@@ -1,0 +1,36 @@
+{
+  "name": "hand-sabers",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "typecheck:server": "tsc -p tsconfig.server.json --noEmit",
+    "server": "node server.js",
+    "server:build": "tsc -p tsconfig.server.json",
+    "start": "node server.js",
+    "client": "vite --host 0.0.0.0",
+    "dev:vite": "node scripts/dev-vite.mjs",
+    "check": "node scripts/check-js.mjs",
+    "smoke": "node scripts/smoke-server.mjs",
+    "test": "npm run check && npm run unit && npm run smoke",
+    "postinstall": "node scripts/sync-vendor.mjs",
+    "unit": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "archiver": "^8.0.0",
+    "express": "^5.2.1",
+    "jszip": "^3.10.1",
+    "multer": "^2.1.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.1.0",
+    "@types/node": "^25.9.1",
+    "@types/three": "^0.184.1",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.14"
+  }
+}

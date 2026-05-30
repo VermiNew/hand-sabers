@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Biblioteka map i wyników Hand Sabers.">
+<title>Hand Sabers — Mapy</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=swap" rel="stylesheet">
+<style>
+:root {
+  --main:#2f7cff; --accent:#36f2a1; --gray:#94a3b8;
+  --bg:#05070d; --panel:rgba(7,17,29,0.92); --text:#e2e8f0;
+  --muted:rgba(226,232,240,0.62); --dim:rgba(226,232,240,0.28);
+  --border:rgba(148,163,184,0.14);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+.material-symbols-rounded { font-family:'Material Symbols Rounded'; font-weight:normal; font-style:normal; font-size:1em; line-height:1; letter-spacing:normal; text-transform:none; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; direction:ltr; font-feature-settings:'liga'; -webkit-font-feature-settings:'liga'; -webkit-font-smoothing:antialiased; }
+.btn-icon { font-size:16px; margin-right:5px; vertical-align:-0.16em; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  min-height:100vh; padding:40px 20px;
+}
+
+header {
+  text-align:center; margin-bottom:40px;
+}
+.title {
+  font-family:'Oxanium',sans-serif; font-size:32px; font-weight:900;
+  letter-spacing:8px; color:var(--main);
+  text-shadow:0 0 30px rgba(47,124,255,0.5);
+}
+.subtitle { font-size:11px; letter-spacing:4px; color:var(--dim); margin-top:6px; }
+
+nav {
+  display:flex; justify-content:center; gap:12px; margin-bottom:32px;
+}
+.nav-btn {
+  background:transparent; border:1px solid var(--border);
+  color:var(--muted); font-family:'JetBrains Mono',monospace;
+  font-size:11px; letter-spacing:3px; padding:8px 20px;
+  border-radius:4px; cursor:pointer; transition:all .2s;
+}
+.nav-btn:hover, .nav-btn.active {
+  border-color:var(--main); color:var(--main);
+  background:rgba(47,124,255,0.08);
+}
+
+.section { max-width:800px; margin:0 auto 48px; }
+.section-title {
+  font-family:'Oxanium',sans-serif; font-size:14px; font-weight:700;
+  letter-spacing:5px; color:var(--accent); margin-bottom:16px;
+  padding-bottom:8px; border-bottom:1px solid var(--border);
+}
+
+/* Map cards */
+#mapList { display:flex; flex-direction:column; gap:10px; }
+.map-card {
+  display:flex; align-items:center; gap:16px;
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:8px; padding:16px 20px;
+  cursor:pointer; transition:all .2s;
+}
+.map-card:hover {
+  border-color:rgba(47,124,255,0.4);
+  box-shadow:0 0 20px rgba(47,124,255,0.1);
+  background:rgba(7,17,29,0.98);
+}
+.map-title {
+  font-family:'Oxanium',sans-serif; font-size:16px; font-weight:700;
+  letter-spacing:2px; color:var(--text); flex:1;
+}
+.map-meta { font-size:10px; color:var(--muted); letter-spacing:2px; margin-top:3px; }
+.map-beats {
+  font-size:11px; color:var(--accent); letter-spacing:2px; text-align:right;
+}
+.map-actions { display:flex; gap:8px; }
+.btn-small {
+  background:transparent; border:1px solid var(--border);
+  color:var(--muted); font-family:'JetBrains Mono',monospace;
+  font-size:10px; letter-spacing:2px; padding:5px 12px;
+  border-radius:3px; cursor:pointer; transition:all .2s;
+}
+.btn-small:hover { border-color:var(--main); color:var(--main); }
+.btn-small.play { border-color:rgba(54,242,161,0.4); color:var(--accent); }
+.btn-small.play:hover { background:rgba(54,242,161,0.08); }
+.btn-small.edit { border-color:rgba(47,124,255,0.4); color:var(--main); }
+.btn-small.del  { border-color:rgba(255,58,58,0.3); color:#ff3a3a; }
+.btn-small.del:hover { background:rgba(255,58,58,0.08); }
+
+.empty-state {
+  text-align:center; padding:40px; color:var(--dim);
+  font-size:12px; letter-spacing:2px;
+  border:1px dashed var(--border); border-radius:8px;
+}
+
+
+/* Neon Minimal map library cards */
+#mapList {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.map-card {
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto auto;
+  align-items:center;
+  gap:14px;
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:14px;
+  overflow:hidden;
+  padding:0;
+  transition:border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+.map-card::before {
+  content:'';
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width:4px;
+  background:linear-gradient(180deg, #36f2a1, #2f7cff);
+}
+.map-card:hover {
+  background:rgba(47,124,255,0.06);
+  border-color:rgba(47,124,255,0.25);
+  transform:translateY(-1px);
+  box-shadow:0 8px 32px rgba(0,0,0,0.32);
+}
+.map-card > div:first-child {
+  padding:16px 20px 16px 24px;
+  min-width:0;
+}
+.map-title {
+  font-family:'Oxanium', sans-serif;
+  font-size:16px;
+  font-weight:700;
+  color:#fff;
+  margin-bottom:4px;
+  letter-spacing:1.4px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.map-meta {
+  font-size:11px;
+  letter-spacing:1.5px;
+  color:rgba(148,163,184,0.70);
+}
+.map-beats {
+  font-size:11px;
+  color:rgba(54,242,161,0.86);
+  letter-spacing:2px;
+  text-align:right;
+  padding-left:10px;
+  white-space:nowrap;
+}
+.map-actions {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 16px 0 0;
+}
+@media (max-width:720px) {
+  .map-card { grid-template-columns:minmax(0,1fr); gap:0; }
+  .map-beats { text-align:left; padding:0 20px 10px 24px; }
+  .map-actions { padding:0 20px 16px 24px; flex-wrap:wrap; }
+}
+
+/* Leaderboard */
+#scoreList { display:flex; flex-direction:column; gap:6px; }
+.score-row {
+  display:flex; align-items:center; gap:12px;
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:6px; padding:10px 16px; font-size:12px;
+}
+.score-rank  { color:var(--dim); min-width:24px; text-align:right; }
+.score-rank.gold   { color:#ffd700; }
+.score-rank.silver { color:#c0c0c0; }
+.score-rank.bronze { color:#cd7f32; }
+.score-player { flex:1; color:var(--text); letter-spacing:1px; }
+.score-map    { color:var(--muted); font-size:10px; letter-spacing:1px; }
+.score-val    { color:var(--accent); font-family:'Oxanium',monospace; font-size:14px; font-weight:700; letter-spacing:2px; }
+.score-combo  { color:var(--main); font-size:10px; letter-spacing:1px; }
+
+/* Loading */
+.loading { text-align:center; padding:24px; color:var(--dim); font-size:11px; letter-spacing:3px; }
+
+.toast-root { position:fixed; top:18px; right:18px; z-index:2000; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+.toast { min-width:240px; max-width:420px; padding:12px 14px; border:1px solid rgba(142,200,255,0.24); border-radius:10px; background:rgba(7,17,29,0.94); box-shadow:0 18px 50px rgba(0,0,0,0.45),0 0 28px rgba(47,124,255,0.14); color:var(--text); opacity:0; transform:translateY(-8px); transition:opacity .18s, transform .18s; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast-error { border-color:rgba(255,58,58,0.42); color:#ffd7d7; }
+.toast-success { border-color:rgba(54,242,161,0.42); color:#dffff0; }
+.modal-root[hidden] { display:none; }
+.modal-root { position:fixed; inset:0; z-index:1900; display:grid; place-items:center; }
+.modal-backdrop { position:absolute; inset:0; background:rgba(2,6,14,0.78); backdrop-filter:blur(8px); }
+.modal-card { position:relative; width:min(460px,calc(100vw - 32px)); padding:22px; border:1px solid rgba(142,200,255,0.28); border-radius:16px; background:linear-gradient(145deg,rgba(10,22,38,0.96),rgba(5,9,18,0.92)); box-shadow:0 30px 90px rgba(0,0,0,0.6),0 0 35px rgba(47,124,255,0.16); }
+.modal-card h2 { font:900 18px 'Oxanium',sans-serif; letter-spacing:3px; color:var(--main); margin-bottom:10px; }
+.modal-card p { color:var(--muted); line-height:1.55; font-size:13px; }
+.modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+.modal-btn { padding:9px 16px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text); font:800 11px 'JetBrains Mono',monospace; letter-spacing:2px; cursor:pointer; }
+.modal-btn.primary { border-color:rgba(54,242,161,0.48); color:var(--accent); background:rgba(54,242,161,0.08); }
+.modal-btn.danger { border-color:rgba(255,58,58,0.54); color:#ff9d9d; background:rgba(255,58,58,0.08); }
+.modal-btn.ghost { color:var(--muted); }
+
+/* Tabs */
+#tabMaps, #tabScores { display:none; }
+#tabMaps.active, #tabScores.active { display:block; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title">HAND SABERS</div>
+  <div class="subtitle">BIBLIOTEKA MAP</div>
+</header>
+
+<nav>
+  <button class="nav-btn active" onclick="showTab('maps')">MAPY</button>
+  <button class="nav-btn"        onclick="showTab('scores')">WYNIKI</button>
+  <a href="./map-creator.html" style="text-decoration:none">
+    <button class="nav-btn"><span class="material-symbols-rounded btn-icon">add</span>NOWA MAPA</button>
+  </a>
+  <button class="nav-btn" id="btnImportMap" type="button">IMPORT ZIP</button>
+  <input type="file" id="importMapInput" accept=".zip,.json" hidden>
+  <a href="./beat-sabers-3d.html" style="text-decoration:none">
+    <button class="nav-btn"><span class="material-symbols-rounded btn-icon">play_arrow</span>GRA</button>
+  </a>
+</nav>
+<div id="importStatus" class="empty-state" style="display:none; max-width:800px; margin:0 auto 24px; padding:14px"></div>
+
+<div id="tabMaps" class="active">
+  <div class="section">
+    <div class="section-title">DOSTĘPNE MAPY</div>
+    <div id="mapList"><div class="loading">Ładowanie...</div></div>
+  </div>
+</div>
+
+<div id="tabScores">
+  <div class="section">
+    <div class="section-title">NAJLEPSZE WYNIKI</div>
+    <div id="scoreList"><div class="loading">Ładowanie...</div></div>
+  </div>
+</div>
+
+<script type="module">
+import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, saveLocalMap, saveLocalMapAudio } from './src/core/localstore.js';
+import { getJSZip } from './src/jszip-loader.js';
+import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } from './src/core/map-format.js';
+import { showAlert, showConfirm, showToast } from './src/creator/dialogs.js';
+
+function showTab(name) {
+  document.getElementById('tabMaps').classList.toggle('active',   name === 'maps');
+  document.getElementById('tabScores').classList.toggle('active', name === 'scores');
+  document.querySelectorAll('.nav-btn').forEach((b, i) => {
+    b.classList.toggle('active', (i === 0 && name === 'maps') || (i === 1 && name === 'scores'));
+  });
+  if (name === 'scores') loadScores();
+}
+window.showTab = showTab;
+
+async function fetchJson(url, options) {
+  const res = await fetch(url, options);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  return res.json();
+}
+
+function mergeMaps(serverMaps, localMaps) {
+  const byId = new Map();
+  for (const m of serverMaps) byId.set(m.id, { ...m, source: 'server' });
+  for (const m of localMaps) byId.set(m.id, { ...m, source: byId.has(m.id) ? 'server+local' : 'local' });
+  return [...byId.values()].sort((a, b) => {
+    const at = a.updatedAt || a.meta?.title || a.id;
+    const bt = b.updatedAt || b.meta?.title || b.id;
+    return String(bt).localeCompare(String(at));
+  });
+}
+
+function getAutosaveMap() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem('hs_autosave') || 'null');
+    if (parsed?.id && Array.isArray(parsed.beats)) return { ...parsed, source: 'autosave', localOnly: true };
+  } catch {}
+  return null;
+}
+
+async function loadServerMaps() {
+  const list = await fetchJson('/api/maps');
+  return Promise.all(list.map(async m => {
+    try { return { ...(await fetchJson(`/api/maps/${encodeURIComponent(m.id)}`)), source: 'server' }; }
+    catch { return { id: m.id, meta: { title: m.id }, beats: [], source: 'server' }; }
+  }));
+}
+
+function withDevQuery(url) {
+  const current = new URLSearchParams(location.search);
+  const target = new URL(url, location.href);
+  for (const key of ['dev', 'testing']) {
+    if (current.has(key)) target.searchParams.set(key, current.get(key) || '');
+  }
+  return `${target.pathname.split('/').pop()}${target.search}${target.hash}`;
+}
+
+function preserveDevQueryOnStaticLinks() {
+  const current = new URLSearchParams(location.search);
+  if (!current.has('dev') && !current.has('testing')) return;
+  for (const link of document.querySelectorAll('a[href$=".html"]')) {
+    link.setAttribute('href', withDevQuery(link.getAttribute('href')));
+  }
+}
+
+preserveDevQueryOnStaticLinks();
+
+const mapList = document.getElementById('mapList');
+const importStatus = document.getElementById('importStatus');
+const importMapInput = document.getElementById('importMapInput');
+
+function setImportStatus(message, tone = 'info') {
+  importStatus.style.display = message ? 'block' : 'none';
+  importStatus.textContent = message || '';
+  importStatus.style.borderColor = tone === 'error' ? 'rgba(255,58,58,0.45)' : tone === 'ok' ? 'rgba(54,242,161,0.45)' : 'var(--border)';
+  importStatus.style.color = tone === 'error' ? '#ff7a7a' : tone === 'ok' ? 'var(--accent)' : 'var(--muted)';
+}
+
+async function importToServer(file) {
+  const fd = new FormData();
+  fd.append('file', file);
+  const res = await fetch('/api/maps/import', { method: 'POST', body: fd });
+  const payload = await res.json().catch(async () => ({ error: await res.text() }));
+  if (!res.ok) throw new Error(payload?.error || `${res.status} ${res.statusText}`);
+  return payload;
+}
+
+async function importLocally(file) {
+  assertFileSize(file);
+  const name = file.name.toLowerCase();
+  let map;
+  let audioName = null;
+
+  if (name.endsWith('.json')) {
+    map = normalizeMap(JSON.parse(await file.text()), { fallbackId: file.name.replace(/\.[^.]+$/, '') });
+  } else if (name.endsWith('.zip')) {
+    const JSZip = await getJSZip();
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const entries = Object.values(zip.files);
+    validateZipEntryNames(entries);
+    const jsonFile = zip.file('map.json');
+    if (!jsonFile) throw new Error('Brak map.json w ZIP.');
+    map = normalizeMap(JSON.parse(await jsonFile.async('string')), { fallbackId: file.name.replace(/\.[^.]+$/, '') });
+    const audioFile = entries.find(f => !f.dir && AUDIO_EXT_RE.test(f.name));
+    if (audioFile) {
+      audioName = audioFile.name.split('/').pop();
+      map.meta = { ...(map.meta || {}), audioFile: audioName };
+      await saveLocalMapAudio(map.id, await audioFile.async('arraybuffer'), { fileName: audioName, mimeType: 'application/octet-stream' });
+    }
+  } else {
+    throw new Error('Import obsługuje tylko .zip albo .json.');
+  }
+
+  saveLocalMap(map);
+  return { id: map.id, beats: map.beats?.length || 0, audio: audioName };
+}
+
+async function importMapFile(file) {
+  if (!file) return;
+  setImportStatus(`Importuję ${file.name}...`);
+  try {
+    const imported = await importToServer(file);
+    setImportStatus(`Zaimportowano na serwer: ${imported.id}${imported.audio ? ` + audio (${imported.audio})` : ''}.`, 'ok');
+    await loadMaps();
+  } catch (serverErr) {
+    try {
+      const imported = await importLocally(file);
+      setImportStatus(`Serwer nie przyjął importu (${serverErr.message}). Zaimportowano lokalnie: ${imported.id}${imported.audio ? ` + audio (${imported.audio})` : ''}.`, 'ok');
+      await loadMaps();
+    } catch (localErr) {
+      setImportStatus(`Błąd importu: ${localErr.message}`, 'error');
+      showAlert(`Błąd importu: ${localErr.message}`, { title:'Błąd importu' });
+    }
+  } finally {
+    importMapInput.value = '';
+  }
+}
+
+document.getElementById('btnImportMap').addEventListener('click', () => importMapInput.click());
+importMapInput.addEventListener('change', e => importMapFile(e.target.files?.[0]));
+
+// ── Maps ──────────────────────────────────────────────────────────
+async function loadMaps() {
+  const localMaps = readLocalMaps();
+  const autosave = getAutosaveMap();
+  if (autosave && !localMaps.some(m => m.id === autosave.id)) localMaps.unshift(autosave);
+
+  let serverMaps = [];
+  let serverError = null;
+  try {
+    serverMaps = await loadServerMaps();
+  } catch (e) {
+    serverError = e;
+  }
+
+  const maps = mergeMaps(serverMaps, localMaps);
+  if (!maps.length) {
+    mapList.innerHTML = serverError
+      ? '<div class="empty-state">Serwer nie odpowiada, a lokalnie nie ma map.<br>Uruchom <code>npm start</code> albo utwórz mapę w kreatorze.</div>'
+      : '<div class="empty-state">Brak map. Utwórz pierwszą w Map Creatorze.</div>';
+    return;
+  }
+
+  const offlineNote = serverError
+    ? '<div class="empty-state" style="margin-bottom:12px">Serwer nie odpowiada — pokazuję lokalne mapy/autosave.</div>'
+    : '';
+
+  mapList.innerHTML = offlineNote + maps.map(m => {
+    const beats  = m.beats?.length ?? 0;
+    const dur    = m.meta?.duration ? formatTime(m.meta.duration) : '?';
+    const title  = m.meta?.title   ?? m.id;
+    const badge  = m.source === 'local' || m.source === 'autosave' ? ' · LOCAL' : '';
+    const canDeleteServer = m.source === 'server' || m.source === 'server+local';
+    return `
+      <div class="map-card">
+        <div style="flex:1">
+          <div class="map-title">${escHtml(title)}</div>
+          <div class="map-meta">${beats} beatów · ${dur}${badge}</div>
+        </div>
+        <div class="map-beats">${beats} BLOKÓW</div>
+        <div class="map-actions">
+          <button class="btn-small play" data-action="play" data-id="${attr(m.id)}"><span class="material-symbols-rounded btn-icon">play_arrow</span>GRAJ</button>
+          <button class="btn-small edit" data-action="edit" data-id="${attr(m.id)}">EDYTUJ</button>
+          <button class="btn-small del" data-action="delete" data-id="${attr(m.id)}" data-server="${canDeleteServer ? '1' : '0'}" aria-label="Usuń mapę"><span class="material-symbols-rounded">delete</span></button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function playMap(id) {
+  window.location.href = withDevQuery(`./beat-sabers-3d.html?map=${encodeURIComponent(id)}`);
+}
+
+function editMap(id) {
+  window.location.href = withDevQuery(`./map-creator.html?id=${encodeURIComponent(id)}`);
+}
+
+async function deleteMap(id, btn, tryServer) {
+  if (!await showConfirm(`Usunąć mapę "${id}"?`, { title:'Usuń mapę', confirmText:'USUŃ', cancelText:'ANULUJ', danger:true })) return;
+  let serverDeleted = false;
+  if (tryServer) {
+    try {
+      await fetchJson(`/api/maps/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      serverDeleted = true;
+    } catch {}
+  }
+  deleteLocalMap(id);
+  await deleteLocalMapAudio(id);
+  btn.closest('.map-card')?.remove();
+  if (!serverDeleted && tryServer) showAlert('Nie udało się usunąć z serwera, ale lokalna kopia została usunięta.', { title:'Usunięto lokalnie', type:'error' });
+  else showToast('Mapa usunięta', { type:'success' });
+}
+
+document.getElementById('mapList').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  if (btn.dataset.action === 'play') playMap(id);
+  if (btn.dataset.action === 'edit') editMap(id);
+  if (btn.dataset.action === 'delete') deleteMap(id, btn, btn.dataset.server === '1');
+});
+
+// ── Scores ────────────────────────────────────────────────────────
+async function loadScores() {
+  const localScores = readLocalScores({ limit: 30 });
+  let scores = [];
+  let serverError = null;
+  try {
+    scores = await fetchJson('/api/scores?limit=30');
+  } catch (e) {
+    serverError = e;
+  }
+
+  scores = [...scores, ...localScores]
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .slice(0, 30);
+
+  if (!scores.length) {
+    document.getElementById('scoreList').innerHTML = serverError
+      ? '<div class="empty-state">Serwer nie odpowiada i nie ma lokalnych wyników.</div>'
+      : '<div class="empty-state">Brak wyników. Zagraj pierwszą mapę!</div>';
+    return;
+  }
+
+  const medals = ['gold', 'silver', 'bronze'];
+  const offlineNote = serverError
+    ? '<div class="empty-state" style="margin-bottom:12px">Serwer nie odpowiada — pokazuję lokalne wyniki.</div>'
+    : '';
+  document.getElementById('scoreList').innerHTML = offlineNote + scores.map((s, i) => `
+    <div class="score-row">
+      <div class="score-rank ${medals[i] || ''}">${i + 1}.</div>
+      <div style="flex:1">
+        <div class="score-player">${escHtml(s.player)}${s.localOnly ? ' · LOCAL' : ''}</div>
+        <div class="score-map">${escHtml(s.mapId)}</div>
+      </div>
+      <div class="score-combo">×${s.combo}</div>
+      <div class="score-val">${String(s.score).padStart(6,'0')}</div>
+    </div>`).join('');
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function escHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function attr(str) { return escHtml(str).replace(/'/g,'&#39;'); }
+
+loadMaps();
+</script>
+</body>
+</html>

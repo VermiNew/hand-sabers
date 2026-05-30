@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-server/
+.tmp/
+
+# Local map/audio data
+maps/_scores.json
+maps/audio/*
+!maps/audio/.gitkeep
+maps/_audio/*
+!maps/_audio/.gitkeep
+maps/beatdata/*.json
+!maps/beatdata/.gitkeep
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+*.log

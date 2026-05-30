@@ -1,0 +1,259 @@
+export const GRAPHICS_TIERS = ['lowest', 'very-low', 'low', 'medium', 'high', 'ultra', 'maximum'];
+export const DEFAULT_PERFORMANCE_MODE = 'auto';
+
+const MODES = [DEFAULT_PERFORMANCE_MODE, ...GRAPHICS_TIERS];
+const LEGACY_MODE_MAP = {
+  turbo: 'low',
+  performance: 'medium',
+  lowest: 'lowest',
+  verylow: 'very-low',
+  'very_low': 'very-low',
+  'very-low': 'very-low',
+  balanced: 'high',
+  quality: 'ultra',
+};
+
+const PROFILES = {
+  lowest: {
+    mode: 'lowest',
+    qualityMode: 'lowest',
+    label: 'Lowest',
+    description: 'Najlżejszy tryb awaryjny: ekstremalnie niska rozdzielczość renderu, minimum efektów i najniższe obciążenie kamery/ML.',
+    targetFps: 60,
+    minDpr: 0.32,
+    maxDpr: 0.45,
+    antialias: false,
+    reflections: false,
+    floorGlows: false,
+    saberGlints: false,
+    backgroundShader: false,
+    menuDemo: false,
+    hitShards: 0,
+    camera: { width: 320, height: 180, frameRate: 20 },
+    detectFps: 8,
+    devRefreshMs: 1200,
+  },
+  'very-low': {
+    mode: 'very-low',
+    qualityMode: 'very-low',
+    label: 'Very Low',
+    description: 'Bardzo lekki tryb dla słabszych laptopów i zintegrowanych GPU: niska rozdzielczość, wyłączone ozdobniki i mniejszy koszt trackingu.',
+    targetFps: 60,
+    minDpr: 0.38,
+    maxDpr: 0.56,
+    antialias: false,
+    reflections: false,
+    floorGlows: false,
+    saberGlints: false,
+    backgroundShader: false,
+    menuDemo: false,
+    hitShards: 1,
+    camera: { width: 424, height: 240, frameRate: 24 },
+    detectFps: 10,
+    devRefreshMs: 1100,
+  },
+  low: {
+    mode: 'low',
+    qualityMode: 'low',
+    label: 'Low',
+    description: 'Na słabe sprzęty: minimalne efekty, niskie obciążenie GPU i stabilny FPS.',
+    targetFps: 60,
+    minDpr: 0.48,
+    maxDpr: 0.68,
+    antialias: false,
+    reflections: false,
+    floorGlows: false,
+    saberGlints: false,
+    backgroundShader: false,
+    menuDemo: false,
+    hitShards: 1,
+    camera: { width: 424, height: 240, frameRate: 30 },
+    detectFps: 18,
+    devRefreshMs: 1000,
+  },
+  medium: {
+    mode: 'medium',
+    qualityMode: 'medium',
+    label: 'Medium',
+    description: 'Na średnie sprzęty: czytelny obraz, lekki shader tła i umiarkowane efekty.',
+    targetFps: 60,
+    minDpr: 0.62,
+    maxDpr: 0.9,
+    antialias: false,
+    reflections: false,
+    floorGlows: false,
+    saberGlints: true,
+    backgroundShader: true,
+    menuDemo: true,
+    hitShards: 2,
+    camera: { width: 640, height: 360, frameRate: 30 },
+    detectFps: 24,
+    devRefreshMs: 750,
+  },
+  high: {
+    mode: 'high',
+    qualityMode: 'high',
+    label: 'High',
+    description: 'Na sprzęty średnio-dobre: wyższa ostrość, odbicia światła i pełniejsze efekty.',
+    targetFps: 60,
+    minDpr: 0.75,
+    maxDpr: 1.08,
+    antialias: false,
+    reflections: false,
+    floorGlows: true,
+    saberGlints: true,
+    backgroundShader: true,
+    menuDemo: true,
+    hitShards: 3,
+    camera: { width: 640, height: 480, frameRate: 30 },
+    detectFps: 28,
+    devRefreshMs: 650,
+  },
+  ultra: {
+    mode: 'ultra',
+    qualityMode: 'ultra',
+    label: 'Ultra',
+    description: 'Na dobre sprzęty: odbicia podłogi, wysoka ostrość i komplet efektów.',
+    targetFps: 60,
+    minDpr: 0.9,
+    maxDpr: 1.3,
+    antialias: true,
+    reflections: true,
+    floorGlows: true,
+    saberGlints: true,
+    backgroundShader: true,
+    menuDemo: true,
+    hitShards: 5,
+    camera: { width: 960, height: 540, frameRate: 30 },
+    detectFps: 30,
+    devRefreshMs: 500,
+  },
+  maximum: {
+    mode: 'maximum',
+    qualityMode: 'maximum',
+    label: 'Maximum',
+    description: 'Najlepsze ustawienia graficzne: najwyższa rozdzielczość renderu i najbogatsze efekty.',
+    targetFps: 60,
+    minDpr: 1.0,
+    maxDpr: 1.75,
+    antialias: true,
+    reflections: true,
+    floorGlows: true,
+    saberGlints: true,
+    backgroundShader: true,
+    menuDemo: true,
+    hitShards: 7,
+    camera: { width: 1280, height: 720, frameRate: 30 },
+    detectFps: 30,
+    devRefreshMs: 400,
+  },
+};
+
+function normalizeMode(mode) {
+  const mapped = LEGACY_MODE_MAP[mode] || mode;
+  return MODES.includes(mapped) ? mapped : DEFAULT_PERFORMANCE_MODE;
+}
+
+function detectGpuBias() {
+  if (typeof document === 'undefined') return 0;
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    if (!gl) return -2;
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const renderer = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || '').toLowerCase();
+    if (renderer.includes('swiftshader') || renderer.includes('llvmpipe') || renderer.includes('software')) return -3;
+    if (renderer.includes('intel') || renderer.includes('uhd') || renderer.includes('iris')) return -1;
+    if (renderer.includes('rtx') || renderer.includes('radeon rx') || renderer.includes('arc') || renderer.includes('apple m')) return 2;
+    if (renderer.includes('gtx') || renderer.includes('geforce') || renderer.includes('radeon')) return 1;
+  } catch {}
+  return 0;
+}
+
+export function detectAutoGraphicsTier() {
+  const nav = typeof navigator !== 'undefined' ? navigator : {};
+  const win = typeof window !== 'undefined' ? window : {};
+  let score = detectGpuBias();
+
+  const cores = Number(nav.hardwareConcurrency) || 4;
+  if (cores >= 12) score += 2;
+  else if (cores >= 8) score += 1;
+  else if (cores <= 4) score -= 1;
+
+  const memory = Number(nav.deviceMemory) || 4;
+  if (memory >= 16) score += 3;
+  else if (memory >= 8) score += 2;
+  else if (memory >= 4) score += 1;
+  else if (memory <= 2) score -= 1;
+
+  const dpr = Math.min(Number(win.devicePixelRatio) || 1, 2);
+  const pixels = (Number(win.innerWidth) || 1280) * (Number(win.innerHeight) || 720) * dpr * dpr;
+  if (pixels >= 5_000_000) score -= 1;
+  else if (pixels <= 1_400_000) score += 1;
+
+  if (score <= -3) return 'lowest';
+  if (score <= -1) return 'very-low';
+  if (score <= 1) return 'low';
+  if (score <= 3) return 'medium';
+  if (score <= 5) return 'high';
+  if (score <= 7) return 'ultra';
+  return 'maximum';
+}
+
+export function getPerformanceMode(settings = {}) {
+  return normalizeMode(settings.performanceMode || DEFAULT_PERFORMANCE_MODE);
+}
+
+export function getPerformanceProfile(settings = {}) {
+  const mode = getPerformanceMode(settings);
+  if (mode === 'auto') {
+    const runtimeQualityMode = typeof window !== 'undefined' ? window.__graphicsQualityMode : null;
+    const qualityMode = normalizeMode(settings.autoQualityMode || runtimeQualityMode || detectAutoGraphicsTier());
+    const profile = PROFILES[qualityMode] || PROFILES.medium;
+    return {
+      ...profile,
+      mode: 'auto',
+      qualityMode: profile.qualityMode,
+      label: `Auto -> ${profile.label}`,
+      description: 'Auto dobiera profil do sprzętu i reguluje jakość w trakcie gry, gdy FPS spada albo jest duży zapas.',
+      auto: true,
+    };
+  }
+  return { ...PROFILES[mode] };
+}
+
+export function getPerformanceModes() {
+  return [
+    { value: 'auto', label: 'Auto (domyślnie)', description: 'Sam sprawdza sprzęt i reguluje jakość w trakcie gry.' },
+    { value: 'lowest', label: 'Lowest', description: PROFILES.lowest.description },
+    { value: 'very-low', label: 'Very Low', description: PROFILES['very-low'].description },
+    { value: 'low', label: 'Low', description: PROFILES.low.description },
+    { value: 'medium', label: 'Medium', description: PROFILES.medium.description },
+    { value: 'high', label: 'High', description: PROFILES.high.description },
+    { value: 'ultra', label: 'Ultra', description: PROFILES.ultra.description },
+    { value: 'maximum', label: 'Maximum', description: PROFILES.maximum.description },
+  ];
+}
+
+export function getPerformanceModeDescription(mode) {
+  const normalized = normalizeMode(mode);
+  return getPerformanceModes().find(item => item.value === normalized)?.description || '';
+}
+
+export function getAdjacentGraphicsTier(mode, direction) {
+  const normalized = normalizeMode(mode);
+  const index = GRAPHICS_TIERS.indexOf(normalized);
+  if (index < 0) return null;
+  const next = GRAPHICS_TIERS[index + Math.sign(direction)];
+  return next || null;
+}
+
+export function clampDpr(value, profile) {
+  const dpr = Number.isFinite(value) ? value : 1;
+  return Math.max(profile.minDpr, Math.min(profile.maxDpr, dpr));
+}
+
+export function getDetectIntervalMs(profile) {
+  const fps = Math.max(8, Math.min(45, Number(profile.detectFps) || 24));
+  return 1000 / fps;
+}

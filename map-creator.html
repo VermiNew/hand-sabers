@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Kreator map do Hand Sabers z eksportem ZIP i autosave.">
+<title>Hand Sabers — Map Creator</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=swap" rel="stylesheet">
+<style>
+:root {
+  --main:   #2f7cff;
+  --accent: #36f2a1;
+  --bomb:   #ff3a3a;
+  --gray:   #94a3b8;
+  --bg:     #05070d;
+  --panel:  rgba(7,17,29,0.92);
+  --text:   #e2e8f0;
+  --muted:  rgba(226,232,240,0.62);
+  --dim:    rgba(226,232,240,0.28);
+  --left:   #36f2a1;
+  --right:  #2f7cff;
+  --border: rgba(148,163,184,0.14);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+.material-symbols-rounded { font-family:'Material Symbols Rounded'; font-weight:normal; font-style:normal; font-size:1em; line-height:1; letter-spacing:normal; text-transform:none; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; direction:ltr; font-feature-settings:'liga'; -webkit-font-feature-settings:'liga'; -webkit-font-smoothing:antialiased; }
+.inline-icon { font-size:1.1em; vertical-align:-0.18em; margin-right:6px; }
+body {
+  background:var(--bg); color:var(--text);
+  font-family:'JetBrains Mono',monospace;
+  height:100vh; display:flex; flex-direction:column; overflow:hidden;
+}
+
+/* ── TOP BAR ── */
+#topBar {
+  display:flex; align-items:center; gap:16px;
+  padding:10px 20px; border-bottom:1px solid var(--border);
+  background:var(--panel); flex-shrink:0; z-index:10;
+}
+.top-title {
+  font-family:'Oxanium',sans-serif; font-weight:900;
+  font-size:15px; letter-spacing:5px; color:var(--main);
+  text-shadow:0 0 20px rgba(47,124,255,0.5);
+  white-space:nowrap;
+}
+.top-sep { width:1px; height:24px; background:var(--border); }
+#songName {
+  font-size:12px; color:var(--text); letter-spacing:1px;
+  max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+#songDuration { font-size:11px; color:var(--muted); }
+
+.top-spacer { flex:1; }
+
+#btnSave, #btnExport, #btnTest {
+  background:transparent; border:1px solid rgba(47,124,255,0.38);
+  color:var(--main); font-family:'JetBrains Mono',monospace;
+  font-size:11px; letter-spacing:3px; padding:7px 18px;
+  border-radius:4px; cursor:pointer; transition:all .2s;
+}
+#btnSave:hover   { background:rgba(47,124,255,0.12); border-color:var(--main); }
+#btnExport:hover { background:rgba(54,242,161,0.1);  border-color:var(--accent); }
+#btnTest:hover   { background:rgba(47,124,255,0.12); border-color:var(--main); }
+#btnExport { border-color:rgba(54,242,161,0.38); color:var(--accent); }
+#autosaveLabel { font-size:10px; color:var(--dim); letter-spacing:1px; }
+
+/* ── TRANSPORT ── */
+#transport {
+  display:flex; align-items:center; gap:14px;
+  padding:8px 20px; border-bottom:1px solid var(--border);
+  background:rgba(5,7,13,0.7); flex-shrink:0;
+}
+.transport-btn {
+  background:transparent; border:1px solid var(--border);
+  color:var(--muted); font-family:'JetBrains Mono',monospace;
+  font-size:11px; letter-spacing:2px; padding:6px 14px;
+  border-radius:4px; cursor:pointer; transition:all .2s; white-space:nowrap;
+}
+.transport-btn:hover  { border-color:var(--main); color:var(--main); }
+.transport-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(54,242,161,0.08); }
+.transport-btn.play   { border-color:var(--main); color:var(--main); }
+
+#timecode {
+  font-size:16px; color:var(--accent); letter-spacing:3px;
+  min-width:80px; text-align:center;
+  font-family:'Oxanium',monospace;
+}
+.transport-sep { width:1px; height:20px; background:var(--border); }
+
+/* Tap mode buttons */
+#tapModeGroup { display:flex; gap:6px; align-items:center; }
+.tap-label { font-size:10px; letter-spacing:2px; color:var(--dim); }
+#tapModeF, #tapModeJ, #tapModeSpace {
+  padding:5px 12px; font-size:11px;
+}
+#tapModeF     { border-color:rgba(54,242,161,0.4); color:var(--left); }
+#tapModeJ     { border-color:rgba(47,124,255,0.4); color:var(--right); }
+#tapModeSpace { border-color:var(--border); }
+#tapModeF.active     { background:rgba(54,242,161,0.12); }
+#tapModeJ.active     { background:rgba(47,124,255,0.12); }
+#tapModeSpace.active { background:rgba(148,163,184,0.1); }
+
+#tapFlash {
+  width:10px; height:10px; border-radius:50%;
+  background:transparent; transition:background 0.05s;
+}
+#tapFlash.flash-left  { background:var(--left); }
+#tapFlash.flash-right { background:var(--right); }
+#tapFlash.flash-rand  { background:var(--gray); }
+
+/* Zoom */
+.zoom-group { display:flex; align-items:center; gap:6px; }
+.zoom-label { font-size:10px; letter-spacing:2px; color:var(--dim); }
+#zoomIn,#zoomOut {
+  width:26px; height:26px; font-size:14px; padding:0;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* Creator song volume */
+.creator-volume {
+  display:flex; align-items:center; gap:8px; min-width:190px;
+}
+.creator-volume label {
+  color:var(--dim); font-size:10px; letter-spacing:2px; font-weight:800;
+}
+#songVolume {
+  --range-progress:50%;
+  --range-fill:var(--main);
+  --range-fill-soft:rgba(47,124,255,0.42);
+  width:112px; height:26px;
+  appearance:none; -webkit-appearance:none;
+  background:transparent; border:0; outline:0; cursor:pointer;
+}
+#songVolume::-webkit-slider-runnable-track {
+  height:8px; border-radius:999px;
+  border:1px solid rgba(142,200,255,0.22);
+  background:
+    linear-gradient(90deg,
+      var(--range-fill) 0%,
+      var(--range-fill) var(--range-progress),
+      rgba(148,163,184,0.16) var(--range-progress),
+      rgba(148,163,184,0.16) 100%);
+  box-shadow:inset 0 0 10px rgba(0,0,0,0.75),0 0 18px var(--range-fill-soft);
+}
+#songVolume::-webkit-slider-thumb {
+  -webkit-appearance:none; appearance:none;
+  width:18px; height:18px; margin-top:-6px; border-radius:50%;
+  border:1px solid rgba(226,232,240,0.92);
+  background:radial-gradient(circle at 35% 30%,#fff 0 12%,#8ec8ff 13% 36%,var(--range-fill) 37% 100%);
+  box-shadow:0 0 0 4px rgba(47,124,255,0.10),0 0 22px var(--range-fill-soft),inset 0 0 8px rgba(255,255,255,0.22);
+  transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+}
+#songVolume:hover::-webkit-slider-thumb,
+#songVolume:focus-visible::-webkit-slider-thumb {
+  transform:scale(1.12); border-color:#fff;
+  box-shadow:0 0 0 5px rgba(47,124,255,0.16),0 0 30px var(--range-fill-soft),inset 0 0 8px rgba(255,255,255,0.28);
+}
+#songVolume:focus-visible { filter:drop-shadow(0 0 12px var(--range-fill-soft)); }
+#songVolume::-moz-range-track {
+  height:8px; border-radius:999px;
+  border:1px solid rgba(142,200,255,0.22);
+  background:rgba(148,163,184,0.16);
+  box-shadow:inset 0 0 10px rgba(0,0,0,0.75),0 0 18px var(--range-fill-soft);
+}
+#songVolume::-moz-range-progress {
+  height:8px; border-radius:999px;
+  background:var(--range-fill);
+  box-shadow:0 0 18px var(--range-fill-soft);
+}
+#songVolume::-moz-range-thumb {
+  width:18px; height:18px; border-radius:50%;
+  border:1px solid rgba(226,232,240,0.92);
+  background:radial-gradient(circle at 35% 30%,#fff 0 12%,#8ec8ff 13% 36%,var(--range-fill) 37% 100%);
+  box-shadow:0 0 0 4px rgba(47,124,255,0.10),0 0 22px var(--range-fill-soft),inset 0 0 8px rgba(255,255,255,0.22);
+}
+#songVolume:hover::-moz-range-thumb,
+#songVolume:focus-visible::-moz-range-thumb { transform:scale(1.12); border-color:#fff; }
+#songVolumeValue {
+  min-width:38px;
+  color:var(--muted);
+  font:800 12px 'JetBrains Mono', monospace;
+  text-align:right;
+  text-shadow:0 0 12px rgba(47,124,255,0.24);
+}
+
+/* ── MAIN AREA ── */
+#mainArea {
+  flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative;
+}
+
+/* Waveform */
+#waveCanvas {
+  width:100%; height:80px; display:block;
+  border-bottom:1px solid var(--border);
+  background:#02050b; cursor:pointer; flex-shrink:0;
+}
+
+/* Timeline */
+#timelineWrap {
+  flex:1; position:relative; overflow:hidden;
+}
+#timelineCanvas {
+  width:100%; height:100%; display:block; cursor:crosshair;
+}
+
+/* Ruler */
+#rulerCanvas {
+  position:absolute; top:0; left:0; right:0; height:24px;
+  pointer-events:none;
+}
+
+/* Playhead */
+#playhead {
+  position:absolute; top:0; bottom:0; width:2px;
+  background:rgba(226,232,240,0.9);
+  box-shadow:0 0 8px rgba(226,232,240,0.5);
+  pointer-events:none; z-index:5;
+  transform:translateX(0);
+}
+#playhead::before {
+  content:''; position:absolute; top:0; left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:rgba(226,232,240,0.9);
+}
+
+/* ── DROP ZONE ── */
+#dropZone {
+  position:absolute; inset:0; z-index:100;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:16px; background:rgba(5,7,13,0.95);
+}
+#dropZone.hidden { display:none; }
+.drop-title {
+  font-family:'Oxanium',sans-serif; font-size:28px; font-weight:900;
+  letter-spacing:6px; color:var(--main);
+  text-shadow:0 0 30px rgba(47,124,255,0.5);
+}
+.drop-sub  { font-size:12px; color:var(--muted); letter-spacing:3px; }
+.drop-box  {
+  width:360px; height:180px; border:2px dashed rgba(47,124,255,0.3);
+  border-radius:10px; display:flex; align-items:center; justify-content:center;
+  cursor:pointer; transition:all .2s; background:rgba(47,124,255,0.03);
+  flex-direction:column; gap:10px;
+}
+.drop-box:hover, .drop-box.drag-over {
+  border-color:var(--main); background:rgba(47,124,255,0.08);
+  box-shadow:0 0 30px rgba(47,124,255,0.2);
+}
+.drop-icon { font-size:36px; opacity:0.5; }
+.drop-hint { font-size:11px; color:var(--dim); letter-spacing:2px; }
+#fileInput  { display:none; }
+
+/* ── PRE-COUNT OVERLAY ── */
+#precount {
+  position:absolute; inset:0; z-index:200;
+  display:none; align-items:center; justify-content:center;
+  background:rgba(5,7,13,0.88); backdrop-filter:blur(4px);
+}
+#precount.show { display:flex; }
+#precountNum {
+  font-family:'Oxanium',sans-serif; font-size:120px; font-weight:900;
+  color:var(--accent); text-shadow:0 0 60px var(--accent);
+  animation:precountPulse 1s ease-out;
+}
+@keyframes precountPulse {
+  from { transform:scale(1.4); opacity:0.4; }
+  to   { transform:scale(1);   opacity:1;   }
+}
+
+/* ── STATUS BAR ── */
+#statusBar {
+  padding:5px 20px; border-top:1px solid var(--border);
+  background:var(--panel); font-size:10px; letter-spacing:2px;
+  color:var(--dim); display:flex; gap:20px; align-items:center; flex-shrink:0;
+}
+.status-item { display:flex; gap:6px; }
+.status-key  { color:var(--dim); }
+.status-val  { color:var(--muted); }
+#warningMsg  { color:#ffaa44; margin-left:auto; }
+.toast-root { position:fixed; top:18px; right:18px; z-index:2000; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+.toast { min-width:240px; max-width:420px; padding:12px 14px; border:1px solid rgba(142,200,255,0.24); border-radius:10px; background:rgba(7,17,29,0.94); box-shadow:0 18px 50px rgba(0,0,0,0.45),0 0 28px rgba(47,124,255,0.14); color:var(--text); opacity:0; transform:translateY(-8px); transition:opacity .18s, transform .18s; }
+.toast.show { opacity:1; transform:translateY(0); }
+.toast-error { border-color:rgba(255,58,58,0.42); color:#ffd7d7; }
+.toast-success { border-color:rgba(54,242,161,0.42); color:#dffff0; }
+.modal-root[hidden] { display:none; }
+.modal-root { position:fixed; inset:0; z-index:1900; display:grid; place-items:center; }
+.modal-backdrop { position:absolute; inset:0; background:rgba(2,6,14,0.78); backdrop-filter:blur(8px); }
+.modal-card { position:relative; width:min(460px,calc(100vw - 32px)); padding:22px; border:1px solid rgba(142,200,255,0.28); border-radius:16px; background:linear-gradient(145deg,rgba(10,22,38,0.96),rgba(5,9,18,0.92)); box-shadow:0 30px 90px rgba(0,0,0,0.6),0 0 35px rgba(47,124,255,0.16); }
+.modal-card h2 { font:900 18px 'Oxanium',sans-serif; letter-spacing:3px; color:var(--main); margin-bottom:10px; }
+.modal-card p { color:var(--muted); line-height:1.55; font-size:13px; }
+.modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+.modal-btn { padding:9px 16px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--text); font:800 11px 'JetBrains Mono',monospace; letter-spacing:2px; cursor:pointer; }
+.modal-btn.primary { border-color:rgba(54,242,161,0.48); color:var(--accent); background:rgba(54,242,161,0.08); }
+.modal-btn.danger { border-color:rgba(255,58,58,0.54); color:#ff9d9d; background:rgba(255,58,58,0.08); }
+.modal-btn.ghost { color:var(--muted); }
+#btnCutDirection { border-color:rgba(255,170,68,0.42); color:#ffaa44; min-width:92px; }
+#btnCutDirection.active { background:rgba(255,170,68,0.10); }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topBar">
+  <div class="top-title">MAP CREATOR</div>
+  <div class="top-sep"></div>
+  <div id="songName">— brak pliku —</div>
+  <div id="songDuration">0:00</div>
+  <div class="top-spacer"></div>
+  <span id="autosaveLabel">autosave: —</span>
+  <button id="btnSave">ZAPISZ</button>
+  <button id="btnExport">EKSPORT ZIP</button>
+  <button id="btnTest"><span class="material-symbols-rounded inline-icon">play_arrow</span>TEST</button>
+</div>
+
+<!-- TRANSPORT -->
+<div id="transport">
+  <button class="transport-btn play" id="btnPlay"><span class="material-symbols-rounded inline-icon">play_arrow</span>PLAY</button>
+  <button class="transport-btn"      id="btnStop">■ STOP</button>
+  <div class="transport-sep"></div>
+  <span id="timecode">0:00.0</span>
+  <div class="transport-sep"></div>
+
+  <div class="creator-volume" title="Głośność odsłuchu utworu w edytorze">
+    <label for="songVolume">UTWÓR</label>
+    <input id="songVolume" type="range" min="0" max="100" value="50" step="1">
+    <span id="songVolumeValue">50%</span>
+  </div>
+
+  <div class="transport-sep"></div>
+
+  <div id="tapModeGroup">
+    <span class="tap-label">TAP:</span>
+    <button class="transport-btn" id="tapModeF">F — LEWO</button>
+    <button class="transport-btn" id="tapModeJ">J — PRAWO</button>
+    <button class="transport-btn active" id="tapModeSpace">SPACJA — RANDOM</button>
+    <button class="transport-btn" id="btnCutDirection" title="R zmienia kierunek cięcia zaznaczonych bloków albo nowych tapów">CIĘCIE: •</button>
+    <div id="tapFlash"></div>
+  </div>
+
+  <div class="transport-sep"></div>
+  <button class="transport-btn" id="btnUndo">↩ UNDO</button>
+  <button class="transport-btn" id="btnRedo">↪ REDO</button>
+
+  <div class="transport-sep"></div>
+  <button class="transport-btn" id="btnSnap">SNAP: WYŁ</button>
+  <button class="transport-btn" id="btnLoop">LOOP: WYŁ</button>
+
+  <div class="transport-sep"></div>
+  <div class="zoom-group">
+    <span class="zoom-label">ZOOM</span>
+    <button class="transport-btn" id="zoomOut">−</button>
+    <button class="transport-btn" id="zoomIn">+</button>
+  </div>
+</div>
+
+<!-- MAIN AREA -->
+<div id="mainArea">
+  <!-- Waveform -->
+  <canvas id="waveCanvas"></canvas>
+
+  <!-- Timeline -->
+  <div id="timelineWrap">
+    <canvas id="rulerCanvas"></canvas>
+    <canvas id="timelineCanvas"></canvas>
+    <div id="playhead"></div>
+  </div>
+
+  <!-- Drop zone -->
+  <div id="dropZone">
+    <div class="drop-title">HAND SABERS</div>
+    <div class="drop-sub">MAP CREATOR</div>
+    <div class="drop-box" id="dropBox">
+      <div class="drop-icon material-symbols-rounded">music_note</div>
+      <div>Przeciągnij plik MP3 / OGG / WAV</div>
+      <div class="drop-hint">lub kliknij aby wybrać</div>
+    </div>
+    <input type="file" id="fileInput" accept="audio/*,.json,.zip">
+  </div>
+
+  <!-- Pre-count overlay -->
+  <div id="precount">
+    <div id="precountNum">4</div>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="statusBar">
+  <div class="status-item">
+    <span class="status-key">BLOKI</span>
+    <span class="status-val" id="stBeats">0</span>
+  </div>
+  <div class="status-item">
+    <span class="status-key">LEWO</span>
+    <span class="status-val" id="stLeft">0</span>
+  </div>
+  <div class="status-item">
+    <span class="status-key">PRAWO</span>
+    <span class="status-val" id="stRight">0</span>
+  </div>
+  <div class="status-item">
+    <span class="status-key">RANDOM</span>
+    <span class="status-val" id="stRand">0</span>
+  </div>
+  <div class="status-item">
+    <span class="status-key">BOMBY</span>
+    <span class="status-val" id="stBombs">0</span>
+  </div>
+  <div class="status-item">
+    <span class="status-key">ZOOM</span>
+    <span class="status-val" id="stZoom">10s</span>
+  </div>
+  <div class="status-item">
+    <span class="status-key">SNAP</span>
+    <span class="status-val" id="stSnap">wył</span>
+  </div>
+  <span id="warningMsg"></span>
+</div>
+
+<script type="module" src="./src/creator/main.js"></script>
+</body>
+</html>
