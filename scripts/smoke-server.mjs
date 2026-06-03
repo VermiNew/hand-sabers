@@ -23,7 +23,13 @@ const PORT = process.env.SMOKE_PORT || await getFreePort();
 const HOST = '127.0.0.1';
 const base = `http://${HOST}:${PORT}`;
 const SMOKE_MAPS_DIR = path.join(process.cwd(), '.tmp', `smoke-maps-${process.pid}-${Date.now()}`);
-const server = spawn(process.execPath, ['server.js'], {
+const SERVER_ENTRY = path.join(process.cwd(), 'dist-server', 'server.js');
+
+if (!existsSync(SERVER_ENTRY)) {
+  throw new Error('Compiled server not found. Run `npm run server:build` before `npm run smoke`.');
+}
+
+const server = spawn(process.execPath, [SERVER_ENTRY], {
   cwd: process.cwd(),
   stdio: ['ignore', 'pipe', 'pipe'],
   env: { ...process.env, PORT, NODE_ENV: 'test', HAND_SABERS_MAPS_DIR: SMOKE_MAPS_DIR },
