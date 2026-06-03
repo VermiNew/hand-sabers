@@ -6,6 +6,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
+    "lint": "npm run check",
     "typecheck": "tsc --noEmit",
     "typecheck:server": "tsc -p tsconfig.server.json --noEmit",
     "server": "node server.js",
@@ -16,6 +17,7 @@
     "check": "node scripts/check-js.mjs",
     "smoke": "node scripts/smoke-server.mjs",
     "test": "npm run check && npm run unit && npm run smoke",
+    "verify": "npm run lint && npm run build && npm run typecheck:server && npm run unit && npm run smoke",
     "postinstall": "node scripts/sync-vendor.mjs",
     "unit": "node --test tests/*.test.mjs"
   },
