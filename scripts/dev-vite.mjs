@@ -16,7 +16,7 @@ function run(name, command, args, env = {}) {
   return child;
 }
 
-run('server', 'node', ['server.js'], { PORT: process.env.PORT || '3000' });
+run('server', 'npm', ['run', 'server'], { PORT: process.env.PORT || '3000' });
 run('vite', 'npm', ['exec', 'vite', '--', '--host', '0.0.0.0']);
 
 function shutdown(signal) {
