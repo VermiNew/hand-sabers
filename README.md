@@ -27,7 +27,7 @@ Otwórz w przeglądarce:
 http://localhost:3000
 ```
 
-To uruchamia `server.js`, który serwuje grę i API. Ten tryb jest najprostszy do normalnego grania.
+To buduje frontend Vite, kompiluje `server.ts` do `dist-server/` i uruchamia skompilowany serwer Express. Ten tryb jest najprostszy do normalnego grania.
 
 ## Tryb developerski
 
@@ -51,6 +51,7 @@ npm run dev
 ```
 
 `npm run dev` odpala tylko Vite. Bez backendu część funkcji przejdzie w fallback przeglądarkowy.
+`npm run server` kompiluje i uruchamia tylko backend. Jeśli istnieje `dist/`, serwer poda build produkcyjny frontendu; w przeciwnym razie użyje plików z katalogu projektu.
 
 ## Przydatne adresy
 
@@ -86,12 +87,14 @@ Kompilacja `server.ts` do `dist-server/`.
 
 ```bash
 npm run check
+npm run lint
 npm run unit
 npm run smoke
 npm test
+npm run verify
 ```
 
-`check` sprawdza składnię JS, `unit` odpala testy jednostkowe, `smoke` uruchamia testowy serwer i sprawdza API. `npm test` odpala pełny zestaw.
+`check` sprawdza składnię JS, `lint` jest aliasem na `check`, `unit` odpala testy jednostkowe, a `smoke` uruchamia skompilowany serwer testowy i sprawdza API oraz stronę główną. `npm test` odpala podstawowy zestaw testów, a `npm run verify` pełną bramkę jakości: lint, build, typecheck serwera, build serwera, unit i smoke.
 
 ## Sterowanie
 
