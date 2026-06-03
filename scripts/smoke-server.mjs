@@ -208,6 +208,11 @@ try {
   const health = await waitForServer();
   if (!health.ok || health.maxImportBytes !== 100 * 1024 * 1024) throw new Error('health check payload is wrong');
 
+  const home = await smokeRequest('/');
+  if (!home.ok || !home.text().includes('Hand Sabers')) {
+    throw new Error(`home page failed: ${home.status}: ${home.text().slice(0, 120)}`);
+  }
+
   const maps = await getJson('/api/maps');
   if (!Array.isArray(maps)) throw new Error('/api/maps did not return an array');
   const scores = await getJson('/api/scores');

@@ -21,8 +21,11 @@ import type { GameMap } from './src/types/index.js';
 
 const require = createRequire(import.meta.url);
 const archiver: { ZipArchive: new (options?: unknown) => ArchiveLike } = require('archiver');
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DEFAULT_MAPS_DIR = path.join(__dirname, 'maps');
+const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.basename(SERVER_DIR) === 'dist-server' ? path.dirname(SERVER_DIR) : SERVER_DIR;
+const FRONTEND_DIST_DIR = path.join(PROJECT_ROOT, 'dist');
+const STATIC_DIR = existsSync(path.join(FRONTEND_DIST_DIR, 'index.html')) ? FRONTEND_DIST_DIR : PROJECT_ROOT;
+const DEFAULT_MAPS_DIR = path.join(PROJECT_ROOT, 'maps');
 const MAPS_DIR = path.resolve(process.env.HAND_SABERS_MAPS_DIR || process.env.MAPS_DIR || DEFAULT_MAPS_DIR);
 const MAP_BEATDATA_DIR = path.join(MAPS_DIR, 'beatdata');
 const MAP_AUDIO_DIR = path.join(MAPS_DIR, 'audio');
@@ -267,8 +270,8 @@ app.use((req, res, next) => {
   }
   next();
 });
-app.use(express.static(__dirname, { dotfiles: 'deny', index: false }));
-app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.use(express.static(STATIC_DIR, { dotfiles: 'deny', index: false }));
+app.get('/', (_req, res) => res.sendFile(path.join(STATIC_DIR, 'index.html')));
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, name: 'hand-sabers', time: new Date().toISOString(), maxImportBytes: MAX_IMPORT_BYTES });
