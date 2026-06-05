@@ -5,6 +5,7 @@ import {
   isSafeZipPath,
   normalizeMap,
   sanitizeMapId,
+  upgradeMapFormat,
   validateMap,
   validateZipEntryNames,
 } from '../src/core/map-format.js';
@@ -92,4 +93,19 @@ test('normalizeMap formalizes optional map metadata', () => {
   assert.equal(map.meta.bpm, 128.5);
   assert.equal(map.meta.duration, 45);
   assert.equal(map.meta.previewStartSec, 45);
+});
+
+test('upgradeMapFormat migrates legacy map shape explicitly', () => {
+  const map = upgradeMapFormat({
+    title: 'Legacy',
+    audioOffsetMs: 1500,
+    beats: [{ timeSec: 2, direction: 'UL' }],
+  });
+
+  assert.equal(map.id, 'Legacy');
+  assert.equal(map.formatVersion, 1);
+  assert.equal(map.meta.title, 'Legacy');
+  assert.equal(map.meta.audioOffsetMs, 1000);
+  assert.equal(map.beats[0].t, 2);
+  assert.equal(map.beats[0].cut, 'up-left');
 });

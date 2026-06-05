@@ -77,7 +77,7 @@ function normalizeBeat(rawBeat, index = 0) {
   return out;
 }
 
-export function normalizeMap(rawMap, options = {}) {
+export function upgradeMapFormat(rawMap, options = {}) {
   if (!isPlainObject(rawMap)) throw new Error('Mapa musi być obiektem JSON.');
   const beats = Array.isArray(rawMap.beats) ? rawMap.beats.map(normalizeBeat).sort((a, b) => a.t - b.t) : [];
   const maxBeats = options.maxBeats ?? MAX_BEATS_DEFAULT;
@@ -89,10 +89,10 @@ export function normalizeMap(rawMap, options = {}) {
   }
   if (!beats.length && options.requireBeats !== false) throw new Error('Mapa musi zawierać tablicę beats.');
   const meta = isPlainObject(rawMap.meta) ? { ...rawMap.meta } : {};
-  const id = sanitizeMapId(rawMap.id || meta.title || options.fallbackId || 'custom-map');
+  const id = sanitizeMapId(rawMap.id || meta.title || rawMap.title || options.fallbackId || 'custom-map');
   const audioOffsetMs = Number(meta.audioOffsetMs ?? rawMap.audioOffsetMs ?? 0);
   meta.audioOffsetMs = Number.isFinite(audioOffsetMs) ? Math.max(-1000, Math.min(1000, audioOffsetMs)) : 0;
-  meta.title = normalizeMetaText(meta.title, id) || id;
+  meta.title = normalizeMetaText(meta.title ?? rawMap.title, id) || id;
   meta.artist = normalizeMetaText(meta.artist ?? rawMap.artist);
   meta.mapper = normalizeMetaText(meta.mapper ?? rawMap.mapper);
   meta.difficulty = normalizeMetaText(meta.difficulty ?? rawMap.difficulty);
@@ -110,9 +110,13 @@ export function normalizeMap(rawMap, options = {}) {
   };
 }
 
+export function normalizeMap(rawMap, options = {}) {
+  return upgradeMapFormat(rawMap, options);
+}
+
 export function validateMap(map, options = {}) {
   try {
-    normalizeMap(map, options);
+    upgradeMapFormat(map, options);
     return true;
   } catch {
     return false;
