@@ -6,7 +6,7 @@
 - [ ] Dodać wizualny marker `hit plane` w trybie `?dev`, żeby było widać dokładne miejsce trafienia kostki.
 - [ ] Dodać w dev panelu podgląd najbliższych 3 beatów: czas nuty, delta ms, strona, typ.
 - [ ] Ujednolicić creator i gameplay wokół jednego modułu `src/core/timing.js`; podstawy już są, ale edytor może jeszcze dostać czytelny preview „hit now”.
-- [ ] Dodać testy jednostkowe dla `normalizeMap`, `isSafeZipPath`, `noteZAtSongTime` i `getSongTimeSec`.
+- [x] Dodać testy jednostkowe dla `normalizeMap`, `isSafeZipPath`, `noteZAtSongTime` i `getSongTimeSec`.
 
 ## Mapy i import/export
 
@@ -20,8 +20,8 @@
 
 ## Stabilność i bezpieczeństwo
 
-- [ ] Dodać testy dla złych ZIP-ów: brak `map.json`, złe ścieżki, niepoprawny JSON, brak beatów.
-- [ ] Dodać walidację audio w creatorze: obsługiwany format, czy dekodowanie przeszło, duration > 0.
+- [x] Dodać testy dla złych ZIP-ów: brak `map.json`, złe ścieżki, niepoprawny JSON, brak beatów.
+- [x] Dodać walidację audio w creatorze: obsługiwany format, czy dekodowanie przeszło, duration > 0.
 - [ ] Dodać limit długości mapy / liczby beatów, żeby przypadkowa mapa z milionem obiektów nie zabiła przeglądarki.
 - [ ] Zrobić osobny moduł `server/storage/*` dla map, wyników i późniejszego audio.
 - [ ] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`.

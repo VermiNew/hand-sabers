@@ -257,6 +257,18 @@ try {
   const evilBytes = await evilZip.generateAsync({ type: 'nodebuffer' });
   await postFile('/api/maps/import', 'evil.zip', 'application/zip', evilBytes, 400);
 
+  const noMapZip = new JSZip();
+  noMapZip.file('audio.ogg', new Uint8Array([1, 2, 3]));
+  await postFile('/api/maps/import', 'no-map.zip', 'application/zip', await noMapZip.generateAsync({ type: 'nodebuffer' }), 400);
+
+  const badJsonZip = new JSZip();
+  badJsonZip.file('map.json', '{bad json');
+  await postFile('/api/maps/import', 'bad-json.zip', 'application/zip', await badJsonZip.generateAsync({ type: 'nodebuffer' }), 400);
+
+  const noBeatsZip = new JSZip();
+  noBeatsZip.file('map.json', JSON.stringify({ id: 'zip-no-beats', meta: { title: 'No Beats' }, beats: [] }));
+  await postFile('/api/maps/import', 'no-beats.zip', 'application/zip', await noBeatsZip.generateAsync({ type: 'nodebuffer' }), 400);
+
   const exported = await smokeRequest('/api/maps/zip-smoke/export.zip');
   if (!exported.ok || !/zip/.test(exported.headers['content-type'] || '')) {
     throw new Error(`export zip failed: ${exported.status}: ${exported.text()}`);
