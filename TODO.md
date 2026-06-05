@@ -10,7 +10,7 @@
 
 ## Mapy i import/export
 
-- [ ] Rozszerzyć format mapy o formalne `meta.bpm`, `meta.artist`, `meta.mapper`, `meta.difficulty`, `meta.previewStartSec`.
+- [x] Rozszerzyć format mapy o formalne `meta.bpm`, `meta.artist`, `meta.mapper`, `meta.difficulty`, `meta.previewStartSec`.
 - [ ] Dodać `upgradeMapFormat(map)`, żeby stare mapy można było automatycznie migrować przy ładowaniu.
 - [x] Zapisywać beatdata po stronie serwera w `maps/beatdata/<id>.json`.
 - [x] Zapisywać audio z kreatora/importu ZIP w `maps/audio/<id>.<ext>`.

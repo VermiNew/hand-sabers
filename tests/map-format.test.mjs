@@ -69,3 +69,27 @@ test('normalizeMap limits excessive beat counts', () => {
     /zbyt wiele beatów/
   );
 });
+
+test('normalizeMap formalizes optional map metadata', () => {
+  const map = normalizeMap({
+    id: 'meta-test',
+    artist: '  Artist  ',
+    mapper: ' Mapper ',
+    difficulty: ' Hard ',
+    bpm: '128.5',
+    meta: {
+      title: '  Title  ',
+      duration: '45',
+      previewStartSec: '90',
+    },
+    beats: [{ t: 1, side: 'left' }],
+  });
+
+  assert.equal(map.meta.title, 'Title');
+  assert.equal(map.meta.artist, 'Artist');
+  assert.equal(map.meta.mapper, 'Mapper');
+  assert.equal(map.meta.difficulty, 'Hard');
+  assert.equal(map.meta.bpm, 128.5);
+  assert.equal(map.meta.duration, 45);
+  assert.equal(map.meta.previewStartSec, 45);
+});

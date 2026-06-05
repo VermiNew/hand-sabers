@@ -50,8 +50,11 @@ export interface Beat {
 export interface MapMeta {
   title?: string;
   artist?: string;
+  mapper?: string;
+  difficulty?: string;
   duration?: number;
   bpm?: number;
+  previewStartSec?: number;
   audioOffsetMs?: number;
   audioFile?: string;
   serverAudioFile?: string;

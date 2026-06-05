@@ -5,6 +5,7 @@ export const AUDIO_EXT_RE = /\.(mp3|ogg|wav|flac)$/i;
 export const JSON_EXT_RE = /\.json$/i;
 
 const CUT_DIRECTIONS = new Set(['any','down','up','left','right','down-left','down-right','up-left','up-right']);
+const META_TEXT_LIMIT = 120;
 
 function normalizeCut(cut) {
   const value = String(cut ?? 'any').trim().toLowerCase().replace(/_/g, '-');
@@ -14,6 +15,20 @@ function normalizeCut(cut) {
   if (value === 'ul') return 'up-left';
   if (value === 'ur') return 'up-right';
   return CUT_DIRECTIONS.has(value) ? value : 'any';
+}
+
+function normalizeMetaText(value, fallback = '') {
+  return String(value ?? fallback).trim().slice(0, META_TEXT_LIMIT);
+}
+
+function normalizeNonNegativeNumber(value, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric >= 0 ? numeric : fallback;
+}
+
+function normalizePositiveNumber(value, fallback = 0) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : fallback;
 }
 
 export function sanitizeMapId(id, fallback = 'custom-map') {
@@ -77,7 +92,14 @@ export function normalizeMap(rawMap, options = {}) {
   const id = sanitizeMapId(rawMap.id || meta.title || options.fallbackId || 'custom-map');
   const audioOffsetMs = Number(meta.audioOffsetMs ?? rawMap.audioOffsetMs ?? 0);
   meta.audioOffsetMs = Number.isFinite(audioOffsetMs) ? Math.max(-1000, Math.min(1000, audioOffsetMs)) : 0;
-  if (!meta.title) meta.title = id;
+  meta.title = normalizeMetaText(meta.title, id) || id;
+  meta.artist = normalizeMetaText(meta.artist ?? rawMap.artist);
+  meta.mapper = normalizeMetaText(meta.mapper ?? rawMap.mapper);
+  meta.difficulty = normalizeMetaText(meta.difficulty ?? rawMap.difficulty);
+  meta.bpm = normalizePositiveNumber(meta.bpm ?? rawMap.bpm);
+  meta.duration = normalizeNonNegativeNumber(meta.duration ?? rawMap.duration);
+  meta.previewStartSec = normalizeNonNegativeNumber(meta.previewStartSec ?? rawMap.previewStartSec);
+  if (meta.duration > 0) meta.previewStartSec = Math.min(meta.previewStartSec, meta.duration);
 
   return {
     ...rawMap,
