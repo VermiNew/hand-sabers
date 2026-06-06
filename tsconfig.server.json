@@ -13,5 +13,5 @@
     "sourceMap": true,
     "outDir": "./dist-server"
   },
-  "include": ["server.ts", "src/core/map-format.ts", "src/core/settings.ts", "src/core/saber-colors.ts", "src/types/index.ts"]
+  "include": ["server.ts", "server/**/*.ts", "src/core/map-format.ts", "src/core/settings.ts", "src/core/saber-colors.ts", "src/types/index.ts"]
 }

@@ -18,6 +18,7 @@ import {
   validateZipEntryNames,
 } from './src/core/map-format.js';
 import type { GameMap } from './src/types/index.js';
+import { createScoreStorage } from './server/storage/scores.js';
 
 const require = createRequire(import.meta.url);
 const archiver: { ZipArchive: new (options?: unknown) => ArchiveLike } = require('archiver');
@@ -61,14 +62,6 @@ interface ZipAudioEntry {
   dir: boolean;
   name: string;
   async(type: 'uint8array'): Promise<Uint8Array>;
-}
-
-interface ScoreEntry {
-  mapId: string;
-  player: string;
-  score: number;
-  combo: number;
-  date: string;
 }
 
 function errorMessage(error: unknown): string {
@@ -459,19 +452,12 @@ app.get('/api/maps/by-title/:title', async (req, res) => {
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 const SCORES_FILE = path.join(MAPS_DIR, '_scores.json');
-
-async function readScores() {
-  const scores = await readJsonFile<ScoreEntry[]>(SCORES_FILE, []);
-  return Array.isArray(scores) ? scores : [];
-}
-async function writeScores(scores: ScoreEntry[]): Promise<void> {
-  await writeFile(SCORES_FILE, JSON.stringify(scores, null, 2));
-}
+const scoreStorage = createScoreStorage(SCORES_FILE);
 
 // GET /api/scores?map=id&limit=20
 app.get('/api/scores', async (req, res) => {
   try {
-    let scores = await readScores();
+    let scores = await scoreStorage.read();
     if (req.query.map) {
       const mapId = String(req.query.map);
       scores = scores.filter(s => s.mapId === mapId);
@@ -494,7 +480,7 @@ app.post('/api/scores', async (req, res) => {
     const { mapId, player, score, combo, date } = req.body;
     const numericScore = Number(score);
     if (!Number.isFinite(numericScore) || numericScore < 0) return res.status(400).json({ error: 'Invalid score' });
-    const scores = await readScores();
+    const scores = await scoreStorage.read();
     scores.push({
       mapId:  sanitizeMapId(mapId || 'random', 'random'),
       player: String(player || 'Gracz').slice(0, 40),
@@ -502,7 +488,7 @@ app.post('/api/scores', async (req, res) => {
       combo:  Math.floor(combo || 0),
       date:   date   || new Date().toISOString(),
     });
-    await writeScores(scores);
+    await scoreStorage.write(scores);
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: errorMessage(e) });
