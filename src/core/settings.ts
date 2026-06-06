@@ -19,7 +19,7 @@ export const DEFAULTS: Settings = {
   saberColorLeft: '#36f2a1',
   saberColorRight: '#2f7cff',
   beatLimitEnabled: true,
-  maxBeats: 5000,
+  maxBeats: 10_000,
   developerMode: false,
   oneHandMode: null,
   audioOffsetMs: 0,

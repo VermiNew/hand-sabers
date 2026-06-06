@@ -19,8 +19,8 @@ const DEFAULTS = {
   playerName:   'Gracz',
   saberColorLeft:  '#36f2a1',  // domyślny kolor lewego miecza (THEME.left)
   saberColorRight: '#2f7cff',  // domyślny kolor prawego miecza (THEME.right)
-  beatLimitEnabled: true,   // czy limit jest aktywny
-  maxBeats: 5000,           // limit użytkownika (może być wyłączony)
+  beatLimitEnabled: true,   // true: limit standardowy, false: rozszerzony
+  maxBeats: 10_000,         // zachowane dla zgodności zapisanych ustawień
   developerMode: false, // panel diagnostyczny + metryki renderowania
   oneHandMode:  null,  // null | 'left' | 'right'
   audioOffsetMs: 0,     // globalny offset map/audio (-1000 – +1000 ms)

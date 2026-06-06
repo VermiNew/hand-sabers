@@ -3,6 +3,8 @@ import { getSettings } from '../core/settings.js';
 import { getJSZip } from '../jszip-loader.js';
 import {
   AUDIO_EXT_RE,
+  MAX_BEATS_DEFAULT,
+  MAX_BEATS_EXTENDED,
   assertFileSize,
   normalizeMap,
   validateMap as validateMapShape,
@@ -14,10 +16,9 @@ import {
 
 function beatLimitOptions(extra = {}) {
   const settings = getSettings();
-  if (settings.beatLimitEnabled === false) return { ...extra, maxBeats: Infinity };
   return {
     ...extra,
-    maxBeats: Number(settings.maxBeats) || 5000,
+    maxBeats: settings.beatLimitEnabled === false ? MAX_BEATS_EXTENDED : MAX_BEATS_DEFAULT,
     throwOnLimit: true,
   };
 }

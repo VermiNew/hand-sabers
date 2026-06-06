@@ -1,5 +1,7 @@
 export const MAP_FORMAT_VERSION = 1;
-export const MAX_BEATS_DEFAULT = 10000; // twardy limit serwera
+export const MAX_BEATS_DEFAULT = 10_000;
+export const MAX_BEATS_EXTENDED = 100_000;
+export const MAX_MAP_DURATION_SEC = 24 * 60 * 60;
 export const MAX_IMPORT_BYTES = 100 * 1024 * 1024; // 100 MB
 export const AUDIO_EXT_RE = /\.(mp3|ogg|wav|flac)$/i;
 export const JSON_EXT_RE = /\.json$/i;
@@ -79,16 +81,31 @@ function normalizeBeat(rawBeat, index = 0) {
 
 export function upgradeMapFormat(rawMap, options = {}) {
   if (!isPlainObject(rawMap)) throw new Error('Mapa musi być obiektem JSON.');
-  const beats = Array.isArray(rawMap.beats) ? rawMap.beats.map(normalizeBeat).sort((a, b) => a.t - b.t) : [];
-  const maxBeats = options.maxBeats ?? MAX_BEATS_DEFAULT;
-  if (beats.length > maxBeats) {
-    if (options.throwOnLimit) {
-      throw new Error(`Mapa zawiera zbyt wiele beatów (${beats.length}). Limit: ${maxBeats}.`);
-    }
-    beats.length = maxBeats;
+  const metaSource = isPlainObject(rawMap.meta) ? rawMap.meta : {};
+  const declaredDuration = Number(metaSource.duration ?? rawMap.duration ?? 0);
+  if (declaredDuration > MAX_MAP_DURATION_SEC) {
+    throw new Error('Mapa jest dłuższa niż dozwolone 24 godziny.');
   }
+
+  const rawBeats = Array.isArray(rawMap.beats) ? rawMap.beats : [];
+  const maxBeats = options.maxBeats ?? MAX_BEATS_DEFAULT;
+  if (rawBeats.length > maxBeats) {
+    if (options.throwOnLimit) {
+      throw new Error(`Mapa zawiera zbyt wiele beatów (${rawBeats.length}). Limit: ${maxBeats}.`);
+    }
+  }
+  const beats = rawBeats
+    .slice(0, maxBeats)
+    .map((rawBeat, index) => {
+      const beat = normalizeBeat(rawBeat, index);
+      if (beat.t > MAX_MAP_DURATION_SEC) {
+        throw new Error(`Beat ${index + 1} przekracza dozwoloną długość mapy wynoszącą 24 godziny.`);
+      }
+      return beat;
+    })
+    .sort((a, b) => a.t - b.t);
   if (!beats.length && options.requireBeats !== false) throw new Error('Mapa musi zawierać tablicę beats.');
-  const meta = isPlainObject(rawMap.meta) ? { ...rawMap.meta } : {};
+  const meta = { ...metaSource };
   const id = sanitizeMapId(rawMap.id || meta.title || rawMap.title || options.fallbackId || 'custom-map');
   const audioOffsetMs = Number(meta.audioOffsetMs ?? rawMap.audioOffsetMs ?? 0);
   meta.audioOffsetMs = Number.isFinite(audioOffsetMs) ? Math.max(-1000, Math.min(1000, audioOffsetMs)) : 0;

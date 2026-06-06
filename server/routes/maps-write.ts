@@ -2,7 +2,7 @@ import path from 'path';
 import type { Express, RequestHandler } from 'express';
 import JSZip from 'jszip';
 import {
-  MAX_BEATS_DEFAULT,
+  MAX_BEATS_EXTENDED,
   assertFileSize,
   normalizeMap,
   sanitizeMapId,
@@ -44,7 +44,7 @@ export function registerMapWriteRoutes({
       if (rateLimit(ip, 'maps-save', 30)) {
         return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
       }
-      const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
+      const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
       await mapStorage.write(map);
       res.json({ ok: true, id: map.id, beats: map.beats.length, storage: 'beatdata' });
     } catch (error) {
@@ -59,7 +59,7 @@ export function registerMapWriteRoutes({
         return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
       }
       const raw = req.body?.map ? JSON.parse(req.body.map) : req.body;
-      const map = normalizeMap(raw, { requireBeats: false, maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
+      const map = normalizeMap(raw, { requireBeats: false, maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
       let audio = null;
 
       if (req.file) {
@@ -102,7 +102,7 @@ export function registerMapWriteRoutes({
         const jsonFile = zip.file('map.json');
         if (!jsonFile) return res.status(400).json({ error: 'Brak map.json w ZIP.' });
         rawMap = JSON.parse(await jsonFile.async('string'));
-        const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
+        const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
         const audio = await audioStorage.persistZip(entries, map);
         await mapStorage.write(map);
         return res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio ? audio.originalName : null, storage: 'beatdata', map });
@@ -113,7 +113,7 @@ export function registerMapWriteRoutes({
       }
 
       rawMap = JSON.parse(req.file.buffer.toString('utf8'));
-      const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
+      const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
       await mapStorage.write(map);
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: null, storage: 'beatdata', map });
     } catch (error) {

@@ -9,7 +9,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import {
   AUDIO_EXT_RE,
-  MAX_BEATS_DEFAULT,
+  MAX_BEATS_EXTENDED,
   MAX_IMPORT_BYTES,
   assertFileSize,
   normalizeMap,
@@ -297,7 +297,7 @@ app.post('/api/maps', async (req, res) => {
     if (rateLimit(ip, 'maps-save', 30)) {
       return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
     }
-    const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
+    const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
     await writeMapById(map);
     res.json({ ok: true, id: map.id, beats: map.beats.length, storage: 'beatdata' });
   } catch (e) {
@@ -313,7 +313,7 @@ app.post('/api/maps/save', upload.single('audio'), async (req, res) => {
       return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
     }
     const raw = req.body?.map ? JSON.parse(req.body.map) : req.body;
-    const map = normalizeMap(raw, { requireBeats: false, maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
+    const map = normalizeMap(raw, { requireBeats: false, maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
     let audio = null;
 
     if (req.file) {
@@ -357,7 +357,7 @@ app.post('/api/maps/import', upload.single('file'), async (req, res) => {
       const jsonFile = zip.file('map.json');
       if (!jsonFile) return res.status(400).json({ error: 'Brak map.json w ZIP.' });
       rawMap = JSON.parse(await jsonFile.async('string'));
-      const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
+      const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
       const audio = await persistZipAudioForMap(entries, map);
       await writeMapById(map);
       return res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio ? audio.originalName : null, storage: 'beatdata', map });
@@ -367,7 +367,7 @@ app.post('/api/maps/import', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Endpoint importuje tylko mapy .json lub .zip.' });
     }
 
-    const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
+    const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
     await writeMapById(map);
     res.json({ ok: true, id: map.id, beats: map.beats.length, audio: null, storage: 'beatdata', map });
   } catch (e) {
