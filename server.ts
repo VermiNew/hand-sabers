@@ -4,7 +4,7 @@ import multer from 'multer';
 import { createRequire } from 'module';
 import JSZip from 'jszip';
 import { createServer } from 'http';
-import { readdir, readFile, writeFile, unlink } from 'fs/promises';
+import { readFile } from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -17,8 +17,9 @@ import {
   sanitizeMapId,
   validateZipEntryNames,
 } from './src/core/map-format.js';
-import { createMapStorage, type StoredMap } from './server/storage/maps.js';
+import { createMapStorage } from './server/storage/maps.js';
 import { createScoreStorage } from './server/storage/scores.js';
+import { createAudioStorage, type ZipAudioEntry } from './server/storage/audio.js';
 
 const require = createRequire(import.meta.url);
 const archiver: { ZipArchive: new (options?: unknown) => ArchiveLike } = require('archiver');
@@ -36,24 +37,12 @@ for (const dir of [MAPS_DIR, MAP_BEATDATA_DIR, MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_D
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
-interface StoredAudio {
-  fullPath: string;
-  fileName: string;
-  publicName: string;
-}
-
 interface ArchiveLike {
   on(event: 'error', handler: (err: Error) => void): void;
   pipe(destination: NodeJS.WritableStream): void;
   append(source: string | Buffer, data: { name: string }): void;
   file(filePath: string, data: { name: string }): void;
   finalize(): Promise<void>;
-}
-
-interface ZipAudioEntry {
-  dir: boolean;
-  name: string;
-  async(type: 'uint8array'): Promise<Uint8Array>;
 }
 
 function errorMessage(error: unknown): string {
@@ -70,102 +59,10 @@ const mapStorage = createMapStorage({
   beatdataDir: MAP_BEATDATA_DIR,
   hiddenIds: HIDDEN_TEST_MAP_IDS,
 });
-
-const AUDIO_MIME_BY_EXT = new Map([
-  ['.mp3', 'audio/mpeg'],
-  ['.ogg', 'audio/ogg'],
-  ['.wav', 'audio/wav'],
-  ['.flac', 'audio/flac'],
-]);
-
-function audioMimeForFile(fileName: string): string {
-  return AUDIO_MIME_BY_EXT.get(path.extname(fileName || '').toLowerCase()) || 'application/octet-stream';
-}
-
-function safeStoredAudioName(name: unknown): string {
-  const base = path.basename(String(name || ''));
-  return /^[a-zA-Z0-9_-]+\.(mp3|ogg|wav|flac)$/i.test(base) ? base : '';
-}
-
-async function findStoredAudioForMap(id: string, map: StoredMap | null = null): Promise<StoredAudio | null> {
-  const stored = safeStoredAudioName(map?.meta?.serverAudioFile);
-  const candidates: Array<{ dir: string; fileName: string }> = [];
-
-  if (stored) {
-    candidates.push({ dir: MAP_AUDIO_DIR, fileName: stored });
-    candidates.push({ dir: LEGACY_MAP_AUDIO_DIR, fileName: stored });
-  }
-
-  for (const dir of [MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_DIR]) {
-    try {
-      const files = await readdir(dir);
-      for (const f of files) {
-        if (f.startsWith(`${id}.`) && AUDIO_EXT_RE.test(f)) candidates.push({ dir, fileName: f });
-      }
-    } catch {}
-  }
-
-  for (const candidate of candidates) {
-    const fullPath = path.join(candidate.dir, candidate.fileName);
-    if (existsSync(fullPath)) {
-      return {
-        fullPath,
-        fileName: candidate.fileName,
-        publicName: path.posix.basename(String(map?.meta?.audioFile || candidate.fileName)),
-      };
-    }
-  }
-
-  return null;
-}
-
-async function removeAudioFilesForMap(id: string, keepFullPath: string | null = null): Promise<number> {
-  const safeId = safeMapId(id);
-  if (!safeId) return 0;
-  let removed = 0;
-  const keep = keepFullPath ? path.resolve(keepFullPath) : null;
-
-  for (const dir of [MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_DIR]) {
-    try {
-      const files = await readdir(dir);
-      for (const f of files) {
-        if (!f.startsWith(`${safeId}.`) || !AUDIO_EXT_RE.test(f)) continue;
-        const fullPath = path.resolve(dir, f);
-        if (keep && fullPath === keep) continue;
-        try { await unlink(fullPath); removed++; } catch {}
-      }
-    } catch {}
-  }
-  return removed;
-}
-
-async function persistAudioBufferForMap(map: StoredMap, buffer: Uint8Array, originalName = 'audio.ogg'): Promise<{ originalName: string; storedFile: string; size: number }> {
-  const cleanName = path.basename(String(originalName || 'audio.ogg'));
-  const ext = path.extname(cleanName).toLowerCase();
-  if (!AUDIO_EXT_RE.test(cleanName)) throw new Error('Nieobsługiwany format audio. Dozwolone: mp3, ogg, wav, flac.');
-  const storedFile = `${map.id}${ext}`;
-  const storedPath = path.join(MAP_AUDIO_DIR, storedFile);
-  await removeAudioFilesForMap(map.id, storedPath);
-  await writeFile(storedPath, Buffer.from(buffer));
-
-  map.meta = {
-    ...(map.meta || {}),
-    audioFile: cleanName,
-    serverAudioFile: storedFile,
-    audioUrl: `/api/maps/${encodeURIComponent(map.id)}/audio`,
-  };
-
-  return { originalName: cleanName, storedFile, size: Buffer.byteLength(buffer) };
-}
-
-async function persistZipAudioForMap(entries: ZipAudioEntry[], map: StoredMap): Promise<{ originalName: string; storedFile: string; size: number } | null> {
-  const audioFile = entries.find(f => !f.dir && AUDIO_EXT_RE.test(f.name));
-  if (!audioFile) return null;
-
-  const originalName = path.posix.basename(audioFile.name);
-  const audioBytes = Buffer.from(await audioFile.async('uint8array'));
-  return await persistAudioBufferForMap(map, audioBytes, originalName);
-}
+const audioStorage = createAudioStorage({
+  audioDir: MAP_AUDIO_DIR,
+  legacyAudioDir: LEGACY_MAP_AUDIO_DIR,
+});
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -238,7 +135,7 @@ app.get('/api/maps/:id/export.zip', async (req, res) => {
   });
   archive.pipe(res);
   archive.append(JSON.stringify(data, null, 2), { name: 'map.json' });
-  const audio = await findStoredAudioForMap(id, data);
+  const audio = await audioStorage.find(id, data);
   if (audio) archive.file(audio.fullPath, { name: audio.publicName });
   await archive.finalize();
 });
@@ -250,10 +147,10 @@ app.get('/api/maps/:id/audio', async (req, res) => {
     if (!id) return res.status(400).json({ error: 'Invalid id' });
     const map = await mapStorage.read(id);
     if (!map) return res.status(404).json({ error: 'Map not found' });
-    const audio = await findStoredAudioForMap(id, map);
+    const audio = await audioStorage.find(id, map);
     if (!audio) return res.status(404).json({ error: 'Audio not found' });
     const bytes = await readFile(audio.fullPath);
-    res.type(audioMimeForFile(audio.publicName || audio.fileName));
+    res.type(audioStorage.mimeForFile(audio.publicName || audio.fileName));
     res.send(bytes);
   } catch (e) {
     res.status(500).json({ error: errorMessage(e) });
@@ -301,9 +198,9 @@ app.post('/api/maps/save', upload.single('audio'), async (req, res) => {
 
     if (req.file) {
       assertFileSize(req.file);
-      audio = await persistAudioBufferForMap(map, req.file.buffer, req.file.originalname);
+      audio = await audioStorage.persistBuffer(map, req.file.buffer, req.file.originalname);
     } else {
-      const existingAudio = await findStoredAudioForMap(map.id, map);
+      const existingAudio = await audioStorage.find(map.id, map);
       if (existingAudio) {
         map.meta = {
           ...(map.meta || {}),
@@ -341,7 +238,7 @@ app.post('/api/maps/import', upload.single('file'), async (req, res) => {
       if (!jsonFile) return res.status(400).json({ error: 'Brak map.json w ZIP.' });
       rawMap = JSON.parse(await jsonFile.async('string'));
       const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
-      const audio = await persistZipAudioForMap(entries, map);
+      const audio = await audioStorage.persistZip(entries, map);
       await mapStorage.write(map);
       return res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio ? audio.originalName : null, storage: 'beatdata', map });
     } else if (originalName.toLowerCase().endsWith('.json')) {
@@ -364,7 +261,7 @@ app.delete('/api/maps/:id', async (req, res) => {
     const id = safeMapId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid id' });
     const deleted = await mapStorage.delete(id);
-    await removeAudioFilesForMap(id);
+    await audioStorage.remove(id);
     if (!deleted) return res.status(404).json({ error: 'Not found' });
     res.json({ ok: true });
   } catch {

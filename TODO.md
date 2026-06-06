@@ -23,7 +23,7 @@
 - [x] Dodać testy dla złych ZIP-ów: brak `map.json`, złe ścieżki, niepoprawny JSON, brak beatów.
 - [x] Dodać walidację audio w creatorze: obsługiwany format, czy dekodowanie przeszło, duration > 0.
 - [ ] Dodać limit długości mapy / liczby beatów, żeby przypadkowa mapa z milionem obiektów nie zabiła przeglądarki.
-- [ ] Zrobić osobny moduł `server/storage/*` dla map, wyników i późniejszego audio.
+- [x] Zrobić osobny moduł `server/storage/*` dla map, wyników i późniejszego audio.
 - [ ] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`.
 
 ## Gameplay / feel
