@@ -20,6 +20,7 @@ import {
 import { createMapStorage } from './server/storage/maps.js';
 import { createScoreStorage } from './server/storage/scores.js';
 import { createAudioStorage, type ZipAudioEntry } from './server/storage/audio.js';
+import { registerScoreRoutes } from './server/routes/scores.js';
 
 const require = createRequire(import.meta.url);
 const archiver: { ZipArchive: new (options?: unknown) => ArchiveLike } = require('archiver');
@@ -289,47 +290,7 @@ app.get('/api/maps/by-title/:title', async (req, res) => {
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 const SCORES_FILE = path.join(MAPS_DIR, '_scores.json');
 const scoreStorage = createScoreStorage(SCORES_FILE);
-
-// GET /api/scores?map=id&limit=20
-app.get('/api/scores', async (req, res) => {
-  try {
-    let scores = await scoreStorage.read();
-    if (req.query.map) {
-      const mapId = String(req.query.map);
-      scores = scores.filter(s => s.mapId === mapId);
-    }
-    const limit = Math.min(100, parseInt(String(req.query.limit || '20')) || 20);
-    scores.sort((a, b) => b.score - a.score);
-    res.json(scores.slice(0, limit));
-  } catch (e) {
-    res.status(500).json({ error: errorMessage(e) });
-  }
-});
-
-// POST /api/scores — zapisz wynik
-app.post('/api/scores', async (req, res) => {
-  try {
-    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
-    if (rateLimit(ip, 'scores', 20)) {
-      return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
-    }
-    const { mapId, player, score, combo, date } = req.body;
-    const numericScore = Number(score);
-    if (!Number.isFinite(numericScore) || numericScore < 0) return res.status(400).json({ error: 'Invalid score' });
-    const scores = await scoreStorage.read();
-    scores.push({
-      mapId:  sanitizeMapId(mapId || 'random', 'random'),
-      player: String(player || 'Gracz').slice(0, 40),
-      score:  Math.floor(numericScore),
-      combo:  Math.floor(combo || 0),
-      date:   date   || new Date().toISOString(),
-    });
-    await scoreStorage.write(scores);
-    res.json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: errorMessage(e) });
-  }
-});
+registerScoreRoutes({ app, storage: scoreStorage, rateLimit });
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err?.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Plik jest za duży. Limit: 100 MB.' });
