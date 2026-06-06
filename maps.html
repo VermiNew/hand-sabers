@@ -248,7 +248,7 @@ nav {
 <script type="module">
 import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, saveLocalMap, saveLocalMapAudio } from './src/core/localstore.js';
 import { getJSZip } from './src/jszip-loader.js';
-import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } from './src/core/map-format.js';
+import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } from './src/core/map-format.ts';
 import { showAlert, showConfirm, showToast } from './src/creator/dialogs.js';
 
 function showTab(name) {

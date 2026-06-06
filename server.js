@@ -15,7 +15,7 @@ import {
   normalizeMap,
   sanitizeMapId,
   validateZipEntryNames,
-} from './src/core/map-format.js';
+} from './src/core/map-format.ts';
 
 const require = createRequire(import.meta.url);
 const archiver = require('archiver');

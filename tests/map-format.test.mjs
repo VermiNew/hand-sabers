@@ -8,7 +8,7 @@ import {
   upgradeMapFormat,
   validateMap,
   validateZipEntryNames,
-} from '../src/core/map-format.js';
+} from '../src/core/map-format.ts';
 
 test('normalizeMap sanitizes id, normalizes beats and cut directions', () => {
   const map = normalizeMap({

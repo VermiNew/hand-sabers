@@ -9,7 +9,7 @@ import {
   normalizeMap,
   validateMap as validateMapShape,
   validateZipEntryNames,
-} from '../core/map-format.js';
+} from '../core/map-format.ts';
 
 // Ładuje mapę z pliku .json lub .zip (drag & drop)
 // Zwraca { meta, beats } lub null

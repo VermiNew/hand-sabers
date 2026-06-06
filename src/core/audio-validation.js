@@ -1,4 +1,4 @@
-import { AUDIO_EXT_RE, MAX_IMPORT_BYTES, assertFileSize } from './map-format.js';
+import { AUDIO_EXT_RE, MAX_IMPORT_BYTES, assertFileSize } from './map-format.ts';
 
 export const MIN_AUDIO_DURATION_SEC = 0.25;
 export const MAX_AUDIO_DURATION_SEC = 60 * 60;

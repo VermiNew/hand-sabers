@@ -1,4 +1,4 @@
-import { CUT_DIRECTIONS, type Beat, type BeatSide, type BeatType, type CutDirection, type GameMap, type MapMeta } from '../types/index.js';
+import type { Beat, BeatSide, BeatType, CutDirection, GameMap, MapMeta } from '../types/index.js';
 
 export const MAP_FORMAT_VERSION = 1;
 export const MAX_BEATS_DEFAULT = 10_000;
@@ -8,7 +8,17 @@ export const MAX_IMPORT_BYTES = 100 * 1024 * 1024; // 100 MB
 export const AUDIO_EXT_RE = /\.(mp3|ogg|wav|flac)$/i;
 export const JSON_EXT_RE = /\.json$/i;
 
-const CUT_DIRECTION_SET = new Set<string>(CUT_DIRECTIONS);
+const CUT_DIRECTION_SET = new Set<string>([
+  'any',
+  'down',
+  'up',
+  'left',
+  'right',
+  'down-left',
+  'down-right',
+  'up-left',
+  'up-right',
+]);
 const META_TEXT_LIMIT = 120;
 
 interface NormalizeMapOptions {

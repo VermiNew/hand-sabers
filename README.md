@@ -4,7 +4,7 @@ Beat Saber bez VR: gra rytmiczna sterowana rękami przez kamerę. Frontend dzia�
 
 ## Wymagania
 
-- Node.js 20+ zalecane
+- Node.js 22.18+
 - npm
 - Kamera
 - Chrome albo Edge z WebGL
@@ -51,7 +51,7 @@ npm run dev
 ```
 
 `npm run dev` odpala tylko Vite. Bez backendu część funkcji przejdzie w fallback przeglądarkowy.
-`npm run server` kompiluje i uruchamia tylko backend. Jeśli istnieje `dist/`, serwer poda build produkcyjny frontendu; w przeciwnym razie użyje plików z katalogu projektu.
+`npm run server` buduje frontend i backend, a następnie uruchamia Express na porcie 3000.
 
 ## Przydatne adresy
 
