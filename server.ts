@@ -17,7 +17,7 @@ import {
   sanitizeMapId,
   validateZipEntryNames,
 } from './src/core/map-format.js';
-import type { GameMap } from './src/types/index.js';
+import { createMapStorage, type StoredMap } from './server/storage/maps.js';
 import { createScoreStorage } from './server/storage/scores.js';
 
 const require = createRequire(import.meta.url);
@@ -34,14 +34,6 @@ const LEGACY_MAP_AUDIO_DIR = path.join(MAPS_DIR, '_audio');
 
 for (const dir of [MAPS_DIR, MAP_BEATDATA_DIR, MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_DIR]) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-}
-
-type StoredMap = GameMap & Record<string, unknown>;
-
-interface StoredMapFile {
-  id: string;
-  filename: string;
-  storage: 'beatdata' | 'legacy';
 }
 
 interface StoredAudio {
@@ -72,14 +64,12 @@ function safeMapId(id: unknown): string {
   return sanitizeMapId(id, '');
 }
 
-function isMapFile(name: string): boolean {
-  return name.endsWith('.json') && !name.startsWith('_');
-}
-
 const HIDDEN_TEST_MAP_IDS = new Set(['smoke-map', 'creator-smoke', 'zip-smoke', 'bad-map']);
-function isHiddenTestMapId(id: string): boolean {
-  return HIDDEN_TEST_MAP_IDS.has(id) || id.startsWith('__smoke-');
-}
+const mapStorage = createMapStorage({
+  mapsDir: MAPS_DIR,
+  beatdataDir: MAP_BEATDATA_DIR,
+  hiddenIds: HIDDEN_TEST_MAP_IDS,
+});
 
 const AUDIO_MIME_BY_EXT = new Map([
   ['.mp3', 'audio/mpeg'],
@@ -95,47 +85,6 @@ function audioMimeForFile(fileName: string): string {
 function safeStoredAudioName(name: unknown): string {
   const base = path.basename(String(name || ''));
   return /^[a-zA-Z0-9_-]+\.(mp3|ogg|wav|flac)$/i.test(base) ? base : '';
-}
-
-function mapFilePath(id: string): string {
-  return path.join(MAP_BEATDATA_DIR, `${id}.json`);
-}
-
-function legacyMapFilePath(id: string): string {
-  return path.join(MAPS_DIR, `${id}.json`);
-}
-
-async function readMapById(id: string): Promise<StoredMap | null> {
-  return await readJsonFile<StoredMap>(mapFilePath(id)) || await readJsonFile<StoredMap>(legacyMapFilePath(id));
-}
-
-async function writeMapById(map: StoredMap): Promise<void> {
-  await writeFile(mapFilePath(map.id), JSON.stringify(map, null, 2));
-}
-
-async function listStoredMapFiles(): Promise<StoredMapFile[]> {
-  const files: StoredMapFile[] = [];
-  const seen = new Set<string>();
-
-  try {
-    for (const f of (await readdir(MAP_BEATDATA_DIR)).filter(isMapFile)) {
-      const id = f.replace('.json', '');
-      if (isHiddenTestMapId(id)) continue;
-      seen.add(id);
-      files.push({ id, filename: f, storage: 'beatdata' });
-    }
-  } catch {}
-
-  try {
-    for (const f of (await readdir(MAPS_DIR)).filter(isMapFile)) {
-      const id = f.replace('.json', '');
-      if (seen.has(id) || isHiddenTestMapId(id)) continue;
-      files.push({ id, filename: f, storage: 'legacy' });
-    }
-  } catch {}
-
-  files.sort((a, b) => a.id.localeCompare(b.id));
-  return files;
 }
 
 async function findStoredAudioForMap(id: string, map: StoredMap | null = null): Promise<StoredAudio | null> {
@@ -218,11 +167,6 @@ async function persistZipAudioForMap(entries: ZipAudioEntry[], map: StoredMap): 
   return await persistAudioBufferForMap(map, audioBytes, originalName);
 }
 
-async function readJsonFile<T>(file: string, fallback: T | null = null): Promise<T | null> {
-  try { return JSON.parse(await readFile(file, 'utf8')) as T; }
-  catch { return fallback; }
-}
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_IMPORT_BYTES },
@@ -273,7 +217,7 @@ app.get('/api/health', (_req, res) => {
 // GET /api/maps — lista map
 app.get('/api/maps', async (_req, res) => {
   try {
-    res.json(await listStoredMapFiles());
+    res.json(await mapStorage.list());
   } catch (e) {
     res.status(500).json({ error: errorMessage(e) });
   }
@@ -283,7 +227,7 @@ app.get('/api/maps', async (_req, res) => {
 app.get('/api/maps/:id/export.zip', async (req, res) => {
   const id = safeMapId(req.params.id);
   if (!id) return res.status(400).json({ error: 'Invalid id' });
-  const data = await readMapById(id);
+  const data = await mapStorage.read(id);
   if (!data) return res.status(404).json({ error: 'Not found' });
 
   res.attachment(`${id}.zip`);
@@ -304,7 +248,7 @@ app.get('/api/maps/:id/audio', async (req, res) => {
   try {
     const id = safeMapId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid id' });
-    const map = await readMapById(id);
+    const map = await mapStorage.read(id);
     if (!map) return res.status(404).json({ error: 'Map not found' });
     const audio = await findStoredAudioForMap(id, map);
     if (!audio) return res.status(404).json({ error: 'Audio not found' });
@@ -321,7 +265,7 @@ app.get('/api/maps/:id', async (req, res) => {
   try {
     const id = safeMapId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid id' });
-    const data = await readMapById(id);
+    const data = await mapStorage.read(id);
     if (!data) return res.status(404).json({ error: 'Not found' });
     res.json(data);
   } catch {
@@ -337,7 +281,7 @@ app.post('/api/maps', async (req, res) => {
       return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
     }
     const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
-    await writeMapById(map);
+    await mapStorage.write(map);
     res.json({ ok: true, id: map.id, beats: map.beats.length, storage: 'beatdata' });
   } catch (e) {
     res.status(400).json({ error: errorMessage(e) });
@@ -369,7 +313,7 @@ app.post('/api/maps/save', upload.single('audio'), async (req, res) => {
       }
     }
 
-    await writeMapById(map);
+    await mapStorage.write(map);
     res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio ? audio.originalName : null, storage: 'beatdata', map });
   } catch (e) {
     res.status(400).json({ error: errorMessage(e) });
@@ -398,7 +342,7 @@ app.post('/api/maps/import', upload.single('file'), async (req, res) => {
       rawMap = JSON.parse(await jsonFile.async('string'));
       const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
       const audio = await persistZipAudioForMap(entries, map);
-      await writeMapById(map);
+      await mapStorage.write(map);
       return res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio ? audio.originalName : null, storage: 'beatdata', map });
     } else if (originalName.toLowerCase().endsWith('.json')) {
       rawMap = JSON.parse(req.file.buffer.toString('utf8'));
@@ -407,7 +351,7 @@ app.post('/api/maps/import', upload.single('file'), async (req, res) => {
     }
 
     const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_DEFAULT, throwOnLimit: true });
-    await writeMapById(map);
+    await mapStorage.write(map);
     res.json({ ok: true, id: map.id, beats: map.beats.length, audio: null, storage: 'beatdata', map });
   } catch (e) {
     res.status(400).json({ error: errorMessage(e) });
@@ -419,12 +363,7 @@ app.delete('/api/maps/:id', async (req, res) => {
   try {
     const id = safeMapId(req.params.id);
     if (!id) return res.status(400).json({ error: 'Invalid id' });
-    const map = await readMapById(id);
-    const audio = await findStoredAudioForMap(id, map);
-    let deleted = false;
-    for (const filePath of [mapFilePath(id), legacyMapFilePath(id)]) {
-      try { await unlink(filePath); deleted = true; } catch {}
-    }
+    const deleted = await mapStorage.delete(id);
     await removeAudioFilesForMap(id);
     if (!deleted) return res.status(404).json({ error: 'Not found' });
     res.json({ ok: true });
@@ -436,9 +375,9 @@ app.delete('/api/maps/:id', async (req, res) => {
 // GET /api/maps/by-title/:title — szukaj mapy po tytule
 app.get('/api/maps/by-title/:title', async (req, res) => {
   try {
-    const maps = await listStoredMapFiles();
+    const maps = await mapStorage.list();
     for (const item of maps) {
-      const map = await readMapById(item.id);
+      const map = await mapStorage.read(item.id);
       if (!map) continue;
       if (map.meta?.title?.toLowerCase() === req.params.title.toLowerCase()) {
         return res.json(map);
