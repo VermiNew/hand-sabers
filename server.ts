@@ -4,7 +4,6 @@ import multer from 'multer';
 import { createRequire } from 'module';
 import JSZip from 'jszip';
 import { createServer } from 'http';
-import { readFile } from 'fs/promises';
 import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -21,6 +20,7 @@ import { createMapStorage } from './server/storage/maps.js';
 import { createScoreStorage } from './server/storage/scores.js';
 import { createAudioStorage, type ZipAudioEntry } from './server/storage/audio.js';
 import { registerScoreRoutes } from './server/routes/scores.js';
+import { registerMapReadRoutes } from './server/routes/maps-read.js';
 
 const require = createRequire(import.meta.url);
 const archiver: { ZipArchive: new (options?: unknown) => ArchiveLike } = require('archiver');
@@ -112,14 +112,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, name: 'hand-sabers', time: new Date().toISOString(), maxImportBytes: MAX_IMPORT_BYTES });
 });
 
-// GET /api/maps — lista map
-app.get('/api/maps', async (_req, res) => {
-  try {
-    res.json(await mapStorage.list());
-  } catch (e) {
-    res.status(500).json({ error: errorMessage(e) });
-  }
-});
+registerMapReadRoutes({ app, mapStorage, audioStorage });
 
 // GET /api/maps/:id/export.zip — ZIP z map.json + audio, jeśli audio jest zapisane na serwerze
 app.get('/api/maps/:id/export.zip', async (req, res) => {
@@ -139,36 +132,6 @@ app.get('/api/maps/:id/export.zip', async (req, res) => {
   const audio = await audioStorage.find(id, data);
   if (audio) archive.file(audio.fullPath, { name: audio.publicName });
   await archive.finalize();
-});
-
-// GET /api/maps/:id/audio — pobierz audio zapisane z ZIP importu
-app.get('/api/maps/:id/audio', async (req, res) => {
-  try {
-    const id = safeMapId(req.params.id);
-    if (!id) return res.status(400).json({ error: 'Invalid id' });
-    const map = await mapStorage.read(id);
-    if (!map) return res.status(404).json({ error: 'Map not found' });
-    const audio = await audioStorage.find(id, map);
-    if (!audio) return res.status(404).json({ error: 'Audio not found' });
-    const bytes = await readFile(audio.fullPath);
-    res.type(audioStorage.mimeForFile(audio.publicName || audio.fileName));
-    res.send(bytes);
-  } catch (e) {
-    res.status(500).json({ error: errorMessage(e) });
-  }
-});
-
-// GET /api/maps/:id — pobierz mapę
-app.get('/api/maps/:id', async (req, res) => {
-  try {
-    const id = safeMapId(req.params.id);
-    if (!id) return res.status(400).json({ error: 'Invalid id' });
-    const data = await mapStorage.read(id);
-    if (!data) return res.status(404).json({ error: 'Not found' });
-    res.json(data);
-  } catch {
-    res.status(404).json({ error: 'Not found' });
-  }
 });
 
 // POST /api/maps — zapisz beatdata JSON do maps/beatdata/<id>.json
@@ -267,23 +230,6 @@ app.delete('/api/maps/:id', async (req, res) => {
     res.json({ ok: true });
   } catch {
     res.status(404).json({ error: 'Not found' });
-  }
-});
-
-// GET /api/maps/by-title/:title — szukaj mapy po tytule
-app.get('/api/maps/by-title/:title', async (req, res) => {
-  try {
-    const maps = await mapStorage.list();
-    for (const item of maps) {
-      const map = await mapStorage.read(item.id);
-      if (!map) continue;
-      if (map.meta?.title?.toLowerCase() === req.params.title.toLowerCase()) {
-        return res.json(map);
-      }
-    }
-    res.status(404).json({ error: 'Not found' });
-  } catch (e) {
-    res.status(500).json({ error: errorMessage(e) });
   }
 });
 
