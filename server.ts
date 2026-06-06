@@ -1,7 +1,6 @@
 import express from 'express';
 import type { ErrorRequestHandler, Request } from 'express';
 import multer from 'multer';
-import { createRequire } from 'module';
 import { createServer } from 'http';
 import { existsSync, mkdirSync } from 'fs';
 import path from 'path';
@@ -9,7 +8,6 @@ import { fileURLToPath } from 'url';
 import {
   AUDIO_EXT_RE,
   MAX_IMPORT_BYTES,
-  sanitizeMapId,
 } from './src/core/map-format.js';
 import { createMapStorage } from './server/storage/maps.js';
 import { createScoreStorage } from './server/storage/scores.js';
@@ -18,8 +16,6 @@ import { registerScoreRoutes } from './server/routes/scores.js';
 import { registerMapReadRoutes } from './server/routes/maps-read.js';
 import { registerMapWriteRoutes } from './server/routes/maps-write.js';
 
-const require = createRequire(import.meta.url);
-const archiver: { ZipArchive: new (options?: unknown) => ArchiveLike } = require('archiver');
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.basename(SERVER_DIR) === 'dist-server' ? path.dirname(SERVER_DIR) : SERVER_DIR;
 const FRONTEND_DIST_DIR = path.join(PROJECT_ROOT, 'dist');
@@ -32,18 +28,6 @@ const LEGACY_MAP_AUDIO_DIR = path.join(MAPS_DIR, '_audio');
 
 for (const dir of [MAPS_DIR, MAP_BEATDATA_DIR, MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_DIR]) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-}
-
-interface ArchiveLike {
-  on(event: 'error', handler: (err: Error) => void): void;
-  pipe(destination: NodeJS.WritableStream): void;
-  append(source: string | Buffer, data: { name: string }): void;
-  file(filePath: string, data: { name: string }): void;
-  finalize(): Promise<void>;
-}
-
-function safeMapId(id: unknown): string {
-  return sanitizeMapId(id, '');
 }
 
 const HIDDEN_TEST_MAP_IDS = new Set(['smoke-map', 'creator-smoke', 'zip-smoke', 'bad-map']);
@@ -105,26 +89,6 @@ app.get('/api/health', (_req, res) => {
 });
 
 registerMapReadRoutes({ app, mapStorage, audioStorage });
-
-// GET /api/maps/:id/export.zip — ZIP z map.json + audio, jeśli audio jest zapisane na serwerze
-app.get('/api/maps/:id/export.zip', async (req, res) => {
-  const id = safeMapId(req.params.id);
-  if (!id) return res.status(400).json({ error: 'Invalid id' });
-  const data = await mapStorage.read(id);
-  if (!data) return res.status(404).json({ error: 'Not found' });
-
-  res.attachment(`${id}.zip`);
-  const archive = new archiver.ZipArchive({ zlib: { level: 9 } });
-  archive.on('error', err => {
-    if (!res.headersSent) res.status(500).json({ error: err.message });
-    else res.destroy(err);
-  });
-  archive.pipe(res);
-  archive.append(JSON.stringify(data, null, 2), { name: 'map.json' });
-  const audio = await audioStorage.find(id, data);
-  if (audio) archive.file(audio.fullPath, { name: audio.publicName });
-  await archive.finalize();
-});
 
 registerMapWriteRoutes({
   app,
