@@ -39,5 +39,5 @@
 
 - [ ] Rozbić `map-creator.html` na moduły: audio, ZIP, storage, waveform, UI, input.
 - [ ] Przenieść CSS dużych overlayów/menu do mniejszych sekcji lub plików.
-- [ ] Przenieść serwer do `server/index.js`, `server/routes`, `server/storage`.
+- [x] Przenieść serwer do `server/index.js`, `server/routes`, `server/storage`.
 - [ ] Po stabilizacji przejść pełniej na Vite, ale dopiero gdy mapy/audio/timing są już przewidywalne.
