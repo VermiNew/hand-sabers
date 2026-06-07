@@ -9,7 +9,7 @@ import {
 import { initAudio, startMapAudio, stopMapAudio, pauseMapAudio, getMapTime, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.js';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.js';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.js';
-import { updateFpsCounter } from '../ui/fps.js';
+import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel } from '../ui/devpanel.js';
 import { loadMapFromFile, validateMap } from './maploader.js';
 import { loadSettings, setSetting } from '../core/settings.ts';

@@ -2,11 +2,11 @@ import { state } from '../core/state.ts';
 import { ui } from './ui.js';
 
 const UPDATE_INTERVAL_MS = 500;
-let lastFrameAt    = performance.now();
-let sampleStartedAt= lastFrameAt;
-let sampledFrames  = 0;
+let lastFrameAt     = performance.now();
+let sampleStartedAt = lastFrameAt;
+let sampledFrames   = 0;
 
-export function updateFpsCounter(now) {
+export function updateFpsCounter(now: number): void {
   const deltaMs = now - lastFrameAt;
   lastFrameAt   = now;
   if (deltaMs <= 0 || deltaMs > 1000) return;
