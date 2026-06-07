@@ -2,6 +2,26 @@ import type { PerformanceMode, Settings } from '../types/index.js';
 
 const KEY = 'hs_settings';
 const DEFAULT_PERFORMANCE_MODE: PerformanceMode = 'auto';
+const PERFORMANCE_MODES: PerformanceMode[] = [
+  DEFAULT_PERFORMANCE_MODE,
+  'lowest',
+  'very-low',
+  'low',
+  'medium',
+  'high',
+  'ultra',
+  'maximum',
+];
+const LEGACY_MODE_MAP: Record<string, PerformanceMode> = {
+  turbo: 'low',
+  performance: 'medium',
+  lowest: 'lowest',
+  verylow: 'very-low',
+  very_low: 'very-low',
+  'very-low': 'very-low',
+  balanced: 'high',
+  quality: 'ultra',
+};
 
 export const DEFAULTS: Settings = {
   sensitivity: 1.0,
@@ -31,8 +51,9 @@ let _settings: Settings = { ...DEFAULTS };
 
 function normalizePerformanceMode(mode: unknown): PerformanceMode {
   const value = String(mode || DEFAULT_PERFORMANCE_MODE);
-  return ['auto', 'lowest', 'very-low', 'low', 'medium', 'high', 'ultra', 'maximum'].includes(value)
-    ? value as PerformanceMode
+  const normalized = LEGACY_MODE_MAP[value] || value;
+  return PERFORMANCE_MODES.includes(normalized as PerformanceMode)
+    ? normalized as PerformanceMode
     : DEFAULT_PERFORMANCE_MODE;
 }
 

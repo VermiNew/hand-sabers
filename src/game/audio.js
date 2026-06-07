@@ -1,4 +1,4 @@
-import { getSettings } from '../core/settings.js';
+import { getSettings } from '../core/settings.ts';
 
 let ctx = null;
 

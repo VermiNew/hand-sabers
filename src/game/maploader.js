@@ -1,5 +1,5 @@
 import { loadMapAudio } from './audio.js';
-import { getSettings } from '../core/settings.js';
+import { getSettings } from '../core/settings.ts';
 import { getJSZip } from '../jszip-loader.js';
 import {
   AUDIO_EXT_RE,

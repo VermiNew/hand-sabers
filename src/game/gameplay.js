@@ -1,5 +1,5 @@
 import { state } from '../core/state.js';
-import { getSettings } from '../core/settings.js';
+import { getSettings } from '../core/settings.ts';
 import { getPerformanceProfile } from '../core/performance.js';
 import { updateHUD, showComboMilestone } from '../ui/ui.js';
 import { THEME } from '../core/theme.js';

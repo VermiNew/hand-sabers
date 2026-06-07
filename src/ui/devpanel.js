@@ -1,5 +1,5 @@
 import { state } from '../core/state.js';
-import { setSetting, getSettings } from '../core/settings.js';
+import { setSetting, getSettings } from '../core/settings.ts';
 import { applyTrackingSettings } from '../tracking/tracking.js';
 import { setVolume, setMusicVolume, setSfxVolume, setSoundVolume } from '../game/audio.js';
 import { getPerformanceMode, getPerformanceModes } from '../core/performance.js';

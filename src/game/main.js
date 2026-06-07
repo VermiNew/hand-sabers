@@ -12,7 +12,7 @@ import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks,
 import { updateFpsCounter } from '../ui/fps.js';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel } from '../ui/devpanel.js';
 import { loadMapFromFile, validateMap } from './maploader.js';
-import { loadSettings, setSetting } from '../core/settings.js';
+import { loadSettings, setSetting } from '../core/settings.ts';
 import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
 import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.js';
 import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeatDeltaMs } from '../core/timing.js';

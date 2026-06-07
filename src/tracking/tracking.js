@@ -1,6 +1,6 @@
 import { state, S } from '../core/state.js';
 import { ui, setLoadingProgress, showCameraError, setCalibFeedback } from '../ui/ui.js';
-import { getSettings } from '../core/settings.js';
+import { getSettings } from '../core/settings.ts';
 import { getDetectIntervalMs, getPerformanceProfile } from '../core/performance.js';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
