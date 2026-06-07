@@ -1,7 +1,26 @@
-let toastRoot = null;
-let modalRoot = null;
+type ToastType = 'info' | 'error' | 'success';
 
-function ensureToastRoot() {
+interface ToastOptions {
+  type?: ToastType;
+  timeout?: number;
+}
+
+interface ConfirmOptions {
+  title?: string;
+  confirmText?: string;
+  cancelText?: string;
+  danger?: boolean;
+}
+
+interface AlertOptions {
+  title?: string;
+  type?: ToastType;
+}
+
+let toastRoot: HTMLDivElement | null = null;
+let modalRoot: HTMLDivElement | null = null;
+
+function ensureToastRoot(): HTMLDivElement {
   if (toastRoot) return toastRoot;
   toastRoot = document.createElement('div');
   toastRoot.className = 'toast-root';
@@ -9,7 +28,7 @@ function ensureToastRoot() {
   return toastRoot;
 }
 
-function ensureModalRoot() {
+function ensureModalRoot(): HTMLDivElement {
   if (modalRoot) return modalRoot;
   modalRoot = document.createElement('div');
   modalRoot.className = 'modal-root';
@@ -18,7 +37,7 @@ function ensureModalRoot() {
   return modalRoot;
 }
 
-export function showToast(message, { type = 'info', timeout = 2800 } = {}) {
+export function showToast(message: string, { type = 'info', timeout = 2800 }: ToastOptions = {}): void {
   const root = ensureToastRoot();
   const el = document.createElement('div');
   el.className = `toast toast-${type}`;
@@ -31,7 +50,10 @@ export function showToast(message, { type = 'info', timeout = 2800 } = {}) {
   }, timeout);
 }
 
-export function showConfirm(message, { title = 'Potwierdź', confirmText = 'OK', cancelText = 'Anuluj', danger = false } = {}) {
+export function showConfirm(
+  message: string,
+  { title = 'Potwierdź', confirmText = 'OK', cancelText = 'Anuluj', danger = false }: ConfirmOptions = {},
+): Promise<boolean> {
   const root = ensureModalRoot();
   root.hidden = false;
   root.innerHTML = `
@@ -46,23 +68,27 @@ export function showConfirm(message, { title = 'Potwierdź', confirmText = 'OK',
     </section>
   `;
   return new Promise(resolve => {
-    const cleanup = (value) => {
+    const cleanup = (value: boolean): void => {
       root.hidden = true;
       root.innerHTML = '';
       resolve(value);
     };
-    root.querySelector('[data-action="cancel"]')?.addEventListener('click', () => cleanup(false));
-    root.querySelector('[data-action="confirm"]')?.addEventListener('click', () => cleanup(true));
-    root.querySelector('.modal-backdrop')?.addEventListener('click', () => cleanup(false));
-    root.querySelector('[data-action="confirm"]')?.focus?.();
+    root.querySelector<HTMLButtonElement>('[data-action="cancel"]')?.addEventListener('click', () => cleanup(false));
+    root.querySelector<HTMLButtonElement>('[data-action="confirm"]')?.addEventListener('click', () => cleanup(true));
+    root.querySelector<HTMLElement>('.modal-backdrop')?.addEventListener('click', () => cleanup(false));
+    root.querySelector<HTMLButtonElement>('[data-action="confirm"]')?.focus();
   });
 }
 
-export function showAlert(message, { title = 'Komunikat', type = 'error' } = {}) {
+export function showAlert(
+  message: string,
+  { title = 'Komunikat', type = 'error' }: AlertOptions = {},
+): Promise<boolean> {
   showToast(message, { type });
   return showConfirm(message, { title, confirmText: 'OK', cancelText: '', danger: type === 'error' });
 }
 
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"]/g, ch => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[ch]));
+function escapeHtml(value: unknown): string {
+  const entities: Record<string, string> = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' };
+  return String(value ?? '').replace(/[&<>"]/g, ch => entities[ch]!);
 }

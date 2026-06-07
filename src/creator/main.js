@@ -3,7 +3,7 @@ import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } fro
 import { validateAudioFile, validateDecodedAudio } from '../core/audio-validation.ts';
 import { markOverlaps, removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
 import { cutButtonText, CUT_SYMBOLS, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
-import { showAlert, showConfirm, showToast } from './dialogs.js';
+import { showAlert, showConfirm, showToast } from './dialogs.ts';
 import { saveLocalMap, getLocalMapById, saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.js';
 // ══════════════════════════════════════════════════════════════════
 //  MAP CREATOR — główna logika
