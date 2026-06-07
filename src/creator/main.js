@@ -1,6 +1,6 @@
 import { getJSZip } from '../jszip-loader.js';
 import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } from '../core/map-format.ts';
-import { validateAudioFile, validateDecodedAudio } from '../core/audio-validation.js';
+import { validateAudioFile, validateDecodedAudio } from '../core/audio-validation.ts';
 import { markOverlaps, removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.js';
 import { cutButtonText, CUT_SYMBOLS, normalizeCutDirection, nextCutDirection } from './cut-ui.js';
 import { showAlert, showConfirm, showToast } from './dialogs.js';

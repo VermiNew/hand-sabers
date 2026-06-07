@@ -4,7 +4,7 @@ import {
   isSupportedAudioFile,
   validateAudioFile,
   validateDecodedAudio,
-} from '../src/core/audio-validation.js';
+} from '../src/core/audio-validation.ts';
 
 test('validateAudioFile accepts supported MIME or extension', () => {
   assert.equal(isSupportedAudioFile({ name: 'song.mp3', type: '' }), true);
