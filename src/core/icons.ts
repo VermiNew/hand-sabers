@@ -1,4 +1,4 @@
-const ICONS = {
+const ICONS: Record<string, string> = {
   'circle-x': 'cancel',
   x:          'close',
   check:      'check',
@@ -7,15 +7,15 @@ const ICONS = {
   house:      'home',
 };
 
-export function iconMarkup(name, className = 'icon-inline') {
+export function iconMarkup(name: string, className = 'icon-inline'): string {
   const symbol = ICONS[name] || name;
   return `<span class="material-symbols-rounded ${className}" aria-hidden="true">${symbol}</span>`;
 }
 
 // Material Symbols renderuje przeglądarka przez font, więc nie trzeba ręcznie odświeżać SVG.
-export function refreshIcons() {}
+export function refreshIcons(): void {}
 
-export function setIconButton(button, label, iconName) {
+export function setIconButton(button: HTMLElement | null, label: string, iconName: string): void {
   if (!button) return;
   button.innerHTML = `<span class="btn-label">${label}</span>${iconMarkup(iconName, 'btn-icon')}`;
 }

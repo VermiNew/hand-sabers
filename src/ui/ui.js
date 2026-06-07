@@ -1,4 +1,4 @@
-import { iconMarkup, refreshIcons, setIconButton } from '../core/icons.js';
+import { iconMarkup, refreshIcons, setIconButton } from '../core/icons.ts';
 
 export const ui = {
   overlay:      document.getElementById('overlay'),
