@@ -1,6 +1,6 @@
 import { THEME } from '../core/theme.js';
 import { loadSettings } from '../core/settings.js';
-import { SABER_COLORS } from '../core/saber-colors.js';
+import { SABER_COLORS } from '../core/saber-colors.ts';
 import { clampDpr, getAdjacentGraphicsTier, getPerformanceProfile } from '../core/performance.js';
 
 export const THREE = window.THREE;

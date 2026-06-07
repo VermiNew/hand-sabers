@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SABER_COLORS, findClosestSaberColor } from '../src/core/saber-colors.js';
+import { SABER_COLORS, findClosestSaberColor } from '../src/core/saber-colors.ts';
 
 test('saber color presets expose twelve unique options', () => {
   assert.equal(SABER_COLORS.length, 12);

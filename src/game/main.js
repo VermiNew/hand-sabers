@@ -13,7 +13,7 @@ import { updateFpsCounter } from '../ui/fps.js';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel } from '../ui/devpanel.js';
 import { loadMapFromFile, validateMap } from './maploader.js';
 import { loadSettings, setSetting } from '../core/settings.js';
-import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.js';
+import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
 import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.js';
 import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeatDeltaMs } from '../core/timing.js';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.js';
