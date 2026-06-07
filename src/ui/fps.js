@@ -1,4 +1,4 @@
-import { state } from '../core/state.js';
+import { state } from '../core/state.ts';
 import { ui } from './ui.js';
 
 const UPDATE_INTERVAL_MS = 500;

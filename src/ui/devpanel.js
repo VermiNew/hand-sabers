@@ -1,4 +1,4 @@
-import { state } from '../core/state.js';
+import { state } from '../core/state.ts';
 import { setSetting, getSettings } from '../core/settings.ts';
 import { applyTrackingSettings } from '../tracking/tracking.js';
 import { setVolume, setMusicVolume, setSfxVolume, setSoundVolume } from '../game/audio.js';

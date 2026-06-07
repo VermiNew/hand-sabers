@@ -1,4 +1,4 @@
-import { S, state } from '../core/state.js';
+import { S, state } from '../core/state.ts';
 import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu } from '../ui/ui.js';
 import {
   THREE, renderer, scene, cam3d, bgMat,

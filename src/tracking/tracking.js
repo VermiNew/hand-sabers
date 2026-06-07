@@ -1,4 +1,4 @@
-import { state, S } from '../core/state.js';
+import { state, S } from '../core/state.ts';
 import { ui, setLoadingProgress, showCameraError, setCalibFeedback } from '../ui/ui.js';
 import { getSettings } from '../core/settings.ts';
 import { getDetectIntervalMs, getPerformanceProfile } from '../core/performance.js';

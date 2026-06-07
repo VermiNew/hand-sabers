@@ -1,4 +1,4 @@
-import { state } from '../core/state.js';
+import { state } from '../core/state.ts';
 import { getSettings } from '../core/settings.ts';
 import { getPerformanceProfile } from '../core/performance.js';
 import { updateHUD, showComboMilestone } from '../ui/ui.js';
