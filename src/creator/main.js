@@ -1,4 +1,4 @@
-import { getJSZip } from '../jszip-loader.js';
+import { getJSZip } from '../jszip-loader.ts';
 import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } from '../core/map-format.ts';
 import { validateAudioFile, validateDecodedAudio } from '../core/audio-validation.ts';
 import { markOverlaps, removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';

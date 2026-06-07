@@ -1,6 +1,6 @@
 import { loadMapAudio } from './audio.js';
 import { getSettings } from '../core/settings.ts';
-import { getJSZip } from '../jszip-loader.js';
+import { getJSZip } from '../jszip-loader.ts';
 import {
   AUDIO_EXT_RE,
   MAX_BEATS_DEFAULT,

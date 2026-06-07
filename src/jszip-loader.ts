@@ -1,18 +1,21 @@
-let jsZipPromise = null;
+type JSZipConstructor = typeof import('jszip');
 
-function isUsableJSZip(candidate) {
-  return typeof candidate === 'function' && typeof candidate.loadAsync === 'function';
+let jsZipPromise: Promise<JSZipConstructor> | null = null;
+
+function isUsableJSZip(candidate: unknown): candidate is JSZipConstructor {
+  return typeof candidate === 'function'
+    && typeof (candidate as { loadAsync?: unknown }).loadAsync === 'function';
 }
 
-function resolveGlobalJSZip() {
-  const candidate = globalThis.JSZip;
+function resolveGlobalJSZip(): JSZipConstructor | null {
+  const candidate = (globalThis as typeof globalThis & { JSZip?: unknown }).JSZip;
   if (isUsableJSZip(candidate)) return candidate;
   return null;
 }
 
-function loadScript(src) {
+function loadScript(src: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector(`script[data-jszip-loader="${src}"]`);
+    const existing = document.querySelector<HTMLScriptElement>(`script[data-jszip-loader="${src}"]`);
     if (existing) {
       existing.addEventListener('load', () => resolve(), { once: true });
       existing.addEventListener('error', () => reject(new Error(`Nie udało się załadować JSZip z ${src}`)), { once: true });
@@ -29,7 +32,7 @@ function loadScript(src) {
   });
 }
 
-export async function getJSZip() {
+export async function getJSZip(): Promise<JSZipConstructor> {
   const alreadyLoaded = resolveGlobalJSZip();
   if (alreadyLoaded) return alreadyLoaded;
 
@@ -41,7 +44,7 @@ export async function getJSZip() {
         './node_modules/jszip/dist/jszip.min.js',
       ];
 
-      let lastError = null;
+      let lastError: unknown = null;
       for (const src of fallbacks) {
         try {
           await loadScript(src);
