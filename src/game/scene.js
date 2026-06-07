@@ -1,4 +1,4 @@
-import { THEME } from '../core/theme.js';
+import { THEME } from '../core/theme.ts';
 import { loadSettings } from '../core/settings.ts';
 import { SABER_COLORS } from '../core/saber-colors.ts';
 import { clampDpr, getAdjacentGraphicsTier, getPerformanceProfile } from '../core/performance.js';
