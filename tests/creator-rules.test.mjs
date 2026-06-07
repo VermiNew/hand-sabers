@@ -5,7 +5,7 @@ import {
   removeBeatByReference,
   removeBeatsByReference,
   sortBeatsByTime,
-} from '../src/core/creator-rules.js';
+} from '../src/core/creator-rules.ts';
 
 test('sortBeatsByTime sorts in place by hit time', () => {
   const beats = [{ t: 2 }, { t: 0.5 }, { t: 1 }];
