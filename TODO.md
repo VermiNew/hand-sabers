@@ -5,7 +5,7 @@
 - [ ] Przetestować `audioOffsetMs` na kilku urządzeniach: laptopowe głośniki, słuchawki przewodowe, Bluetooth. Jeśli Bluetooth mocno odstaje, dodać preset offsetu.
 - [ ] Dodać wizualny marker `hit plane` w trybie `?dev`, żeby było widać dokładne miejsce trafienia kostki.
 - [ ] Dodać w dev panelu podgląd najbliższych 3 beatów: czas nuty, delta ms, strona, typ.
-- [ ] Ujednolicić creator i gameplay wokół jednego modułu `src/core/timing.js`; podstawy już są, ale edytor może jeszcze dostać czytelny preview „hit now”.
+- [ ] Ujednolicić creator i gameplay wokół jednego modułu `src/core/timing.ts`; podstawy już są, ale edytor może jeszcze dostać czytelny preview „hit now”.
 - [x] Dodać testy jednostkowe dla `normalizeMap`, `isSafeZipPath`, `noteZAtSongTime` i `getSongTimeSec`.
 
 ## Mapy i import/export

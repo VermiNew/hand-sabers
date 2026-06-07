@@ -7,7 +7,7 @@ import {
   getSongTimeSec,
   nearestBeatDeltaMs,
   noteZAtSongTime,
-} from '../src/core/timing.js';
+} from '../src/core/timing.ts';
 
 test('getEffectiveMapDuration prefers audio duration', () => {
   const map = { meta: { duration: 123 }, beats: [{ t: 200 }] };

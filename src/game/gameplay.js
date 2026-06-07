@@ -4,7 +4,7 @@ import { getPerformanceProfile } from '../core/performance.js';
 import { updateHUD, showComboMilestone } from '../ui/ui.js';
 import { THEME } from '../core/theme.ts';
 import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.js';
-import { getBeatHitTimeSec, isBeatTooLate, noteZAtSongTime, shouldSpawnBeat } from '../core/timing.js';
+import { getBeatHitTimeSec, isBeatTooLate, noteZAtSongTime, shouldSpawnBeat } from '../core/timing.ts';
 import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.js';
 
