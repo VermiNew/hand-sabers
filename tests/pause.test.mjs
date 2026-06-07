@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PAUSE_REASONS, canAutoResumeFromHands } from '../src/core/pause.js';
+import { PAUSE_REASONS, canAutoResumeFromHands } from '../src/core/pause.ts';
 
 test('only hands pause can auto resume from hand tracking', () => {
   assert.equal(canAutoResumeFromHands(PAUSE_REASONS.HANDS), true);
