@@ -11,7 +11,7 @@ import {
   registerComboHit,
   resetCombo,
   scoreForHit,
-} from '../src/core/gameplay-rules.js';
+} from '../src/core/gameplay-rules.ts';
 
 test('cut direction normalization supports aliases and safe fallback', () => {
   assert.equal(normalizeCutDirection('DL'), 'down-left');
