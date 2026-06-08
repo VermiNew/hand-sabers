@@ -1,6 +1,6 @@
 import { state } from '../core/state.ts';
 import { getSettings } from '../core/settings.ts';
-import { getPerformanceProfile } from '../core/performance.js';
+import { getPerformanceProfile } from '../core/performance.ts';
 import { updateHUD, showComboMilestone } from '../ui/ui.js';
 import { THEME } from '../core/theme.ts';
 import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.js';

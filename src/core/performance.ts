@@ -1,8 +1,25 @@
-export const GRAPHICS_TIERS = ['lowest', 'very-low', 'low', 'medium', 'high', 'ultra', 'maximum'];
-export const DEFAULT_PERFORMANCE_MODE = 'auto';
+import type { PerformanceMode, PerformanceProfile } from '../types/index.js';
 
-const MODES = [DEFAULT_PERFORMANCE_MODE, ...GRAPHICS_TIERS];
-const LEGACY_MODE_MAP = {
+export const GRAPHICS_TIERS = ['lowest', 'very-low', 'low', 'medium', 'high', 'ultra', 'maximum'] as const;
+export const DEFAULT_PERFORMANCE_MODE: PerformanceMode = 'auto';
+
+type GraphicsTier = typeof GRAPHICS_TIERS[number];
+
+interface PerformanceSettingsLike {
+  performanceMode?: string | null;
+  autoQualityMode?: string | null;
+}
+
+interface PerformanceModeOption {
+  value: PerformanceMode;
+  label: string;
+  description: string;
+}
+
+type PerformanceProfileBase = Omit<PerformanceProfile, 'auto'>;
+
+const MODES: readonly PerformanceMode[] = [DEFAULT_PERFORMANCE_MODE, ...GRAPHICS_TIERS];
+const LEGACY_MODE_MAP: Record<string, PerformanceMode> = {
   turbo: 'low',
   performance: 'medium',
   lowest: 'lowest',
@@ -147,14 +164,14 @@ const PROFILES = {
     detectFps: 30,
     devRefreshMs: 400,
   },
-};
+} satisfies Record<GraphicsTier, PerformanceProfileBase>;
 
-function normalizeMode(mode) {
-  const mapped = LEGACY_MODE_MAP[mode] || mode;
-  return MODES.includes(mapped) ? mapped : DEFAULT_PERFORMANCE_MODE;
+function normalizeMode(mode: string | null | undefined): PerformanceMode {
+  const mapped = typeof mode === 'string' ? LEGACY_MODE_MAP[mode] || mode : mode;
+  return MODES.includes(mapped as PerformanceMode) ? mapped as PerformanceMode : DEFAULT_PERFORMANCE_MODE;
 }
 
-function detectGpuBias() {
+function detectGpuBias(): number {
   if (typeof document === 'undefined') return 0;
   try {
     const canvas = document.createElement('canvas');
@@ -170,9 +187,13 @@ function detectGpuBias() {
   return 0;
 }
 
-export function detectAutoGraphicsTier() {
-  const nav = typeof navigator !== 'undefined' ? navigator : {};
-  const win = typeof window !== 'undefined' ? window : {};
+export function detectAutoGraphicsTier(): GraphicsTier {
+  const nav = typeof navigator !== 'undefined'
+    ? navigator as Navigator & { deviceMemory?: number }
+    : {} as Navigator & { deviceMemory?: number };
+  const win = typeof window !== 'undefined'
+    ? window
+    : {} as Window;
   let score = detectGpuBias();
 
   const cores = Number(nav.hardwareConcurrency) || 4;
@@ -200,16 +221,18 @@ export function detectAutoGraphicsTier() {
   return 'maximum';
 }
 
-export function getPerformanceMode(settings = {}) {
+export function getPerformanceMode(settings: PerformanceSettingsLike = {}): PerformanceMode {
   return normalizeMode(settings.performanceMode || DEFAULT_PERFORMANCE_MODE);
 }
 
-export function getPerformanceProfile(settings = {}) {
+export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): PerformanceProfile {
   const mode = getPerformanceMode(settings);
   if (mode === 'auto') {
-    const runtimeQualityMode = typeof window !== 'undefined' ? window.__graphicsQualityMode : null;
+    const runtimeQualityMode = typeof window !== 'undefined'
+      ? (window as Window & { __graphicsQualityMode?: string }).__graphicsQualityMode
+      : null;
     const qualityMode = normalizeMode(settings.autoQualityMode || runtimeQualityMode || detectAutoGraphicsTier());
-    const profile = PROFILES[qualityMode] || PROFILES.medium;
+    const profile = qualityMode === 'auto' ? PROFILES.medium : PROFILES[qualityMode];
     return {
       ...profile,
       mode: 'auto',
@@ -222,7 +245,7 @@ export function getPerformanceProfile(settings = {}) {
   return { ...PROFILES[mode] };
 }
 
-export function getPerformanceModes() {
+export function getPerformanceModes(): PerformanceModeOption[] {
   return [
     { value: 'auto', label: 'Auto (domyślnie)', description: 'Sam sprawdza sprzęt i reguluje jakość w trakcie gry.' },
     { value: 'lowest', label: 'Lowest', description: PROFILES.lowest.description },
@@ -235,25 +258,25 @@ export function getPerformanceModes() {
   ];
 }
 
-export function getPerformanceModeDescription(mode) {
+export function getPerformanceModeDescription(mode: string | null | undefined): string {
   const normalized = normalizeMode(mode);
   return getPerformanceModes().find(item => item.value === normalized)?.description || '';
 }
 
-export function getAdjacentGraphicsTier(mode, direction) {
+export function getAdjacentGraphicsTier(mode: string | null | undefined, direction: number): GraphicsTier | null {
   const normalized = normalizeMode(mode);
-  const index = GRAPHICS_TIERS.indexOf(normalized);
+  const index = GRAPHICS_TIERS.indexOf(normalized as GraphicsTier);
   if (index < 0) return null;
   const next = GRAPHICS_TIERS[index + Math.sign(direction)];
   return next || null;
 }
 
-export function clampDpr(value, profile) {
+export function clampDpr(value: number, profile: Pick<PerformanceProfile, 'minDpr' | 'maxDpr'>): number {
   const dpr = Number.isFinite(value) ? value : 1;
   return Math.max(profile.minDpr, Math.min(profile.maxDpr, dpr));
 }
 
-export function getDetectIntervalMs(profile) {
+export function getDetectIntervalMs(profile: Pick<PerformanceProfile, 'detectFps'>): number {
   const fps = Math.max(8, Math.min(45, Number(profile.detectFps) || 24));
   return 1000 / fps;
 }

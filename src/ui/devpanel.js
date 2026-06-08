@@ -2,7 +2,7 @@ import { state } from '../core/state.ts';
 import { setSetting, getSettings } from '../core/settings.ts';
 import { applyTrackingSettings } from '../tracking/tracking.js';
 import { setVolume, setMusicVolume, setSfxVolume, setSoundVolume } from '../game/audio.js';
-import { getPerformanceMode, getPerformanceModes } from '../core/performance.js';
+import { getPerformanceMode, getPerformanceModes } from '../core/performance.ts';
 import { THREE, scene, reflectTarget, getScenePerformanceProfile, setScenePerformanceProfile, setWireframeVisible } from '../game/scene.js';
 
 let pane    = null;
