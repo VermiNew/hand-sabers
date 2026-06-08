@@ -246,7 +246,7 @@ nav {
 </div>
 
 <script type="module">
-import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, saveLocalMap, saveLocalMapAudio } from './src/core/localstore.js';
+import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, saveLocalMap, saveLocalMapAudio } from './src/core/localstore.ts';
 import { getJSZip } from './src/jszip-loader.ts';
 import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } from './src/core/map-format.ts';
 import { showAlert, showConfirm, showToast } from './src/creator/dialogs.ts';

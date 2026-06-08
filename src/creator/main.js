@@ -4,7 +4,7 @@ import { validateAudioFile, validateDecodedAudio } from '../core/audio-validatio
 import { markOverlaps, removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
 import { cutButtonText, CUT_SYMBOLS, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
 import { showAlert, showConfirm, showToast } from './dialogs.ts';
-import { saveLocalMap, getLocalMapById, saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.js';
+import { saveLocalMap, getLocalMapById, saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.ts';
 // ══════════════════════════════════════════════════════════════════
 //  MAP CREATOR — główna logika
 // ══════════════════════════════════════════════════════════════════

@@ -17,7 +17,7 @@ import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
 import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.js';
 import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeatDeltaMs } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
-import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.js';
+import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
 
 // ── Ustawienia ────────────────────────────────────────────────────────────────
 const settings = loadSettings();
