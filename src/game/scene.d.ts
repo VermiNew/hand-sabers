@@ -1,0 +1,32 @@
+import type * as ThreeNS from 'three';
+import type { Settings, PerformanceProfile } from '../types/index.js';
+
+export const THREE: typeof ThreeNS;
+export const renderer: ThreeNS.WebGLRenderer;
+export const scene: ThreeNS.Scene;
+export const cam3d: ThreeNS.PerspectiveCamera;
+export const bgMat: ThreeNS.ShaderMaterial;
+export const lSaber: ThreeNS.Group;
+export const rSaber: ThreeNS.Group;
+export const lTarget: ThreeNS.Vector3;
+export const rTarget: ThreeNS.Vector3;
+export const lVel: ThreeNS.Vector3;
+export const rVel: ThreeNS.Vector3;
+export const lLight: ThreeNS.PointLight;
+export const rLight: ThreeNS.PointLight;
+export const REFLECT_SIZE: number;
+export const reflectTarget: ThreeNS.WebGLRenderTarget;
+export const reflectCam: ThreeNS.PerspectiveCamera;
+
+export function setSaberColor(side: 'left' | 'right', hex: string): void;
+export function animateIdleSabers(t: number): void;
+export function updateReflection(): void;
+export function updateLightReflections(t: number): void;
+export function setWireframeVisible(visible: boolean): void;
+export function resizeRenderer(): void;
+export function triggerShake(intensity?: number): void;
+export function applyShake(deltaScale?: number): void;
+export function setScenePerformanceProfile(settingsOrProfile?: Settings | PerformanceProfile): void;
+export function getScenePerformanceProfile(): PerformanceProfile;
+export function adaptRenderQuality(frameMs: number, fps?: number): void;
+export function disposeSceneResources(): void;

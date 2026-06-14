@@ -21,7 +21,7 @@ interface StateMap {
   localOnly?: boolean;
 }
 
-interface GameState {
+export interface GameState {
   appState: AppStateKey;
   calibIdx: number;
   score: number;

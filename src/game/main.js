@@ -1,16 +1,16 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu } from '../ui/ui.js';
+import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu } from '../ui/ui.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor,
 } from './scene.js';
-import { initAudio, startMapAudio, stopMapAudio, pauseMapAudio, getMapTime, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.js';
+import { initAudio, startMapAudio, stopMapAudio, pauseMapAudio, getMapTime, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.js';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.js';
 import { updateFpsCounter } from '../ui/fps.ts';
-import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel } from '../ui/devpanel.js';
+import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
 import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
@@ -57,7 +57,7 @@ function preserveDevQueryOnMenuLinks() {
 async function submitScore() {
   const payload = {
     mapId:  state.map?.id ?? 'random',
-    player: 'Gracz',
+    player: settings.playerName || 'Gracz',
     score:  state.score,
     combo:  state.maxCombo,
     date:   new Date().toISOString(),

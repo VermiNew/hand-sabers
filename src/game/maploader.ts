@@ -1,5 +1,5 @@
 import type { Beat, GameMap, MapMeta } from '../types/index.js';
-import { loadMapAudio } from './audio.js';
+import { loadMapAudio } from './audio.ts';
 import { getSettings } from '../core/settings.ts';
 import { getJSZip } from '../jszip-loader.ts';
 import {

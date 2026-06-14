@@ -70,7 +70,7 @@ floorSheen.rotation.x = -Math.PI / 2;
 floorSheen.position.y = -0.004;
 scene.add(floorSheen);
 
-// Planar reflection (256×256, co 3 klatki) — GTX 1050 Ti friendly
+// Planar reflection (256×256, co 4 klatki) — GTX 1050 Ti friendly
 export const REFLECT_SIZE = 256;
 export const reflectTarget = new THREE.WebGLRenderTarget(REFLECT_SIZE, REFLECT_SIZE, {
   minFilter: THREE.LinearFilter,

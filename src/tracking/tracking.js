@@ -1,5 +1,5 @@
 import { state, S } from '../core/state.ts';
-import { ui, setLoadingProgress, showCameraError, setCalibFeedback } from '../ui/ui.js';
+import { ui, setLoadingProgress, showCameraError, setCalibFeedback } from '../ui/ui.ts';
 import { getSettings } from '../core/settings.ts';
 import { getDetectIntervalMs, getPerformanceProfile } from '../core/performance.ts';
 
@@ -138,7 +138,7 @@ function getCalibInstruction(step) {
 export function renderCalibStep() {
   const step = CALIB_STEPS[state.calibIdx];
   if (!step) return;
-  const pct = ((state.calibIdx) / CALIB_STEPS.length) * 100;
+  const pct = ((state.calibIdx + 1) / CALIB_STEPS.length) * 100;
   ui.ovStep.textContent    = step.title;
   ui.ovInstr.textContent   = getCalibInstruction(step);
   ui.ovBar.style.width     = `${pct}%`;

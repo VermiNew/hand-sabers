@@ -10,11 +10,11 @@ export const APP_STATES = {
 export type AppStateKey = typeof APP_STATES[keyof typeof APP_STATES];
 
 export const PAUSE_REASONS = {
-  NONE: 'none',
+  NONE: null,
   HANDS: 'hands',
   MANUAL: 'manual',
 } as const;
-export type PauseReason = typeof PAUSE_REASONS[keyof typeof PAUSE_REASONS];
+export type PauseReason = 'hands' | 'manual';
 
 export type OneHandMode = 'left' | 'right' | null;
 export type SaberSide = 'left' | 'right';

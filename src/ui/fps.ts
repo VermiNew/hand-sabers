@@ -1,5 +1,5 @@
 import { state } from '../core/state.ts';
-import { ui } from './ui.js';
+import { ui } from './ui.ts';
 
 const UPDATE_INTERVAL_MS = 500;
 let lastFrameAt     = performance.now();

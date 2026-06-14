@@ -1,9 +1,9 @@
 import { state } from '../core/state.ts';
 import { getSettings } from '../core/settings.ts';
 import { getPerformanceProfile } from '../core/performance.ts';
-import { updateHUD, showComboMilestone } from '../ui/ui.js';
+import { updateHUD, showComboMilestone } from '../ui/ui.ts';
 import { THEME } from '../core/theme.ts';
-import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.js';
+import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.ts';
 import { getBeatHitTimeSec, isBeatTooLate, noteZAtSongTime, shouldSpawnBeat } from '../core/timing.ts';
 import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.js';
@@ -209,7 +209,7 @@ function burst(pos, colorHex, pushDir = null) {
   }
 }
 
-const SHARDS_PER_HIT = 5;
+const SHARDS_PER_HIT_MAX = 8;
 const MAX_SHARDS     = 28;
 const SHARD_GRAVITY  = 0.0075;
 const shardGeo       = new THREE.BoxGeometry(1, 1, 1);
@@ -309,7 +309,7 @@ function shatterBlock(mesh, colorHex, cache, { strong = false, demo = false } = 
   tmpPushSnapshot.copy(computeSlicePush(cache));
   const freeSlots = Math.max(0, MAX_SHARDS - activeShards.length);
   const perf = getPerformanceProfile(getSettings());
-  const perfShardCount = Math.max(0, Math.min(SHARDS_PER_HIT, Number(perf.hitShards) || SHARDS_PER_HIT));
+  const perfShardCount = Math.max(0, Math.min(SHARDS_PER_HIT_MAX, Number(perf.hitShards) || SHARDS_PER_HIT_MAX));
   const baseCount = demo ? Math.min(2, perfShardCount) : perfShardCount;
   const count = Math.min(baseCount + (strong && !demo && perfShardCount >= 4 ? 1 : 0), freeSlots);
 
