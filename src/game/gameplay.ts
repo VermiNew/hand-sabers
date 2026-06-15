@@ -6,7 +6,7 @@ import { THEME } from '../core/theme.ts';
 import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.ts';
 import { getBeatHitTimeSec, isBeatTooLate, noteZAtSongTime, shouldSpawnBeat } from '../core/timing.ts';
 import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
-import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.js';
+import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import type * as ThreeT from 'three';
 import type { Beat, CutDirection } from '../types/index.js';
 

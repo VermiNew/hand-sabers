@@ -1,9 +1,9 @@
 import { state } from '../core/state.ts';
 import { setSetting, getSettings } from '../core/settings.ts';
-import { applyTrackingSettings } from '../tracking/tracking.js';
+import { applyTrackingSettings } from '../tracking/tracking.ts';
 import { setVolume, setMusicVolume, setSfxVolume, setSoundVolume } from '../game/audio.ts';
 import { getPerformanceMode, getPerformanceModes } from '../core/performance.ts';
-import { scene, reflectTarget, getScenePerformanceProfile, setScenePerformanceProfile, setWireframeVisible } from '../game/scene.js';
+import { scene, reflectTarget, getScenePerformanceProfile, setScenePerformanceProfile, setWireframeVisible } from '../game/scene.ts';
 import type * as THREE from 'three';
 import type { PerformanceMode, Settings } from '../types/index.js';
 
