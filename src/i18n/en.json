@@ -41,5 +41,61 @@
     "unknownTrack": "Unknown track",
     "pauseHands": "PAUSE — HANDS",
     "pause": "PAUSE"
+  },
+  "settings": {
+    "menuKicker": "Game menu",
+    "title": "Settings",
+    "close": "Close settings",
+    "audio": {
+      "individualSounds": "Individual sounds",
+      "music": "Music",
+      "sfx": "Effects",
+      "hit": "Hit",
+      "miss": "Miss",
+      "bomb": "Bomb"
+    },
+    "performance": {
+      "title": "Performance",
+      "graphicsSettings": "Graphics settings",
+      "autoHint": "Automatically checks hardware and adjusts quality during gameplay.",
+      "currentMode": "Current mode: —"
+    },
+    "developer": {
+      "name": "Developer mode",
+      "desc": "Shows diagnostic panel, rendering metrics, VRAM, tracking and camera preview"
+    },
+    "gameplay": {
+      "noFailDesc": "Game doesn't end at zero HP",
+      "flipCamera": "Flip camera sides",
+      "flipCameraDesc": "Enable when left saber hits right track",
+      "beatLimit": "Beat limit",
+      "beatLimitDesc": "10,000 beats; disable to extend to 100,000",
+      "oneHandMode": "One-hand mode",
+      "oneHandModeDesc": "Play with only one saber",
+      "both": "Both",
+      "left": "Left",
+      "right": "Right",
+      "saberColors": "Saber colors",
+      "saberColorsDesc": "Choose color separately for each saber",
+      "leftHand": "Left hand",
+      "rightHand": "Right hand",
+      "leftSaberColor": "Left saber color",
+      "rightSaberColor": "Right saber color"
+    }
+  },
+  "camera": {
+    "raw": "CAMERA RAW",
+    "mlTracking": "ML TRACKING"
+  },
+  "hud": {
+    "progress": "PROGRESS"
+  },
+  "overlay": {
+    "handTrackingSystem": "HAND TRACKING SYSTEM — MEDIAPIPE",
+    "loadingModel": "Loading hand tracking model…",
+    "prepareCamera": "Prepare your camera and good lighting.",
+    "waitingForHands": "Waiting for hands",
+    "continue": "CONTINUE",
+    "retryCalibration": "RETRY CALIBRATION"
   }
 }

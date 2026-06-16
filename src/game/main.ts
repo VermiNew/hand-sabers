@@ -52,6 +52,63 @@ setSaberTargetSetter((side, pos) => {
   else                 rTarget.set(pos.x, pos.y, pos.z);
 });
 
+function applyTranslations(): void {
+  const setText = (id: string, text: string): void => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  const setQuery = (selector: string, text: string): void => {
+    const el = document.querySelector(selector);
+    if (el) el.textContent = text;
+  };
+
+  setText('mainSettingsTitle', t('settings.title'));
+  setQuery('.settings-card-kicker', t('settings.menuKicker'));
+  setQuery('.settings-subsection-title', t('settings.audio.individualSounds'));
+
+  const audioLabels = document.querySelectorAll('.settings-slider-label');
+  const audioKeys = ['music', 'sfx', 'hit', 'miss', 'bomb'] as const;
+  audioLabels.forEach((label, i) => {
+    if (i < audioKeys.length) {
+      const key = audioKeys[i];
+      if (key) label.textContent = t(`settings.audio.${key}`);
+    }
+  });
+
+  setQuery('[data-section="performance"] .settings-section-title', t('settings.performance.title'));
+  setText('menuPerformanceHint', t('settings.performance.autoHint'));
+  setText('menuGraphicsModeInfo', t('settings.performance.currentMode'));
+
+  setQuery('[data-section="developer"] .settings-toggle-name', t('settings.developer.name'));
+  setQuery('[data-section="developer"] .settings-toggle-desc', t('settings.developer.desc'));
+
+  setQuery('[data-section="gameplay"] .settings-toggle-name', t('settings.gameplay.noFailDesc'));
+  setQuery('[data-section="gameplay"] .settings-toggle-desc', t('settings.gameplay.noFailDesc'));
+
+  setText('pauseResume', t('pause.resume'));
+  setText('pauseRestart', t('pause.restart'));
+  setText('pauseMaps', t('pause.maps'));
+  setText('pauseQuit', t('pause.mainMenu'));
+
+  setQuery('.pause-title', t('pause.title'));
+  setText('pauseSub', t('pause.handsLost'));
+  setQuery('.pause-menu-title', t('pause.title'));
+
+  setQuery('.ov-sub', t('overlay.handTrackingSystem'));
+  setQuery('.ov-instruction', `${t('overlay.loadingModel')}<br>${t('overlay.prepareCamera')}`);
+  setText('calibHint', t('overlay.waitingForHands'));
+  setText('ovBtn', t('overlay.continue'));
+  setText('ovBtnCalib', t('overlay.retryCalibration'));
+  setText('ovBtnMenu', t('gameover.mainMenu'));
+
+  setQuery('.cam-tag:not(.ml)', t('camera.raw'));
+  setQuery('.cam-tag.ml', t('camera.mlTracking'));
+
+  setQuery('.map-time-row span:first-child', t('hud.progress'));
+}
+
+applyTranslations();
+
 function withDevQuery(url: string): string {
   const current = new URLSearchParams(location.search);
   const target  = new URL(url, location.href);
