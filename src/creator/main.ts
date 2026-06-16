@@ -1011,8 +1011,14 @@ document.addEventListener('drop', (e: DragEvent) => {
   if (f) void handleFile(f);
 });
 
+const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
+
 async function handleFile(file: File): Promise<void> {
   try {
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      showAlert('File is too large (max 100 MB)', { title: 'Plik za duży' });
+      return;
+    }
     assertFileSize(file);
     if (file.type.startsWith('audio/') || AUDIO_EXT_RE.test(file.name)) {
       await loadAudioFile(file);
