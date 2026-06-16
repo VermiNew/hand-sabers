@@ -1,5 +1,6 @@
 import { S, state } from '../core/state.ts';
 import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu } from '../ui/ui.ts';
+import { translateDOM } from '../i18n/index.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
@@ -35,6 +36,7 @@ declare global {
 
 // ── Ustawienia ────────────────────────────────────────────────────────────────
 const settings = loadSettings();
+translateDOM();
 if (settings.saberColorLeft)  setSaberColor('left',  settings.saberColorLeft);
 if (settings.saberColorRight) setSaberColor('right', settings.saberColorRight);
 window.__trackingSensitivity = settings.sensitivity;

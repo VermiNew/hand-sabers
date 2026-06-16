@@ -21,6 +21,7 @@ export function getCurrentLang(): Lang {
 export function setLang(lang: Lang): void {
   currentLang = lang;
   localStorage.setItem('lang', lang);
+  translateDOM();
 }
 
 export function t(key: string, params?: Record<string, string | number>): string {
@@ -45,5 +46,22 @@ export function t(key: string, params?: Record<string, string | number>): string
 
   return value.replace(/\{(\w+)\}/g, (_, paramKey: string) => {
     return params[paramKey] !== undefined ? String(params[paramKey]) : `{${paramKey}}`;
+  });
+}
+
+export function translateDOM(): void {
+  const elements = document.querySelectorAll('[data-i18n]');
+  elements.forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (!key) return;
+
+    const attr = el.getAttribute('data-i18n-attr');
+    const translated = t(key);
+
+    if (attr) {
+      el.setAttribute(attr, translated);
+    } else {
+      el.textContent = translated;
+    }
   });
 }

@@ -7,5 +7,14 @@
     "playAgain": "PLAY AGAIN",
     "calibration": "CALIBRATION",
     "mainMenu": "MAIN MENU"
+  },
+  "menu": {
+    "singleplayer": "Singleplayer",
+    "multiplayer": "Multiplayer",
+    "calibration": "Calibration",
+    "settings": "Settings",
+    "help": "Help",
+    "maps": "Maps",
+    "creator": "Creator"
   }
 }
