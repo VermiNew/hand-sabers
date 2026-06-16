@@ -36,5 +36,10 @@
     "loadFailed": "Failed to load model or dependencies.<br>Check your internet connection and refresh the page.",
     "cameraBusy": "Camera is busy.<br>Close other tabs/apps using the camera and restart.",
     "cameraPermission": "Check camera permissions and refresh the page."
+  },
+  "game": {
+    "unknownTrack": "Unknown track",
+    "pauseHands": "PAUSE — HANDS",
+    "pause": "PAUSE"
   }
 }

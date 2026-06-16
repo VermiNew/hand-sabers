@@ -260,7 +260,7 @@ async function beginPlaying(): Promise<void> {
     await ensureCurrentMapAudio();
     resetMapSpawn();
     startMapTimeline(performance.now());
-    showMapTitle(state.map.meta?.title ?? 'Nieznany utwór');
+    showMapTitle(state.map.meta?.title ?? t('game.unknownTrack'));
   } else {
     resetMapTimeline();
   }
@@ -334,7 +334,7 @@ function pauseGame(reason: PauseReason, now = performance.now()): void {
     hideHandsPaused();
     showPauseMenu();
   }
-  if (ui.dStatus) ui.dStatus.textContent = reason === PAUSE_REASONS.HANDS ? 'PAUZA — RĘCE' : 'PAUZA';
+  if (ui.dStatus) ui.dStatus.textContent = reason === PAUSE_REASONS.HANDS ? t('game.pauseHands') : t('game.pause');
 }
 
 function resumeGame(now = performance.now()): void {
