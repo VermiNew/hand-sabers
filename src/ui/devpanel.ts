@@ -26,6 +26,7 @@ interface DevData {
   graphicsMode: string; graphicsProfile: string; renderScale: number; canvasSize: string; drawingBuffer: string; gpuRenderer: string; toneMapping: string; antialias: string; shadows: boolean; reflections: boolean;
   activeBlocks: number; activeSparks: number; pooledBlocks: number; pooledBombs: number; pooledShards: number; combo: number; score: number; lives: number;
   songTime: number; nearestBeatDeltaMs: number; audioOffsetMs: number;
+  nearestBeat1: string; nearestBeat2: string; nearestBeat3: string;
   leftActive: boolean; rightActive: boolean; filteredHands: number; rawHands: number;
   wireframe: boolean; noFail: boolean; developerMode: boolean;
   sensitivity: number; flipCamera: boolean;
@@ -42,6 +43,7 @@ declare global {
     __songTimeSec?: number;
     __audioOffsetMs?: number;
     __nearestBeatDeltaMs?: number | null;
+    __nearestBeats?: Array<{ deltaMs: number; side: string; cut: string }> | null;
     __prewarmedBlockPool?: number;
     __prewarmedBombPool?: number;
     __prewarmedShardPool?: number;
@@ -61,6 +63,7 @@ interface TweakpaneInstance {
 interface TweakpaneFolder {
   addMonitor(obj: DevData, key: string, opts?: Record<string, unknown>): void;
   addInput(obj: DevData, key: string, opts?: Record<string, unknown>): { on(event: string, cb: (ev: { value: unknown }) => void): void };
+  addFolder?(opts: { title: string }): TweakpaneFolder;
   addSeparator?(): void;
   addBlade?(opts: Record<string, unknown>): void;
 }
@@ -84,6 +87,7 @@ const devData: DevData = {
   graphicsMode: '—', graphicsProfile: '—', renderScale: 1, canvasSize: '—', drawingBuffer: '—', gpuRenderer: '—', toneMapping: '—', antialias: '—', shadows: false, reflections: false,
   activeBlocks: 0, activeSparks: 0, pooledBlocks: 0, pooledBombs: 0, pooledShards: 0, combo: 0, score: 0, lives: 0,
   songTime: 0, nearestBeatDeltaMs: 0, audioOffsetMs: 0,
+  nearestBeat1: '—', nearestBeat2: '—', nearestBeat3: '—',
   leftActive: false, rightActive: false, filteredHands: 0, rawHands: 0,
   wireframe: false, noFail: false, developerMode: false,
   sensitivity: 1.0, flipCamera: false,
@@ -392,6 +396,12 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     game.addMonitor(devData, 'pooledShards', { label: 'Pool shards', interval: 1000 });
     game.addMonitor(devData, 'songTime',           { label: 'Song time', interval: 100 });
     game.addMonitor(devData, 'nearestBeatDeltaMs', { label: 'Beat Δ ms', interval: 100 });
+    const nearestFolder = game.addFolder?.({ title: 'Nearest beats' });
+    if (nearestFolder) {
+      nearestFolder.addMonitor(devData, 'nearestBeat1', { label: 'Beat 1', interval: 100 });
+      nearestFolder.addMonitor(devData, 'nearestBeat2', { label: 'Beat 2', interval: 100 });
+      nearestFolder.addMonitor(devData, 'nearestBeat3', { label: 'Beat 3', interval: 100 });
+    }
 
     // ── TRACK ──
     const track = tabs.pages[2]!;
@@ -507,6 +517,10 @@ export function tickDevPanel(renderer: THREE.WebGLRenderer, now: number, renderM
   devData.songTime     = +(window.__songTimeSec ?? 0).toFixed(3);
   devData.audioOffsetMs       = window.__audioOffsetMs ?? devData.audioOffsetMs;
   devData.nearestBeatDeltaMs  = window.__nearestBeatDeltaMs ?? 0;
+  const nb = window.__nearestBeats ?? [];
+  devData.nearestBeat1 = nb[0] ? `${nb[0].deltaMs}ms | ${nb[0].side} | ${nb[0].cut}` : '—';
+  devData.nearestBeat2 = nb[1] ? `${nb[1].deltaMs}ms | ${nb[1].side} | ${nb[1].cut}` : '—';
+  devData.nearestBeat3 = nb[2] ? `${nb[2].deltaMs}ms | ${nb[2].side} | ${nb[2].cut}` : '—';
   devData.leftActive   = state.handsLeftActive;
   devData.rightActive  = state.handsRightActive;
   devData.filteredHands = gameStats.filteredHands;
