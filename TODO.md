@@ -39,10 +39,10 @@
 - [ ] Dodać osobny ekran diagnostyczny kamery bez `?dev`
 
 ## 8. i18n — Polski i Angielski
-- [ ] Wybrać bibliotekę lub prosty system kluczy (np. `t('key')`)
-- [ ] Wyekstrahować wszystkie ciągi UI do plików tłumaczeń `pl.json` / `en.json`
-- [ ] Dodać przełącznik języka w ustawieniach
-- [ ] Przetłumaczyć UI na angielski
+- [x] Wybrać bibliotekę lub prosty system kluczy (np. `t('key')`)
+- [x] Wyekstrahować wszystkie ciągi UI do plików tłumaczeń `pl.json` / `en.json`
+- [x] Dodać przełącznik języka w ustawieniach
+- [x] Przetłumaczyć UI na angielski
 
 ## 9. Tutorial
 - [ ] Zaprojektować flow tutoriala (krok po kroku: kalibracja → ruch → trafienie)
