@@ -1,0 +1,11 @@
+{
+  "gameover": {
+    "title": "KONIEC GRY",
+    "score": "Wynik",
+    "bestCombo": "Najlepsze combo",
+    "resetCalibration": "Resetuję kalibrację...",
+    "playAgain": "ZAGRAJ PONOWNIE",
+    "calibration": "KALIBRACJA",
+    "mainMenu": "MENU GŁÓWNE"
+  }
+}
