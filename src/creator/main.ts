@@ -178,7 +178,7 @@ async function decodeAndAttachAudio(arrayBuffer: ArrayBuffer, { fileName = 'audi
   } catch (err) {
     audioBuffer = null;
     audioArrayBuffer = null;
-    throw new Error(`Failed to decode audio: ${(err as Error).message}`);
+    throw new Error(`Nie udało się zdekodować audio: ${(err as Error).message}`);
   }
 
   if (!keepMapId) map.id = MAP_ID();
@@ -930,7 +930,7 @@ async function saveMap(): Promise<void> {
     downloadMapJsonFallback(map);
     lastSavedAt = new Date();
     autosaveLbl.textContent = `zapis lokalny/export JSON: ${lastSavedAt.toLocaleTimeString()} — ${(err as Error).message}`;
-    showToast('Server unavailable — downloaded JSON as backup', { type: 'error' });
+    showToast('Serwer niedostępny — pobrano JSON jako kopię zapasową', { type: 'error' });
   }
 }
 
@@ -956,7 +956,7 @@ async function exportZip(): Promise<void> {
     a.click();
     URL.revokeObjectURL(url);
   } catch (err) {
-    showAlert('ZIP export failed: ' + (err as Error).message, { title: 'Export error' });
+    showAlert('Eksport ZIP nie powiódł się: ' + (err as Error).message, { title: 'Błąd eksportu ZIP' });
   }
 }
 
@@ -1016,7 +1016,7 @@ const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 async function handleFile(file: File): Promise<void> {
   try {
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      showAlert('File is too large (max 100 MB)', { title: 'Plik za duży' });
+      showAlert('Plik jest za duży (maks. 100 MB)', { title: 'Plik za duży' });
       return;
     }
     assertFileSize(file);
@@ -1034,7 +1034,7 @@ async function handleFile(file: File): Promise<void> {
       songNameEl.textContent = map.meta?.title ?? file.name;
       songDurEl.textContent  = formatTime(map.meta?.duration ?? 0);
       const restored = await restoreAudioForCurrentMap();
-      if (!restored) warningMsg.textContent = 'Map loaded without audio — drop audio or ZIP file.';
+      if (!restored) warningMsg.textContent = 'Wczytano mapę bez dźwięku — przeciągnij plik audio lub ZIP.';
       saveLocalMap(map as unknown as Parameters<typeof saveLocalMap>[0]);
       renderAll();
       showToast('Mapa JSON wczytana', { type: 'success' });
@@ -1042,11 +1042,11 @@ async function handleFile(file: File): Promise<void> {
       await loadZipFile(file);
       showToast('ZIP wczytany', { type: 'success' });
     } else {
-      throw new Error(`Unsupported file format: ${file.name}`);
+      throw new Error(`Nieobsługiwany format pliku: ${file.name}. Obsługiwane: audio (.mp3, .ogg, .wav), .json, .zip`);
     }
   } catch (err) {
     warningMsg.textContent = (err as Error).message;
-    showAlert((err as Error).message, { title: 'Failed to load file' });
+    showAlert((err as Error).message, { title: 'Nie udało się wczytać pliku' });
   }
 }
 
@@ -1056,7 +1056,7 @@ async function loadZipFile(file: File): Promise<void> {
   const zip       = await JSZip.loadAsync(await file.arrayBuffer());
   validateZipEntryNames(Object.values(zip.files));
   const jsonFile  = zip.file('map.json');
-  if (!jsonFile) throw new Error('ZIP does not contain map.json');
+  if (!jsonFile) throw new Error('Archiwum ZIP nie zawiera pliku map.json');
   const loadedMap = JSON.parse(await jsonFile.async('string')) as Record<string, unknown>;
   map = normalizeMap({ id: (loadedMap['id'] as string | undefined) || MAP_ID(), ...loadedMap }, { fallbackId: MAP_ID(), requireBeats: false }) as unknown as CreatorMap;
   sortBeatsByTime(map.beats);

@@ -28,9 +28,9 @@
 
 ## 7. TODO techniczne (backlog)
 - [ ] Przetestować `audioOffsetMs` na kilku urządzeniach (Bluetooth, przewodowe, głośniki)
-- [ ] Ujednolicić creator i gameplay wokół `src/core/timing.ts`
+- [x] Ujednolicić creator i gameplay wokół `src/core/timing.ts`
 - [x] Dodać komunikat UI przy pliku >100 MB zamiast alertu
-- [ ] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`
+- [x] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`
 - [ ] Dodać ustawienie prędkości nut / difficulty presets (bez zmiany `beat.t`)
 - [ ] Dodać tryb treningowy (wolniejsze tempo, bez zapisu wyniku)
 - [ ] Dodać lepsze feedbacki trafienia: kierunek cięcia, accuracy ms

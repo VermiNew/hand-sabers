@@ -377,7 +377,7 @@ async function importMapFile(file) {
       await loadMaps();
     } catch (localErr) {
       setImportStatus(`Błąd importu: ${localErr.message}`, 'error');
-      showAlert(`Błąd importu: ${localErr.message}`, { title:'Błąd importu' });
+      showAlert(`Błąd importu: ${localErr.message}`, { title:'Import mapy nie powiódł się' });
     }
   } finally {
     importMapInput.value = '';
