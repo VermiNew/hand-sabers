@@ -98,7 +98,7 @@ function clearDangerPulse(): void {
   document.body.classList.remove('danger-pulse', 'danger-low', 'danger-crit');
 }
 
-export function showHandsPaused(text = 'UTRACONO RĘCE — STAŃ PRZED KAMERĄ'): void {
+export function showHandsPaused(text = t('pause.handsLost')): void {
   if (ui.pauseSub)    ui.pauseSub.textContent = text;
   if (ui.pauseBanner) ui.pauseBanner.classList.add('show');
 }
@@ -176,16 +176,16 @@ export function showCameraError(err: unknown): void {
   const cameraErrors = new Set(['NotAllowedError', 'NotFoundError', 'NotReadableError', 'OverconstrainedError', 'SecurityError']);
   const isCameraError = cameraErrors.has(name);
   const isBusyCamera  = name === 'NotReadableError' || /allocate videosource|start video source|camera is already in use/i.test(message);
-  let hint = 'Nie udało się załadować modelu lub zależności.<br>Sprawdź internet i odśwież stronę.';
-  if (isBusyCamera)       hint = 'Kamera jest zajęta.<br>Zamknij inne karty/aplikacje z kamerą i uruchom ponownie.';
-  else if (isCameraError) hint = 'Sprawdź uprawnienia do kamery i odśwież stronę.';
+  let hint = t('errors.loadFailed');
+  if (isBusyCamera)       hint = t('errors.cameraBusy');
+  else if (isCameraError) hint = t('errors.cameraPermission');
 
   if (ui.spinner) ui.spinner.style.display = 'none';
   if (ui.ovInstr) ui.ovInstr.innerHTML =
-    `<span class="message-title">${iconMarkup('circle-x', 'message-icon')}<span>${isCameraError ? 'BŁĄD KAMERY' : 'BŁĄD STARTU'}</span></span><br><br>
+    `<span class="message-title">${iconMarkup('circle-x', 'message-icon')}<span>${isCameraError ? t('errors.cameraError') : t('errors.startError')}</span></span><br><br>
      ${message}<br><br>${hint}`;
   refreshIcons();
-  if (ui.dStatus) ui.dStatus.textContent = 'BŁĄD';
+  if (ui.dStatus) ui.dStatus.textContent = t('errors.error');
 }
 
 export function showGameOver(state: GameState): void {

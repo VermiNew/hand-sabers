@@ -28,5 +28,13 @@
     "help": "Pomoc",
     "maps": "Mapy",
     "creator": "Kreator"
+  },
+  "errors": {
+    "cameraError": "BŁĄD KAMERY",
+    "startError": "BŁĄD STARTU",
+    "error": "BŁĄD",
+    "loadFailed": "Nie udało się załadować modelu lub zależności.<br>Sprawdź internet i odśwież stronę.",
+    "cameraBusy": "Kamera jest zajęta.<br>Zamknij inne karty/aplikacje z kamerą i uruchom ponownie.",
+    "cameraPermission": "Sprawdź uprawnienia do kamery i odśwież stronę."
   }
 }

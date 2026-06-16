@@ -28,5 +28,13 @@
     "help": "Help",
     "maps": "Maps",
     "creator": "Creator"
+  },
+  "errors": {
+    "cameraError": "CAMERA ERROR",
+    "startError": "STARTUP ERROR",
+    "error": "ERROR",
+    "loadFailed": "Failed to load model or dependencies.<br>Check your internet connection and refresh the page.",
+    "cameraBusy": "Camera is busy.<br>Close other tabs/apps using the camera and restart.",
+    "cameraPermission": "Check camera permissions and refresh the page."
   }
 }
