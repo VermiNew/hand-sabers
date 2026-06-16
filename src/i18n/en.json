@@ -1,0 +1,25 @@
+{
+  "gameover": {
+    "title": "GAME OVER",
+    "score": "Score",
+    "bestCombo": "Best combo",
+    "resetCalibration": "Resetting calibration...",
+    "playAgain": "PLAY AGAIN",
+    "calibration": "CALIBRATION",
+    "mainMenu": "MAIN MENU"
+  },
+  "pause": {
+    "title": "PAUSE",
+    "handsLost": "HANDS LOST — STAND IN FRONT OF CAMERA",
+    "resume": "RESUME",
+    "restart": "PLAY AGAIN",
+    "maps": "MAPS",
+    "mainMenu": "MAIN MENU"
+  },
+  "nav": {
+    "settings": "Settings",
+    "help": "Help",
+    "maps": "Maps",
+    "creator": "Creator"
+  }
+}

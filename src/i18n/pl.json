@@ -1,0 +1,25 @@
+{
+  "gameover": {
+    "title": "KONIEC GRY",
+    "score": "Wynik",
+    "bestCombo": "Najlepsze combo",
+    "resetCalibration": "Resetowanie kalibracji...",
+    "playAgain": "ZAGRAJ PONOWNIE",
+    "calibration": "KALIBRACJA",
+    "mainMenu": "MENU GŁÓWNE"
+  },
+  "pause": {
+    "title": "PAUZA",
+    "handsLost": "UTRACONO RĘCE — STAŃ PRZED KAMERĄ",
+    "resume": "WRÓĆ DO GRY",
+    "restart": "ZAGRAJ PONOWNIE",
+    "maps": "MAPY",
+    "mainMenu": "MENU GŁÓWNE"
+  },
+  "nav": {
+    "settings": "Ustawienia",
+    "help": "Pomoc",
+    "maps": "Mapy",
+    "creator": "Kreator"
+  }
+}
