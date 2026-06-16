@@ -943,9 +943,9 @@ async function exportZip(): Promise<void> {
     if (audioArrayBuffer) {
       zip.file(audioFileName || map.meta?.audioFile || 'audio.bin', audioArrayBuffer!.slice(0) as ArrayBuffer);
     } else {
-      const restored = await restoreAudioForCurrentMap();
-      const buf = audioArrayBuffer;
-      if (restored && buf) zip.file(audioFileName || map.meta?.audioFile || 'audio.bin', buf.slice(0));
+      await restoreAudioForCurrentMap();
+      const restoredBuf = audioArrayBuffer as ArrayBuffer | null;
+      if (restoredBuf) zip.file(audioFileName || map.meta?.audioFile || 'audio.bin', restoredBuf.slice(0));
       else if (!await showConfirm('Nie mam audio w pamięci. Wyeksportować ZIP tylko z map.json?', { title: 'Eksport bez audio', confirmText: 'EKSPORTUJ', cancelText: 'ANULUJ' })) return;
     }
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
