@@ -30,7 +30,7 @@ interface NotePositionOptions {
   approachSec?: number;
 }
 
-interface NearestBeat<T extends TimingBeat> {
+export interface NearestBeat<T extends TimingBeat> {
   beat: T;
   timeSec: number;
   deltaMs: number;
@@ -123,4 +123,29 @@ export function nearestBeatDeltaMs<T extends TimingBeat>(
     }
   }
   return best;
+}
+
+export function nearestBeats<T extends TimingBeat>(
+  beats: readonly T[] | null | undefined,
+  songTimeSec: number,
+  count: number,
+): NearestBeat<T>[] {
+  if (!Array.isArray(beats) || !beats.length || count <= 0) return [];
+
+  const withDelta: NearestBeat<T>[] = beats.map(beat => ({
+    beat,
+    timeSec: getBeatHitTimeSec(beat),
+    deltaMs: Math.round((getBeatHitTimeSec(beat) - songTimeSec) * 1000),
+  }));
+
+  withDelta.sort((a, b) => {
+    const absA = Math.abs(a.deltaMs);
+    const absB = Math.abs(b.deltaMs);
+    if (absA !== absB) return absA - absB;
+    if (a.deltaMs >= 0 && b.deltaMs < 0) return -1;
+    if (a.deltaMs < 0 && b.deltaMs >= 0) return 1;
+    return 0;
+  });
+
+  return withDelta.slice(0, count);
 }
