@@ -1,0 +1,23 @@
+:root {
+  --main:        #2f7cff;
+  --main-soft:   rgba(47,124,255,0.32);
+  --main-glow:   rgba(47,124,255,0.42);
+  --main-light:  #8ec8ff;
+  --accent:      #36f2a1;
+  --accent-soft: rgba(54,242,161,0.25);
+  --gray:        #94a3b8;
+  --gray-soft:   rgba(148,163,184,0.72);
+  --bg:          #05070d;
+  --panel:       rgba(7,17,29,0.84);
+  --text:        #e2e8f0;
+  --muted:       rgba(226,232,240,0.62);
+  --dim:         rgba(226,232,240,0.38);
+  --left:        var(--accent);
+  --right:       var(--main);
+  --bomb:        #ff3a3a;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+html { color-scheme:dark; }
+body { background:var(--bg); overflow:hidden; font-family:'JetBrains Mono',monospace; color:var(--text); }
+
+#gameCanvas { position:fixed; inset:0; width:100vw; height:100vh; display:block; }

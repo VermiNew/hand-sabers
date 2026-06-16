@@ -1,0 +1,61 @@
+/* ── BUTTONS ── */
+.ov-btn {
+  background:transparent; border:1px solid rgba(47,124,255,0.42);
+  color:var(--main); font-family:'JetBrains Mono',monospace;
+  font-size:12px; padding:13px 36px; cursor:pointer; border-radius:4px;
+  transition:all .2s; display:inline-flex; align-items:center;
+  justify-content:center; gap:10px; min-width:150px; white-space:nowrap;
+}
+.btn-label { letter-spacing:4px; }
+.ov-btn:hover { background:rgba(47,124,255,0.1); border-color:var(--main); box-shadow:0 0 24px rgba(47,124,255,0.28); }
+.ov-btn:disabled { opacity:0.3; cursor:not-allowed; }
+.ov-btn.danger { border-color:rgba(255,58,58,0.42); color:var(--bomb); }
+.ov-btn.danger:hover { background:rgba(255,58,58,0.1); border-color:var(--bomb); box-shadow:0 0 24px rgba(255,58,58,0.28); }
+
+/* ── ICONS ── */
+.icon-inline,.btn-icon,.message-icon,.verdict-icon {
+  width:1em; height:1em; display:inline-block; vertical-align:-0.15em; flex:0 0 auto;
+}
+.btn-icon { width:16px; height:16px; }
+.message-title { display:inline-flex; align-items:center; justify-content:center; gap:8px; color:var(--gray); }
+.message-icon  { width:20px; height:20px; }
+.verdict-icon  { width:18px; height:18px; }
+
+/* ── SPINNER ── */
+.spinner {
+  width:36px; height:36px; border:2px solid rgba(47,124,255,0.16);
+  border-top-color:var(--main); border-radius:50%;
+  animation:spin 1s linear infinite; margin:0 auto 18px;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── MISC ── */
+.score-highlight { color:var(--accent); font-size:20px; }
+.muted-small     { color:var(--dim); font-size:11px; }
+.dot {
+  display:inline-block; width:7px; height:7px; border-radius:50%;
+  margin-right:4px; background:rgba(226,232,240,0.18);
+  transition:background 0.2s,box-shadow 0.2s;
+}
+.dot.active-l { background:var(--left);  box-shadow:0 0 8px var(--left); }
+.dot.active-r { background:var(--right); box-shadow:0 0 8px var(--right); }
+
+/* Modern refresh: Material icons */
+.material-symbols-rounded {
+  font-family:'Material Symbols Rounded';
+  font-weight:normal; font-style:normal; font-size:1em; line-height:1;
+  letter-spacing:normal; text-transform:none; display:inline-flex;
+  align-items:center; justify-content:center; white-space:nowrap; direction:ltr;
+  font-feature-settings:'liga'; -webkit-font-feature-settings:'liga';
+  -webkit-font-smoothing:antialiased;
+}
+
+.btn-icon.material-symbols-rounded,
+.icon-inline.material-symbols-rounded,
+.message-icon.material-symbols-rounded,
+.verdict-icon.material-symbols-rounded {
+  width:1em; height:1em;
+}
+.btn-icon.material-symbols-rounded { font-size:18px; }
+.message-icon.material-symbols-rounded { font-size:22px; }
+.verdict-icon.material-symbols-rounded { font-size:20px; }
