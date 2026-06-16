@@ -530,3 +530,7 @@
   background:#36f2a1;
   box-shadow:0 0 14px rgba(54,242,161,0.46);
 }
+
+.lang-active {
+  outline: 2px solid var(--accent, #36f2a1);
+}

@@ -18,7 +18,7 @@ import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes,
 import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeatDeltaMs, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
-import { t } from '../i18n/index.ts';
+import { t, setLang, getCurrentLang } from '../i18n/index.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
 declare global {
@@ -916,6 +916,29 @@ function initMainMenu(): void {
   window.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && isSettingsPanelVisible()) setSettingsPanelVisible(false);
   });
+
+  const btnLangPl = document.getElementById('btnLangPl');
+  const btnLangEn = document.getElementById('btnLangEn');
+
+  function updateLangButtons(): void {
+    const currentLang = getCurrentLang();
+    btnLangPl?.classList.toggle('lang-active', currentLang === 'pl');
+    btnLangEn?.classList.toggle('lang-active', currentLang === 'en');
+  }
+
+  btnLangPl?.addEventListener('click', () => {
+    setLang('pl');
+    updateLangButtons();
+    applyTranslations();
+  });
+
+  btnLangEn?.addEventListener('click', () => {
+    setLang('en');
+    updateLangButtons();
+    applyTranslations();
+  });
+
+  updateLangButtons();
 
   if (volumeInput) {
     volumeInput.value = String(settings.volume ?? 0.8);
