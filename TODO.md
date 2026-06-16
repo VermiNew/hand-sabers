@@ -1,43 +1,98 @@
 # TODO — Hand Sabers
 
-## Najbliższe kroki
+## 1. Migracja JS → TS
+- [x] Przenieść wszystkie `.js` na `.ts` (zostaje tylko `src/vendor/jszip.min.js`)
 
-- [ ] Przetestować `audioOffsetMs` na kilku urządzeniach: laptopowe głośniki, słuchawki przewodowe, Bluetooth. Jeśli Bluetooth mocno odstaje, dodać preset offsetu.
-- [ ] Dodać wizualny marker `hit plane` w trybie `?dev`, żeby było widać dokładne miejsce trafienia kostki.
-- [ ] Dodać w dev panelu podgląd najbliższych 3 beatów: czas nuty, delta ms, strona, typ.
-- [ ] Ujednolicić creator i gameplay wokół jednego modułu `src/core/timing.ts`; podstawy już są, ale edytor może jeszcze dostać czytelny preview „hit now”.
-- [x] Dodać testy jednostkowe dla `normalizeMap`, `isSafeZipPath`, `noteZAtSongTime` i `getSongTimeSec`.
+## 2. UX całości gry
+- [ ] Przejrzeć i poprawić flow każdego ekranu (menu, kalibracja, gameplay, game over)
+- [ ] Spójne animacje przejść między ekranami
+- [ ] Lepszy feedback dla gracza (dźwięki, wibracje wizualne)
 
-## Mapy i import/export
+## 3. Ustawienia
+- [ ] Przeprojektować panel ustawień — czytelne sekcje (audio, grafika, sterowanie, gameplay)
+- [ ] Podgląd zmian na żywo (np. głośność, kolor mieczy) bez restartu
+- [ ] Zapisywanie i resetowanie ustawień do domyślnych
 
-- [x] Rozszerzyć format mapy o formalne `meta.bpm`, `meta.artist`, `meta.mapper`, `meta.difficulty`, `meta.previewStartSec`.
-- [x] Dodać `upgradeMapFormat(map)`, żeby stare mapy można było automatycznie migrować przy ładowaniu.
-- [x] Zapisywać beatdata po stronie serwera w `maps/beatdata/<id>.json`.
-- [x] Zapisywać audio z kreatora/importu ZIP w `maps/audio/<id>.<ext>`.
-- [x] Odczytywać legacy mapy z `maps/<id>.json` i legacy audio z `maps/_audio/`.
-- [x] Eksportować ZIP z `map.json` i audio, jeśli audio jest zapisane na serwerze.
-- [ ] Dodać komunikat UI przy pliku >100 MB zamiast samego alertu/błędu technicznego.
+## 4. Panel debugowania
+- [x] Podstawowy dev panel (FPS, timing, pool)
+- [ ] Dodać wizualny marker `hit plane` w trybie `?dev`
+- [ ] Podgląd najbliższych 3 beatów: czas nuty, delta ms, strona, typ
 
-## Stabilność i bezpieczeństwo
+## 5. Trzy modele mieczy
+- [ ] Zaimplementować wybór spośród 3 modeli geometrii miecza (np. klasyczny, szeroki, cienki)
+- [ ] Picker modelu w ustawieniach z podglądem 3D
 
-- [x] Dodać testy dla złych ZIP-ów: brak `map.json`, złe ścieżki, niepoprawny JSON, brak beatów.
-- [x] Dodać walidację audio w creatorze: obsługiwany format, czy dekodowanie przeszło, duration > 0.
-- [x] Dodać limit długości mapy / liczby beatów, żeby przypadkowa mapa z milionem obiektów nie zabiła przeglądarki.
-- [x] Zrobić osobny moduł `server/storage/*` dla map, wyników i późniejszego audio.
-- [ ] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`.
+## 6. Więcej kolorów i lepszy picker
+- [ ] Zastąpić prosty input[type=color] pełnym color pickerem (HSL/HEX/RGB)
+- [ ] Więcej presetów kolorów dla mieczy
 
-## Gameplay / feel
+## 7. TODO techniczne (backlog)
+- [ ] Przetestować `audioOffsetMs` na kilku urządzeniach (Bluetooth, przewodowe, głośniki)
+- [ ] Ujednolicić creator i gameplay wokół `src/core/timing.ts`
+- [ ] Dodać komunikat UI przy pliku >100 MB zamiast alertu
+- [ ] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`
+- [ ] Dodać ustawienie prędkości nut / difficulty presets (bez zmiany `beat.t`)
+- [ ] Dodać tryb treningowy (wolniejsze tempo, bez zapisu wyniku)
+- [ ] Dodać lepsze feedbacki trafienia: kierunek cięcia, accuracy ms
+- [ ] Rozważyć własne sample audio (import `.wav/.ogg`) dla trafienia/bomby/pudła
+- [ ] Przejrzeć hitboxy po kalibracji; dodać opcję czułości niezależną od tracking sensitivity
+- [ ] Dodać osobny ekran diagnostyczny kamery bez `?dev`
 
-- [ ] Dodać ustawienie prędkości nut lub difficulty presets, ale bez zmiany znaczenia czasu nuty — `beat.t` zawsze musi oznaczać moment trafienia.
-- [ ] Dodać tryb treningowy z wolniejszym tempem i bez zapisu wyniku.
-- [ ] Dodać lepsze feedbacki trafienia: kierunek cięcia, accuracy ms, osobny efekt perfect/good/bad.
-- [ ] Rozważyć własne sample audio w ustawieniach, np. import pliku `.wav/.ogg` dla trafienia, bomby i pudła. Obecnie wszystkie dźwięki mają osobne suwaki głośności.
-- [ ] Przejrzeć hitboxy mieczy po kalibracji i dodać opcję czułości hitboxów niezależną od tracking sensitivity.
-- [ ] Dodać osobny ekran diagnostyczny kamery także bez `?dev`.
+## 8. i18n — Polski i Angielski
+- [ ] Wybrać bibliotekę lub prosty system kluczy (np. `t('key')`)
+- [ ] Wyekstrahować wszystkie ciągi UI do plików tłumaczeń `pl.json` / `en.json`
+- [ ] Dodać przełącznik języka w ustawieniach
+- [ ] Przetłumaczyć UI na angielski
 
-## Refactor
+## 9. Tutorial
+- [ ] Zaprojektować flow tutoriala (krok po kroku: kalibracja → ruch → trafienie)
+- [ ] Overlay z instrukcjami wyświetlany przy pierwszym uruchomieniu
+- [ ] Możliwość pominięcia i powrotu do tutoriala z menu
 
-- [ ] Rozbić `map-creator.html` na moduły: audio, ZIP, storage, waveform, UI, input.
-- [ ] Przenieść CSS dużych overlayów/menu do mniejszych sekcji lub plików.
-- [x] Przenieść serwer do `server/index.js`, `server/routes`, `server/storage`.
-- [ ] Po stabilizacji przejść pełniej na Vite, ale dopiero gdy mapy/audio/timing są już przewidywalne.
+## 10. Menu pomocy
+- [ ] Strona/overlay "Jak grać" dostępna z głównego menu
+- [ ] Sekcje: sterowanie, scoring, ustawienia kamery, FAQ
+
+## 11. Multiplayer
+- [ ] Architektura: WebSocket server, synchronizacja stanu gry
+- [ ] Tryb współpracy (co-op) i rywalizacji (score attack)
+- [ ] Synchronizacja beatów i wyników w czasie rzeczywistym
+
+## 12. Lobby do Multiplayer
+- [ ] Tworzenie i dołączanie do pokoju (kod/link)
+- [ ] Lista graczy w lobby z gotowością
+- [ ] Wybór mapy przez hosta
+
+## 13. Optymalizacja dla słabych PC
+- [ ] Profilowanie — znaleźć główne wąskie gardła na niskich ustawieniach
+- [ ] Dalsze obniżanie jakości grafiki (wyłączenie mgły, siatek, efektów)
+- [ ] Adaptive quality — automatyczne obniżanie gdy FPS spada poniżej progu
+
+## 14. Kamera/ML na telefon (remote tracking)
+- [ ] Architektura: telefon jako klient kamery + WebRTC lub WebSocket
+- [ ] Parowanie przez QR code lub kod z ekranu
+- [ ] Przekazywanie danych śledzenia rąk z telefonu do przeglądarki PC
+
+## 15. Lepsza rozgrywka
+- [ ] Balans trudności — krzywa nauki
+- [ ] Więcej wzorców sekwencji beatów
+- [ ] Efekty trafienia bardziej satysfakcjonujące (shake, flash, dźwięk)
+
+## 16. Edytor map
+- [ ] Rozbić `map-creator.html` na moduły: audio, ZIP, storage, waveform, UI, input
+- [ ] Czytelny preview "hit now" na osi czasu
+- [ ] Lepsze narzędzia do układania beatów (snap do BPM, kopiuj/wklej)
+- [ ] Podgląd mapy w trybie 3D podczas edycji
+
+## Mapy i import/export (zrobione)
+- [x] Rozszerzyć format mapy o `meta.bpm`, `meta.artist`, `meta.mapper`, `meta.difficulty`, `meta.previewStartSec`
+- [x] Dodać `upgradeMapFormat(map)` do automatycznej migracji starych map
+- [x] Zapisywać beatdata po stronie serwera w `maps/beatdata/<id>.json`
+- [x] Zapisywać audio z kreatora/importu ZIP w `maps/audio/<id>.<ext>`
+- [x] Odczytywać legacy mapy z `maps/<id>.json` i legacy audio z `maps/_audio/`
+- [x] Eksportować ZIP z `map.json` i audio
+- [x] Testy dla złych ZIP-ów i walidacja audio
+- [x] Limit długości mapy / liczby beatów
+- [x] Osobny moduł `server/storage/*`
+- [x] Przenieść serwer do `server/index.js`, `server/routes`, `server/storage`
+- [x] Testy jednostkowe dla `normalizeMap`, `isSafeZipPath`, `noteZAtSongTime`, `getSongTimeSec`
