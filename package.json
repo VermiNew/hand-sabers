@@ -27,6 +27,7 @@
   "dependencies": {
     "archiver": "^8.0.0",
     "express": "^5.2.1",
+    "i18next": "^26.3.1",
     "jszip": "^3.10.1",
     "multer": "^2.1.1"
   },
