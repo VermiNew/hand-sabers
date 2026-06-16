@@ -16,7 +16,7 @@
 ## 4. Panel debugowania
 - [x] Podstawowy dev panel (FPS, timing, pool)
 - [ ] Dodać wizualny marker `hit plane` w trybie `?dev`
-- [ ] Podgląd najbliższych 3 beatów: czas nuty, delta ms, strona, typ
+- [x] Podgląd najbliższych 3 beatów: czas nuty, delta ms, strona, typ
 
 ## 5. Trzy modele mieczy
 - [ ] Zaimplementować wybór spośród 3 modeli geometrii miecza (np. klasyczny, szeroki, cienki)
