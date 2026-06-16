@@ -15,7 +15,7 @@
 
 ## 4. Panel debugowania
 - [x] Podstawowy dev panel (FPS, timing, pool)
-- [ ] Dodać wizualny marker `hit plane` w trybie `?dev`
+- [x] Dodać wizualny marker `hit plane` w trybie `?dev`
 - [x] Podgląd najbliższych 3 beatów: czas nuty, delta ms, strona, typ
 
 ## 5. Trzy modele mieczy
@@ -29,7 +29,7 @@
 ## 7. TODO techniczne (backlog)
 - [ ] Przetestować `audioOffsetMs` na kilku urządzeniach (Bluetooth, przewodowe, głośniki)
 - [ ] Ujednolicić creator i gameplay wokół `src/core/timing.ts`
-- [ ] Dodać komunikat UI przy pliku >100 MB zamiast alertu
+- [x] Dodać komunikat UI przy pliku >100 MB zamiast alertu
 - [ ] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`
 - [ ] Dodać ustawienie prędkości nut / difficulty presets (bez zmiany `beat.t`)
 - [ ] Dodać tryb treningowy (wolniejsze tempo, bez zapisu wyniku)
