@@ -178,7 +178,7 @@ async function decodeAndAttachAudio(arrayBuffer: ArrayBuffer, { fileName = 'audi
   } catch (err) {
     audioBuffer = null;
     audioArrayBuffer = null;
-    throw new Error(`Nie udało się zdekodować audio: ${(err as Error).message}`);
+    throw new Error(`Failed to decode audio: ${(err as Error).message}`);
   }
 
   if (!keepMapId) map.id = MAP_ID();
@@ -930,7 +930,7 @@ async function saveMap(): Promise<void> {
     downloadMapJsonFallback(map);
     lastSavedAt = new Date();
     autosaveLbl.textContent = `zapis lokalny/export JSON: ${lastSavedAt.toLocaleTimeString()} — ${(err as Error).message}`;
-    showToast('Serwer niedostępny — pobrałem JSON jako kopię', { type: 'error' });
+    showToast('Server unavailable — downloaded JSON as backup', { type: 'error' });
   }
 }
 
@@ -946,7 +946,7 @@ async function exportZip(): Promise<void> {
       await restoreAudioForCurrentMap();
       const restoredBuf = audioArrayBuffer as ArrayBuffer | null;
       if (restoredBuf) zip.file(audioFileName || map.meta?.audioFile || 'audio.bin', restoredBuf.slice(0));
-      else if (!await showConfirm('Nie mam audio w pamięci. Wyeksportować ZIP tylko z map.json?', { title: 'Eksport bez audio', confirmText: 'EKSPORTUJ', cancelText: 'ANULUJ' })) return;
+      else if (!await showConfirm('No audio in memory. Export ZIP with map.json only?', { title: 'Export without audio', confirmText: 'EXPORT', cancelText: 'CANCEL' })) return;
     }
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
     const url  = URL.createObjectURL(blob);
@@ -956,7 +956,7 @@ async function exportZip(): Promise<void> {
     a.click();
     URL.revokeObjectURL(url);
   } catch (err) {
-    showAlert('Błąd eksportu ZIP: ' + (err as Error).message, { title: 'Błąd eksportu' });
+    showAlert('ZIP export failed: ' + (err as Error).message, { title: 'Export error' });
   }
 }
 
@@ -1034,7 +1034,7 @@ async function handleFile(file: File): Promise<void> {
       songNameEl.textContent = map.meta?.title ?? file.name;
       songDurEl.textContent  = formatTime(map.meta?.duration ?? 0);
       const restored = await restoreAudioForCurrentMap();
-      if (!restored) warningMsg.textContent = 'Mapa wczytana bez audio — wrzuć audio lub ZIP.';
+      if (!restored) warningMsg.textContent = 'Map loaded without audio — drop audio or ZIP file.';
       saveLocalMap(map as unknown as Parameters<typeof saveLocalMap>[0]);
       renderAll();
       showToast('Mapa JSON wczytana', { type: 'success' });
@@ -1042,11 +1042,11 @@ async function handleFile(file: File): Promise<void> {
       await loadZipFile(file);
       showToast('ZIP wczytany', { type: 'success' });
     } else {
-      throw new Error(`Nieznany format pliku: ${file.name}`);
+      throw new Error(`Unsupported file format: ${file.name}`);
     }
   } catch (err) {
     warningMsg.textContent = (err as Error).message;
-    showAlert((err as Error).message, { title: 'Nie udało się wczytać pliku' });
+    showAlert((err as Error).message, { title: 'Failed to load file' });
   }
 }
 
@@ -1056,7 +1056,7 @@ async function loadZipFile(file: File): Promise<void> {
   const zip       = await JSZip.loadAsync(await file.arrayBuffer());
   validateZipEntryNames(Object.values(zip.files));
   const jsonFile  = zip.file('map.json');
-  if (!jsonFile) throw new Error('Brak map.json w ZIP');
+  if (!jsonFile) throw new Error('ZIP does not contain map.json');
   const loadedMap = JSON.parse(await jsonFile.async('string')) as Record<string, unknown>;
   map = normalizeMap({ id: (loadedMap['id'] as string | undefined) || MAP_ID(), ...loadedMap }, { fallbackId: MAP_ID(), requireBeats: false }) as unknown as CreatorMap;
   sortBeatsByTime(map.beats);
@@ -1131,7 +1131,7 @@ async function loadInitialMap(): Promise<void> {
     if (saved) {
       const parsed = JSON.parse(saved) as Record<string, unknown>;
       if (parsed?.['beats'] && !audioBuffer) {
-        if (await showConfirm(`Znaleziono autosave "${parsed['meta'] ? (parsed['meta'] as Record<string, unknown>)['title'] : ''}". Wczytać?`, { title: 'Autosave', confirmText: 'WCZYTAJ', cancelText: 'POMIŃ' })) {
+        if (await showConfirm(`Found autosave "${parsed['meta'] ? (parsed['meta'] as Record<string, unknown>)['title'] : ''}". Load it?`, { title: 'Autosave', confirmText: 'LOAD', cancelText: 'SKIP' })) {
           map = normalizeMap({ formatVersion: 1, id: (parsed['id'] as string | undefined) || MAP_ID(), ...parsed }, { fallbackId: MAP_ID(), requireBeats: false }) as unknown as CreatorMap;
           sortBeatsByTime(map.beats);
           selectedBeats.clear();
