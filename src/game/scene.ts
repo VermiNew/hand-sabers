@@ -117,6 +117,23 @@ function rail(x: number, color: number): void {
 rail(-2.2, THEME.left);
 rail(2.2,  THEME.right);
 
+const HIT_Z = 1.5;
+const hitPlaneMat = new THREE.MeshBasicMaterial({
+  color: 0x00ffff,
+  transparent: true,
+  opacity: 0.08,
+  depthWrite: false,
+  side: THREE.DoubleSide,
+});
+const hitPlane = new THREE.Mesh(new THREE.PlaneGeometry(6, 3), hitPlaneMat);
+hitPlane.position.set(0, 1.5, HIT_Z);
+hitPlane.visible = false;
+scene.add(hitPlane);
+
+export function setHitPlaneVisible(visible: boolean): void {
+  hitPlane.visible = Boolean(visible);
+}
+
 function makeGlowTexture(hex: number): THREE.CanvasTexture {
   const c   = document.createElement('canvas');
   c.width   = 96; c.height = 96;

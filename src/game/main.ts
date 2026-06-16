@@ -4,7 +4,7 @@ import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
-  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor,
+  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible,
 } from './scene.ts';
 import { initAudio, startMapAudio, stopMapAudio, pauseMapAudio, getMapTime, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
@@ -44,6 +44,7 @@ state.oneHandMode            = settings.oneHandMode || null;
 window.__oneHandMode         = state.oneHandMode || 'both';
 applyAudioSettings(settings);
 setScenePerformanceProfile(settings);
+setHitPlaneVisible(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
 prewarmGameplayResources();
 setSaberTargetSetter((side, pos) => {
   if (side === 'left') lTarget.set(pos.x, pos.y, pos.z);
@@ -932,6 +933,7 @@ function initMainMenu(): void {
       const value = developerModeInput.checked;
       settings.developerMode = value;
       setDeveloperPanelEnabled(renderer, value);
+      setHitPlaneVisible(value);
     });
   }
 
