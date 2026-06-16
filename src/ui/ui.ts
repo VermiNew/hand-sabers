@@ -1,5 +1,4 @@
 import { iconMarkup, refreshIcons, setIconButton } from '../core/icons.ts';
-import { t } from '../i18n/index.ts';
 import type { GameState } from '../core/state.ts';
 
 interface UiRefs {
@@ -193,16 +192,16 @@ export function showGameOver(state: GameState): void {
   showModalElement(ui.overlay);
   if (ui.hud)        ui.hud.style.display = 'none';
   if (ui.mapProgress) ui.mapProgress.style.display = 'none';
-  if (ui.ovStep)     ui.ovStep.textContent = t('gameover.title');
+  if (ui.ovStep)     ui.ovStep.textContent = 'KONIEC GRY';
   if (ui.ovInstr)    ui.ovInstr.innerHTML =
-    `${t('gameover.score')}: <span class="score-highlight">${String(state.score).padStart(6, '0')}</span><br>
-     ${t('gameover.bestCombo')}: ×${Math.max(0, state.maxCombo)}<br><br>
-     <span class="muted-small">${t('gameover.resetCalibration')}</span>`;
+    `Wynik: <span class="score-highlight">${String(state.score).padStart(6, '0')}</span><br>
+     Najlepsze combo: ×${Math.max(0, state.maxCombo)}<br><br>
+     <span class="muted-small">Resetuję kalibrację...</span>`;
   if (ui.ovVisual)   ui.ovVisual.style.display  = 'none';
   if (ui.ovProgress) ui.ovProgress.style.display = 'none';
-  setIconButton(ui.ovBtn,      t('gameover.playAgain'), 'rotate-ccw');
-  setIconButton(ui.ovBtnCalib, t('gameover.calibration'), 'settings');
-  setIconButton(ui.ovBtnMenu,  t('gameover.mainMenu'),    'house');
+  setIconButton(ui.ovBtn,      'ZAGRAJ PONOWNIE', 'rotate-ccw');
+  setIconButton(ui.ovBtnCalib, 'KALIBRACJA',      'settings');
+  setIconButton(ui.ovBtnMenu,  'MENU GŁÓWNE',     'house');
   if (ui.ovBtnCalib) ui.ovBtnCalib.style.display = 'inline-flex';
   if (ui.ovBtnMenu)  ui.ovBtnMenu.style.display  = 'inline-flex';
   if (ui.dStatus)    ui.dStatus.textContent = 'GAME OVER';
