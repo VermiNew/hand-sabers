@@ -18,6 +18,7 @@ import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes,
 import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeatDeltaMs, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
+import { t } from '../i18n/index.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
 declare global {
@@ -314,12 +315,12 @@ function hasRequiredHands(): boolean {
 }
 
 function missingHandsText(): string {
-  if (state.oneHandMode === 'left')  return 'TRYB 1 RĘKI — POKAŻ RĘKĘ DLA LEWEGO MIECZA';
-  if (state.oneHandMode === 'right') return 'TRYB 1 RĘKI — POKAŻ RĘKĘ DLA PRAWEGO MIECZA';
+  if (state.oneHandMode === 'left')  return t('hands.oneHandLeft');
+  if (state.oneHandMode === 'right') return t('hands.oneHandRight');
   return !state.handsLeftActive && !state.handsRightActive
-    ? 'BRAK OBU RĄK — STAŃ PRZED KAMERĄ'
-    : !state.handsLeftActive ? 'BRAK LEWEJ RĘKI — POKAŻ JĄ'
-    : 'BRAK PRAWEJ RĘKI — POKAŻ JĄ';
+    ? t('hands.bothMissing')
+    : !state.handsLeftActive ? t('hands.leftMissing')
+    : t('hands.rightMissing');
 }
 
 function pauseGame(reason: PauseReason, now = performance.now()): void {
@@ -639,6 +640,21 @@ function initMapDrop(): void {
 }
 
 // ── Start ─────────────────────────────────────────────────────────────────────
+
+// Apply translations to static pause UI elements
+const applyPauseTranslations = (): void => {
+  document.querySelectorAll('.pause-title, .pause-menu-title').forEach(el => { el.textContent = t('pause.title'); });
+  const pauseSub = document.getElementById('pauseSub');
+  if (pauseSub) pauseSub.textContent = t('pause.handsLost');
+  const el = (id: string) => document.getElementById(id);
+  const setText = (id: string, key: string) => { const e = el(id); if (e) e.textContent = t(key); };
+  setText('pauseResume',  'pause.resume');
+  setText('pauseRestart', 'pause.restart');
+  setText('pauseMaps',    'pause.maps');
+  setText('pauseQuit',    'pause.mainMenu');
+};
+applyPauseTranslations();
+
 ui.ovBtn?.addEventListener('click',      handleOverlayButton);
 ui.ovBtnCalib?.addEventListener('click', handleCalibButton);
 document.getElementById('pauseResume')?.addEventListener('click',  () => resumeGame(performance.now()));

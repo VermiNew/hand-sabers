@@ -16,6 +16,13 @@
     "maps": "MAPY",
     "mainMenu": "MENU GŁÓWNE"
   },
+  "hands": {
+    "bothMissing": "BRAK OBU RĄK — STAŃ PRZED KAMERĄ",
+    "leftMissing": "BRAK LEWEJ RĘKI — POKAŻ JĄ",
+    "rightMissing": "BRAK PRAWEJ RĘKI — POKAŻ JĄ",
+    "oneHandLeft": "TRYB 1 RĘKI — POKAŻ RĘKĘ DLA LEWEGO MIECZA",
+    "oneHandRight": "TRYB 1 RĘKI — POKAŻ RĘKĘ DLA PRAWEGO MIECZA"
+  },
   "nav": {
     "settings": "Ustawienia",
     "help": "Pomoc",

@@ -16,6 +16,13 @@
     "maps": "MAPS",
     "mainMenu": "MAIN MENU"
   },
+  "hands": {
+    "bothMissing": "BOTH HANDS MISSING — STAND IN FRONT OF CAMERA",
+    "leftMissing": "LEFT HAND MISSING — SHOW IT",
+    "rightMissing": "RIGHT HAND MISSING — SHOW IT",
+    "oneHandLeft": "ONE-HAND MODE — SHOW YOUR LEFT SABER HAND",
+    "oneHandRight": "ONE-HAND MODE — SHOW YOUR RIGHT SABER HAND"
+  },
   "nav": {
     "settings": "Settings",
     "help": "Help",
