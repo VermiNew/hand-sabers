@@ -15,7 +15,7 @@ import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
 import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
 import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.ts';
-import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeatDeltaMs } from '../core/timing.ts';
+import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeatDeltaMs, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
@@ -29,6 +29,7 @@ declare global {
     __songTimeSec?:         number;
     __audioOffsetMs?:       number;
     __nearestBeatDeltaMs?:  number | null;
+    __nearestBeats?:        Array<{ deltaMs: number; side: string; cut: string }> | null;
   }
 }
 
@@ -464,6 +465,7 @@ let mainLoopRaf: number | null = null;
 let mainLoopRunning  = false;
 let _nearestBeat:    ReturnType<typeof nearestBeatDeltaMs> | null = null;
 let _nearestBeatAt   = 0;
+let _nearestBeats:   Array<{ deltaMs: number; side: string; cut: string }> | null = null;
 const BASE_FRAME_MS      = 1000 / 60;
 const MAX_FRAME_DELTA_MS = 250;
 const MAX_SIM_DELTA_SCALE = 3;
@@ -510,9 +512,16 @@ function loop(timestamp: number): void {
       if (now - _nearestBeatAt > 250) {
         _nearestBeat   = nearestBeatDeltaMs(state.map?.beats, mapTimeSec);
         _nearestBeatAt = now;
+        const raw = nearestBeats(state.map?.beats, mapTimeSec, 3);
+        _nearestBeats = raw.map(n => ({
+          deltaMs: n.deltaMs,
+          side: n.beat.side ?? '—',
+          cut: n.beat.cut ?? '—',
+        }));
       }
       window.__audioOffsetMs      = Math.round(getAudioOffsetSec(settings, state.map) * 1000);
       window.__nearestBeatDeltaMs = _nearestBeat?.deltaMs ?? null;
+      window.__nearestBeats       = _nearestBeats;
       if ((mapAudioStarted || !hasMapAudio()) && progressTime >= getCurrentMapDuration() && getCurrentMapDuration() > 0) {
         endGame();
       }
