@@ -449,7 +449,15 @@ async function loadMaps(): Promise<void> {
   let serverMaps: MapEntry[] = [];
   let serverError: Error | null = null;
   try { serverMaps = await loadServerMaps(); }
-  catch (e) { serverError = e instanceof Error ? e : new Error(String(e)); }
+  catch (e) {
+    serverError = e instanceof Error ? e : new Error(String(e));
+    // Network errors during startup (server still booting) — retry once after 2s
+    if (serverError.message.includes('Failed to fetch') || serverError.message.includes('NetworkError') || serverError.message.startsWith('0 ')) {
+      await new Promise(r => setTimeout(r, 2000));
+      try { serverMaps = await loadServerMaps(); serverError = null; }
+      catch { /* keep serverError set */ }
+    }
+  }
 
   allScores = readLocalScores({ limit: 1000 }) as ScoreEntry[];
   allMaps   = mergeMaps(serverMaps, localMaps);
