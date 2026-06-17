@@ -285,7 +285,7 @@ export function fadeTransition(callback: () => void, durationMs = 220): void {
 
 export function setCalibFeedback(ok: boolean, hint: string): void {
   if (ui.calibVerdict) {
-    ui.calibVerdict.innerHTML = `${iconMarkup(ok ? 'check' : 'x', 'verdict-icon')}<span>${ok ? 'OK' : 'NIE'}</span>`;
+    ui.calibVerdict.innerHTML = `${iconMarkup(ok ? 'check' : 'x', 'verdict-icon')}<span>${ok ? t('calib.ok') : t('calib.notOk')}</span>`;
     ui.calibVerdict.className = 'calib-verdict ' + (ok ? 'ok' : 'bad');
   }
   if (ui.calibHint) ui.calibHint.textContent = hint;

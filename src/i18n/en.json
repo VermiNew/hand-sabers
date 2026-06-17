@@ -23,12 +23,6 @@
     "oneHandLeft": "ONE-HAND MODE — SHOW YOUR LEFT SABER HAND",
     "oneHandRight": "ONE-HAND MODE — SHOW YOUR RIGHT SABER HAND"
   },
-  "nav": {
-    "settings": "Settings",
-    "help": "Help",
-    "maps": "Maps",
-    "creator": "Creator"
-  },
   "errors": {
     "cameraError": "CAMERA ERROR",
     "startError": "STARTUP ERROR",
@@ -122,9 +116,10 @@
   "maps": {
     "title": "HAND SABERS",
     "subtitle": "MAP LIBRARY",
+    "backToGame": "GAME",
     "tabMaps": "Maps",
     "tabScores": "Scores",
-    "newMap": "+ New map",
+    "newMap": "New map",
     "importZip": "Import ZIP",
     "play": "Play",
     "available": "AVAILABLE MAPS",
@@ -132,7 +127,7 @@
     "noMaps": "No maps.",
     "noScores": "No scores.",
     "loading": "Loading...",
-    "serverFallback": "Server not responding — showing local maps/autosave.",
+    "serverFallback": "Server not responding — showing local maps.",
     "beats": "blocks",
     "local": "LOCAL",
     "playBtn": "PLAY",
@@ -143,7 +138,16 @@
     "score": "Score",
     "combo": "Combo",
     "player": "Player",
-    "date": "Date"
+    "date": "Date",
+    "filterDiff": "Difficulty",
+    "diffEasy": "EASY",
+    "diffMedium": "MEDIUM",
+    "diffHard": "HARD",
+    "diffExpert": "EXPERT",
+    "sortNewest": "Newest",
+    "sortAlpha": "Alphabetical",
+    "sortBeats": "Beats (descending)",
+    "sortScore": "Best score"
   },
   "creator": {
     "title": "MAP CREATOR",
@@ -174,7 +178,8 @@
     "statSnap": "SNAP",
     "autoSave": "autosave:",
     "dropAudio": "Drag MP3 / OGG / WAV file",
-    "dropAudioSub": "or click to select"
+    "dropAudioSub": "or click to select",
+    "noAudioWarning": "Map loaded without audio — drag an audio file or ZIP."
   },
   "camera": {
     "raw": "CAMERA RAW",
@@ -194,6 +199,8 @@
   "calib": {
     "abort": "CANCEL",
     "cameraFeed": "CAMERA FEED",
-    "holdStill": "Hold position…"
+    "holdStill": "Hold position…",
+    "ok": "OK",
+    "notOk": "NO"
   }
 }

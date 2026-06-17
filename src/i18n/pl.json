@@ -23,12 +23,6 @@
     "oneHandLeft": "TRYB 1 RĘKI — POKAŻ RĘKĘ DLA LEWEGO MIECZA",
     "oneHandRight": "TRYB 1 RĘKI — POKAŻ RĘKĘ DLA PRAWEGO MIECZA"
   },
-  "nav": {
-    "settings": "Ustawienia",
-    "help": "Pomoc",
-    "maps": "Mapy",
-    "creator": "Kreator"
-  },
   "errors": {
     "cameraError": "BŁĄD KAMERY",
     "startError": "BŁĄD STARTU",
@@ -41,55 +35,6 @@
     "unknownTrack": "Nieznany utwór",
     "pauseHands": "PAUZA — RĘCE",
     "pause": "PAUZA"
-  },
-  "settings": {
-    "menuKicker": "Menu gry",
-    "title": "Ustawienia",
-    "close": "Zamknij ustawienia",
-    "audio": {
-      "individualSounds": "Poszczególne dźwięki",
-      "music": "Muzyka",
-      "sfx": "Efekty",
-      "hit": "Trafienie",
-      "miss": "Pudło",
-      "bomb": "Bomba"
-    },
-    "performance": {
-      "title": "Wydajność",
-      "graphicsSettings": "Ustawienia graficzne",
-      "autoHint": "Auto sprawdza sprzęt i reguluje jakość w trakcie gry.",
-      "currentMode": "Obecny tryb: —"
-    },
-    "developer": {
-      "name": "Tryb developera",
-      "desc": "Pokazuje panel diagnostyczny, metryki renderowania, VRAM, tracking i podgląd kamery"
-    },
-    "gameplay": {
-      "noFailDesc": "Gra nie kończy się przy zerowym HP",
-      "flipCamera": "Odwróć strony kamery",
-      "flipCameraDesc": "Włącz, gdy lewy miecz trafia na prawy tor",
-      "beatLimit": "Limit beatów",
-      "beatLimitDesc": "10 000 beatów; wyłącz, aby rozszerzyć do 100 000",
-      "oneHandMode": "Tryb jednej ręki",
-      "oneHandModeDesc": "Graj tylko wybranym mieczem",
-      "both": "Obie",
-      "left": "Lewa",
-      "right": "Prawa",
-      "saberColors": "Kolory mieczy",
-      "saberColorsDesc": "Wybierz kolor osobno dla każdego miecza",
-      "leftHand": "Lewa ręka",
-      "rightHand": "Prawa ręka",
-      "leftSaberColor": "Kolor lewego miecza",
-      "rightSaberColor": "Kolor prawego miecza",
-      "customColor": "Własny kolor",
-      "custom": "Własny",
-      "apply": "Zastosuj",
-      "saberModel": "Model miecza",
-      "saberModelLabel": "Kształt ostrza",
-      "modelClassic": "Klasyczny",
-      "modelWide": "Szeroki",
-      "modelThin": "Cienki"
-    }
   },
   "menu": {
     "singleplayer": "Singleplayer",
@@ -157,15 +102,24 @@
       "leftHand": "Lewa ręka",
       "rightHand": "Prawa ręka",
       "leftSaberColor": "Kolor lewego miecza",
-      "rightSaberColor": "Kolor prawego miecza"
+      "rightSaberColor": "Kolor prawego miecza",
+      "customColor": "Własny kolor",
+      "custom": "Własny",
+      "apply": "Zastosuj",
+      "saberModel": "Model miecza",
+      "saberModelLabel": "Kształt ostrza",
+      "modelClassic": "Klasyczny",
+      "modelWide": "Szeroki",
+      "modelThin": "Cienki"
     }
   },
   "maps": {
     "title": "HAND SABERS",
     "subtitle": "BIBLIOTEKA MAP",
+    "backToGame": "GRA",
     "tabMaps": "Mapy",
     "tabScores": "Wyniki",
-    "newMap": "+ Nowa mapa",
+    "newMap": "Nowa mapa",
     "importZip": "Import ZIP",
     "play": "Gra",
     "available": "DOSTĘPNE MAPY",
@@ -173,7 +127,7 @@
     "noMaps": "Brak map.",
     "noScores": "Brak wyników.",
     "loading": "Ładowanie...",
-    "serverFallback": "Serwer nie odpowiada — pokazuję lokalne mapy/autosave.",
+    "serverFallback": "Serwer nie odpowiada — pokazuję lokalne mapy.",
     "beats": "bloków",
     "local": "LOCAL",
     "playBtn": "GRAJ",
@@ -184,7 +138,16 @@
     "score": "Wynik",
     "combo": "Combo",
     "player": "Gracz",
-    "date": "Data"
+    "date": "Data",
+    "filterDiff": "Trudność",
+    "diffEasy": "ŁATWY",
+    "diffMedium": "ŚREDNI",
+    "diffHard": "TRUDNY",
+    "diffExpert": "EXPERT",
+    "sortNewest": "Najnowsze",
+    "sortAlpha": "Alfabetycznie",
+    "sortBeats": "Beatów (malejąco)",
+    "sortScore": "Najlepszy wynik"
   },
   "creator": {
     "title": "MAP CREATOR",
@@ -215,7 +178,8 @@
     "statSnap": "SNAP",
     "autoSave": "autosave:",
     "dropAudio": "Przeciągnij plik MP3 / OGG / WAV",
-    "dropAudioSub": "lub kliknij aby wybrać"
+    "dropAudioSub": "lub kliknij aby wybrać",
+    "noAudioWarning": "Wczytano mapę bez dźwięku — przeciągnij plik audio lub ZIP."
   },
   "camera": {
     "raw": "KAMERA RAW",
@@ -235,6 +199,8 @@
   "calib": {
     "abort": "ANULUJ",
     "cameraFeed": "PODGLĄD KAMERY",
-    "holdStill": "Trzymaj pozycję…"
+    "holdStill": "Trzymaj pozycję…",
+    "ok": "OK",
+    "notOk": "NIE"
   }
 }

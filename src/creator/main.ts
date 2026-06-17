@@ -1047,7 +1047,7 @@ async function handleFile(file: File): Promise<void> {
       songNameEl.textContent = map.meta?.title ?? file.name;
       songDurEl.textContent  = formatTime(map.meta?.duration ?? 0);
       const restored = await restoreAudioForCurrentMap();
-      if (!restored) warningMsg.textContent = 'Wczytano mapę bez dźwięku — przeciągnij plik audio lub ZIP.';
+      if (!restored) warningMsg.textContent = t('creator.noAudioWarning');
       saveLocalMap(map as unknown as Parameters<typeof saveLocalMap>[0]);
       renderAll();
       showToast('Mapa JSON wczytana', { type: 'success' });
