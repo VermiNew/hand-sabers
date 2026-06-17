@@ -26,7 +26,22 @@
 - [ ] Zastąpić prosty input[type=color] pełnym color pickerem (HSL/HEX/RGB)
 - [ ] Więcej presetów kolorów dla mieczy
 
-## 7. TODO techniczne (backlog)
+## 7. UX / Animacje (backlog)
+- [ ] Animacje fade-in/fade-out przy otwieraniu i zamykaniu paneli (ustawienia, game over, pauza, overlay)
+- [ ] Przeprojektować panel game over (czytelny, gamingowy styl)
+- [ ] Poprawić pasek zdrowia (animacje, stany: full/mid/low/critical)
+- [ ] Pasek timera/postępu utworu — wyraźniejszy, z timecodem
+- [ ] Wskaźnik rytmu: feedback czy gracz cina za wcześnie / za późno (accuracy ms na ekranie)
+- [ ] Komunikat "zgubiono ręce": pokazać podgląd ML, auto-resume po 5s stabilności z timerem 1.0→0.5→0.3→0.1→0.0→GO!
+- [ ] Poprawić kontenery KAMERA RAW / ŚLEDZENIE ML w trybie dev (prawy dolny róg)
+- [ ] Całkowity remake systemu cieni i odbić w scenie 3D (subtelne, nieprzesadzone)
+- [ ] Poprawić system wydajności (profile, adaptive quality)
+- [ ] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC
+- [ ] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
+- [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach
+- [ ] Nowa strona/overlay "Pomoc" w menu — instrukcja gry + mini-tutorial (PL i EN)
+
+## 8. TODO techniczne (backlog)
 - [ ] Przetestować `audioOffsetMs` na kilku urządzeniach (Bluetooth, przewodowe, głośniki)
 - [x] Ujednolicić creator i gameplay wokół `src/core/timing.ts`
 - [x] Dodać komunikat UI przy pliku >100 MB zamiast alertu
