@@ -1,6 +1,19 @@
 {
   "name": "hand-sabers",
   "version": "1.0.0",
+  "description": "A Beat Saber-inspired rhythm game you play with your hands through a webcam — no VR headset required.",
+  "keywords": [
+    "rhythm-game",
+    "beat-saber",
+    "hand-tracking",
+    "webcam",
+    "no-vr",
+    "three.js",
+    "typescript",
+    "vite",
+    "game"
+  ],
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=22.18.0"
