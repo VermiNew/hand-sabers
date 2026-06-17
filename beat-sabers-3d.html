@@ -27,43 +27,31 @@
     </div>
 
     <nav class="main-nav" aria-label="Tryby gry">
-      <button class="main-nav-item is-selected" id="mainStart" data-menu-action="singleplayer" type="button">
-        <span class="main-nav-icon"><span class="material-symbols-rounded">play_arrow</span></span>
+      <button class="main-nav-item is-selected" id="mainStart" data-menu-action="singleplayer" type="button" style="--i:0">
         <span class="main-nav-label">Singleplayer</span>
-        <span class="main-nav-pulse" aria-hidden="true"></span>
       </button>
-      <button class="main-nav-item is-disabled" id="mainMultiplayer" type="button" disabled aria-disabled="true">
-        <span class="main-nav-icon"><span class="material-symbols-rounded">lock</span></span>
+      <button class="main-nav-item is-disabled" id="mainMultiplayer" type="button" disabled aria-disabled="true" style="--i:1">
         <span class="main-nav-label">Multiplayer</span>
+        <span class="main-nav-lock" aria-hidden="true">&#x1F512;</span>
       </button>
-      <button class="main-nav-item" id="mainCalibrate" data-menu-action="calibration" type="button">
-        <span class="main-nav-icon"><span class="material-symbols-rounded">center_focus_strong</span></span>
+      <button class="main-nav-item" id="mainCalibrate" data-menu-action="calibration" type="button" style="--i:2">
         <span class="main-nav-label">Kalibracja</span>
       </button>
-      <button class="main-nav-item" id="mainSettings" data-menu-action="settings" type="button" aria-expanded="false" aria-controls="mainSettingsPanel">
-        <span class="main-nav-icon"><span class="material-symbols-rounded">settings</span></span>
+      <button class="main-nav-item" id="mainSettings" data-menu-action="settings" type="button" aria-expanded="false" aria-controls="mainSettingsPanel" style="--i:3">
         <span class="main-nav-label">Ustawienia</span>
       </button>
-      <button class="main-nav-item is-disabled" id="mainHelp" type="button" disabled aria-disabled="true">
-        <span class="main-nav-icon"><span class="material-symbols-rounded">help</span></span>
-        <span class="main-nav-label">Pomoc</span>
-      </button>
-      <a class="main-nav-item" id="mainMaps" href="./maps.html">
-        <span class="main-nav-icon"><span class="material-symbols-rounded">library_music</span></span>
+      <a class="main-nav-item" id="mainMaps" href="./maps.html" style="--i:4">
         <span class="main-nav-label">Mapy</span>
       </a>
-      <a class="main-nav-item" id="mainCreator" href="./map-creator.html">
-        <span class="main-nav-icon"><span class="material-symbols-rounded">edit</span></span>
+      <a class="main-nav-item" id="mainCreator" href="./map-creator.html" style="--i:5">
         <span class="main-nav-label">Kreator</span>
       </a>
-      <button class="main-nav-item" id="mainDevMode" type="button">
-        <span class="main-nav-icon"><span class="material-symbols-rounded">terminal</span></span>
-        <span class="main-nav-label">Developer Mode</span>
-      </button>
     </nav>
 
     <div class="main-menu-footer">
-      <span class="main-menu-dev">?dev</span>
+      <button class="main-menu-dev main-menu-dev-btn" id="mainDevMode" type="button">[dev]</button>
+      <span class="main-menu-footer-sep">·</span>
+      <span class="main-menu-footer-version">CAMERA RHYTHM</span>
     </div>
   </aside>
 

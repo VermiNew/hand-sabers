@@ -704,6 +704,7 @@ function returnToMainMenu(): void {
   state.appState    = S.MENU;
   state.pauseReason = PAUSE_REASONS.NONE;
   resetMenuDemo();
+  triggerMenuEnter();
 }
 
 document.getElementById('pauseQuit')?.addEventListener('click', returnToMainMenu);
@@ -724,7 +725,13 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
   setScenePerformanceProfile(settings);
   prewarmGameplayResources();
   const mainMenu = document.getElementById('mainMenu');
-  if (mainMenu) mainMenu.style.display = 'none';
+  if (mainMenu) {
+    mainMenu.classList.remove('is-entering');
+    mainMenu.classList.add('is-leaving');
+    await new Promise<void>(r => setTimeout(r, 280));
+    mainMenu.classList.remove('is-leaving');
+    mainMenu.style.display = 'none';
+  }
   document.body.classList.remove('menu-open');
   clearGameplayEntities();
   showOverlay();
@@ -740,10 +747,21 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
   initMP(startCalib);
 }
 
+function triggerMenuEnter(): void {
+  const mainMenu = document.getElementById('mainMenu');
+  if (!mainMenu) return;
+  mainMenu.classList.remove('is-leaving');
+  mainMenu.classList.remove('is-entering');
+  void mainMenu.offsetWidth;
+  mainMenu.classList.add('is-entering');
+  setTimeout(() => mainMenu.classList.remove('is-entering'), 800);
+}
+
 function initMainMenu(): void {
   document.body.classList.add('menu-open');
   preserveDevQueryOnMenuLinks();
   resetMenuDemo();
+  triggerMenuEnter();
 
   const navItems         = [...document.querySelectorAll<HTMLElement>('.main-nav-item:not(.is-disabled)')];
   const settingsBackdrop = document.getElementById('mainSettingsBackdrop');
@@ -843,28 +861,45 @@ function initMainMenu(): void {
     if (graphicsModeInfo) graphicsModeInfo.textContent = getGraphicsModeSummary();
   }
 
+  const allNavItems = [...document.querySelectorAll<HTMLElement>('.main-nav-item')];
+  allNavItems.forEach((item, i) => item.style.setProperty('--i', String(i)));
+
   for (const item of navItems) {
     item.addEventListener('mouseenter', () => selectItem(item));
     item.addEventListener('focus',      () => selectItem(item));
     item.addEventListener('pointerdown',  () => item.classList.add('is-pressed'));
     item.addEventListener('pointerup',    () => item.classList.remove('is-pressed'));
     item.addEventListener('pointerleave', () => item.classList.remove('is-pressed'));
+  }
+
+  for (const item of allNavItems) {
     item.addEventListener('click', () => {
-      if (item.classList.contains('is-disabled')) return;
-      const sliceTimer = (item as HTMLElement & { _sliceTimer?: ReturnType<typeof setTimeout> })._sliceTimer;
-      if (sliceTimer !== undefined) clearTimeout(sliceTimer);
-      item.classList.remove('slicing');
+      if (item.classList.contains('is-disabled')) {
+        item.classList.remove('is-locked-attempt');
+        void item.offsetWidth;
+        item.classList.add('is-locked-attempt');
+        setTimeout(() => item.classList.remove('is-locked-attempt'), 420);
+        return;
+      }
+      item.classList.remove('is-clicked');
       void item.offsetWidth;
-      item.classList.add('slicing');
-      (item as HTMLElement & { _sliceTimer?: ReturnType<typeof setTimeout> })._sliceTimer = setTimeout(() => item.classList.remove('slicing'), 400);
+      item.classList.add('is-clicked');
+      setTimeout(() => item.classList.remove('is-clicked'), 380);
     });
   }
 
-  document.getElementById('mainStart')?.addEventListener('click', () => {
+  function dispatchMenuAction(id: string, action: () => void): void {
+    document.getElementById(id)?.addEventListener('click', () => {
+      if (document.getElementById(id)?.classList.contains('is-disabled')) return;
+      setTimeout(action, 350);
+    });
+  }
+
+  dispatchMenuAction('mainStart', () => {
     setSettingsPanelVisible(false);
     void startFromMainMenu({ calibrate: false });
   });
-  document.getElementById('mainCalibrate')?.addEventListener('click', () => {
+  dispatchMenuAction('mainCalibrate', () => {
     setSettingsPanelVisible(false);
     void startFromMainMenu({ calibrate: true });
   });

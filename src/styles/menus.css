@@ -37,7 +37,7 @@
 body {
   background:
     radial-gradient(circle at 70% 20%, rgba(47,124,255,0.10), transparent 34%),
-    radial-gradient(circle at 18% 80%, rgba(54,242,161,0.08), transparent 38%),
+    radial-gradient(circle at 18% 80%, rgba(0,212,255,0.06), transparent 38%),
     var(--bg);
 }
 
@@ -47,20 +47,20 @@ body {
   overflow:hidden;
 }
 
-/* Vignette — left-side darkness so text is readable */
+/* Vignette */
 .main-menu-vignette {
   position:fixed; inset:0; pointer-events:none; z-index:0;
   background:
-    linear-gradient(90deg, rgba(5,7,13,0.72) 0%, rgba(5,7,13,0.38) 38%, transparent 62%),
-    linear-gradient(180deg, rgba(5,7,13,0.38) 0%, transparent 20%, transparent 80%, rgba(5,7,13,0.44) 100%);
+    linear-gradient(90deg, rgba(5,7,13,0.82) 0%, rgba(5,7,13,0.52) 40%, transparent 65%),
+    linear-gradient(180deg, rgba(5,7,13,0.5) 0%, transparent 18%, transparent 78%, rgba(5,7,13,0.6) 100%);
 }
 .main-menu-vignette::before,
 .main-menu-vignette::after { display:none; }
 
-/* Panel — strip all decoration */
+/* Panel */
 .main-menu-panel {
   position:fixed; left:0; top:0; bottom:0; z-index:2;
-  width:min(520px, 44vw);
+  width:min(560px, 46vw);
   min-height:100vh;
   display:flex; flex-direction:column; justify-content:center;
   gap:0;
@@ -69,80 +69,169 @@ body {
 }
 .main-menu-panel::before { display:none; }
 
-/* Brand — text only, hide logo mark */
+/* Brand */
 .main-brand {
-  display:flex; flex-direction:column; gap:4px;
-  margin-bottom:clamp(32px, 5vh, 56px);
+  display:flex; flex-direction:column; gap:6px;
+  margin-bottom:clamp(36px, 6vh, 64px);
 }
 .main-brand-mark { display:none; }
 .main-brand-title {
-  font-family:'Oxanium',sans-serif; font-size:clamp(18px, 2.2vw, 26px); font-weight:900;
-  letter-spacing:8px; color:#fff;
-  text-shadow:0 0 40px rgba(54,242,161,0.3), 0 2px 8px rgba(0,0,0,0.8);
-}
-.main-brand-sub { font-size:10px; letter-spacing:6px; color:rgba(54,242,161,0.55); }
-
-/* Nav items — giant bare text, Overwatch style */
-.main-nav { display:flex; flex-direction:column; gap:2px; }
-.main-nav-item {
-  display:flex; align-items:center; gap:16px;
-  width:100%; padding:6px 0;
-  background:none; border:none; border-radius:0;
   font-family:'Oxanium',sans-serif; font-size:clamp(28px, 3.6vw, 52px); font-weight:900;
+  letter-spacing:6px; color:#fff; line-height:1;
+  text-shadow:0 0 60px rgba(0,212,255,0.4), 0 0 20px rgba(0,212,255,0.15), 0 2px 12px rgba(0,0,0,0.9);
+}
+.main-brand-sub {
+  font-size:10px; letter-spacing:8px;
+  color:rgba(0,212,255,0.4);
+}
+
+/* Nav */
+.main-nav { display:flex; flex-direction:column; gap:0; }
+
+.main-nav-item {
+  position:relative;
+  display:flex; align-items:center;
+  width:100%; padding:9px 28px 9px 20px;
+  background:none; border:none; border-radius:0;
+  font-family:'Oxanium',sans-serif; font-size:clamp(24px, 3.2vw, 46px); font-weight:900;
   letter-spacing:3px; text-transform:uppercase; white-space:nowrap;
-  color:rgba(226,232,240,0.55);
+  color:rgba(226,232,240,0.5);
   text-shadow:0 2px 18px rgba(0,0,0,0.9);
   cursor:pointer; line-height:1.1; text-decoration:none;
+  overflow:hidden;
   transition:color 0.22s cubic-bezier(0.4,0,0.2,1),
-             text-shadow 0.22s cubic-bezier(0.4,0,0.2,1),
              transform 0.22s cubic-bezier(0.4,0,0.2,1);
 }
-.main-nav-item::before,
-.main-nav-item::after { display:none; }
 
-/* Hide icon and pulse — text only */
+/* Lewy pasek akcentu */
+.main-nav-item::after {
+  content:'';
+  position:absolute; left:0; top:15%; height:70%; width:3px;
+  background:#00d4ff;
+  transform:scaleY(0);
+  transform-origin:center;
+  transition:transform 0.2s cubic-bezier(0.4,0,0.2,1);
+  border-radius:0 2px 2px 0;
+}
+
+/* Tło hover — wjeżdża z lewej */
+.main-nav-item::before {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(100deg, rgba(0,212,255,0.10) 0%, rgba(0,212,255,0.03) 55%, transparent 80%);
+  clip-path:polygon(0 0, calc(100% - 24px) 0, 100% 100%, 0 100%);
+  transform:translateX(-105%);
+  transition:transform 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+
+.main-nav-label { position:relative; z-index:1; }
+.main-nav-lock  { position:relative; z-index:1; margin-left:10px; font-size:0.5em; opacity:0.5; }
+
+/* Hide old icon/pulse */
 .main-nav-icon,
 .main-nav-pulse { display:none; }
-.main-nav-label { position:relative; z-index:1; }
 
-/* Hover — smooth slide in on enter, slide back on leave */
+/* Hover */
 .main-nav-item:hover:not(.is-disabled),
 .main-nav-item:focus-visible:not(.is-disabled) {
   color:#fff;
-  text-shadow:0 0 48px rgba(54,242,161,0.7), 0 0 18px rgba(54,242,161,0.35), 0 2px 18px rgba(0,0,0,0.9);
-  transform:translateX(14px);
+  transform:translateX(10px);
+}
+.main-nav-item:hover:not(.is-disabled)::before,
+.main-nav-item:focus-visible:not(.is-disabled)::before {
+  transform:translateX(0);
+}
+.main-nav-item:hover:not(.is-disabled)::after,
+.main-nav-item:focus-visible:not(.is-disabled)::after {
+  transform:scaleY(1);
 }
 
-/* Active press */
+/* Press */
 .main-nav-item:active:not(.is-disabled),
 .main-nav-item.is-pressed:not(.is-disabled) {
-  filter:brightness(1.15);
+  filter:brightness(1.2);
 }
 
 /* Selected */
 .main-nav-item.is-selected:not(.is-disabled) {
-  color:var(--accent);
-  text-shadow:0 0 40px rgba(54,242,161,0.6), 0 2px 18px rgba(0,0,0,0.9);
+  color:#fff;
+}
+.main-nav-item.is-selected:not(.is-disabled)::after {
+  transform:scaleY(1);
 }
 
 /* Disabled */
 .main-nav-item.is-disabled {
-  color:rgba(148,163,184,0.22); cursor:not-allowed;
+  color:rgba(148,163,184,0.2); cursor:not-allowed;
   transform:none !important;
 }
-.main-nav-item.is-disabled:hover { color:rgba(148,163,184,0.22); }
+.main-nav-item.is-disabled:hover { color:rgba(148,163,184,0.2); }
 
-/* Footer — only ?dev link remains */
+/* ── Animacje menu ── */
+
+@keyframes navItemEnter {
+  from { opacity:0; transform:translateX(-28px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+@keyframes navItemLeave {
+  from { opacity:1; transform:translateX(0); }
+  to   { opacity:0; transform:translateX(-20px); }
+}
+@keyframes navItemClick {
+  0%   { filter:brightness(1); }
+  25%  { filter:brightness(2.2); }
+  100% { filter:brightness(1); }
+}
+@keyframes navItemShake {
+  0%,100% { transform:translateX(0); }
+  18%     { transform:translateX(-7px); }
+  36%     { transform:translateX(5px); }
+  54%     { transform:translateX(-4px); }
+  72%     { transform:translateX(3px); }
+}
+@keyframes brandEnter {
+  from { opacity:0; transform:translateY(-12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+.main-menu-screen.is-entering .main-brand {
+  animation:brandEnter 0.5s cubic-bezier(0.22,1,0.36,1) both;
+}
+.main-menu-screen.is-entering .main-nav-item {
+  animation:navItemEnter 0.45s cubic-bezier(0.22,1,0.36,1) both;
+  animation-delay:calc(var(--i, 0) * 65ms + 80ms);
+}
+.main-menu-screen.is-leaving .main-nav-item {
+  animation:navItemLeave 0.22s ease-in both;
+  animation-delay:calc((5 - var(--i, 0)) * 28ms);
+}
+
+.main-nav-item.is-clicked {
+  animation:navItemClick 0.35s ease-out;
+}
+.main-nav-item.is-locked-attempt {
+  animation:navItemShake 0.38s cubic-bezier(0.36,0.07,0.19,0.97);
+  color:rgba(255,70,70,0.65) !important;
+}
+
+/* Footer */
 .main-menu-footer {
-  margin-top:clamp(24px, 4vh, 48px);
-  display:flex; gap:16px; align-items:center;
+  margin-top:clamp(28px, 5vh, 56px);
+  display:flex; gap:10px; align-items:center;
   font-size:10px; letter-spacing:3px;
-  color:rgba(148,163,184,0.38);
+  color:rgba(148,163,184,0.3);
 }
-.main-menu-dev {
-  color:rgba(148,163,184,0.28); text-decoration:none; transition:color 0.15s;
+.main-menu-dev,
+.main-menu-dev-btn {
+  background:none; border:none; padding:0;
+  color:rgba(148,163,184,0.25); text-decoration:none;
+  font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:2px;
+  cursor:pointer; transition:color 0.15s;
 }
-.main-menu-dev:hover { color:var(--accent); }
+.main-menu-dev:hover,
+.main-menu-dev-btn:hover { color:#00d4ff; }
+.main-menu-footer-sep { opacity:0.3; }
+.main-menu-footer-version { opacity:0.3; letter-spacing:4px; }
 
 /* Menu-open: hide HUD / pause */
 body.menu-open #hud,
@@ -151,8 +240,8 @@ body.menu-open #pauseMenu { display:none !important; }
 
 @media (max-width:760px) {
   .main-menu-panel { width:100%; padding:22px; }
-  .main-brand-title { letter-spacing:4px; font-size:clamp(16px, 5vw, 22px); }
-  .main-nav-item { font-size:clamp(22px, 6vw, 32px); }
+  .main-brand-title { letter-spacing:3px; font-size:clamp(22px, 6vw, 32px); }
+  .main-nav-item { font-size:clamp(20px, 5.5vw, 30px); padding:7px 16px 7px 14px; }
 }
 
 /* ── SETTINGS ── */
