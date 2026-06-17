@@ -5,7 +5,15 @@ import { markOverlaps, removeBeatByReference, removeBeatsByReference, sortBeatsB
 import { cutButtonText, CUT_SYMBOLS, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
 import { showAlert, showConfirm, showToast } from './dialogs.ts';
 import { saveLocalMap, getLocalMapById, saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.ts';
+import { t } from '../i18n/index.ts';
 import type { Beat, BeatSide, CutDirection } from '../types/index.js';
+
+function applyCreatorTranslations(): void {
+  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
+    const key = el.dataset['i18n'];
+    if (key) el.textContent = t(key);
+  });
+}
 
 // ══════════════════════════════════════════════════════════════════
 //  MAP CREATOR — główna logika
@@ -77,7 +85,7 @@ function cycleSnap(): void {
   snapIdx = (snapIdx + 1) % SNAP_VALUES.length;
   const s = getSnap();
   const btnSnap = document.getElementById('btnSnap')!;
-  btnSnap.textContent = s ? `SNAP: ${s}s` : 'SNAP: WYŁ';
+  btnSnap.textContent = s ? `SNAP: ${s}s` : t('creator.snapOff');
   btnSnap.classList.toggle('active', !!s);
   const stSnap = document.getElementById('stSnap');
   if (stSnap) stSnap.textContent = s ? `${s}s` : 'wył';
@@ -91,7 +99,7 @@ let loopEnd:     number | null = null;
 function toggleLoop(): void {
   loopEnabled = !loopEnabled;
   const btn = document.getElementById('btnLoop')!;
-  btn.textContent = loopEnabled ? 'LOOP: WŁ' : 'LOOP: WYŁ';
+  btn.textContent = loopEnabled ? t('creator.loopOn') : t('creator.loopOff');
   btn.classList.toggle('active', loopEnabled);
   if (loopEnabled && loopStart === null) {
     loopStart = currentTime;
@@ -1150,3 +1158,4 @@ async function loadInitialMap(): Promise<void> {
 }
 
 void loadInitialMap();
+applyCreatorTranslations();

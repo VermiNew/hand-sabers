@@ -213,35 +213,35 @@ nav {
 <body>
 
 <header>
-  <div class="title">HAND SABERS</div>
-  <div class="subtitle">BIBLIOTEKA MAP</div>
+  <div class="title" data-i18n="maps.title">HAND SABERS</div>
+  <div class="subtitle" data-i18n="maps.subtitle">BIBLIOTEKA MAP</div>
 </header>
 
 <nav>
-  <button class="nav-btn active" onclick="showTab('maps')">MAPY</button>
-  <button class="nav-btn"        onclick="showTab('scores')">WYNIKI</button>
+  <button class="nav-btn active" onclick="showTab('maps')" data-i18n="maps.tabMaps">MAPY</button>
+  <button class="nav-btn"        onclick="showTab('scores')" data-i18n="maps.tabScores">WYNIKI</button>
   <a href="./map-creator.html" style="text-decoration:none">
-    <button class="nav-btn"><span class="material-symbols-rounded btn-icon">add</span>NOWA MAPA</button>
+    <button class="nav-btn"><span class="material-symbols-rounded btn-icon">add</span><span data-i18n="maps.newMap">NOWA MAPA</span></button>
   </a>
-  <button class="nav-btn" id="btnImportMap" type="button">IMPORT ZIP</button>
+  <button class="nav-btn" id="btnImportMap" type="button" data-i18n="maps.importZip">IMPORT ZIP</button>
   <input type="file" id="importMapInput" accept=".zip,.json" hidden>
   <a href="./beat-sabers-3d.html" style="text-decoration:none">
-    <button class="nav-btn"><span class="material-symbols-rounded btn-icon">play_arrow</span>GRA</button>
+    <button class="nav-btn"><span class="material-symbols-rounded btn-icon">play_arrow</span><span data-i18n="maps.play">GRA</span></button>
   </a>
 </nav>
 <div id="importStatus" class="empty-state" style="display:none; max-width:800px; margin:0 auto 24px; padding:14px"></div>
 
 <div id="tabMaps" class="active">
   <div class="section">
-    <div class="section-title">DOSTĘPNE MAPY</div>
-    <div id="mapList"><div class="loading">Ładowanie...</div></div>
+    <div class="section-title" data-i18n="maps.available">DOSTĘPNE MAPY</div>
+    <div id="mapList"><div class="loading" data-i18n="maps.loading">Ładowanie...</div></div>
   </div>
 </div>
 
 <div id="tabScores">
   <div class="section">
-    <div class="section-title">NAJLEPSZE WYNIKI</div>
-    <div id="scoreList"><div class="loading">Ładowanie...</div></div>
+    <div class="section-title" data-i18n="maps.bestScores">NAJLEPSZE WYNIKI</div>
+    <div id="scoreList"><div class="loading" data-i18n="maps.loading">Ładowanie...</div></div>
   </div>
 </div>
 
@@ -250,6 +250,15 @@ import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, sa
 import { getJSZip } from './src/jszip-loader.ts';
 import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } from './src/core/map-format.ts';
 import { showAlert, showConfirm, showToast } from './src/creator/dialogs.ts';
+import { t } from './src/i18n/index.ts';
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (key) el.textContent = t(key);
+  });
+}
+applyTranslations();
 
 function showTab(name) {
   document.getElementById('tabMaps').classList.toggle('active',   name === 'maps');
@@ -404,31 +413,31 @@ async function loadMaps() {
   const maps = mergeMaps(serverMaps, localMaps);
   if (!maps.length) {
     mapList.innerHTML = serverError
-      ? '<div class="empty-state">Serwer nie odpowiada, a lokalnie nie ma map.<br>Uruchom <code>npm start</code> albo utwórz mapę w kreatorze.</div>'
-      : '<div class="empty-state">Brak map. Utwórz pierwszą w Map Creatorze.</div>';
+      ? `<div class="empty-state">${t('maps.serverFallback')}</div>`
+      : `<div class="empty-state">${t('maps.noMaps')}</div>`;
     return;
   }
 
   const offlineNote = serverError
-    ? '<div class="empty-state" style="margin-bottom:12px">Serwer nie odpowiada — pokazuję lokalne mapy/autosave.</div>'
+    ? `<div class="empty-state" style="margin-bottom:12px">${t('maps.serverFallback')}</div>`
     : '';
 
   mapList.innerHTML = offlineNote + maps.map(m => {
     const beats  = m.beats?.length ?? 0;
     const dur    = m.meta?.duration ? formatTime(m.meta.duration) : '?';
     const title  = m.meta?.title   ?? m.id;
-    const badge  = m.source === 'local' || m.source === 'autosave' ? ' · LOCAL' : '';
+    const badge  = m.source === 'local' || m.source === 'autosave' ? ` · ${t('maps.local')}` : '';
     const canDeleteServer = m.source === 'server' || m.source === 'server+local';
     return `
       <div class="map-card">
         <div style="flex:1">
           <div class="map-title">${escHtml(title)}</div>
-          <div class="map-meta">${beats} beatów · ${dur}${badge}</div>
+          <div class="map-meta">${beats} ${t('maps.beats')} · ${dur}${badge}</div>
         </div>
-        <div class="map-beats">${beats} BLOKÓW</div>
+        <div class="map-beats">${beats} ${t('maps.beats').toUpperCase()}</div>
         <div class="map-actions">
-          <button class="btn-small play" data-action="play" data-id="${attr(m.id)}"><span class="material-symbols-rounded btn-icon">play_arrow</span>GRAJ</button>
-          <button class="btn-small edit" data-action="edit" data-id="${attr(m.id)}">EDYTUJ</button>
+          <button class="btn-small play" data-action="play" data-id="${attr(m.id)}"><span class="material-symbols-rounded btn-icon">play_arrow</span>${t('maps.playBtn')}</button>
+          <button class="btn-small edit" data-action="edit" data-id="${attr(m.id)}">${t('maps.editBtn')}</button>
           <button class="btn-small del" data-action="delete" data-id="${attr(m.id)}" data-server="${canDeleteServer ? '1' : '0'}" aria-label="Usuń mapę"><span class="material-symbols-rounded">delete</span></button>
         </div>
       </div>`;
@@ -444,7 +453,7 @@ function editMap(id) {
 }
 
 async function deleteMap(id, btn, tryServer) {
-  if (!await showConfirm(`Usunąć mapę "${id}"?`, { title:'Usuń mapę', confirmText:'USUŃ', cancelText:'ANULUJ', danger:true })) return;
+  if (!await showConfirm(`${t('maps.deleteConfirm')} "${id}"?`, { title: t('maps.deleteConfirm'), confirmText:'USUŃ', cancelText:'ANULUJ', danger:true })) return;
   let serverDeleted = false;
   if (tryServer) {
     try {
@@ -485,14 +494,14 @@ async function loadScores() {
 
   if (!scores.length) {
     document.getElementById('scoreList').innerHTML = serverError
-      ? '<div class="empty-state">Serwer nie odpowiada i nie ma lokalnych wyników.</div>'
-      : '<div class="empty-state">Brak wyników. Zagraj pierwszą mapę!</div>';
+      ? `<div class="empty-state">${t('maps.serverFallback')}</div>`
+      : `<div class="empty-state">${t('maps.noScores')}</div>`;
     return;
   }
 
   const medals = ['gold', 'silver', 'bronze'];
   const offlineNote = serverError
-    ? '<div class="empty-state" style="margin-bottom:12px">Serwer nie odpowiada — pokazuję lokalne wyniki.</div>'
+    ? `<div class="empty-state" style="margin-bottom:12px">${t('maps.serverFallback')}</div>`
     : '';
   document.getElementById('scoreList').innerHTML = offlineNote + scores.map((s, i) => `
     <div class="score-row">

@@ -303,27 +303,27 @@ body {
 
 <!-- TOP BAR -->
 <div id="topBar">
-  <div class="top-title">MAP CREATOR</div>
+  <div class="top-title" data-i18n="creator.title">MAP CREATOR</div>
   <div class="top-sep"></div>
-  <div id="songName">— brak pliku —</div>
+  <div id="songName" data-i18n="creator.noFile">— brak pliku —</div>
   <div id="songDuration">0:00</div>
   <div class="top-spacer"></div>
-  <span id="autosaveLabel">autosave: —</span>
-  <button id="btnSave">ZAPISZ</button>
-  <button id="btnExport">EKSPORT ZIP</button>
-  <button id="btnTest"><span class="material-symbols-rounded inline-icon">play_arrow</span>TEST</button>
+  <span id="autosaveLabel"><span data-i18n="creator.autoSave">autosave:</span> —</span>
+  <button id="btnSave" data-i18n="creator.save">ZAPISZ</button>
+  <button id="btnExport" data-i18n="creator.exportZip">EKSPORT ZIP</button>
+  <button id="btnTest"><span class="material-symbols-rounded inline-icon">play_arrow</span><span data-i18n="creator.test">TEST</span></button>
 </div>
 
 <!-- TRANSPORT -->
 <div id="transport">
-  <button class="transport-btn play" id="btnPlay"><span class="material-symbols-rounded inline-icon">play_arrow</span>PLAY</button>
-  <button class="transport-btn"      id="btnStop">■ STOP</button>
+  <button class="transport-btn play" id="btnPlay"><span class="material-symbols-rounded inline-icon">play_arrow</span><span data-i18n="creator.play">PLAY</span></button>
+  <button class="transport-btn"      id="btnStop">■ <span data-i18n="creator.stop">STOP</span></button>
   <div class="transport-sep"></div>
   <span id="timecode">0:00.0</span>
   <div class="transport-sep"></div>
 
   <div class="creator-volume" title="Głośność odsłuchu utworu w edytorze">
-    <label for="songVolume">UTWÓR</label>
+    <label for="songVolume" data-i18n="creator.track">UTWÓR</label>
     <input id="songVolume" type="range" min="0" max="100" value="50" step="1">
     <span id="songVolumeValue">50%</span>
   </div>
@@ -332,16 +332,16 @@ body {
 
   <div id="tapModeGroup">
     <span class="tap-label">TAP:</span>
-    <button class="transport-btn" id="tapModeF">F — LEWO</button>
-    <button class="transport-btn" id="tapModeJ">J — PRAWO</button>
-    <button class="transport-btn active" id="tapModeSpace">SPACJA — RANDOM</button>
+    <button class="transport-btn" id="tapModeF" data-i18n="creator.tapLeft">F — LEWO</button>
+    <button class="transport-btn" id="tapModeJ" data-i18n="creator.tapRight">J — PRAWO</button>
+    <button class="transport-btn active" id="tapModeSpace" data-i18n="creator.tapRandom">SPACJA — RANDOM</button>
     <button class="transport-btn" id="btnCutDirection" title="R zmienia kierunek cięcia zaznaczonych bloków albo nowych tapów">CIĘCIE: •</button>
     <div id="tapFlash"></div>
   </div>
 
   <div class="transport-sep"></div>
-  <button class="transport-btn" id="btnUndo">↩ UNDO</button>
-  <button class="transport-btn" id="btnRedo">↪ REDO</button>
+  <button class="transport-btn" id="btnUndo">↩ <span data-i18n="creator.undo">UNDO</span></button>
+  <button class="transport-btn" id="btnRedo">↪ <span data-i18n="creator.redo">REDO</span></button>
 
   <div class="transport-sep"></div>
   <button class="transport-btn" id="btnSnap">SNAP: WYŁ</button>
@@ -349,7 +349,7 @@ body {
 
   <div class="transport-sep"></div>
   <div class="zoom-group">
-    <span class="zoom-label">ZOOM</span>
+    <span class="zoom-label" data-i18n="creator.zoom">ZOOM</span>
     <button class="transport-btn" id="zoomOut">−</button>
     <button class="transport-btn" id="zoomIn">+</button>
   </div>
@@ -370,11 +370,11 @@ body {
   <!-- Drop zone -->
   <div id="dropZone">
     <div class="drop-title">HAND SABERS</div>
-    <div class="drop-sub">MAP CREATOR</div>
+    <div class="drop-sub" data-i18n="creator.title">MAP CREATOR</div>
     <div class="drop-box" id="dropBox">
       <div class="drop-icon material-symbols-rounded">music_note</div>
-      <div>Przeciągnij plik MP3 / OGG / WAV</div>
-      <div class="drop-hint">lub kliknij aby wybrać</div>
+      <div data-i18n="creator.dropAudio">Przeciągnij plik MP3 / OGG / WAV</div>
+      <div class="drop-hint" data-i18n="creator.dropAudioSub">lub kliknij aby wybrać</div>
     </div>
     <input type="file" id="fileInput" accept="audio/*,.json,.zip">
   </div>
@@ -388,31 +388,31 @@ body {
 <!-- STATUS BAR -->
 <div id="statusBar">
   <div class="status-item">
-    <span class="status-key">BLOKI</span>
+    <span class="status-key" data-i18n="creator.statBlocks">BLOKI</span>
     <span class="status-val" id="stBeats">0</span>
   </div>
   <div class="status-item">
-    <span class="status-key">LEWO</span>
+    <span class="status-key" data-i18n="creator.statLeft">LEWO</span>
     <span class="status-val" id="stLeft">0</span>
   </div>
   <div class="status-item">
-    <span class="status-key">PRAWO</span>
+    <span class="status-key" data-i18n="creator.statRight">PRAWO</span>
     <span class="status-val" id="stRight">0</span>
   </div>
   <div class="status-item">
-    <span class="status-key">RANDOM</span>
+    <span class="status-key" data-i18n="creator.statRandom">RANDOM</span>
     <span class="status-val" id="stRand">0</span>
   </div>
   <div class="status-item">
-    <span class="status-key">BOMBY</span>
+    <span class="status-key" data-i18n="creator.statBombs">BOMBY</span>
     <span class="status-val" id="stBombs">0</span>
   </div>
   <div class="status-item">
-    <span class="status-key">ZOOM</span>
+    <span class="status-key" data-i18n="creator.statZoom">ZOOM</span>
     <span class="status-val" id="stZoom">10s</span>
   </div>
   <div class="status-item">
-    <span class="status-key">SNAP</span>
+    <span class="status-key" data-i18n="creator.statSnap">SNAP</span>
     <span class="status-val" id="stSnap">wył</span>
   </div>
   <span id="warningMsg"></span>
