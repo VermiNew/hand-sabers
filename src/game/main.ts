@@ -244,18 +244,20 @@ function resumeMapTimeline(now = performance.now()): void {
 
 let calibrationReady = false;
 
+function showCalibPanel(): void {
+  if (ui.calibPanel) ui.calibPanel.classList.add('show');
+}
+
+function hideCalibPanel(): void {
+  if (ui.calibPanel) ui.calibPanel.classList.remove('show');
+}
+
 function startCalib(): void {
   state.calibIdx = 0;
-  showOverlay();
+  showCalibPanel();
   resetCalibration();
   state.appState = S.CALIB;
-  if (ui.spinner)    ui.spinner.style.display    = 'none';
-  if (ui.ovStep)     ui.ovStep.style.display     = 'block';
-  if (ui.ovVisual)   ui.ovVisual.style.display   = 'flex';
-  if (ui.ovProgress) ui.ovProgress.style.display = 'block';
-  if (ui.ovBtn)      ui.ovBtn.style.display      = 'inline-block';
-  if (ui.ovBtnMenu)  ui.ovBtnMenu.style.display  = 'none';
-  if (ui.dStatus)    ui.dStatus.textContent       = 'CALIB';
+  if (ui.dStatus) ui.dStatus.textContent = 'CALIB';
   renderCalibStep();
 }
 
@@ -271,6 +273,7 @@ async function advanceCalib(): Promise<void> {
 }
 
 async function beginPlaying(): Promise<void> {
+  hideCalibPanel();
   hideOverlay();
   if (ui.hud)                       ui.hud.style.display        = 'flex';
   if (ui.mapProgress && state.map)  ui.mapProgress.style.display = 'flex';
@@ -314,8 +317,6 @@ function restartGame(): void {
   hidePauseMenu();
   handsLostSince = handsReturnedSince = 0;
   state.pauseReason = PAUSE_REASONS.NONE;
-  if (ui.ovVisual)   ui.ovVisual.style.display   = 'flex';
-  if (ui.ovProgress) ui.ovProgress.style.display = 'block';
   startCalib();
 }
 
@@ -683,8 +684,11 @@ const applyPauseTranslations = (): void => {
 };
 applyPauseTranslations();
 
-ui.ovBtn?.addEventListener('click',      handleOverlayButton);
-ui.ovBtnCalib?.addEventListener('click', handleCalibButton);
+ui.ovBtn?.addEventListener('click',       handleOverlayButton);
+ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
+ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); void advanceCalib(); });
+ui.calibBtnRetry?.addEventListener('click', () => { initAudio(); restartGame(); });
+ui.calibBtnMenu?.addEventListener('click',  returnToMainMenu);
 document.getElementById('pauseResume')?.addEventListener('click',  () => resumeGame(performance.now()));
 document.getElementById('pauseRestart')?.addEventListener('click', () => {
   hidePauseMenu();
@@ -707,6 +711,7 @@ function returnToMainMenu(): void {
     hideHandsPaused();
     if (ui.hud) ui.hud.style.display = 'none';
     hideOverlay();
+    hideCalibPanel();
     const mainMenu = document.getElementById('mainMenu');
     if (mainMenu) mainMenu.style.display = 'flex';
     document.body.classList.add('menu-open');
@@ -719,6 +724,7 @@ function returnToMainMenu(): void {
 
 document.getElementById('pauseQuit')?.addEventListener('click', returnToMainMenu);
 ui.ovBtnMenu?.addEventListener('click', returnToMainMenu);
+ui.calibAbortBtn?.addEventListener('click', returnToMainMenu);
 
 window.addEventListener('resize',  resizeRenderer);
 window.addEventListener('keydown', handleKeydown);

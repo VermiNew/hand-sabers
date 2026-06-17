@@ -190,5 +190,10 @@
     "waitingForHands": "Waiting for hands",
     "continue": "CONTINUE",
     "retryCalibration": "RETRY CALIBRATION"
+  },
+  "calib": {
+    "abort": "CANCEL",
+    "cameraFeed": "CAMERA FEED",
+    "holdStill": "Hold position…"
   }
 }

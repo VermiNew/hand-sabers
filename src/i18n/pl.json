@@ -231,5 +231,10 @@
     "waitingForHands": "Czekam na ręce",
     "continue": "DALEJ",
     "retryCalibration": "PONÓW KALIBRACJĘ"
+  },
+  "calib": {
+    "abort": "ANULUJ",
+    "cameraFeed": "PODGLĄD KAMERY",
+    "holdStill": "Trzymaj pozycję…"
   }
 }

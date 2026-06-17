@@ -160,14 +160,39 @@ function getCalibInstruction(step: CalibStep): string {
   return step.instr;
 }
 
+const CALIB_STEP_LABELS = ['ZASIĘG', 'STREFA', 'STRONY', 'POTW.'];
+
 export function renderCalibStep(): void {
   const step = CALIB_STEPS[state.calibIdx];
   if (!step) return;
-  const pct = ((state.calibIdx + 1) / CALIB_STEPS.length) * 100;
-  if (ui.ovStep)    ui.ovStep.textContent  = step.title;
-  if (ui.ovInstr)   ui.ovInstr.textContent = getCalibInstruction(step);
-  if (ui.ovBar)     ui.ovBar.style.width   = `${pct}%`;
-  if (ui.ovProgress) ui.ovProgress.classList.remove('indeterminate');
+  const total = CALIB_STEPS.length;
+  const idx   = state.calibIdx;
+  const pct   = ((idx + 1) / total) * 100;
+
+  if (ui.calibStep)  ui.calibStep.textContent  = step.title;
+  if (ui.calibInstr) ui.calibInstr.textContent = getCalibInstruction(step);
+  if (ui.calibBar)   ui.calibBar.style.width   = `${pct}%`;
+
+  if (ui.calibStepBadge) {
+    ui.calibStepBadge.textContent = `KROK ${idx + 1} / ${total}`;
+  }
+  if (ui.calibProgressLabel) {
+    ui.calibProgressLabel.textContent = `${Math.round(pct)}%`;
+  }
+
+  if (ui.calibStepsTrack) {
+    ui.calibStepsTrack.innerHTML = CALIB_STEPS.map((_, i) => {
+      const cls = i < idx ? 'is-done' : i === idx ? 'is-active' : '';
+      const connector = i < total - 1
+        ? `<div class="calib-step-connector${i < idx ? ' is-done' : ''}"></div>`
+        : '';
+      return `<div class="calib-step-dot ${cls}">
+        <div class="calib-step-num">${i < idx ? '<span class="material-symbols-rounded" style="font-size:13px">check</span>' : i + 1}</div>
+        <span class="calib-step-label">${CALIB_STEP_LABELS[i] ?? ''}</span>
+      </div>${connector}`;
+    }).join('');
+  }
+
   scheduleCalibAuto();
 }
 

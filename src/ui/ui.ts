@@ -8,7 +8,6 @@ interface UiRefs {
   spinner:         HTMLElement | null;
   ovStep:          HTMLElement | null;
   ovInstr:         HTMLElement | null;
-  ovVisual:        HTMLElement | null;
   ovProgress:      HTMLElement | null;
   ovBar:           HTMLElement | null;
   ovBtn:           HTMLElement | null;
@@ -33,9 +32,20 @@ interface UiRefs {
   hpHud:           HTMLElement | null;
   hpFill:          HTMLElement | null;
   hpTicks:         HTMLElement | null;
-  calibVerdict:    HTMLElement | null;
-  calibHint:       HTMLElement | null;
-  pauseBanner:     HTMLElement | null;
+  calibPanel:          HTMLElement | null;
+  calibStepsTrack:     HTMLElement | null;
+  calibStepBadge:      HTMLElement | null;
+  calibProgressLabel:  HTMLElement | null;
+  calibAbortBtn:       HTMLElement | null;
+  calibStep:           HTMLElement | null;
+  calibInstr:          HTMLElement | null;
+  calibBar:            HTMLElement | null;
+  calibBtnNext:        HTMLElement | null;
+  calibBtnRetry:       HTMLElement | null;
+  calibBtnMenu:        HTMLElement | null;
+  calibVerdict:        HTMLElement | null;
+  calibHint:           HTMLElement | null;
+  pauseBanner:         HTMLElement | null;
   pauseSub:        HTMLElement | null;
   mapTitle:        HTMLElement | null;
   mapProgress:     HTMLElement | null;
@@ -48,7 +58,6 @@ export const ui: UiRefs = {
   spinner:         document.getElementById('spinner'),
   ovStep:          document.getElementById('ovStep'),
   ovInstr:         document.getElementById('ovInstr'),
-  ovVisual:        document.getElementById('ovVisual'),
   ovProgress:      document.getElementById('ovProgress'),
   ovBar:           document.getElementById('ovBar'),
   ovBtn:           document.getElementById('ovBtn'),
@@ -73,9 +82,20 @@ export const ui: UiRefs = {
   hpHud:           document.getElementById('hpHud'),
   hpFill:          document.getElementById('hpFill'),
   hpTicks:         document.getElementById('hpTicks'),
-  calibVerdict:    document.getElementById('calibVerdict'),
-  calibHint:       document.getElementById('calibHint'),
-  pauseBanner:     document.getElementById('pauseBanner'),
+  calibPanel:          document.getElementById('calibPanel'),
+  calibStepsTrack:     document.getElementById('calibStepsTrack'),
+  calibStepBadge:      document.getElementById('calibStepBadge'),
+  calibProgressLabel:  document.getElementById('calibProgressLabel'),
+  calibAbortBtn:       document.getElementById('calibAbortBtn'),
+  calibStep:           document.getElementById('calibStep'),
+  calibInstr:          document.getElementById('calibInstr'),
+  calibBar:            document.getElementById('calibBar'),
+  calibBtnNext:        document.getElementById('calibBtnNext'),
+  calibBtnRetry:       document.getElementById('calibBtnRetry'),
+  calibBtnMenu:        document.getElementById('calibBtnMenu'),
+  calibVerdict:        document.getElementById('calibVerdict'),
+  calibHint:           document.getElementById('calibHint'),
+  pauseBanner:         document.getElementById('pauseBanner'),
   pauseSub:        document.getElementById('pauseSub'),
   mapTitle:        document.getElementById('mapTitle'),
   mapProgress:     document.getElementById('mapProgress'),
@@ -211,7 +231,6 @@ export function showGameOver(state: GameState): void {
       <span class="go-value go-combo">×${combo}</span>
     </div>
     <div class="go-hint">${t('gameover.resetCalibration')}</div>`;
-  if (ui.ovVisual)   ui.ovVisual.style.display   = 'none';
   if (ui.ovProgress) ui.ovProgress.style.display = 'none';
   setIconButton(ui.ovBtn,      t('gameover.playAgain'), 'rotate-ccw');
   setIconButton(ui.ovBtnCalib, t('gameover.calibration'), 'settings');

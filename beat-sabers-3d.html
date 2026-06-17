@@ -9,6 +9,7 @@
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700;800;900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./src/styles.css">
+<link rel="stylesheet" href="./src/styles/calib.css">
 </head>
 <body class="menu-open">
 
@@ -370,7 +371,7 @@
   </div>
 </div>
 
-<!-- OVERLAY (loading / calib / gameover) -->
+<!-- OVERLAY (loading / gameover) -->
 <div id="overlay">
   <div id="overlayBox">
     <div class="ov-title">HAND SABERS</div>
@@ -381,13 +382,6 @@
       Ładowanie modelu śledzenia rąk…
       Przygotuj kamerę i dobre oświetlenie.
     </div>
-    <div class="ov-visual" id="ovVisual" style="display:none">
-      <canvas id="calibCanvas"></canvas>
-      <div class="calib-status">
-        <span class="calib-verdict bad" id="calibVerdict">NIE</span>
-        <span class="calib-hint" id="calibHint" data-i18n="overlay.waitingForHands">Czekam na ręce</span>
-      </div>
-    </div>
     <div class="progress-wrap" id="ovProgress" style="display:none">
       <div class="progress-bar" id="ovBar" style="width:0%"></div>
     </div>
@@ -395,6 +389,60 @@
       <button class="ov-btn" id="ovBtn"      style="display:none" data-i18n="overlay.continue">DALEJ</button>
       <button class="ov-btn" id="ovBtnCalib" style="display:none" data-i18n="overlay.retryCalibration">PONÓW KALIBRACJĘ</button>
       <button class="ov-btn" id="ovBtnMenu"  style="display:none" data-i18n="gameover.mainMenu">MENU GŁÓWNE</button>
+    </div>
+  </div>
+</div>
+
+<!-- CALIB PANEL (dedicated full-screen calibration UI) -->
+<div id="calibPanel">
+  <div class="calib-topbar">
+    <div class="calib-brand">HAND SABERS</div>
+    <div class="calib-steps-track" id="calibStepsTrack">
+      <!-- filled by JS -->
+    </div>
+    <button class="calib-abort-btn" id="calibAbortBtn" type="button">
+      <span class="material-symbols-rounded">close</span>
+      <span data-i18n="calib.abort">ANULUJ</span>
+    </button>
+  </div>
+
+  <div class="calib-body">
+    <!-- Left: camera feed -->
+    <div class="calib-camera-col">
+      <div class="calib-camera-wrap">
+        <div class="ov-visual" id="ovVisual">
+          <canvas id="calibCanvas"></canvas>
+          <div class="calib-status">
+            <span class="calib-verdict bad" id="calibVerdict">
+              <span class="material-symbols-rounded calib-verdict-icon">close</span>
+              <span class="calib-verdict-text">NIE</span>
+            </span>
+            <span class="calib-hint" id="calibHint" data-i18n="overlay.waitingForHands">Czekam na ręce</span>
+          </div>
+        </div>
+        <div class="calib-camera-label">
+          <span class="material-symbols-rounded">videocam</span>
+          <span data-i18n="calib.cameraFeed">PODGLĄD KAMERY</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: instructions -->
+    <div class="calib-info-col">
+      <div class="calib-step-badge" id="calibStepBadge">1 / 4</div>
+      <div class="calib-step-title" id="calibStep"></div>
+      <div class="calib-step-desc"  id="calibInstr"></div>
+
+      <div class="calib-progress-wrap">
+        <div class="calib-progress-bar" id="calibBar"></div>
+      </div>
+      <div class="calib-progress-label" id="calibProgressLabel" data-i18n="calib.holdStill">Trzymaj pozycję…</div>
+
+      <div class="calib-actions">
+        <button class="calib-btn-primary"   id="calibBtnNext"   style="display:none" data-i18n="overlay.continue">DALEJ</button>
+        <button class="calib-btn-secondary" id="calibBtnRetry"  style="display:none" data-i18n="overlay.retryCalibration">PONÓW KALIBRACJĘ</button>
+        <button class="calib-btn-secondary" id="calibBtnMenu"   style="display:none" data-i18n="gameover.mainMenu">MENU GŁÓWNE</button>
+      </div>
     </div>
   </div>
 </div>
