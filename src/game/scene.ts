@@ -102,7 +102,7 @@ floorReflect.position.y = 0.005;
 floorReflect.renderOrder = 1;
 scene.add(floorReflect);
 
-function rail(x: number, color: number): void {
+function rail(x: number, color: number): THREE.MeshBasicMaterial[] {
   const g  = new THREE.BoxGeometry(0.04, 0.04, 30);
   const m  = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.8 });
   const r  = new THREE.Mesh(g, m);
@@ -113,9 +113,10 @@ function rail(x: number, color: number): void {
   const gr = new THREE.Mesh(gg, gm);
   gr.position.set(x, 0.01, -12);
   scene.add(gr);
+  return [m, gm];
 }
-rail(-2.2, THEME.left);
-rail(2.2,  THEME.right);
+const leftRailMats  = rail(-2.2, THEME.left);
+const rightRailMats = rail(2.2,  THEME.right);
 
 const HIT_Z = 1.5;
 const hitPlaneMat = new THREE.MeshBasicMaterial({
@@ -349,6 +350,12 @@ export function setSaberColor(side: 'left' | 'right', hex: string): void {
       mat.needsUpdate = true;
     }
   });
+
+  const railMats = side === 'left' ? leftRailMats : rightRailMats;
+  for (const railMat of railMats) {
+    railMat.color.set(color);
+    railMat.needsUpdate = true;
+  }
 
   ud.color = new THREE.Color(colorHex).getHex();
 }

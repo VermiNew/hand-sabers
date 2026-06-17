@@ -88,6 +88,10 @@ const MATS = {
   bombSpike: new THREE.MeshBasicMaterial({ color: 0xff6060 }),
 };
 
+// Current block colors, kept in sync with saber color (used for shards)
+let currentColorLeft:  number = THEME.left;
+let currentColorRight: number = THEME.right;
+
 const CUT_ARROW_ROT_Z = {
   down: 0,
   up: Math.PI,
@@ -796,9 +800,9 @@ function checkHits() {
     }
 
     if ((state.oneHandMode === 'left' || entry.side === 'left') && useLeft && bladeHits(entry.mesh, bladeHitboxes.left) && lSpeed > MIN_SWING_SPEED) {
-      hitBlock(entry, THEME.left,  lLight, bladeHitboxes.left);  swapRemoveActiveBlock(i);
+      hitBlock(entry, getCurrentBlockColor('left'),  lLight, bladeHitboxes.left);  swapRemoveActiveBlock(i);
     } else if ((state.oneHandMode === 'right' || entry.side === 'right') && useRight && bladeHits(entry.mesh, bladeHitboxes.right) && rSpeed > MIN_SWING_SPEED) {
-      hitBlock(entry, THEME.right, rLight, bladeHitboxes.right); swapRemoveActiveBlock(i);
+      hitBlock(entry, getCurrentBlockColor('right'), rLight, bladeHitboxes.right); swapRemoveActiveBlock(i);
     }
   }
 }
@@ -970,3 +974,20 @@ export function disposeGameplayResources() {
 }
 
 export function getLastHitMs() { return lastHitMs; }
+
+// Sync block + outline materials (and the tracked shard color) with the saber color.
+export function setBlockColor(side: 'left' | 'right', hex: number): void {
+  const mat  = side === 'left' ? MATS.blockL   : MATS.blockR;
+  const outl = side === 'left' ? MATS.outlineL : MATS.outlineR;
+  mat.color.setHex(hex);
+  mat.emissive.setHex(hex);
+  mat.needsUpdate = true;
+  outl.color.setHex(hex);
+  outl.needsUpdate = true;
+  if (side === 'left') currentColorLeft = hex;
+  else currentColorRight = hex;
+}
+
+export function getCurrentBlockColor(side: 'left' | 'right'): number {
+  return side === 'left' ? currentColorLeft : currentColorRight;
+}

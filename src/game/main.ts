@@ -8,7 +8,7 @@ import {
 } from './scene.ts';
 import { initAudio, startMapAudio, stopMapAudio, pauseMapAudio, getMapTime, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
-import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
+import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
@@ -36,8 +36,14 @@ declare global {
 
 // ── Ustawienia ────────────────────────────────────────────────────────────────
 const settings = loadSettings();
-if (settings.saberColorLeft)  setSaberColor('left',  settings.saberColorLeft);
-if (settings.saberColorRight) setSaberColor('right', settings.saberColorRight);
+if (settings.saberColorLeft) {
+  setSaberColor('left', settings.saberColorLeft);
+  setBlockColor('left', parseInt(settings.saberColorLeft.replace('#', ''), 16));
+}
+if (settings.saberColorRight) {
+  setSaberColor('right', settings.saberColorRight);
+  setBlockColor('right', parseInt(settings.saberColorRight.replace('#', ''), 16));
+}
 window.__trackingSensitivity = settings.sensitivity;
 window.__trackingFlip        = settings.flipCamera;
 state.noFail                 = settings.noFail;
@@ -1052,6 +1058,7 @@ function initMainMenu(): void {
         btn.setAttribute('aria-checked', 'true');
 
         setSaberColor(side, colorDef.hex);
+        setBlockColor(side, parseInt(colorDef.hex.replace('#', ''), 16));
         const settingKey = side === 'left' ? 'saberColorLeft' : 'saberColorRight';
         (settings as unknown as Record<string, unknown>)[settingKey] = colorDef.hex;
         setSetting(settingKey as keyof Settings, colorDef.hex);
