@@ -170,6 +170,7 @@
     "local": "LOCAL",
     "playBtn": "GRAJ",
     "editBtn": "EDYTUJ",
+    "tries": "prób",
     "deleteConfirm": "Usunąć tę mapę?",
     "importError": "Błąd importu ZIP",
     "score": "Wynik",

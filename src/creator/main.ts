@@ -773,8 +773,13 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
   if (e.code === 'Space') {
     e.preventDefault();
     if (e.shiftKey) { tapBomb(); return; }
-    if (isPlaying) tapBeat(Math.random() < 0.5 ? 'left' : 'right');
-    else handlePlay();
+    handlePlay();
+    return;
+  }
+  if (e.code === 'KeyR' && e.shiftKey) {
+    e.preventDefault();
+    cancelPrecount();
+    stopAudio(true);
     return;
   }
   if (e.code === 'KeyR') { e.preventDefault(); cycleCutForSelectionOrTap(); return; }

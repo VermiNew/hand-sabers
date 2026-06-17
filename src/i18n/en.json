@@ -129,6 +129,7 @@
     "local": "LOCAL",
     "playBtn": "PLAY",
     "editBtn": "EDIT",
+    "tries": "attempts",
     "deleteConfirm": "Delete this map?",
     "importError": "ZIP import error",
     "score": "Score",

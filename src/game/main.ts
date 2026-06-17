@@ -90,13 +90,14 @@ function preserveDevQueryOnMenuLinks(): void {
 }
 
 // ── Score submit ──────────────────────────────────────────────────────────────
-async function submitScore(): Promise<void> {
+async function submitScore(progress?: number): Promise<void> {
   const payload = {
     mapId:  state.map?.id ?? 'random',
     player: settings.playerName || 'Gracz',
     score:  state.score,
     combo:  state.maxCombo,
     date:   new Date().toISOString(),
+    ...(progress !== undefined ? { progress } : {}),
   };
 
   try {
@@ -292,9 +293,12 @@ async function beginPlaying(): Promise<void> {
 function endGame(): void {
   state.appState    = S.GAMEOVER;
   state.pauseReason = PAUSE_REASONS.NONE;
+  const dur = getCurrentMapDuration();
+  const pos = getMapTimelineSec();
+  const progress = dur > 0 ? Math.max(0, Math.min(1, pos / dur)) : undefined;
   stopMapAudio();
   resetMapTimeline();
-  void submitScore();
+  void submitScore(progress);
   showGameOver(state);
 }
 

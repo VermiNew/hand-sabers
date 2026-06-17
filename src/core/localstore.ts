@@ -33,6 +33,7 @@ interface LocalScoreInput {
   score?: number;
   combo?: number;
   date?: string;
+  progress?: number;
 }
 
 export interface LocalScore {
@@ -42,6 +43,7 @@ export interface LocalScore {
   combo: number;
   date: string;
   localOnly: true;
+  progress?: number;
 }
 
 interface AudioMeta {
@@ -118,6 +120,7 @@ export function appendLocalScore(score: LocalScoreInput | null | undefined): voi
     combo: Math.max(0, Math.floor(score.combo || 0)),
     date: score.date || new Date().toISOString(),
     localOnly: true,
+    ...(score.progress !== undefined ? { progress: Math.max(0, Math.min(1, score.progress)) } : {}),
   });
   scores.sort((a, b) => (b.score || 0) - (a.score || 0));
   localStorage.setItem(LOCAL_SCORES_KEY, JSON.stringify(scores.slice(0, 500)));

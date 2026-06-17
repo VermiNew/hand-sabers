@@ -56,39 +56,107 @@ nav {
 }
 
 /* Map cards */
-#mapList { display:flex; flex-direction:column; gap:10px; }
+#mapList { display:flex; flex-direction:column; gap:12px; }
+
 .map-card {
-  display:flex; align-items:center; gap:16px;
-  background:var(--panel); border:1px solid var(--border);
-  border-radius:8px; padding:16px 20px;
-  cursor:pointer; transition:all .2s;
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:stretch;
+  background:rgba(8,14,28,0.8);
+  border:1px solid rgba(255,255,255,0.07);
+  border-radius:16px;
+  overflow:hidden;
+  transform-style:preserve-3d;
+  transition:border-color 0.2s, box-shadow 0.2s;
+  will-change:transform;
+}
+.map-card::before {
+  content:'';
+  position:absolute;
+  left:0; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg, #36f2a1 0%, #2f7cff 100%);
+  border-radius:0 0 0 0;
 }
 .map-card:hover {
-  border-color:rgba(47,124,255,0.4);
-  box-shadow:0 0 20px rgba(47,124,255,0.1);
-  background:rgba(7,17,29,0.98);
+  border-color:rgba(47,124,255,0.3);
+  box-shadow:0 12px 40px rgba(0,0,0,0.4), 0 0 0 1px rgba(47,124,255,0.08);
 }
-.map-title {
-  font-family:'Oxanium',sans-serif; font-size:16px; font-weight:700;
-  letter-spacing:2px; color:var(--text); flex:1;
+
+/* Card body */
+.map-card-body {
+  padding:16px 20px 14px 22px;
+  display:flex; flex-direction:column; gap:6px; min-width:0;
 }
-.map-meta { font-size:10px; color:var(--muted); letter-spacing:2px; margin-top:3px; }
-.map-beats {
-  font-size:11px; color:var(--accent); letter-spacing:2px; text-align:right;
+.map-card-title {
+  font-family:'Oxanium',sans-serif; font-size:17px; font-weight:700;
+  color:#fff; letter-spacing:1px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
-.map-actions { display:flex; gap:8px; }
+.map-card-artist {
+  font-size:11px; color:rgba(148,163,184,0.55); letter-spacing:1px;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+.map-card-meta {
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  font-size:10px; color:rgba(148,163,184,0.6); letter-spacing:1.5px;
+}
+.map-card-meta span { white-space:nowrap; }
+.diff-badge {
+  padding:1px 7px; border-radius:3px;
+  font-size:9px; letter-spacing:2px; font-weight:700; text-transform:uppercase;
+}
+.diff-easy   { background:rgba(54,242,161,0.12); color:#36f2a1; border:1px solid rgba(54,242,161,0.3); }
+.diff-medium { background:rgba(255,200,60,0.12);  color:#ffc83c; border:1px solid rgba(255,200,60,0.3); }
+.diff-hard   { background:rgba(255,100,60,0.12);  color:#ff643c; border:1px solid rgba(255,100,60,0.3); }
+.diff-expert { background:rgba(200,60,255,0.12);  color:#c83cff; border:1px solid rgba(200,60,255,0.3); }
+
+/* Score row under meta */
+.map-card-score-row {
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  margin-top:2px;
+}
+.map-card-tries {
+  font-size:10px; color:rgba(148,163,184,0.4); letter-spacing:1px; white-space:nowrap;
+}
+.map-card-best {
+  font-family:'Oxanium',sans-serif; font-size:12px; font-weight:700;
+  color:rgba(54,242,161,0.8); letter-spacing:2px; white-space:nowrap;
+}
+
+/* Progress bar */
+.map-card-progress {
+  flex:1; min-width:80px; height:4px;
+  background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden;
+}
+.map-card-progress-fill {
+  height:100%; border-radius:2px;
+  background:linear-gradient(90deg, #36f2a1, #2f7cff);
+  transition:width 0.3s ease;
+}
+
+/* Actions panel */
+.map-card-actions {
+  display:flex; flex-direction:column; justify-content:center;
+  gap:6px; padding:12px 14px 12px 0;
+  border-left:1px solid rgba(255,255,255,0.05);
+  margin-left:4px;
+  padding-left:14px;
+}
 .btn-small {
-  background:transparent; border:1px solid var(--border);
-  color:var(--muted); font-family:'JetBrains Mono',monospace;
-  font-size:10px; letter-spacing:2px; padding:5px 12px;
-  border-radius:3px; cursor:pointer; transition:all .2s;
+  background:transparent; border:1px solid rgba(148,163,184,0.15);
+  color:rgba(148,163,184,0.55); font-family:'JetBrains Mono',monospace;
+  font-size:10px; letter-spacing:1.5px; padding:5px 12px;
+  border-radius:4px; cursor:pointer; transition:border-color .15s, color .15s, background .15s;
+  white-space:nowrap;
 }
-.btn-small:hover { border-color:var(--main); color:var(--main); }
-.btn-small.play { border-color:rgba(54,242,161,0.4); color:var(--accent); }
-.btn-small.play:hover { background:rgba(54,242,161,0.08); }
-.btn-small.edit { border-color:rgba(47,124,255,0.4); color:var(--main); }
-.btn-small.del  { border-color:rgba(255,58,58,0.3); color:#ff3a3a; }
-.btn-small.del:hover { background:rgba(255,58,58,0.08); }
+.btn-small:hover { border-color:rgba(47,124,255,0.5); color:rgba(200,220,255,0.9); }
+.btn-small.play { border-color:rgba(54,242,161,0.35); color:rgba(54,242,161,0.8); }
+.btn-small.play:hover { background:rgba(54,242,161,0.07); border-color:var(--accent); color:var(--accent); }
+.btn-small.edit { border-color:rgba(47,124,255,0.3); color:rgba(47,124,255,0.75); }
+.btn-small.edit:hover { background:rgba(47,124,255,0.07); border-color:var(--main); color:var(--main); }
+.btn-small.del  { border-color:rgba(255,58,58,0.25); color:rgba(255,80,80,0.6); padding:5px 8px; }
+.btn-small.del:hover { background:rgba(255,58,58,0.07); border-color:rgba(255,58,58,0.6); color:#ff6060; }
 
 .empty-state {
   text-align:center; padding:40px; color:var(--dim);
@@ -96,77 +164,9 @@ nav {
   border:1px dashed var(--border); border-radius:8px;
 }
 
-
-/* Neon Minimal map library cards */
-#mapList {
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.map-card {
-  position:relative;
-  display:grid;
-  grid-template-columns:minmax(0,1fr) auto auto;
-  align-items:center;
-  gap:14px;
-  background:rgba(255,255,255,0.03);
-  border:1px solid rgba(255,255,255,0.07);
-  border-radius:14px;
-  overflow:hidden;
-  padding:0;
-  transition:border-color 0.15s, background 0.15s, transform 0.15s, box-shadow 0.15s;
-}
-.map-card::before {
-  content:'';
-  position:absolute;
-  left:0; top:0; bottom:0;
-  width:4px;
-  background:linear-gradient(180deg, #36f2a1, #2f7cff);
-}
-.map-card:hover {
-  background:rgba(47,124,255,0.06);
-  border-color:rgba(47,124,255,0.25);
-  transform:translateY(-1px);
-  box-shadow:0 8px 32px rgba(0,0,0,0.32);
-}
-.map-card > div:first-child {
-  padding:16px 20px 16px 24px;
-  min-width:0;
-}
-.map-title {
-  font-family:'Oxanium', sans-serif;
-  font-size:16px;
-  font-weight:700;
-  color:#fff;
-  margin-bottom:4px;
-  letter-spacing:1.4px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.map-meta {
-  font-size:11px;
-  letter-spacing:1.5px;
-  color:rgba(148,163,184,0.70);
-}
-.map-beats {
-  font-size:11px;
-  color:rgba(54,242,161,0.86);
-  letter-spacing:2px;
-  text-align:right;
-  padding-left:10px;
-  white-space:nowrap;
-}
-.map-actions {
-  display:flex;
-  align-items:center;
-  gap:8px;
-  padding:0 16px 0 0;
-}
 @media (max-width:720px) {
-  .map-card { grid-template-columns:minmax(0,1fr); gap:0; }
-  .map-beats { text-align:left; padding:0 20px 10px 24px; }
-  .map-actions { padding:0 20px 16px 24px; flex-wrap:wrap; }
+  .map-card { grid-template-columns:minmax(0,1fr); }
+  .map-card-actions { flex-direction:row; border-left:none; border-top:1px solid rgba(255,255,255,0.05); padding:10px 16px; margin-left:0; }
 }
 
 /* Leaderboard */
@@ -326,6 +326,28 @@ const mapList = document.getElementById('mapList');
 const importStatus = document.getElementById('importStatus');
 const importMapInput = document.getElementById('importMapInput');
 
+let allScores = readLocalScores({ limit: 1000 });
+
+function getMapScoreData(mapId) {
+  const scores = allScores.filter(s => s.mapId === mapId);
+  if (!scores.length) return { tries: 0, best: null, progress: null };
+  const best = scores.reduce((a, b) => (b.score > a.score ? b : a), scores[0]);
+  const maxProgress = scores.reduce((a, b) => Math.max(a, b.progress ?? 0), 0);
+  return { tries: scores.length, best, progress: maxProgress };
+}
+
+function add3DTilt(card) {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width  - 0.5;
+    const y = (e.clientY - r.top)  / r.height - 0.5;
+    card.style.transform = `perspective(600px) rotateY(${x * 6}deg) rotateX(${-y * 4}deg) translateY(-2px)`;
+  });
+  card.addEventListener('mouseleave', () => {
+    card.style.transform = '';
+  });
+}
+
 function setImportStatus(message, tone = 'info') {
   importStatus.style.display = message ? 'block' : 'none';
   importStatus.textContent = message || '';
@@ -422,26 +444,64 @@ async function loadMaps() {
     ? `<div class="empty-state" style="margin-bottom:12px">${t('maps.serverFallback')}</div>`
     : '';
 
+  allScores = readLocalScores({ limit: 1000 });
   mapList.innerHTML = offlineNote + maps.map(m => {
-    const beats  = m.beats?.length ?? 0;
-    const dur    = m.meta?.duration ? formatTime(m.meta.duration) : '?';
-    const title  = m.meta?.title   ?? m.id;
-    const badge  = m.source === 'local' || m.source === 'autosave' ? ` · ${t('maps.local')}` : '';
+    const beats   = m.beats?.length ?? 0;
+    const dur     = m.meta?.duration ? formatTime(m.meta.duration) : '?';
+    const title   = m.meta?.title   ?? m.id;
+    const artist  = m.meta?.artist  ?? '';
+    const mapper  = m.meta?.mapper  ?? '';
+    const diff    = m.meta?.difficulty ?? '';
+    const isLocal = m.source === 'local' || m.source === 'autosave';
     const canDeleteServer = m.source === 'server' || m.source === 'server+local';
+
+    const sd = getMapScoreData(m.id);
+    const triesLabel = sd.tries > 0 ? `${sd.tries} ${t('maps.tries') || 'prób'}` : '';
+    const bestLabel  = sd.best  ? `${String(sd.best.score).padStart(6,'0')}` : '';
+    const progressPct = sd.progress !== null ? Math.round(sd.progress * 100) : null;
+    const progressBar = progressPct !== null
+      ? `<div class="map-card-progress"><div class="map-card-progress-fill" style="width:${progressPct}%"></div></div>`
+      : '';
+
+    const artistLine = (artist || mapper)
+      ? `<div class="map-card-artist">${escHtml(artist)}${artist && mapper ? ' · ' : ''}${mapper ? escHtml(mapper) : ''}</div>`
+      : '';
+    const diffBadge = diff
+      ? `<span class="diff-badge diff-${escHtml(diff.toLowerCase())}">${escHtml(diff)}</span>`
+      : '';
+    const localBadge = isLocal ? `<span style="color:rgba(148,163,184,0.4);font-size:9px;letter-spacing:2px">LOCAL</span>` : '';
+    const scoreRow = (triesLabel || bestLabel || progressPct !== null) ? `
+      <div class="map-card-score-row">
+        ${triesLabel ? `<span class="map-card-tries">${escHtml(triesLabel)}</span>` : ''}
+        ${bestLabel  ? `<span class="map-card-best">${escHtml(bestLabel)}</span>` : ''}
+        ${progressBar}
+      </div>` : '';
+
     return `
-      <div class="map-card">
-        <div style="flex:1">
-          <div class="map-title">${escHtml(title)}</div>
-          <div class="map-meta">${beats} ${t('maps.beats')} · ${dur}${badge}</div>
+      <div class="map-card" data-id="${attr(m.id)}">
+        <div class="map-card-body">
+          <div class="map-card-title">${escHtml(title)}</div>
+          ${artistLine}
+          <div class="map-card-meta">
+            <span>${escHtml(dur)}</span>
+            <span>${beats} ${t('maps.beats')}</span>
+            ${diffBadge}
+            ${localBadge}
+          </div>
+          ${scoreRow}
         </div>
-        <div class="map-beats">${beats} ${t('maps.beats').toUpperCase()}</div>
-        <div class="map-actions">
+        <div class="map-card-actions">
           <button class="btn-small play" data-action="play" data-id="${attr(m.id)}"><span class="material-symbols-rounded btn-icon">play_arrow</span>${t('maps.playBtn')}</button>
           <button class="btn-small edit" data-action="edit" data-id="${attr(m.id)}">${t('maps.editBtn')}</button>
-          <button class="btn-small del" data-action="delete" data-id="${attr(m.id)}" data-server="${canDeleteServer ? '1' : '0'}" aria-label="Usuń mapę"><span class="material-symbols-rounded">delete</span></button>
+          <button class="btn-small del"  data-action="delete" data-id="${attr(m.id)}" data-server="${canDeleteServer ? '1' : '0'}" aria-label="Usuń mapę"><span class="material-symbols-rounded" style="font-size:14px">delete</span></button>
         </div>
       </div>`;
   }).join('');
+  applyTiltToCards();
+}
+
+function applyTiltToCards() {
+  document.querySelectorAll('.map-card').forEach(add3DTilt);
 }
 
 function playMap(id) {
