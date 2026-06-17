@@ -89,11 +89,13 @@ body {
   width:100%; padding:6px 0;
   background:none; border:none; border-radius:0;
   font-family:'Oxanium',sans-serif; font-size:clamp(28px, 3.6vw, 52px); font-weight:900;
-  letter-spacing:3px; text-transform:uppercase;
+  letter-spacing:3px; text-transform:uppercase; white-space:nowrap;
   color:rgba(226,232,240,0.55);
   text-shadow:0 2px 18px rgba(0,0,0,0.9);
-  cursor:pointer; line-height:1.1;
-  transition:color 0.14s ease, text-shadow 0.14s ease, transform 0.14s ease;
+  cursor:pointer; line-height:1.1; text-decoration:none;
+  transition:color 0.22s cubic-bezier(0.4,0,0.2,1),
+             text-shadow 0.22s cubic-bezier(0.4,0,0.2,1),
+             transform 0.22s cubic-bezier(0.4,0,0.2,1);
 }
 .main-nav-item::before,
 .main-nav-item::after { display:none; }
@@ -103,12 +105,12 @@ body {
 .main-nav-pulse { display:none; }
 .main-nav-label { position:relative; z-index:1; }
 
-/* Hover */
+/* Hover — smooth slide in on enter, slide back on leave */
 .main-nav-item:hover:not(.is-disabled),
 .main-nav-item:focus-visible:not(.is-disabled) {
   color:#fff;
-  text-shadow:0 0 32px rgba(54,242,161,0.55), 0 2px 18px rgba(0,0,0,0.9);
-  transform:translateX(8px);
+  text-shadow:0 0 48px rgba(54,242,161,0.7), 0 0 18px rgba(54,242,161,0.35), 0 2px 18px rgba(0,0,0,0.9);
+  transform:translateX(14px);
 }
 
 /* Active press */
@@ -130,19 +132,17 @@ body {
 }
 .main-nav-item.is-disabled:hover { color:rgba(148,163,184,0.22); }
 
-/* Footer */
+/* Footer — only ?dev link remains */
 .main-menu-footer {
   margin-top:clamp(24px, 4vh, 48px);
   display:flex; gap:16px; align-items:center;
   font-size:10px; letter-spacing:3px;
   color:rgba(148,163,184,0.38);
 }
-.main-menu-footer a,
-.main-menu-footer span,
 .main-menu-dev {
-  color:rgba(148,163,184,0.38); text-decoration:none; transition:color 0.15s;
+  color:rgba(148,163,184,0.28); text-decoration:none; transition:color 0.15s;
 }
-.main-menu-footer a:hover { color:var(--accent); }
+.main-menu-dev:hover { color:var(--accent); }
 
 /* Menu-open: hide HUD / pause */
 body.menu-open #hud,
