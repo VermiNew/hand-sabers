@@ -1121,6 +1121,13 @@ function initMainMenu(): void {
     document.getElementById('saberColorNameRight'),
     'right', rightHex
   );
+
+  document.getElementById('mainDevMode')?.addEventListener('click', () => {
+    const current = new URLSearchParams(location.search);
+    if (!current.has('dev')) current.set('dev', '');
+    const qs = current.toString().replace(/=(?=&|$)/g, '');
+    location.href = `${location.pathname}${qs ? `?${qs}` : ''}${location.hash}`;
+  });
 }
 
 function startRenderLoop(): void {
