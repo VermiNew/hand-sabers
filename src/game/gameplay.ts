@@ -843,7 +843,7 @@ export function updateMenuDemo(now: number, t: number): void {
     }
 
     if (entry.mesh.position.z >= MENU_DEMO_HIT_Z) {
-      const color = entry.side === 'left' ? THEME.left : THEME.right;
+      const color = getCurrentBlockColor(entry.side);
       shatterBlock(entry.mesh, color, null, { demo: true });
       releaseBlock(entry.mesh);
       swapRemoveActiveBlock(i);
