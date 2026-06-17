@@ -221,7 +221,7 @@ async function restoreAudioForCurrentMap(): Promise<boolean> {
         updateTitle: false,
         keepMapId:   true,
       });
-      autosaveLbl.textContent = `audio przywrócone lokalnie: ${new Date().toLocaleTimeString()}`;
+      autosaveLbl.textContent = `${t('creator.autosaveAudioLocal')}: ${new Date().toLocaleTimeString()}`;
       return true;
     }
   } catch (e) {
@@ -238,7 +238,7 @@ async function restoreAudioForCurrentMap(): Promise<boolean> {
       updateTitle: false,
       keepMapId:   true,
     });
-    autosaveLbl.textContent = `audio pobrane z serwera: ${new Date().toLocaleTimeString()}`;
+    autosaveLbl.textContent = `${t('creator.autosaveAudioServer')}: ${new Date().toLocaleTimeString()}`;
     return true;
   } catch (e) {
     console.warn('Server audio restore failed:', e);
@@ -937,13 +937,13 @@ async function saveMap(): Promise<void> {
       saveLocalMap(map as unknown as Parameters<typeof saveLocalMap>[0]);
     }
     lastSavedAt = new Date();
-    autosaveLbl.textContent = `zapisano na serwerze: ${lastSavedAt.toLocaleTimeString()} (${String(saved['id'] ?? '')})`;
-    showToast('Mapa zapisana na serwerze', { type: 'success' });
+    autosaveLbl.textContent = `${t('creator.autosaveServer')}: ${lastSavedAt.toLocaleTimeString()} (${String(saved['id'] ?? '')})`;
+    showToast(t('creator.savedServer'), { type: 'success' });
   } catch (err) {
     downloadMapJsonFallback(map);
     lastSavedAt = new Date();
-    autosaveLbl.textContent = `zapis lokalny/export JSON: ${lastSavedAt.toLocaleTimeString()} — ${(err as Error).message}`;
-    showToast('Serwer niedostępny — pobrano JSON jako kopię zapasową', { type: 'error' });
+    autosaveLbl.textContent = `${t('creator.autosaveLocal')}: ${lastSavedAt.toLocaleTimeString()} — ${(err as Error).message}`;
+    showToast(t('creator.savedLocal'), { type: 'error' });
   }
 }
 
@@ -959,7 +959,7 @@ async function exportZip(): Promise<void> {
       await restoreAudioForCurrentMap();
       const restoredBuf = audioArrayBuffer as ArrayBuffer | null;
       if (restoredBuf) zip.file(audioFileName || map.meta?.audioFile || 'audio.bin', restoredBuf.slice(0));
-      else if (!await showConfirm('No audio in memory. Export ZIP with map.json only?', { title: 'Export without audio', confirmText: 'EXPORT', cancelText: 'CANCEL' })) return;
+      else if (!await showConfirm(t('creator.exportNoAudioConfirm'), { title: t('creator.exportNoAudioTitle'), confirmText: t('creator.exportConfirm'), cancelText: t('creator.exportCancel') })) return;
     }
     const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
     const url  = URL.createObjectURL(blob);
@@ -969,7 +969,7 @@ async function exportZip(): Promise<void> {
     a.click();
     URL.revokeObjectURL(url);
   } catch (err) {
-    showAlert('Eksport ZIP nie powiódł się: ' + (err as Error).message, { title: 'Błąd eksportu ZIP' });
+    showAlert(t('creator.exportError') + (err as Error).message, { title: t('creator.exportErrorTitle') });
   }
 }
 
@@ -1004,7 +1004,7 @@ function autoSaveToLocalStorage(): void {
     saveLocalMap(map as unknown as Parameters<typeof saveLocalMap>[0]);
     if (audioArrayBuffer) void saveLocalMapAudio(map.id, audioArrayBuffer!.slice(0) as ArrayBuffer, { fileName: audioFileName, mimeType: audioMimeType });
     lastSavedAt = new Date();
-    autosaveLbl.textContent = `autosave: ${lastSavedAt.toLocaleTimeString()}`;
+    autosaveLbl.textContent = `${t('creator.autosave')}: ${lastSavedAt.toLocaleTimeString()}`;
   } catch { /* storage quota exceeded */ }
 }
 
@@ -1029,13 +1029,13 @@ const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
 async function handleFile(file: File): Promise<void> {
   try {
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      showAlert('Plik jest za duży (maks. 100 MB)', { title: 'Plik za duży' });
+      showAlert(t('creator.fileTooBig'), { title: t('creator.fileTooBigTitle') });
       return;
     }
     assertFileSize(file);
     if (file.type.startsWith('audio/') || AUDIO_EXT_RE.test(file.name)) {
       await loadAudioFile(file);
-      showToast('Audio wczytane', { type: 'success' });
+      showToast(t('creator.audioLoaded'), { type: 'success' });
     } else if (file.name.endsWith('.json')) {
       const text   = await file.text();
       const loaded = JSON.parse(text) as Record<string, unknown>;
@@ -1050,16 +1050,16 @@ async function handleFile(file: File): Promise<void> {
       if (!restored) warningMsg.textContent = t('creator.noAudioWarning');
       saveLocalMap(map as unknown as Parameters<typeof saveLocalMap>[0]);
       renderAll();
-      showToast('Mapa JSON wczytana', { type: 'success' });
+      showToast(t('creator.mapJsonLoaded'), { type: 'success' });
     } else if (file.name.endsWith('.zip')) {
       await loadZipFile(file);
-      showToast('ZIP wczytany', { type: 'success' });
+      showToast(t('creator.zipLoaded'), { type: 'success' });
     } else {
       throw new Error(`Nieobsługiwany format pliku: ${file.name}. Obsługiwane: audio (.mp3, .ogg, .wav), .json, .zip`);
     }
   } catch (err) {
     warningMsg.textContent = (err as Error).message;
-    showAlert((err as Error).message, { title: 'Nie udało się wczytać pliku' });
+    showAlert((err as Error).message, { title: t('creator.loadError') });
   }
 }
 
@@ -1144,7 +1144,7 @@ async function loadInitialMap(): Promise<void> {
     if (saved) {
       const parsed = JSON.parse(saved) as Record<string, unknown>;
       if (parsed?.['beats'] && !audioBuffer) {
-        if (await showConfirm(`Found autosave "${parsed['meta'] ? (parsed['meta'] as Record<string, unknown>)['title'] : ''}". Load it?`, { title: 'Autosave', confirmText: 'LOAD', cancelText: 'SKIP' })) {
+        if (await showConfirm(t('creator.autosaveFoundConfirm'), { title: t('creator.autosaveFoundTitle'), confirmText: t('creator.autosaveLoad'), cancelText: t('creator.autosaveSkip') })) {
           map = normalizeMap({ formatVersion: 1, id: (parsed['id'] as string | undefined) || MAP_ID(), ...parsed }, { fallbackId: MAP_ID(), requireBeats: false }) as unknown as CreatorMap;
           sortBeatsByTime(map.beats);
           selectedBeats.clear();
