@@ -8,8 +8,12 @@ interface UiRefs {
   spinner:         HTMLElement | null;
   ovStep:          HTMLElement | null;
   ovInstr:         HTMLElement | null;
+  ovLoadDetail:    HTMLElement | null;
   ovProgress:      HTMLElement | null;
   ovBar:           HTMLElement | null;
+  ovProgressPct:   HTMLElement | null;
+  goTitle:         HTMLElement | null;
+  goBody:          HTMLElement | null;
   ovBtn:           HTMLElement | null;
   ovBtnCalib:      HTMLElement | null;
   ovBtnMenu:       HTMLElement | null;
@@ -58,8 +62,12 @@ export const ui: UiRefs = {
   spinner:         document.getElementById('spinner'),
   ovStep:          document.getElementById('ovStep'),
   ovInstr:         document.getElementById('ovInstr'),
+  ovLoadDetail:    document.getElementById('ovLoadDetail'),
   ovProgress:      document.getElementById('ovProgress'),
   ovBar:           document.getElementById('ovBar'),
+  ovProgressPct:   document.getElementById('ovProgressPct'),
+  goTitle:         document.getElementById('goTitle'),
+  goBody:          document.getElementById('goBody'),
   ovBtn:           document.getElementById('ovBtn'),
   ovBtnCalib:      document.getElementById('ovBtnCalib'),
   ovBtnMenu:       document.getElementById('ovBtnMenu'),
@@ -185,12 +193,15 @@ export function showMapTitle(title: string): void {
 }
 
 export function setLoadingProgress(title: string, detail: string, ratio: number | null = null): void {
-  if (!ui.spinner || !ui.ovProgress || !ui.ovBar || !ui.ovInstr) return;
-  ui.spinner.style.display = 'none';
+  if (!ui.ovProgress || !ui.ovBar) return;
+  if (ui.spinner) ui.spinner.style.display = 'none';
   ui.ovProgress.style.display = 'block';
   ui.ovProgress.classList.toggle('indeterminate', ratio === null);
-  ui.ovBar.style.width = ratio === null ? '38%' : `${Math.round(Math.max(0, Math.min(1, ratio)) * 100)}%`;
-  ui.ovInstr.innerHTML = `${title}<br><span class="loading-detail">${detail}</span>`;
+  const pct = ratio === null ? 0 : Math.round(Math.max(0, Math.min(1, ratio)) * 100);
+  ui.ovBar.style.width = ratio === null ? '0%' : `${pct}%`;
+  if (ui.ovProgressPct) ui.ovProgressPct.textContent = ratio === null ? '' : `${pct}%`;
+  if (ui.ovInstr) ui.ovInstr.textContent = title;
+  if (ui.ovLoadDetail) ui.ovLoadDetail.textContent = detail;
 }
 
 export function showCameraError(err: unknown): void {
@@ -205,9 +216,8 @@ export function showCameraError(err: unknown): void {
   else if (isCameraError) hint = t('errors.cameraPermission');
 
   if (ui.spinner) ui.spinner.style.display = 'none';
-  if (ui.ovInstr) ui.ovInstr.innerHTML =
-    `<span class="message-title">${iconMarkup('circle-x', 'message-icon')}<span>${isCameraError ? t('errors.cameraError') : t('errors.startError')}</span></span><br><br>
-     ${message}<br><br>${hint}`;
+  if (ui.ovInstr)     ui.ovInstr.textContent     = isCameraError ? t('errors.cameraError') : t('errors.startError');
+  if (ui.ovLoadDetail) ui.ovLoadDetail.textContent = `${message}\n${hint}`;
   refreshIcons();
   if (ui.dStatus) ui.dStatus.textContent = t('errors.error');
 }
@@ -216,12 +226,12 @@ export function showGameOver(state: GameState): void {
   clearDangerPulse();
   if (ui.overlay) ui.overlay.classList.add('is-gameover');
   showModalElement(ui.overlay);
-  if (ui.hud)         ui.hud.style.display         = 'none';
-  if (ui.mapProgress) ui.mapProgress.style.display  = 'none';
-  if (ui.ovStep)      ui.ovStep.textContent          = t('gameover.title');
+  if (ui.hud)         ui.hud.style.display        = 'none';
+  if (ui.mapProgress) ui.mapProgress.style.display = 'none';
+  if (ui.goTitle) ui.goTitle.textContent = t('gameover.title');
   const scoreStr = String(state.score).padStart(6, '0');
   const combo    = Math.max(0, state.maxCombo);
-  if (ui.ovInstr) ui.ovInstr.innerHTML = `
+  if (ui.goBody) ui.goBody.innerHTML = `
     <div class="go-score-row">
       <span class="go-label">${t('gameover.score')}</span>
       <span class="go-value score-highlight">${scoreStr}</span>
@@ -231,7 +241,6 @@ export function showGameOver(state: GameState): void {
       <span class="go-value go-combo">×${combo}</span>
     </div>
     <div class="go-hint">${t('gameover.resetCalibration')}</div>`;
-  if (ui.ovProgress) ui.ovProgress.style.display = 'none';
   setIconButton(ui.ovBtn,      t('gameover.playAgain'), 'rotate-ccw');
   setIconButton(ui.ovBtnCalib, t('gameover.calibration'), 'settings');
   setIconButton(ui.ovBtnMenu,  t('gameover.mainMenu'), 'house');

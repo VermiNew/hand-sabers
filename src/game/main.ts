@@ -204,14 +204,12 @@ function getCurrentMapDuration(): number {
 
 function showOverlay(): void {
   if (!ui.overlay) return;
-  ui.overlay.style.display = '';
   ui.overlay.classList.add('show');
 }
 
 function hideOverlay(): void {
   if (!ui.overlay) return;
   ui.overlay.classList.remove('show', 'is-gameover');
-  ui.overlay.style.display = '';
 }
 
 function updateMapAudioSchedule(now = performance.now()): void {

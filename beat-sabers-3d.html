@@ -373,24 +373,56 @@
 
 <!-- OVERLAY (loading / gameover) -->
 <div id="overlay">
+
+  <!-- ── Loading state ── -->
+  <div class="ov-load-screen">
+    <div class="ov-load-bg-grid" aria-hidden="true"></div>
+
+    <div class="ov-load-brand">
+      <div class="ov-load-logo">HS</div>
+      <div class="ov-load-brand-text">
+        <div class="ov-load-title">HAND SABERS</div>
+        <div class="ov-load-sub" data-i18n="overlay.handTrackingSystem">SYSTEM ŚLEDZENIA RĄK — MEDIAPIPE</div>
+      </div>
+    </div>
+
+    <div class="ov-load-center">
+      <div class="ov-load-spinner" id="spinner">
+        <div class="ov-spinner-ring"></div>
+        <div class="ov-spinner-ring ov-spinner-ring--2"></div>
+        <span class="material-symbols-rounded ov-spinner-icon">sensors</span>
+      </div>
+
+      <div class="ov-load-step" id="ovStep" style="display:none"></div>
+
+      <div class="ov-load-instr" id="ovInstr">
+        <span data-i18n="overlay.loadingModel">Ładowanie modelu śledzenia rąk…</span>
+      </div>
+
+      <div class="ov-load-detail" id="ovLoadDetail"></div>
+
+      <div class="ov-load-progress" id="ovProgress" style="display:none">
+        <div class="ov-load-progress-track">
+          <div class="ov-load-progress-fill" id="ovBar" style="width:0%"></div>
+        </div>
+        <div class="ov-load-progress-pct" id="ovProgressPct">0%</div>
+      </div>
+    </div>
+
+    <div class="ov-load-footer" data-i18n="overlay.prepareCamera">Przygotuj kamerę i dobre oświetlenie.</div>
+  </div>
+
+  <!-- ── Game over state ── -->
   <div id="overlayBox">
-    <div class="ov-title">HAND SABERS</div>
-    <div class="ov-sub" data-i18n="overlay.handTrackingSystem">SYSTEM ŚLEDZENIA RĄK — MEDIAPIPE</div>
-    <div class="spinner" id="spinner"></div>
-    <div class="ov-step" id="ovStep" style="display:none"></div>
-    <div class="ov-instruction" id="ovInstr">
-      Ładowanie modelu śledzenia rąk…
-      Przygotuj kamerę i dobre oświetlenie.
-    </div>
-    <div class="progress-wrap" id="ovProgress" style="display:none">
-      <div class="progress-bar" id="ovBar" style="width:0%"></div>
-    </div>
+    <div class="ov-step" id="goTitle"></div>
+    <div class="ov-instruction" id="goBody"></div>
     <div style="display:flex;gap:12px;justify-content:center;">
       <button class="ov-btn" id="ovBtn"      style="display:none" data-i18n="overlay.continue">DALEJ</button>
       <button class="ov-btn" id="ovBtnCalib" style="display:none" data-i18n="overlay.retryCalibration">PONÓW KALIBRACJĘ</button>
       <button class="ov-btn" id="ovBtnMenu"  style="display:none" data-i18n="gameover.mainMenu">MENU GŁÓWNE</button>
     </div>
   </div>
+
 </div>
 
 <!-- CALIB PANEL (dedicated full-screen calibration UI) -->
