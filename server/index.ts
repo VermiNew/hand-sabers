@@ -15,6 +15,7 @@ import { createAudioStorage } from './storage/audio.js';
 import { registerScoreRoutes } from './routes/scores.js';
 import { registerMapReadRoutes } from './routes/maps-read.js';
 import { registerMapWriteRoutes } from './routes/maps-write.js';
+import { RateLimiter } from './utils.js';
 
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE_PROJECT_ROOT = path.resolve(SERVER_DIR, '..');
@@ -58,23 +59,9 @@ const upload = multer({
 
 const app = express();
 
-// Prosty rate limiter in-memory (bez zależności)
-const _rlMap = new Map<string, number[]>();
-function rateLimit(ip: string, key: string, maxPerMinute: number): boolean {
-  const mapKey = `${key}:${ip}`;
-  const now = Date.now();
-  const calls = (_rlMap.get(mapKey) || []).filter(t => now - t < 60_000);
-  calls.push(now);
-  _rlMap.set(mapKey, calls);
-  return calls.length > maxPerMinute;
-}
-// Sprzątanie co 5 minut
-setInterval(() => {
-  const now = Date.now();
-  for (const [k, calls] of _rlMap) {
-    if (!calls.some(t => now - t < 60_000)) _rlMap.delete(k);
-  }
-}, 300_000).unref();
+const limiter = new RateLimiter();
+const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
+  limiter.check(ip, key, maxPerMinute);
 
 app.use(express.json({ limit: '100mb' }));
 
