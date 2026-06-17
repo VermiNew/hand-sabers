@@ -801,6 +801,19 @@ function initMainMenu(): void {
     return Boolean(settingsBackdrop && !settingsBackdrop.hidden);
   }
 
+  function switchSettingsTab(tabName: string): void {
+    document.querySelectorAll<HTMLElement>('.sp-nav-item').forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset['tab'] === tabName);
+    });
+    document.querySelectorAll<HTMLElement>('.sp-tab').forEach(tab => {
+      tab.classList.toggle('is-active', tab.dataset['tab'] === tabName);
+    });
+  }
+
+  document.querySelectorAll<HTMLElement>('.sp-nav-item[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => switchSettingsTab(btn.dataset['tab'] ?? 'audio'));
+  });
+
   function setSettingsPanelVisible(visible: boolean): void {
     if (settingsBackdrop) {
       settingsBackdrop.hidden = !visible;

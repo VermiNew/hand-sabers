@@ -58,238 +58,212 @@
   <div class="main-settings-backdrop" id="mainSettingsBackdrop" hidden>
     <section class="main-settings-card" id="mainSettingsPanel" role="dialog" aria-modal="true" aria-labelledby="mainSettingsTitle">
 
-      <!-- Nagłówek -->
-      <div class="settings-modal-head">
-        <div>
-          <div class="settings-card-kicker" data-i18n="settings.menuKicker">Menu gry</div>
-          <div class="settings-card-title" id="mainSettingsTitle" data-i18n="settings.title">Ustawienia</div>
-        </div>
-        <button class="settings-close-btn" id="mainSettingsClose" type="button" aria-label="Zamknij ustawienia">
+      <!-- Sidebar nawigacja -->
+      <nav class="sp-nav" aria-label="Kategorie ustawień">
+        <div class="sp-nav-title" data-i18n="settings.title">Ustawienia</div>
+        <button class="sp-nav-item is-active" data-tab="audio" type="button">
+          <span class="material-symbols-rounded">volume_up</span>
+          <span data-i18n="settings.sections.audio">Audio</span>
+        </button>
+        <button class="sp-nav-item" data-tab="gameplay" type="button">
+          <span class="material-symbols-rounded">sports_esports</span>
+          <span data-i18n="settings.sections.gameplay">Rozgrywka</span>
+        </button>
+        <button class="sp-nav-item" data-tab="performance" type="button">
+          <span class="material-symbols-rounded">speed</span>
+          <span data-i18n="settings.performance.title">Wydajność</span>
+        </button>
+        <button class="sp-nav-item" data-tab="language" type="button">
+          <span class="material-symbols-rounded">language</span>
+          <span data-i18n="settings.sections.language">Język</span>
+        </button>
+        <button class="sp-nav-item" data-tab="developer" type="button">
+          <span class="material-symbols-rounded">terminal</span>
+          <span data-i18n="settings.sections.developer">Developer</span>
+        </button>
+        <button class="settings-close-btn sp-close" id="mainSettingsClose" type="button" aria-label="Zamknij ustawienia">
           <span class="material-symbols-rounded">close</span>
         </button>
-      </div>
+      </nav>
 
-      <!-- SEKCJA: JĘZYK -->
-      <div class="settings-section">
-        <div class="settings-section-header">
-          <span class="material-symbols-rounded settings-section-icon">language</span>
-          <span class="settings-section-title" data-i18n="settings.sections.language">Język</span>
-        </div>
-        <div class="settings-toggle-row">
-          <div class="settings-toggle-info">
-            <span class="settings-toggle-name" data-i18n="settings.labels.selectLanguage">Wybierz język</span>
-          </div>
-          <div class="segmented" role="group" aria-label="Język">
-            <button type="button" class="seg-btn" id="btnLangPl">PL</button>
-            <button type="button" class="seg-btn" id="btnLangEn">EN</button>
-          </div>
-        </div>
-      </div>
+      <!-- Zawartość zakładek -->
+      <div class="sp-body">
 
-      <!-- SEKCJA: AUDIO -->
-      <div class="settings-section">
-        <div class="settings-section-header">
-          <span class="material-symbols-rounded settings-section-icon">volume_up</span>
-          <span class="settings-section-title" data-i18n="settings.sections.audio">Audio</span>
-        </div>
+        <!-- TAB: AUDIO -->
+        <div class="sp-tab is-active" data-tab="audio">
+          <h2 class="sp-tab-title" data-i18n="settings.sections.audio">Audio</h2>
 
-        <div class="settings-slider-row">
-          <span class="settings-slider-label" data-i18n="settings.labels.master">Master</span>
-          <div class="settings-slider-track">
-            <input id="menuVolume" type="range" min="0" max="1" step="0.05">
-          </div>
-          <span class="settings-slider-value" data-for="menuVolume">65%</span>
-        </div>
-
-        <div class="settings-subsection">
-          <div class="settings-subsection-title" data-i18n="settings.audio.individualSounds">Poszczególne dźwięki</div>
-          <div class="settings-slider-row">
-            <span class="settings-slider-label" data-i18n="settings.audio.music">Muzyka</span>
-            <div class="settings-slider-track">
-              <input id="menuMusicVolume" data-audio-setting="musicVolume" type="range" min="0" max="1" step="0.05">
+          <div class="sp-group">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.labels.master">Master</span>
+              <div class="sp-slider-wrap">
+                <input id="menuVolume" type="range" min="0" max="1" step="0.05">
+              </div>
+              <span class="sp-value" data-for="menuVolume">65%</span>
             </div>
-            <span class="settings-slider-value" data-for="menuMusicVolume">50%</span>
           </div>
-          <div class="settings-slider-row">
-            <span class="settings-slider-label" data-i18n="settings.audio.sfx">Efekty</span>
-            <div class="settings-slider-track">
-              <input id="menuSfxVolume" data-audio-setting="sfxVolume" type="range" min="0" max="1" step="0.05">
+
+          <div class="sp-group-title" data-i18n="settings.audio.individualSounds">Poszczególne dźwięki</div>
+          <div class="sp-group">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.audio.music">Muzyka</span>
+              <div class="sp-slider-wrap"><input id="menuMusicVolume" data-audio-setting="musicVolume" type="range" min="0" max="1" step="0.05"></div>
+              <span class="sp-value" data-for="menuMusicVolume">100%</span>
             </div>
-            <span class="settings-slider-value" data-for="menuSfxVolume">60%</span>
-          </div>
-          <div class="settings-slider-row">
-            <span class="settings-slider-label" data-i18n="settings.audio.hit">Trafienie</span>
-            <div class="settings-slider-track">
-              <input id="menuHitSoundVolume" data-audio-setting="hitSoundVolume" type="range" min="0" max="1" step="0.05">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.audio.sfx">Efekty</span>
+              <div class="sp-slider-wrap"><input id="menuSfxVolume" data-audio-setting="sfxVolume" type="range" min="0" max="1" step="0.05"></div>
+              <span class="sp-value" data-for="menuSfxVolume">100%</span>
             </div>
-            <span class="settings-slider-value" data-for="menuHitSoundVolume">70%</span>
-          </div>
-          <div class="settings-slider-row">
-            <span class="settings-slider-label" data-i18n="settings.labels.combo">Combo</span>
-            <div class="settings-slider-track">
-              <input id="menuComboSoundVolume" data-audio-setting="comboSoundVolume" type="range" min="0" max="1" step="0.05">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.audio.hit">Trafienie</span>
+              <div class="sp-slider-wrap"><input id="menuHitSoundVolume" data-audio-setting="hitSoundVolume" type="range" min="0" max="1" step="0.05"></div>
+              <span class="sp-value" data-for="menuHitSoundVolume">85%</span>
             </div>
-            <span class="settings-slider-value" data-for="menuComboSoundVolume">60%</span>
-          </div>
-          <div class="settings-slider-row">
-            <span class="settings-slider-label" data-i18n="settings.audio.miss">Pudło</span>
-            <div class="settings-slider-track">
-              <input id="menuMissSoundVolume" data-audio-setting="missSoundVolume" type="range" min="0" max="1" step="0.05">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.labels.combo">Combo</span>
+              <div class="sp-slider-wrap"><input id="menuComboSoundVolume" data-audio-setting="comboSoundVolume" type="range" min="0" max="1" step="0.05"></div>
+              <span class="sp-value" data-for="menuComboSoundVolume">55%</span>
             </div>
-            <span class="settings-slider-value" data-for="menuMissSoundVolume">60%</span>
-          </div>
-          <div class="settings-slider-row">
-            <span class="settings-slider-label" data-i18n="settings.audio.bomb">Bomba</span>
-            <div class="settings-slider-track">
-              <input id="menuBombSoundVolume" data-audio-setting="bombSoundVolume" type="range" min="0" max="1" step="0.05">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.audio.miss">Pudło</span>
+              <div class="sp-slider-wrap"><input id="menuMissSoundVolume" data-audio-setting="missSoundVolume" type="range" min="0" max="1" step="0.05"></div>
+              <span class="sp-value" data-for="menuMissSoundVolume">75%</span>
             </div>
-            <span class="settings-slider-value" data-for="menuBombSoundVolume">60%</span>
-          </div>
-          <div class="settings-slider-row">
-            <span class="settings-slider-label" data-i18n="settings.labels.beatCue">Beat cue</span>
-            <div class="settings-slider-track">
-              <input id="menuBeatSoundVolume" data-audio-setting="beatSoundVolume" type="range" min="0" max="1" step="0.05">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.audio.bomb">Bomba</span>
+              <div class="sp-slider-wrap"><input id="menuBombSoundVolume" data-audio-setting="bombSoundVolume" type="range" min="0" max="1" step="0.05"></div>
+              <span class="sp-value" data-for="menuBombSoundVolume">80%</span>
             </div>
-            <span class="settings-slider-value" data-for="menuBeatSoundVolume">50%</span>
-          </div>
-          <div class="settings-slider-row">
-            <span class="settings-slider-label" data-i18n="settings.labels.milestone">Milestone</span>
-            <div class="settings-slider-track">
-              <input id="menuMilestoneSoundVolume" data-audio-setting="milestoneSoundVolume" type="range" min="0" max="1" step="0.05">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.labels.beatCue">Beat cue</span>
+              <div class="sp-slider-wrap"><input id="menuBeatSoundVolume" data-audio-setting="beatSoundVolume" type="range" min="0" max="1" step="0.05"></div>
+              <span class="sp-value" data-for="menuBeatSoundVolume">65%</span>
             </div>
-            <span class="settings-slider-value" data-for="menuMilestoneSoundVolume">60%</span>
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.labels.milestone">Milestone</span>
+              <div class="sp-slider-wrap"><input id="menuMilestoneSoundVolume" data-audio-setting="milestoneSoundVolume" type="range" min="0" max="1" step="0.05"></div>
+              <span class="sp-value" data-for="menuMilestoneSoundVolume">70%</span>
+            </div>
+          </div>
+
+          <div class="sp-group-title" data-i18n="settings.labels.audioOffset">Offset audio</div>
+          <div class="sp-group">
+            <div class="sp-row">
+              <span class="sp-label">ms</span>
+              <div class="sp-slider-wrap sp-slider-accent"><input id="menuAudioOffset" type="range" min="-500" max="500" step="10"></div>
+              <span class="sp-value" id="menuAudioOffsetValue">0 ms</span>
+            </div>
           </div>
         </div>
 
-        <!-- Offset audio -->
-        <div class="settings-slider-row settings-offset-row">
-          <span class="settings-slider-label" data-i18n="settings.labels.audioOffset">Offset audio</span>
-          <div class="settings-slider-track">
-            <input id="menuAudioOffset" type="range" min="-500" max="500" step="10">
-          </div>
-          <span class="settings-slider-value" id="menuAudioOffsetValue">0 ms</span>
-        </div>
-      </div>
+        <!-- TAB: GAMEPLAY -->
+        <div class="sp-tab" data-tab="gameplay">
+          <h2 class="sp-tab-title" data-i18n="settings.sections.gameplay">Rozgrywka</h2>
 
-      <!-- SEKCJA: WYDAJNOŚĆ -->
-      <div class="settings-section" data-section="performance">
-        <div class="settings-section-header">
-          <span class="material-symbols-rounded settings-section-icon">speed</span>
-          <span class="settings-section-title" data-i18n="settings.performance.title">Wydajność</span>
-        </div>
-        <div class="settings-select-row">
-          <span class="settings-slider-label" data-i18n="settings.performance.graphicsSettings">Ustawienia graficzne</span>
-          <select id="menuPerformanceMode" class="settings-select" aria-label="Profil wydajności"></select>
-          <span class="settings-select-hint" id="menuPerformanceHint" data-i18n="settings.performance.autoHint">Auto sprawdza sprzęt i reguluje jakość w trakcie gry.</span>
-          <span class="settings-select-hint settings-graphics-mode" id="menuGraphicsModeInfo" data-i18n="settings.performance.currentMode">Obecny tryb: —</span>
-        </div>
-      </div>
-
-
-      <!-- SEKCJA: DEVELOPER -->
-      <div class="settings-section" data-section="developer">
-        <div class="settings-section-header">
-          <span class="material-symbols-rounded settings-section-icon">terminal</span>
-          <span class="settings-section-title" data-i18n="settings.sections.developer">Developer</span>
-        </div>
-        <div class="settings-toggle-row">
-          <div class="settings-toggle-info">
-            <span class="settings-toggle-name" data-i18n="settings.developer.name">Tryb developera</span>
-            <span class="settings-toggle-desc" data-i18n="settings.developer.desc">Pokazuje panel diagnostyczny, metryki renderowania, VRAM, tracking i podgląd kamery</span>
-          </div>
-          <label class="settings-toggle-switch">
-            <input id="menuDeveloperMode" type="checkbox">
-            <span class="settings-toggle-knob"></span>
-          </label>
-        </div>
-      </div>
-
-      <!-- SEKCJA: GAMEPLAY -->
-      <div class="settings-section">
-        <div class="settings-section-header">
-          <span class="material-symbols-rounded settings-section-icon">sports_esports</span>
-          <span class="settings-section-title" data-i18n="settings.sections.gameplay">Gameplay</span>
-        </div>
-
-        <!-- No Fail toggle -->
-        <div class="settings-toggle-row">
-          <div class="settings-toggle-info">
-            <span class="settings-toggle-name" data-i18n="settings.labels.noFail">No Fail</span>
-            <span class="settings-toggle-desc" data-i18n="settings.gameplay.noFailDesc">Gra nie kończy się przy zerowym HP</span>
-          </div>
-          <label class="settings-toggle-switch">
-            <input id="menuNoFail" type="checkbox">
-            <span class="settings-toggle-knob"></span>
-          </label>
-        </div>
-
-        <!-- Odwróć kamerę toggle -->
-        <div class="settings-toggle-row">
-          <span class="material-symbols-rounded settings-toggle-icon-left">swap_horiz</span>
-          <div class="settings-toggle-info">
-            <span class="settings-toggle-name" data-i18n="settings.gameplay.flipCamera">Odwróć strony kamery</span>
-            <span class="settings-toggle-desc" data-i18n="settings.gameplay.flipCameraDesc">Włącz, gdy lewy miecz trafia na prawy tor</span>
-          </div>
-          <label class="settings-toggle-switch">
-            <input id="menuFlipCamera" type="checkbox">
-            <span class="settings-toggle-knob"></span>
-          </label>
-        </div>
-
-        <!-- Limit beatów -->
-        <div class="settings-toggle-row">
-          <div class="settings-toggle-info">
-            <span class="settings-toggle-name" data-i18n="settings.gameplay.beatLimit">Limit beatów</span>
-            <span class="settings-toggle-desc" data-i18n="settings.gameplay.beatLimitDesc">10 000 beatów; wyłącz, aby rozszerzyć do 100 000</span>
-          </div>
-          <label class="settings-toggle-switch">
-            <input id="menuBeatLimit" type="checkbox">
-            <span class="settings-toggle-knob"></span>
-          </label>
-        </div>
-
-        <!-- Tryb jednej ręki -->
-        <div class="settings-toggle-row settings-segmented-row">
-          <div class="settings-toggle-info">
-            <span class="settings-toggle-name" data-i18n="settings.gameplay.oneHandMode">Tryb jednej ręki</span>
-            <span class="settings-toggle-desc" data-i18n="settings.gameplay.oneHandModeDesc">Graj tylko wybranym mieczem</span>
-          </div>
-          <div class="segmented" role="group" aria-label="Tryb jednej ręki">
-            <button type="button" class="seg-btn" data-one-hand="" data-i18n="settings.gameplay.both">Obie</button>
-            <button type="button" class="seg-btn" data-one-hand="left" data-i18n="settings.gameplay.left">Lewa</button>
-            <button type="button" class="seg-btn" data-one-hand="right" data-i18n="settings.gameplay.right">Prawa</button>
-          </div>
-        </div>
-
-        <!-- Kolory mieczy -->
-        <div class="settings-toggle-row saber-color-picker-row">
-          <div class="settings-toggle-info">
-            <span class="settings-toggle-name" data-i18n="settings.gameplay.saberColors">Kolory mieczy</span>
-            <span class="settings-toggle-desc" data-i18n="settings.gameplay.saberColorsDesc">Wybierz kolor osobno dla każdego miecza</span>
+          <div class="sp-group">
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.labels.noFail">No Fail</span>
+                <span class="sp-toggle-desc" data-i18n="settings.gameplay.noFailDesc">Gra nie kończy się przy zerowym HP</span>
+              </div>
+              <label class="sp-switch"><input id="menuNoFail" type="checkbox"><span class="sp-knob"></span></label>
+            </div>
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.gameplay.flipCamera">Odwróć strony kamery</span>
+                <span class="sp-toggle-desc" data-i18n="settings.gameplay.flipCameraDesc">Włącz, gdy lewy miecz trafia na prawy tor</span>
+              </div>
+              <label class="sp-switch"><input id="menuFlipCamera" type="checkbox"><span class="sp-knob"></span></label>
+            </div>
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.gameplay.beatLimit">Limit beatów</span>
+                <span class="sp-toggle-desc" data-i18n="settings.gameplay.beatLimitDesc">10 000 beatów; wyłącz, aby rozszerzyć do 100 000</span>
+              </div>
+              <label class="sp-switch"><input id="menuBeatLimit" type="checkbox"><span class="sp-knob"></span></label>
+            </div>
           </div>
 
-          <div class="saber-color-section">
-            <div class="saber-color-side">
-              <span class="saber-color-side-label" data-i18n="settings.gameplay.leftHand">⬤ Lewa ręka</span>
+          <div class="sp-group-title" data-i18n="settings.gameplay.oneHandMode">Tryb jednej ręki</div>
+          <div class="sp-group">
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-desc" data-i18n="settings.gameplay.oneHandModeDesc">Graj tylko wybranym mieczem</span>
+              </div>
+              <div class="sp-segmented" role="group">
+                <button type="button" class="sp-seg" data-one-hand="" data-i18n="settings.gameplay.both">Obie</button>
+                <button type="button" class="sp-seg" data-one-hand="left" data-i18n="settings.gameplay.left">Lewa</button>
+                <button type="button" class="sp-seg" data-one-hand="right" data-i18n="settings.gameplay.right">Prawa</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sp-group-title" data-i18n="settings.gameplay.saberColors">Kolory mieczy</div>
+          <div class="sp-group sp-colors-group">
+            <div class="sp-color-side">
+              <div class="sp-color-label" data-i18n="settings.gameplay.leftHand">Lewa ręka</div>
               <div class="saber-color-grid" id="saberColorGridLeft" role="radiogroup" aria-label="Kolor lewego miecza"></div>
-              <div class="saber-color-preview">
+              <div class="sp-color-preview">
                 <div class="saber-color-preview-bar" id="saberColorPreviewLeft"></div>
-                <span id="saberColorNameLeft">Zielony</span>
+                <span id="saberColorNameLeft"></span>
               </div>
             </div>
-
-            <div class="saber-color-side">
-              <span class="saber-color-side-label" data-i18n="settings.gameplay.rightHand">⬤ Prawa ręka</span>
+            <div class="sp-color-side">
+              <div class="sp-color-label" data-i18n="settings.gameplay.rightHand">Prawa ręka</div>
               <div class="saber-color-grid" id="saberColorGridRight" role="radiogroup" aria-label="Kolor prawego miecza"></div>
-              <div class="saber-color-preview">
+              <div class="sp-color-preview">
                 <div class="saber-color-preview-bar" id="saberColorPreviewRight"></div>
-                <span id="saberColorNameRight">Niebieski</span>
+                <span id="saberColorNameRight"></span>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
+        <!-- TAB: WYDAJNOŚĆ -->
+        <div class="sp-tab" data-tab="performance">
+          <h2 class="sp-tab-title" data-i18n="settings.performance.title">Wydajność</h2>
+          <div class="sp-group">
+            <div class="sp-select-row">
+              <span class="sp-label" data-i18n="settings.performance.graphicsSettings">Ustawienia graficzne</span>
+              <select id="menuPerformanceMode" class="sp-select" aria-label="Profil wydajności"></select>
+            </div>
+            <p class="sp-hint" id="menuPerformanceHint" data-i18n="settings.performance.autoHint">Auto sprawdza sprzęt i reguluje jakość w trakcie gry.</p>
+            <p class="sp-hint sp-hint-mode" id="menuGraphicsModeInfo" data-i18n="settings.performance.currentMode">Obecny tryb: —</p>
+          </div>
+        </div>
+
+        <!-- TAB: JĘZYK -->
+        <div class="sp-tab" data-tab="language">
+          <h2 class="sp-tab-title" data-i18n="settings.sections.language">Język</h2>
+          <div class="sp-group">
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.labels.selectLanguage">Wybierz język</span>
+              </div>
+              <div class="sp-segmented" role="group" aria-label="Język">
+                <button type="button" class="sp-seg sp-seg-lang" id="btnLangPl">PL</button>
+                <button type="button" class="sp-seg sp-seg-lang" id="btnLangEn">EN</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB: DEVELOPER -->
+        <div class="sp-tab" data-tab="developer">
+          <h2 class="sp-tab-title" data-i18n="settings.sections.developer">Developer</h2>
+          <div class="sp-group">
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.developer.name">Tryb developera</span>
+                <span class="sp-toggle-desc" data-i18n="settings.developer.desc">Pokazuje panel diagnostyczny, metryki renderowania, VRAM, tracking i podgląd kamery</span>
+              </div>
+              <label class="sp-switch"><input id="menuDeveloperMode" type="checkbox"><span class="sp-knob"></span></label>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </section>
   </div>
 
