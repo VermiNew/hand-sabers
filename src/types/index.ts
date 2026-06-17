@@ -95,6 +95,7 @@ export interface Settings {
   performanceMode: PerformanceMode;
   saberColorLeft: string;
   saberColorRight: string;
+  saberModel: string;
   beatLimitEnabled: boolean;
   maxBeats: number;
   playerName: string;

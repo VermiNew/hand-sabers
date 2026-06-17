@@ -108,7 +108,15 @@
       "leftHand": "Left hand",
       "rightHand": "Right hand",
       "leftSaberColor": "Left saber color",
-      "rightSaberColor": "Right saber color"
+      "rightSaberColor": "Right saber color",
+      "customColor": "Custom color",
+      "custom": "Custom",
+      "apply": "Apply",
+      "saberModel": "Saber model",
+      "saberModelLabel": "Blade shape",
+      "modelClassic": "Classic",
+      "modelWide": "Wide",
+      "modelThin": "Thin"
     }
   },
   "maps": {

@@ -80,7 +80,15 @@
       "leftHand": "Lewa ręka",
       "rightHand": "Prawa ręka",
       "leftSaberColor": "Kolor lewego miecza",
-      "rightSaberColor": "Kolor prawego miecza"
+      "rightSaberColor": "Kolor prawego miecza",
+      "customColor": "Własny kolor",
+      "custom": "Własny",
+      "apply": "Zastosuj",
+      "saberModel": "Model miecza",
+      "saberModelLabel": "Kształt ostrza",
+      "modelClassic": "Klasyczny",
+      "modelWide": "Szeroki",
+      "modelThin": "Cienki"
     }
   },
   "menu": {

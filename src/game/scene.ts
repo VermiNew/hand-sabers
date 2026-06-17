@@ -39,7 +39,7 @@ renderer.toneMappingExposure = ['lowest', 'very-low', 'low'].includes(initialPer
 
 export const scene = new THREE.Scene();
 scene.background = new THREE.Color(THEME.dark);
-scene.fog        = new THREE.FogExp2(THEME.dark, 0.035);
+scene.fog        = new THREE.FogExp2(THEME.dark, 0.028);
 
 export const cam3d = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.1, 100);
 cam3d.position.set(0, 1.55, 3.2);
@@ -58,6 +58,10 @@ scene.add(specTopL);
 const rimL = new THREE.DirectionalLight(THEME.gray, 0.22);
 rimL.position.set(-1, -2, 2);
 scene.add(rimL);
+
+const backL = new THREE.DirectionalLight(0x0a1628, 0.35);
+backL.position.set(0, 2, -8);
+scene.add(backL);
 
 export const lLight = new THREE.PointLight(THEME.left,  4, 5);
 export const rLight = new THREE.PointLight(THEME.right, 4, 5);
@@ -92,7 +96,7 @@ export const reflectCam = new THREE.PerspectiveCamera(68, 1, 0.1, 30);
 const floorReflectMat = new THREE.MeshBasicMaterial({
   map:         reflectTarget.texture,
   transparent: true,
-  opacity:     0.18,
+  opacity:     0.28,
   depthWrite:  false,
   blending:    THREE.AdditiveBlending,
 });
@@ -117,6 +121,28 @@ function rail(x: number, color: number): THREE.MeshBasicMaterial[] {
 }
 const leftRailMats  = rail(-2.2, THEME.left);
 const rightRailMats = rail(2.2,  THEME.right);
+
+function makeBlobShadow(): THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const ctx = c.getContext('2d')!;
+  const g = ctx.createRadialGradient(32, 32, 2, 32, 32, 32);
+  g.addColorStop(0,   'rgba(0,0,0,0.55)');
+  g.addColorStop(0.5, 'rgba(0,0,0,0.18)');
+  g.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  const tex = new THREE.CanvasTexture(c);
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false });
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = 0.001;
+  mesh.renderOrder = 3;
+  scene.add(mesh);
+  return mesh;
+}
+const lBlobShadow = makeBlobShadow();
+const rBlobShadow = makeBlobShadow();
 
 const HIT_Z = 1.5;
 const hitPlaneMat = new THREE.MeshBasicMaterial({
@@ -360,6 +386,38 @@ export function setSaberColor(side: 'left' | 'right', hex: string): void {
   ud.color = new THREE.Color(colorHex).getHex();
 }
 
+export type SaberModel = 'classic' | 'wide' | 'thin';
+
+const SABER_MODELS: Record<SaberModel, { coreR: number; glowR: number; outerR: number; length: number }> = {
+  classic: { coreR: 0.007, glowR: 0.022, outerR: 0.038, length: 1.1 },
+  wide:    { coreR: 0.013, glowR: 0.038, outerR: 0.060, length: 1.0 },
+  thin:    { coreR: 0.004, glowR: 0.013, outerR: 0.024, length: 1.2 },
+};
+
+export function setSaberModel(side: 'left' | 'right', model: SaberModel): void {
+  const saber = side === 'left' ? lSaber : rSaber;
+  const spec  = SABER_MODELS[model] ?? SABER_MODELS.classic;
+
+  saber.children.forEach(child => {
+    if (!(child instanceof THREE.Mesh)) return;
+    const geo = child.geometry as THREE.CylinderGeometry | undefined;
+    if (!geo?.parameters) return;
+    const p = geo.parameters;
+    const len = p.height ?? 0;
+    if (Math.abs(len - 1.1) < 0.15 || Math.abs(len - 1.0) < 0.01 || Math.abs(len - 1.2) < 0.01) {
+      const newGeo = new THREE.CylinderGeometry(
+        spec.coreR * (p.radiusTop / 0.007),
+        spec.coreR * (p.radiusBottom / 0.007),
+        spec.length,
+        p.radialSegments,
+      );
+      child.geometry.dispose();
+      child.geometry = newGeo;
+      child.position.y = spec.length / 2 + 0.02;
+    }
+  });
+}
+
 export function animateIdleSabers(t: number): void {
   lSaber.position.set(-0.45 + Math.sin(t * 0.7) * 0.08, 1.1 + Math.sin(t * 0.5) * 0.1, 1.5);
   rSaber.position.set( 0.45 + Math.sin(t * 0.7 + 1.2) * 0.08, 1.1 + Math.sin(t * 0.5 + 1.0) * 0.1, 1.5);
@@ -397,6 +455,9 @@ export function updateLightReflections(t: number): void {
     lReflection.material.opacity = 0.20 * pulse;
     rReflection.material.opacity = 0.20 * (1.7 - pulse);
   }
+
+  lBlobShadow.position.set(lSaber.position.x, 0.002, lSaber.position.z);
+  rBlobShadow.position.set(rSaber.position.x, 0.002, rSaber.position.z);
 
   if (!perfProfile.saberGlints) return;
   for (const s of [lSaber, rSaber]) {

@@ -122,6 +122,48 @@
   box-shadow:0 0 18px rgba(54,242,161,0.16);
 }
 
+/* ── Custom Color Picker ── */
+.cp-toggle {
+  margin-top:8px; width:100%; padding:7px 12px;
+  background:rgba(47,124,255,0.08); border:1px solid rgba(47,124,255,0.28);
+  border-radius:8px; color:var(--main-light); font-size:11px; letter-spacing:2px;
+  font-family:'Oxanium',sans-serif; cursor:pointer; transition:background 0.15s, border-color 0.15s;
+}
+.cp-toggle:hover { background:rgba(47,124,255,0.16); border-color:rgba(47,124,255,0.5); }
+.cp-panel {
+  display:none; margin-top:10px; padding:12px;
+  background:rgba(5,7,13,0.6); border:1px solid rgba(148,163,184,0.14);
+  border-radius:8px; gap:8px; flex-direction:column;
+}
+.cp-panel.is-open { display:flex; }
+.cp-sliders { display:flex; flex-direction:column; gap:6px; }
+.cp-row {
+  display:grid; grid-template-columns:14px 1fr 36px; gap:8px; align-items:center;
+}
+.cp-row label { font-size:10px; letter-spacing:2px; color:var(--muted); text-align:center; }
+.cp-row input[type=range] { width:100%; accent-color:var(--accent); }
+.cp-val { font-size:10px; letter-spacing:1px; color:var(--dim); text-align:right; }
+.cp-hex-row {
+  display:flex; gap:8px; align-items:center; margin-top:4px;
+}
+.cp-swatch {
+  width:28px; height:28px; border-radius:6px; flex-shrink:0;
+  border:1px solid rgba(255,255,255,0.18); display:block;
+}
+.cp-hex {
+  flex:1; background:rgba(148,163,184,0.08); border:1px solid rgba(148,163,184,0.2);
+  border-radius:6px; padding:5px 8px; color:var(--text); font-family:'JetBrains Mono',monospace;
+  font-size:12px; letter-spacing:1px; outline:none;
+}
+.cp-hex:focus { border-color:var(--accent); }
+.cp-apply {
+  padding:6px 12px; background:rgba(54,242,161,0.14); border:1px solid rgba(54,242,161,0.4);
+  border-radius:6px; color:var(--accent); font-size:10px; letter-spacing:2px;
+  font-family:'Oxanium',sans-serif; cursor:pointer; white-space:nowrap;
+  transition:background 0.15s;
+}
+.cp-apply:hover { background:rgba(54,242,161,0.25); }
+
 @media (max-width:640px) {
   .main-settings-card,
   .main-settings-card.show {

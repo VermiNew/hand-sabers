@@ -38,6 +38,7 @@ export const DEFAULTS: Settings = {
   noFail: false,
   saberColorLeft: '#36f2a1',
   saberColorRight: '#2f7cff',
+  saberModel: 'classic',
   beatLimitEnabled: true,
   maxBeats: 10_000,
   developerMode: false,
