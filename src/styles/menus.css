@@ -543,3 +543,57 @@ body.menu-open #pauseMenu { display:none !important; }
   0%   { transform:translateX(-115%); }
   100% { transform:translateX(265%); }
 }
+
+/* ── GAME OVER ── */
+@keyframes goScoreCount {
+  0%   { opacity:0; transform:scale(0.7) translateY(12px); filter:blur(4px); }
+  60%  { opacity:1; transform:scale(1.06) translateY(-2px); filter:blur(0); }
+  100% { transform:scale(1) translateY(0); }
+}
+@keyframes goSlideIn {
+  0%   { opacity:0; transform:translateY(18px); }
+  100% { opacity:1; transform:translateY(0); }
+}
+#overlay.is-gameover {
+  background:radial-gradient(ellipse at 50% 60%, rgba(47,124,255,0.14), transparent 65%),
+             rgba(5,7,13,0.96);
+}
+#overlay.is-gameover #overlayBox {
+  border-color:rgba(47,124,255,0.38);
+  box-shadow:0 0 80px rgba(47,124,255,0.18), 0 0 160px rgba(54,242,161,0.06);
+  padding:52px 60px;
+}
+#overlay.is-gameover .ov-step {
+  font-size:clamp(28px,5vw,52px);
+  letter-spacing:10px;
+  color:#fff;
+  text-shadow:0 0 40px rgba(47,124,255,0.8), 0 0 80px rgba(47,124,255,0.4);
+  margin-bottom:36px;
+  animation:goSlideIn 0.4s ease-out both;
+}
+.go-score-row, .go-combo-row {
+  display:flex; align-items:baseline; justify-content:space-between;
+  padding:14px 0; border-bottom:1px solid rgba(148,163,184,0.1);
+  animation:goSlideIn 0.45s ease-out both;
+}
+.go-combo-row { animation-delay:0.08s; border-bottom:none; }
+.go-label {
+  font-size:10px; letter-spacing:4px; color:var(--muted); text-transform:uppercase;
+}
+.go-value {
+  font-family:'Oxanium',sans-serif; font-weight:900;
+}
+.score-highlight {
+  font-size:clamp(32px,5.5vw,56px); letter-spacing:6px; color:#fff;
+  text-shadow:0 0 30px rgba(54,242,161,0.6), 0 0 60px rgba(54,242,161,0.25);
+  animation:goScoreCount 0.55s cubic-bezier(.34,1.56,.64,1) both;
+  animation-delay:0.1s;
+}
+.go-combo {
+  font-size:clamp(22px,3.8vw,38px); letter-spacing:4px; color:var(--main);
+  text-shadow:0 0 24px rgba(47,124,255,0.7);
+}
+.go-hint {
+  font-size:10px; letter-spacing:2.5px; color:var(--dim);
+  margin-top:22px; animation:goSlideIn 0.5s ease-out 0.2s both;
+}

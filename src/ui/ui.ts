@@ -138,7 +138,11 @@ export function updateHUD(state: GameState): void {
   }
 
   lastHp = hp;
-  if (ui.hpHud)   ui.hpHud.className = hp <= 0 ? 'hp-empty' : '';
+  let hpHudClass = '';
+  if      (hp <= 0)           hpHudClass = 'hp-empty';
+  else if (hpRatio <= 0.25)   hpHudClass = 'hp-low';
+  else if (hpRatio <= 0.5)    hpHudClass = 'hp-mid';
+  if (ui.hpHud)   ui.hpHud.className = hpHudClass;
   if (ui.hpTicks) ui.hpTicks.style.setProperty('--hp-max', String(maxHp));
 }
 
@@ -190,15 +194,24 @@ export function showCameraError(err: unknown): void {
 
 export function showGameOver(state: GameState): void {
   clearDangerPulse();
+  if (ui.overlay) ui.overlay.classList.add('is-gameover');
   showModalElement(ui.overlay);
-  if (ui.hud)        ui.hud.style.display = 'none';
-  if (ui.mapProgress) ui.mapProgress.style.display = 'none';
-  if (ui.ovStep)     ui.ovStep.textContent = t('gameover.title');
-  if (ui.ovInstr)    ui.ovInstr.innerHTML =
-    `${t('gameover.score')}: <span class="score-highlight">${String(state.score).padStart(6, '0')}</span><br>
-     ${t('gameover.bestCombo')}: ×${Math.max(0, state.maxCombo)}<br><br>
-     <span class="muted-small">${t('gameover.resetCalibration')}</span>`;
-  if (ui.ovVisual)   ui.ovVisual.style.display  = 'none';
+  if (ui.hud)         ui.hud.style.display         = 'none';
+  if (ui.mapProgress) ui.mapProgress.style.display  = 'none';
+  if (ui.ovStep)      ui.ovStep.textContent          = t('gameover.title');
+  const scoreStr = String(state.score).padStart(6, '0');
+  const combo    = Math.max(0, state.maxCombo);
+  if (ui.ovInstr) ui.ovInstr.innerHTML = `
+    <div class="go-score-row">
+      <span class="go-label">${t('gameover.score')}</span>
+      <span class="go-value score-highlight">${scoreStr}</span>
+    </div>
+    <div class="go-combo-row">
+      <span class="go-label">${t('gameover.bestCombo')}</span>
+      <span class="go-value go-combo">×${combo}</span>
+    </div>
+    <div class="go-hint">${t('gameover.resetCalibration')}</div>`;
+  if (ui.ovVisual)   ui.ovVisual.style.display   = 'none';
   if (ui.ovProgress) ui.ovProgress.style.display = 'none';
   setIconButton(ui.ovBtn,      t('gameover.playAgain'), 'rotate-ccw');
   setIconButton(ui.ovBtnCalib, t('gameover.calibration'), 'settings');
@@ -238,6 +251,17 @@ export function showComboMilestone(combo: number): void {
   el._timer = setTimeout(() => {
     if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; }
   }, 900);
+}
+
+const _screenFade = document.getElementById('screenFade');
+
+export function fadeTransition(callback: () => void, durationMs = 220): void {
+  if (!_screenFade) { callback(); return; }
+  _screenFade.classList.add('fade-out');
+  setTimeout(() => {
+    callback();
+    _screenFade.classList.remove('fade-out');
+  }, durationMs);
 }
 
 export function setCalibFeedback(ok: boolean, hint: string): void {

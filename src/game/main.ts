@@ -1,10 +1,10 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu } from '../ui/ui.ts';
+import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
-  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible,
+  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel,
 } from './scene.ts';
 import { initAudio, startMapAudio, stopMapAudio, pauseMapAudio, getMapTime, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
@@ -39,6 +39,10 @@ const settings = loadSettings();
 if (settings.saberColorLeft) {
   setSaberColor('left', settings.saberColorLeft);
   setBlockColor('left', parseInt(settings.saberColorLeft.replace('#', ''), 16));
+}
+if (settings.saberModel) {
+  setSaberModel('left',  settings.saberModel as Parameters<typeof setSaberModel>[1]);
+  setSaberModel('right', settings.saberModel as Parameters<typeof setSaberModel>[1]);
 }
 if (settings.saberColorRight) {
   setSaberColor('right', settings.saberColorRight);
@@ -206,7 +210,7 @@ function showOverlay(): void {
 
 function hideOverlay(): void {
   if (!ui.overlay) return;
-  ui.overlay.classList.remove('show');
+  ui.overlay.classList.remove('show', 'is-gameover');
   ui.overlay.style.display = '';
 }
 
@@ -299,7 +303,7 @@ function endGame(): void {
   stopMapAudio();
   resetMapTimeline();
   void submitScore(progress);
-  showGameOver(state);
+  fadeTransition(() => { showGameOver(state); });
 }
 
 function restartGame(): void {
@@ -695,20 +699,22 @@ document.getElementById('pauseMaps')?.addEventListener('click', () => {
 });
 
 function returnToMainMenu(): void {
-  stopMapAudio();
-  resetMapTimeline();
-  clearGameplayEntities();
-  hidePauseMenu();
-  hideHandsPaused();
-  if (ui.hud) ui.hud.style.display = 'none';
-  hideOverlay();
-  const mainMenu = document.getElementById('mainMenu');
-  if (mainMenu) mainMenu.style.display = 'flex';
-  document.body.classList.add('menu-open');
-  state.appState    = S.MENU;
-  state.pauseReason = PAUSE_REASONS.NONE;
-  resetMenuDemo();
-  triggerMenuEnter();
+  fadeTransition(() => {
+    stopMapAudio();
+    resetMapTimeline();
+    clearGameplayEntities();
+    hidePauseMenu();
+    hideHandsPaused();
+    if (ui.hud) ui.hud.style.display = 'none';
+    hideOverlay();
+    const mainMenu = document.getElementById('mainMenu');
+    if (mainMenu) mainMenu.style.display = 'flex';
+    document.body.classList.add('menu-open');
+    state.appState    = S.MENU;
+    state.pauseReason = PAUSE_REASONS.NONE;
+    resetMenuDemo();
+    triggerMenuEnter();
+  });
 }
 
 document.getElementById('pauseQuit')?.addEventListener('click', returnToMainMenu);
@@ -1138,6 +1144,125 @@ function initMainMenu(): void {
     document.getElementById('saberColorNameRight'),
     'right', rightHex
   );
+
+  // ── Custom color picker ─────────────────────────────────────────────────
+  function hexToHsl(hex: string): [number, number, number] {
+    const r = parseInt(hex.slice(1,3),16)/255;
+    const g = parseInt(hex.slice(3,5),16)/255;
+    const b = parseInt(hex.slice(5,7),16)/255;
+    const max = Math.max(r,g,b), min = Math.min(r,g,b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      if      (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+      else if (max === g) h = ((b - r) / d + 2) / 6;
+      else                h = ((r - g) / d + 4) / 6;
+    }
+    return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
+  }
+
+  function hslToHex(h: number, s: number, l: number): string {
+    const sl = s / 100, ll = l / 100;
+    const c  = (1 - Math.abs(2 * ll - 1)) * sl;
+    const x  = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m  = ll - c / 2;
+    let r = 0, g = 0, b = 0;
+    if      (h < 60)  { r=c; g=x; b=0; }
+    else if (h < 120) { r=x; g=c; b=0; }
+    else if (h < 180) { r=0; g=c; b=x; }
+    else if (h < 240) { r=0; g=x; b=c; }
+    else if (h < 300) { r=x; g=0; b=c; }
+    else              { r=c; g=0; b=x; }
+    const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  }
+
+  function initColorPicker(panelId: string, swatchId: string, hexInputId: string, side: 'left' | 'right', initHex: string): void {
+    const panelEl    = document.getElementById(panelId);
+    const swatchEl   = document.getElementById(swatchId);
+    const hexInputEl = document.getElementById(hexInputId) as HTMLInputElement | null;
+    if (!panelEl || !swatchEl || !hexInputEl) return;
+    const panel    = panelEl;
+    const swatch   = swatchEl;
+    const hexInput = hexInputEl;
+
+    let [h, s, l] = hexToHsl(initHex);
+    const slH = panel.querySelector<HTMLInputElement>('.cp-h')!;
+    const slS = panel.querySelector<HTMLInputElement>('.cp-s')!;
+    const slL = panel.querySelector<HTMLInputElement>('.cp-l')!;
+    const vH  = panel.querySelector<HTMLElement>('.cp-hval')!;
+    const vS  = panel.querySelector<HTMLElement>('.cp-sval')!;
+    const vL  = panel.querySelector<HTMLElement>('.cp-lval')!;
+
+    function syncFromHsl(): void {
+      slH.value = String(h); vH.textContent = String(h);
+      slS.value = String(s); vS.textContent = String(s);
+      slL.value = String(l); vL.textContent = String(l);
+      const hex = hslToHex(h, s, l);
+      swatch.style.background = hex;
+      swatch.style.boxShadow  = `0 0 8px 3px ${hex}88`;
+      hexInput.value = hex;
+      panel.style.setProperty('--cp-hue', String(h));
+    }
+
+    slH.addEventListener('input', () => { h = Number(slH.value); syncFromHsl(); });
+    slS.addEventListener('input', () => { s = Number(slS.value); syncFromHsl(); });
+    slL.addEventListener('input', () => { l = Number(slL.value); syncFromHsl(); });
+    hexInput.addEventListener('input', () => {
+      const v = hexInput.value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+        [h, s, l] = hexToHsl(v);
+        syncFromHsl();
+      }
+    });
+
+    panel.querySelector<HTMLButtonElement>('.cp-apply')?.addEventListener('click', () => {
+      const hex = hexInput.value.trim();
+      if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+      setSaberColor(side, hex);
+      setBlockColor(side, parseInt(hex.replace('#', ''), 16));
+      const key = side === 'left' ? 'saberColorLeft' : 'saberColorRight';
+      (settings as unknown as Record<string, unknown>)[key] = hex;
+      setSetting(key as keyof Settings, hex);
+      const previewBar  = document.getElementById(side === 'left' ? 'saberColorPreviewLeft' : 'saberColorPreviewRight');
+      const previewName = document.getElementById(side === 'left' ? 'saberColorNameLeft'    : 'saberColorNameRight');
+      updateColorPreview(previewBar, previewName, { hex, label: t('settings.gameplay.custom') });
+    });
+
+    syncFromHsl();
+  }
+
+  initColorPicker('cpLeft',  'cpSwatchLeft',  'cpHexLeft',  'left',  leftHex);
+  initColorPicker('cpRight', 'cpSwatchRight', 'cpHexRight', 'right', rightHex);
+
+  document.querySelectorAll<HTMLButtonElement>('.cp-toggle').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = document.getElementById(btn.dataset['target'] ?? '');
+      if (target) target.classList.toggle('is-open');
+    });
+  });
+
+  // ── Picker modelu miecza ──────────────────────────────────────────────────
+  const modelPicker = document.getElementById('saberModelPicker');
+  if (modelPicker) {
+    const currentModel = (settings.saberModel || 'classic') as Parameters<typeof setSaberModel>[1];
+    modelPicker.querySelectorAll<HTMLButtonElement>('[data-saber-model]').forEach(btn => {
+      if (btn.dataset['saberModel'] === currentModel) btn.classList.add('is-active');
+      else                                             btn.classList.remove('is-active');
+      btn.addEventListener('click', () => {
+        const model = btn.dataset['saberModel'] as Parameters<typeof setSaberModel>[1];
+        if (!model) return;
+        modelPicker.querySelectorAll('[data-saber-model]').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        setSaberModel('left',  model);
+        setSaberModel('right', model);
+        (settings as unknown as Record<string, unknown>)['saberModel'] = model;
+        setSetting('saberModel' as keyof Settings, model);
+      });
+    });
+  }
 
   document.getElementById('mainDevMode')?.addEventListener('click', () => {
     const current = new URLSearchParams(location.search);

@@ -199,6 +199,18 @@
             </div>
           </div>
 
+          <div class="sp-group-title" data-i18n="settings.gameplay.saberModel">Model miecza</div>
+          <div class="sp-group">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.gameplay.saberModelLabel">Kształt ostrza</span>
+              <div class="sp-seg-row" id="saberModelPicker">
+                <button type="button" class="sp-seg is-active" data-saber-model="classic" data-i18n="settings.gameplay.modelClassic">Klasyczny</button>
+                <button type="button" class="sp-seg" data-saber-model="wide" data-i18n="settings.gameplay.modelWide">Szeroki</button>
+                <button type="button" class="sp-seg" data-saber-model="thin" data-i18n="settings.gameplay.modelThin">Cienki</button>
+              </div>
+            </div>
+          </div>
+
           <div class="sp-group-title" data-i18n="settings.gameplay.saberColors">Kolory mieczy</div>
           <div class="sp-group sp-colors-group">
             <div class="sp-color-side">
@@ -208,6 +220,19 @@
                 <div class="saber-color-preview-bar" id="saberColorPreviewLeft"></div>
                 <span id="saberColorNameLeft"></span>
               </div>
+              <div class="cp-panel" id="cpLeft">
+                <div class="cp-sliders">
+                  <div class="cp-row"><label>H</label><input type="range" class="cp-h" min="0" max="360" step="1"><span class="cp-val cp-hval">0</span></div>
+                  <div class="cp-row"><label>S</label><input type="range" class="cp-s" min="0" max="100" step="1"><span class="cp-val cp-sval">100</span></div>
+                  <div class="cp-row"><label>L</label><input type="range" class="cp-l" min="10" max="90" step="1"><span class="cp-val cp-lval">55</span></div>
+                </div>
+                <div class="cp-hex-row">
+                  <span class="cp-swatch" id="cpSwatchLeft"></span>
+                  <input type="text" class="cp-hex" maxlength="7" placeholder="#rrggbb" id="cpHexLeft">
+                  <button type="button" class="cp-apply" data-side="left" data-i18n="settings.gameplay.apply">Zastosuj</button>
+                </div>
+              </div>
+              <button type="button" class="cp-toggle" data-target="cpLeft" data-i18n="settings.gameplay.customColor">Własny kolor</button>
             </div>
             <div class="sp-color-side">
               <div class="sp-color-label" data-i18n="settings.gameplay.rightHand">Prawa ręka</div>
@@ -216,6 +241,19 @@
                 <div class="saber-color-preview-bar" id="saberColorPreviewRight"></div>
                 <span id="saberColorNameRight"></span>
               </div>
+              <div class="cp-panel" id="cpRight">
+                <div class="cp-sliders">
+                  <div class="cp-row"><label>H</label><input type="range" class="cp-h" min="0" max="360" step="1"><span class="cp-val cp-hval">210</span></div>
+                  <div class="cp-row"><label>S</label><input type="range" class="cp-s" min="0" max="100" step="1"><span class="cp-val cp-sval">100</span></div>
+                  <div class="cp-row"><label>L</label><input type="range" class="cp-l" min="10" max="90" step="1"><span class="cp-val cp-lval">55</span></div>
+                </div>
+                <div class="cp-hex-row">
+                  <span class="cp-swatch" id="cpSwatchRight"></span>
+                  <input type="text" class="cp-hex" maxlength="7" placeholder="#rrggbb" id="cpHexRight">
+                  <button type="button" class="cp-apply" data-side="right" data-i18n="settings.gameplay.apply">Zastosuj</button>
+                </div>
+              </div>
+              <button type="button" class="cp-toggle" data-target="cpRight" data-i18n="settings.gameplay.customColor">Własny kolor</button>
             </div>
           </div>
         </div>
@@ -292,7 +330,7 @@
   <div id="hudBottom">
     <div id="hpHud">
       <div class="hp-meta">
-        <span>HP</span>
+        <span class="hp-icon material-symbols-rounded" aria-hidden="true">favorite</span>
         <span id="lives">10 / 10</span>
       </div>
       <div class="hp-shell">
@@ -307,7 +345,9 @@
         <span id="mapTimeLeft">0:00</span>
       </div>
       <div class="map-prog-shell">
-        <div id="mapProgressFill"></div>
+        <div id="mapProgressFill">
+          <span class="map-prog-dot"></span>
+        </div>
       </div>
     </div>
   </div>
@@ -358,6 +398,8 @@
     </div>
   </div>
 </div>
+
+<div id="screenFade"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/umd/lucide.min.js"></script>

@@ -676,7 +676,7 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
   const points = scoreForHit(quality.basePoints, comboBefore);
 
   shatterBlock(entry.mesh, color, cache, { strong: quality.strong });
-  showHitLabel(entry.mesh.position, quality.label, quality.label === 'PERFECT', quality.reason);
+  showHitLabel(entry.mesh.position, quality.label, quality.label === 'PERFECT', quality.reason, deltaMs);
   releaseBlock(entry.mesh);
 
   state.score += points;
@@ -733,11 +733,17 @@ const hitLabelContainer = document.createElement('div');
 hitLabelContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:300;overflow:hidden;';
 document.body.appendChild(hitLabelContainer);
 
-function showHitLabel(pos3d: THREE.Vector3, label: string, perfect: boolean, _reason = ''): void {
-  const el  = document.createElement('div');
+function showHitLabel(pos3d: THREE.Vector3, label: string, perfect: boolean, _reason = '', deltaMs = 0): void {
+  const el    = document.createElement('div');
   const isBad = label === 'BAD';
-  const col = isBad ? '#ffaa44' : perfect ? '#36f2a1' : '#8ec8ff';
-  el.textContent = label;
+  const col   = isBad ? '#ffaa44' : perfect ? '#36f2a1' : '#8ec8ff';
+  const msAbs = Math.abs(Math.round(deltaMs));
+  const msSign = deltaMs > 0 ? '+' : deltaMs < 0 ? '−' : '';
+  const msCol  = msAbs < 30 ? '#36f2a1' : msAbs < 80 ? '#8ec8ff' : '#ffaa44';
+  el.innerHTML = `
+    <span style="display:block">${label}</span>
+    <span style="display:block;font-size:11px;letter-spacing:2px;color:${msCol};opacity:0.85;margin-top:2px">${msSign}${msAbs} ms</span>
+  `;
   el.style.cssText = `
     position:absolute;
     font-family:'Oxanium',sans-serif;
@@ -746,12 +752,12 @@ function showHitLabel(pos3d: THREE.Vector3, label: string, perfect: boolean, _re
     letter-spacing:4px;
     color:${col};
     text-shadow:0 0 20px ${col};
+    text-align:center;
     opacity:1;
     transition:opacity 0.35s, transform 0.35s;
     pointer-events:none;
     white-space:nowrap;
   `;
-  // Przybliżona projekcja 3D → ekran (uproszczona, wystarczy dla feel)
   const sx = window.innerWidth  * (0.5 - pos3d.x * 0.08);
   const sy = window.innerHeight * (0.42 - pos3d.y * 0.06);
   el.style.left      = `${sx}px`;

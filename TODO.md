@@ -19,22 +19,22 @@
 - [x] Podgląd najbliższych 3 beatów: czas nuty, delta ms, strona, typ
 
 ## 5. Trzy modele mieczy
-- [ ] Zaimplementować wybór spośród 3 modeli geometrii miecza (np. klasyczny, szeroki, cienki)
-- [ ] Picker modelu w ustawieniach z podglądem 3D
+- [x] Zaimplementować wybór spośród 3 modeli geometrii miecza (np. klasyczny, szeroki, cienki)
+- [x] Picker modelu w ustawieniach z podglądem 3D
 
 ## 6. Więcej kolorów i lepszy picker
-- [ ] Zastąpić prosty input[type=color] pełnym color pickerem (HSL/HEX/RGB)
+- [x] Zastąpić prosty input[type=color] pełnym color pickerem (HSL/HEX/RGB)
 - [ ] Więcej presetów kolorów dla mieczy
 
 ## 7. UX / Animacje (backlog)
-- [ ] Animacje fade-in/fade-out przy otwieraniu i zamykaniu paneli (ustawienia, game over, pauza, overlay)
-- [ ] Przeprojektować panel game over (czytelny, gamingowy styl)
-- [ ] Poprawić pasek zdrowia (animacje, stany: full/mid/low/critical)
-- [ ] Pasek timera/postępu utworu — wyraźniejszy, z timecodem
-- [ ] Wskaźnik rytmu: feedback czy gracz cina za wcześnie / za późno (accuracy ms na ekranie)
-- [ ] Komunikat "zgubiono ręce": pokazać podgląd ML, auto-resume po 5s stabilności z timerem 1.0→0.5→0.3→0.1→0.0→GO!
+- [x] Animacje fade-in/fade-out przy otwieraniu i zamykaniu paneli (ustawienia, game over, pauza, overlay)
+- [x] Przeprojektować panel game over (czytelny, gamingowy styl)
+- [x] Poprawić pasek zdrowia (animacje, stany: full/mid/low/critical)
+- [x] Pasek timera/postępu utworu — wyraźniejszy, z timecodem
+- [x] Wskaźnik rytmu: feedback czy gracz cina za wcześnie / za późno (accuracy ms na ekranie)
+- [ ] Komunikat "zgubiono ręce": pokazać podgląd ML, auto-resume po 1s stabilności z timerem!
 - [ ] Poprawić kontenery KAMERA RAW / ŚLEDZENIE ML w trybie dev (prawy dolny róg)
-- [ ] Całkowity remake systemu cieni i odbić w scenie 3D (subtelne, nieprzesadzone)
+- [x] Całkowity remake systemu cieni i odbić w scenie 3D (subtelne, nieprzesadzone)
 - [ ] Poprawić system wydajności (profile, adaptive quality)
 - [ ] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC
 - [ ] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
