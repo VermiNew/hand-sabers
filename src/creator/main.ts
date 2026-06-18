@@ -44,6 +44,8 @@ import {
   handlePlay,
 } from './input.ts';
 
+import { initKeybindsUI } from './keybinds-ui.ts';
+
 // ── i18n ──────────────────────────────────────────────────────────
 function applyCreatorTranslations(): void {
   document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
@@ -239,17 +241,10 @@ function bindBpm(): void {
 
 // ── Shortcuts panel ───────────────────────────────────────────────
 function bindShortcutsPanel(): void {
-  const panel     = document.getElementById('shortcutsPanel');
-  const btnOpen   = document.getElementById('btnShortcuts');
-  const btnClose  = document.getElementById('btnShortcutsClose');
-  if (!panel || !btnOpen || !btnClose) return;
-
-  const toggle = (): void => { panel.classList.toggle('hidden'); };
-  btnOpen.addEventListener('click', toggle);
-  btnClose.addEventListener('click', () => panel.classList.add('hidden'));
-  panel.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Escape') panel.classList.add('hidden');
-  });
+  const panel   = document.getElementById('shortcutsPanel');
+  const btnOpen = document.getElementById('btnShortcuts');
+  if (!panel || !btnOpen) return;
+  btnOpen.addEventListener('click', () => panel.classList.toggle('hidden'));
 }
 
 // ── Waveform scroll → timeline sync ──────────────────────────────
@@ -279,6 +274,7 @@ bindVolume();
 bindBpm();
 bindShortcutsPanel();
 bindWaveformScroll();
+initKeybindsUI();
 initAudioCtx();
 resizeCanvases();
 drawWaveform();

@@ -296,17 +296,17 @@ body {
 
 /* ── STATUS BAR ── */
 #statusBar {
-  padding:0 18px; height:30px;
+  padding:0 18px; height:34px;
   border-top:1px solid rgba(255,255,255,0.06);
   background:rgba(4,6,12,0.99);
-  font-size:11px; letter-spacing:1px; color:var(--dim);
-  display:flex; gap:20px; align-items:center; flex-shrink:0;
+  font-size:12px; letter-spacing:1px; color:var(--dim);
+  display:flex; gap:22px; align-items:center; flex-shrink:0;
 }
 
-.status-item { display:flex; gap:6px; align-items:center; }
-.status-key  { color:rgba(148,163,184,0.38); font-size:10px; letter-spacing:1.5px; }
-.status-val  { color:rgba(148,163,184,0.75); font-weight:700; }
-#warningMsg  { color:#ffaa44; margin-left:auto; font-size:11px; display:flex; align-items:center; gap:5px; }
+.status-item { display:flex; gap:7px; align-items:center; }
+.status-key  { color:rgba(148,163,184,0.4); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; }
+.status-val  { color:rgba(226,232,240,0.85); font-weight:700; font-size:13px; }
+#warningMsg  { color:#ffaa44; margin-left:auto; font-size:12px; display:flex; align-items:center; gap:5px; }
 
 /* ── TOAST ── */
 .toast-root {
@@ -468,3 +468,81 @@ kbd {
   background:rgba(255,200,80,0.06); border:1px solid rgba(255,200,80,0.14);
   border-radius:4px; padding:4px 2px; letter-spacing:0;
 }
+
+/* ── SHORTCUTS PANEL TABS ── */
+.shortcuts-tabs {
+  display:flex; gap:4px; margin-bottom:14px;
+}
+.shortcuts-tab-btn {
+  background:transparent; border:1px solid rgba(255,255,255,0.1);
+  color:rgba(148,163,184,0.6); font-family:'JetBrains Mono',monospace;
+  font-size:10px; letter-spacing:1.5px; padding:5px 14px;
+  border-radius:6px; cursor:pointer; transition:all .15s;
+}
+.shortcuts-tab-btn:hover { color:#fff; border-color:rgba(255,255,255,0.25); }
+.shortcuts-tab-btn.is-active {
+  background:rgba(0,212,255,0.1); border-color:rgba(0,212,255,0.4);
+  color:#00d4ff;
+}
+.shortcuts-tab-pane { display:none; }
+.shortcuts-tab-pane.is-active { display:block; }
+
+/* ── KEYBIND EDITOR ── */
+.kb-editor {
+  max-height:420px; overflow-y:auto;
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.1) transparent;
+}
+.kb-editor::-webkit-scrollbar { width:5px; }
+.kb-editor::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.1); border-radius:3px; }
+
+.kb-group-title {
+  font-size:9px; letter-spacing:3px; color:rgba(148,163,184,0.4);
+  text-transform:uppercase; margin:14px 0 5px; padding-bottom:4px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.kb-group-title:first-child { margin-top:0; }
+
+.kb-row {
+  display:grid; grid-template-columns:1fr auto;
+  align-items:center; gap:12px;
+  padding:5px 4px; border-radius:6px;
+  transition:background .12s;
+}
+.kb-row:hover { background:rgba(255,255,255,0.03); }
+
+.kb-label {
+  font-size:11px; color:rgba(226,232,240,0.7);
+}
+.kb-hint {
+  font-size:10px; color:rgba(148,163,184,0.4); margin-top:1px;
+}
+
+.kb-bind-btn {
+  font-family:'JetBrains Mono',monospace; font-size:11px;
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+  border-bottom-width:2px; color:rgba(226,232,240,0.85);
+  padding:3px 10px; border-radius:5px; cursor:pointer;
+  min-width:100px; text-align:center;
+  transition:all .15s; white-space:nowrap;
+}
+.kb-bind-btn:hover {
+  background:rgba(0,212,255,0.08); border-color:rgba(0,212,255,0.35); color:#00d4ff;
+}
+.kb-bind-btn.is-recording {
+  background:rgba(255,200,0,0.12); border-color:rgba(255,200,0,0.5);
+  color:#ffc800; animation:kb-blink .7s step-start infinite;
+}
+@keyframes kb-blink { 50% { opacity:.4; } }
+
+.kb-footer {
+  display:flex; justify-content:flex-end; gap:8px;
+  margin-top:12px; padding-top:10px;
+  border-top:1px solid rgba(255,255,255,0.07);
+}
+.kb-reset-btn {
+  font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:1px;
+  background:rgba(255,60,60,0.08); border:1px solid rgba(255,60,60,0.25);
+  color:rgba(255,100,100,0.8); padding:5px 14px; border-radius:6px;
+  cursor:pointer; transition:all .15s;
+}
+.kb-reset-btn:hover { background:rgba(255,60,60,0.15); border-color:rgba(255,60,60,0.5); color:#ff6060; }
