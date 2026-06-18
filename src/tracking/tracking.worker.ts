@@ -118,7 +118,7 @@ function computeQuaternion(lms: Landmark[]): QuatRepr {
 
   const bx = middleMCP.x - wrist.x;
   const by = -(middleMCP.y - wrist.y);
-  const bz = (middleMCP.z ?? 0 - (wrist.z ?? 0)) * 2;
+  const bz = ((middleMCP.z ?? 0) - (wrist.z ?? 0)) * 2;
   const bLen = Math.sqrt(bx * bx + by * by + bz * bz) || 1;
 
   const rx = pinkyMCP.x - indexMCP.x;
