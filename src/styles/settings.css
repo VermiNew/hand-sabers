@@ -44,7 +44,8 @@
   transition:color 0.15s, border-color 0.15s, background 0.15s;
 }
 .sp-nav-item .material-symbols-rounded { font-size:18px; flex-shrink:0; }
-.sp-nav-item:hover { color:rgba(226,232,240,0.85); background:rgba(255,255,255,0.03); }
+.sp-nav-item:hover,
+.sp-nav-item:focus-visible { color:rgba(226,232,240,0.9); background:rgba(255,255,255,0.04); outline:none; border-left-color:rgba(0,212,255,0.4); }
 .sp-nav-item.is-active {
   color:#fff; border-left-color:#00d4ff;
   background:rgba(0,212,255,0.06);
@@ -55,7 +56,8 @@
   height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
   color:rgba(148,163,184,0.5); cursor:pointer; transition:all 0.15s;
 }
-.sp-close:hover { background:rgba(255,60,60,0.1); border-color:rgba(255,60,60,0.3); color:#ff6060; }
+.sp-close:hover,
+.sp-close:focus-visible { background:rgba(255,60,60,0.1); border-color:rgba(255,60,60,0.3); color:#ff6060; outline:2px solid rgba(255,60,60,0.5); outline-offset:2px; }
 
 /* ── Tab body ── */
 .sp-body {
@@ -171,6 +173,10 @@
 .sp-switch input:checked + .sp-knob::before {
   transform:translateX(20px); background:#00d4ff;
 }
+.sp-switch input:focus-visible + .sp-knob {
+  outline:2px solid rgba(0,212,255,0.7);
+  outline-offset:3px;
+}
 
 /* Segmented */
 .sp-segmented { display:flex; gap:4px; flex-shrink:0; }
@@ -180,7 +186,12 @@
   font-size:11px; letter-spacing:1px; padding:6px 14px;
   border-radius:6px; cursor:pointer; transition:all 0.15s;
 }
-.sp-seg:hover { color:#fff; border-color:rgba(255,255,255,0.2); }
+.sp-seg:hover     { color:#fff; border-color:rgba(255,255,255,0.2); }
+.sp-seg:focus-visible {
+  outline:2px solid rgba(0,212,255,0.65);
+  outline-offset:2px;
+  color:#fff; border-color:rgba(0,212,255,0.4);
+}
 .sp-seg.is-active,
 .sp-seg.lang-active {
   background:rgba(0,212,255,0.12); border-color:rgba(0,212,255,0.45);
