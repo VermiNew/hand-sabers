@@ -37,7 +37,7 @@ export interface GameState {
   deltaScale: number;
   handsLeftActive: boolean;
   handsRightActive: boolean;
-  pauseReason: PauseReason | null;
+  pauseReason: PauseReason;
   noFail: boolean;
   oneHandMode: OneHandMode;
   map: StateMap | null;

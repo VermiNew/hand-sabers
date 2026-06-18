@@ -116,7 +116,8 @@ function getSoundVolume(key: SoundVolumeKey, fallback = 1): number {
 
 function connectSfx(gain: GainNode): void {
   ensureAudioGraph();
-  gain.connect(sfxGain ?? masterGain ?? ctx!.destination);
+  if (!ctx) return;
+  gain.connect(sfxGain ?? masterGain ?? ctx.destination);
 }
 
 function rampGain(

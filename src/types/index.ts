@@ -14,7 +14,7 @@ export const PAUSE_REASONS = {
   HANDS: 'hands',
   MANUAL: 'manual',
 } as const;
-export type PauseReason = 'hands' | 'manual';
+export type PauseReason = 'hands' | 'manual' | null;
 
 export type OneHandMode = 'left' | 'right' | null;
 export type SaberSide = 'left' | 'right';
