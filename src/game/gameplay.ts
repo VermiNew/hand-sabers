@@ -536,6 +536,9 @@ export function clearGameplayEntities() {
   sparkSystem.visible = false;
   while (activeShards.length) releaseShardAt(activeShards.length - 1);
   hitStreakForRegen   = 0;
+  for (const light of [lLight, rLight]) {
+    if (light.userData.hitTimer) { clearTimeout(light.userData.hitTimer); light.userData.hitTimer = null; }
+  }
   resetBladeHitboxes();
   publishGameplayStats();
 }
