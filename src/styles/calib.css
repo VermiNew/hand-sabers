@@ -27,7 +27,7 @@
 
 .calib-brand {
   font-family: 'Oxanium', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 900;
   letter-spacing: 6px;
   color: var(--main);
@@ -80,7 +80,7 @@
 }
 
 .calib-step-label {
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 2px;
   color: var(--dim);
   margin-left: 6px;
@@ -111,9 +111,9 @@
   border: 1px solid rgba(148,163,184,0.15);
   color: var(--dim);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 2px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
@@ -229,8 +229,8 @@
 .calib-hint {
   flex: 1;
   text-align: right;
-  font-size: 10px;
-  letter-spacing: 1.8px;
+  font-size: 13px;
+  letter-spacing: 1.5px;
   color: var(--muted);
   line-height: 1.4;
 }
@@ -239,7 +239,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 3px;
   color: var(--dim);
   text-transform: uppercase;
@@ -258,7 +258,7 @@
 
 .calib-step-badge {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 13px;
   letter-spacing: 4px;
   color: var(--main);
   margin-bottom: 12px;
@@ -276,9 +276,9 @@
 }
 
 .calib-step-desc {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--muted);
-  line-height: 2;
+  line-height: 1.9;
   letter-spacing: 0.5px;
   white-space: pre-line;
   margin-bottom: 32px;
@@ -302,7 +302,7 @@
 }
 
 .calib-progress-label {
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 2.5px;
   color: var(--dim);
   margin-bottom: 32px;
@@ -343,13 +343,13 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 9px 20px;
+  padding: 10px 22px;
   background: transparent;
   border: 1px solid rgba(148,163,184,0.18);
   border-radius: 8px;
   color: var(--muted);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 2px;
   cursor: pointer;
   transition: all 0.15s;

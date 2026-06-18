@@ -488,7 +488,7 @@ body.menu-open #pauseMenu { display:none !important; }
 .ov-load-screen {
   position:absolute; inset:0;
   display:flex; flex-direction:column;
-  align-items:center; justify-content:center;
+  align-items:stretch; justify-content:flex-start;
   gap:0;
   background:
     radial-gradient(ellipse at 25% 40%, rgba(47,124,255,0.07), transparent 50%),
@@ -507,9 +507,16 @@ body.menu-open #pauseMenu { display:none !important; }
   mask-image:radial-gradient(ellipse at 50% 50%, black 30%, transparent 75%);
 }
 
-/* Brand top-left */
+/* Topbar — mirrors calib-topbar */
+.ov-load-topbar {
+  display:flex; align-items:center; gap:20px;
+  padding:14px 28px;
+  border-bottom:1px solid rgba(148,163,184,0.1);
+  flex-shrink:0;
+  position:relative; z-index:1;
+}
+
 .ov-load-brand {
-  position:absolute; top:24px; left:32px;
   display:flex; align-items:center; gap:14px;
 }
 .ov-load-logo {
@@ -521,18 +528,22 @@ body.menu-open #pauseMenu { display:none !important; }
   box-shadow:0 0 20px rgba(47,124,255,0.25);
 }
 .ov-load-title {
-  font-family:'Oxanium',sans-serif; font-weight:900; font-size:14px;
+  font-family:'Oxanium',sans-serif; font-weight:900; font-size:15px;
   letter-spacing:6px; color:var(--main);
   text-shadow:0 0 20px rgba(47,124,255,0.4);
 }
 .ov-load-sub {
-  font-size:9px; letter-spacing:3px; color:var(--dim); margin-top:2px;
+  font-size:11px; letter-spacing:3px; color:var(--dim); margin-top:2px;
 }
 
-/* Center content */
+/* Center content — vertically centered in remaining space */
 .ov-load-center {
-  display:flex; flex-direction:column; align-items:center;
-  gap:20px; text-align:center; max-width:440px; width:90%;
+  flex:1;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:24px; text-align:center; max-width:480px; width:90%;
+  margin:0 auto;
+  padding:32px 0;
+  position:relative; z-index:1;
 }
 
 /* Spinner */
@@ -566,7 +577,7 @@ body.menu-open #pauseMenu { display:none !important; }
 
 /* Step label (shown when progress starts) */
 .ov-load-step {
-  font-size:10px; letter-spacing:4px; color:var(--accent);
+  font-size:13px; letter-spacing:4px; color:var(--accent);
   text-shadow:0 0 14px rgba(54,242,161,0.5);
   text-transform:uppercase;
 }
@@ -574,14 +585,14 @@ body.menu-open #pauseMenu { display:none !important; }
 /* Main instruction text */
 .ov-load-instr {
   font-family:'Oxanium',sans-serif; font-weight:700;
-  font-size:clamp(16px,2.2vw,22px); letter-spacing:2px;
+  font-size:clamp(18px,2.4vw,26px); letter-spacing:2px;
   color:#fff; line-height:1.4;
   text-shadow:0 0 30px rgba(47,124,255,0.3);
 }
 
 /* Detail sub-line */
 .ov-load-detail {
-  font-size:11px; letter-spacing:2.5px; color:var(--main);
+  font-size:13px; letter-spacing:2px; color:var(--main);
   min-height:1em; white-space:pre-line; line-height:1.6;
 }
 
@@ -590,7 +601,7 @@ body.menu-open #pauseMenu { display:none !important; }
   width:100%; display:flex; flex-direction:column; gap:8px; align-items:stretch;
 }
 .ov-load-progress-track {
-  height:3px; background:rgba(148,163,184,0.1); border-radius:999px; overflow:hidden;
+  height:4px; background:rgba(148,163,184,0.1); border-radius:999px; overflow:hidden;
 }
 .ov-load-progress-fill {
   height:100%; border-radius:999px;
@@ -603,14 +614,14 @@ body.menu-open #pauseMenu { display:none !important; }
   animation:progressSlide 1.3s ease-in-out infinite;
 }
 .ov-load-progress-pct {
-  font-family:'JetBrains Mono',monospace; font-size:10px;
+  font-family:'JetBrains Mono',monospace; font-size:12px;
   letter-spacing:3px; color:var(--dim); text-align:right;
 }
 
-/* Footer */
+/* Footer — inside center block now */
 .ov-load-footer {
-  position:absolute; bottom:24px;
-  font-size:9px; letter-spacing:3px; color:var(--dim); text-transform:uppercase;
+  font-size:11px; letter-spacing:3px; color:var(--dim); text-transform:uppercase;
+  margin-top:8px;
 }
 
 /* Game over box — hidden unless is-gameover */
