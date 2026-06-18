@@ -100,6 +100,21 @@ const devData: DevData = {
   appState: '—',
 };
 
+const DEV_ACCENTS: Record<string, string> = {
+  green:  '54, 242, 161',
+  blue:   '96, 185, 255',
+  purple: '196, 132, 255',
+  pink:   '255, 112, 200',
+  orange: '255, 165, 80',
+  yellow: '255, 220, 50',
+};
+
+export function applyDevAccent(name: string): void {
+  const rgb = DEV_ACCENTS[name] ?? DEV_ACCENTS['green']!;
+  document.documentElement.style.setProperty('--dev-accent-rgb', rgb);
+  setSetting('devAccent', name);
+}
+
 function isDevModeRequested(): boolean {
   const params = new URLSearchParams(location.search);
   return params.has('dev') || params.has('testing') || Boolean(getSettings().developerMode);
@@ -333,6 +348,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
   devData.audioOffsetMs   = settings.audioOffsetMs ?? 0;
   devData.performanceMode = getPerformanceMode(settings);
   devData.developerMode   = Boolean(settings.developerMode) || isDev;
+  applyDevAccent(settings.devAccent || 'green');
   updateRenderingDiagnostics(lastRenderer!);
 
   void loadStatsJS().then(Stats => {
@@ -498,7 +514,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     const panelEl = pane.element;
     panelEl.classList.add('hs-dev-pane');
     panelEl.setAttribute('aria-label', 'Hand Sabers developer panel');
-    panelEl.style.cssText = 'position:fixed;top:16px;left:16px;z-index:9000;width:min(320px,calc(100vw - 32px));';
+    panelEl.style.cssText = 'position:fixed;top:16px;left:16px;z-index:9000;width:min(360px,calc(100vw - 32px));';
     makeDraggable(panelEl);
     attachMarqueeScroll(panelEl);
   });

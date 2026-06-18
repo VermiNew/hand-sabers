@@ -84,7 +84,17 @@
     },
     "developer": {
       "name": "Tryb developera",
-      "desc": "Pokazuje panel diagnostyczny, metryki renderowania, VRAM, tracking i podgląd kamery"
+      "desc": "Pokazuje panel diagnostyczny, metryki renderowania, VRAM, tracking i podgląd kamery",
+      "accentColor": "Kolor akcentu panelu",
+      "color": "Kolor",
+      "accent": {
+        "green": "Zielony",
+        "blue": "Niebieski",
+        "purple": "Fioletowy",
+        "pink": "Różowy",
+        "orange": "Pomarańczowy",
+        "yellow": "Żółty"
+      }
     },
     "gameplay": {
       "noFailDesc": "Gra nie kończy się przy zerowym HP",

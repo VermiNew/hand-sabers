@@ -84,7 +84,17 @@
     },
     "developer": {
       "name": "Developer mode",
-      "desc": "Shows diagnostic panel, rendering metrics, VRAM, tracking and camera preview"
+      "desc": "Shows diagnostic panel, rendering metrics, VRAM, tracking and camera preview",
+      "accentColor": "Panel accent color",
+      "color": "Color",
+      "accent": {
+        "green": "Green",
+        "blue": "Blue",
+        "purple": "Purple",
+        "pink": "Pink",
+        "orange": "Orange",
+        "yellow": "Yellow"
+      }
     },
     "gameplay": {
       "noFailDesc": "Game doesn't end at zero HP",

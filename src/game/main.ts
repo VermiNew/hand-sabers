@@ -10,7 +10,7 @@ import { initAudio, startMapAudio, stopMapAudio, pauseMapAudio, getMapTime, getM
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
-import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel } from '../ui/devpanel.ts';
+import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
 import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
@@ -1055,6 +1055,14 @@ function initMainMenu(): void {
       settings.developerMode = value;
       setDeveloperPanelEnabled(renderer, value);
       setHitPlaneVisible(value);
+    });
+  }
+
+  const devAccentInput = document.getElementById('menuDevAccent') as HTMLSelectElement | null;
+  if (devAccentInput) {
+    devAccentInput.value = settings.devAccent || 'green';
+    devAccentInput.addEventListener('change', () => {
+      applyDevAccent(devAccentInput.value);
     });
   }
 

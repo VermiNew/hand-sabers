@@ -42,6 +42,7 @@ export const DEFAULTS: Settings = {
   beatLimitEnabled: true,
   maxBeats: 10_000,
   developerMode: false,
+  devAccent: 'green',
   oneHandMode: null,
   audioOffsetMs: 0,
   performanceMode: DEFAULT_PERFORMANCE_MODE,

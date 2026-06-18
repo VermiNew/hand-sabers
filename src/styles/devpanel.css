@@ -1,11 +1,24 @@
-/* ── Camera panel base (always rendered, hidden outside dev mode) ── */
+/* ── Dev palette
+   --dev-accent-rgb  R G B of accent colour (set by JS via applyDevAccent)
+   --dev-accent      computed from rgb values
+   --dev-blue        cold blue — borders, glows, backgrounds
+   --dev-bg          near-black — panel background
+   ─────────────────────────────────────────────────────────────────────────── */
+:root {
+  --dev-accent-rgb: 54, 242, 161;    /* default: green */
+  --dev-accent:     rgb(var(--dev-accent-rgb));
+  --dev-blue:       rgba(47, 124, 255, 1);
+  --dev-bg:         rgba(4, 8, 18, 0.97);
+}
+
+/* ── Camera panel ─────────────────────────────────────────────────────────── */
 #camPanel {
   position: fixed;
   bottom: 16px;
   right: 16px;
   display: flex;
   flex-direction: row;
-  gap: 10px;
+  gap: 8px;
   align-items: flex-end;
   padding: 0;
   pointer-events: none;
@@ -16,31 +29,28 @@ body:not(.dev-tools) #camPanel { display: none; }
 
 body.dev-tools #camPanel {
   pointer-events: auto;
-  padding: 10px;
-  border: 1px solid rgba(142, 200, 255, 0.14);
-  border-radius: 18px;
+  padding: 8px;
+  border: 1px solid rgba(47, 124, 255, 0.18);
+  border-radius: 14px;
   background:
-    linear-gradient(145deg, rgba(7, 13, 25, 0.72), rgba(3, 7, 14, 0.50)),
-    radial-gradient(circle at 82% 18%, rgba(47, 124, 255, 0.16), transparent 40%);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.035) inset,
-    0 26px 70px rgba(0, 0, 0, 0.60),
-    0 0 36px rgba(47, 124, 255, 0.12);
-  backdrop-filter: blur(18px) saturate(1.25);
-}
-
-/* ── Camera / canvas box ── */
-.cam-box {
-  position: relative;
-  width: 202px;
-  height: 128px;
-  border-radius: 12px;
-  border: 1px solid rgba(142, 200, 255, 0.18);
-  overflow: hidden;
-  background: rgba(2, 6, 14, 0.86);
+    linear-gradient(160deg, rgba(5, 10, 22, 0.88), rgba(3, 6, 16, 0.78)),
+    radial-gradient(circle at 80% 0%, rgba(47, 124, 255, 0.10), transparent 55%);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-    0 12px 32px rgba(0, 0, 0, 0.48);
+    0 16px 48px rgba(0, 0, 0, 0.72),
+    0 0 24px rgba(47, 124, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+/* ── Camera / canvas box ─────────────────────────────────────────────────── */
+.cam-box {
+  position: relative;
+  width: 190px;
+  height: 120px;
+  border-radius: 10px;
+  border: none;
+  overflow: hidden;
+  background: #03060f;
   flex-shrink: 0;
 }
 
@@ -53,96 +63,89 @@ body.dev-tools #camPanel {
   border-radius: inherit;
 }
 
-/* Scanline overlay */
+/* Vignette — darkens bottom for label legibility */
 .cam-box::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 30%),
-    repeating-linear-gradient(
-      0deg,
-      rgba(255, 255, 255, 0.022) 0 1px,
-      transparent 1px 4px
-    );
-  opacity: 0.5;
+  background: linear-gradient(
+    180deg,
+    transparent 50%,
+    rgba(3, 6, 18, 0.65) 100%
+  );
 }
 
-/* Label tag */
+/* Label */
 .cam-tag {
   position: absolute;
-  top: 8px;
+  bottom: 7px;
   left: 8px;
   z-index: 2;
-  padding: 3px 7px;
-  border: 1px solid rgba(142, 200, 255, 0.18);
-  border-radius: 999px;
-  background: rgba(3, 7, 14, 0.72);
-  color: rgba(226, 232, 240, 0.72);
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(3, 6, 18, 0.60);
+  color: rgba(180, 210, 255, 0.65);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 8px;
-  font-weight: 500;
-  letter-spacing: 1.2px;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 0.7px;
   text-transform: uppercase;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(4px);
   pointer-events: none;
 }
 
 .cam-tag.ml {
-  color: var(--accent);
-  border-color: rgba(54, 242, 161, 0.26);
-  background: rgba(3, 7, 14, 0.76);
+  color: rgba(var(--dev-accent-rgb), 0.85);
 }
 
-/* ── Tweakpane dev pane ── */
+/* ── Tweakpane dev pane ───────────────────────────────────────────────────── */
 .hs-dev-pane {
-  --tp-base-background-color:          rgba(4, 8, 16, 0.97);
-  --tp-base-shadow-color:              rgba(0, 0, 0, 0.55);
-  --tp-button-background-color:        rgba(54, 242, 161, 0.11);
-  --tp-button-background-color-active: rgba(54, 242, 161, 0.24);
-  --tp-button-background-color-focus:  rgba(54, 242, 161, 0.18);
-  --tp-button-background-color-hover:  rgba(54, 242, 161, 0.18);
-  --tp-button-foreground-color:        rgba(226, 232, 240, 0.92);
-  --tp-container-background-color:       rgba(255, 255, 255, 0.055);
-  --tp-container-background-color-active: rgba(47, 124, 255, 0.20);
-  --tp-container-background-color-focus:  rgba(47, 124, 255, 0.16);
-  --tp-container-background-color-hover:  rgba(255, 255, 255, 0.080);
-  --tp-container-foreground-color:       rgba(226, 232, 240, 0.86);
-  --tp-groove-foreground-color:          rgba(142, 200, 255, 0.16);
-  --tp-input-background-color:           rgba(2, 6, 14, 0.82);
-  --tp-input-background-color-active:    rgba(47, 124, 255, 0.22);
-  --tp-input-background-color-focus:     rgba(47, 124, 255, 0.18);
-  --tp-input-background-color-hover:     rgba(255, 255, 255, 0.07);
-  --tp-input-foreground-color:           rgba(235, 248, 255, 0.96);
-  --tp-label-foreground-color:           rgba(148, 163, 184, 0.82);
-  --tp-monitor-background-color:         rgba(2, 6, 14, 0.84);
-  --tp-monitor-foreground-color:         rgba(54, 242, 161, 0.92);
+  --tp-base-background-color:             var(--dev-bg);
+  --tp-base-shadow-color:                 rgba(0, 0, 0, 0.55);
+  --tp-button-background-color:           rgba(47, 124, 255, 0.11);
+  --tp-button-background-color-active:    rgba(47, 124, 255, 0.26);
+  --tp-button-background-color-focus:     rgba(47, 124, 255, 0.18);
+  --tp-button-background-color-hover:     rgba(47, 124, 255, 0.18);
+  --tp-button-foreground-color:           rgba(220, 235, 255, 0.92);
+  --tp-container-background-color:        rgba(47, 124, 255, 0.06);
+  --tp-container-background-color-active: rgba(47, 124, 255, 0.18);
+  --tp-container-background-color-focus:  rgba(47, 124, 255, 0.14);
+  --tp-container-background-color-hover:  rgba(47, 124, 255, 0.10);
+  --tp-container-foreground-color:        rgba(210, 228, 255, 0.86);
+  --tp-groove-foreground-color:           rgba(47, 124, 255, 0.22);
+  --tp-input-background-color:            rgba(3, 6, 18, 0.82);
+  --tp-input-background-color-active:     rgba(47, 124, 255, 0.22);
+  --tp-input-background-color-focus:      rgba(47, 124, 255, 0.16);
+  --tp-input-background-color-hover:      rgba(47, 124, 255, 0.09);
+  --tp-input-foreground-color:            rgba(220, 238, 255, 0.96);
+  --tp-label-foreground-color:            rgba(140, 168, 210, 0.80);
+  --tp-monitor-background-color:          rgba(3, 6, 18, 0.84);
+  --tp-monitor-foreground-color:          rgba(var(--dev-accent-rgb), 0.95);
   font-family: 'JetBrains Mono', monospace !important;
 }
 
 /* Outer panel shell */
 .hs-dev-pane.tp-dfwv {
-  border: 1px solid rgba(142, 200, 255, 0.16);
-  border-radius: 20px;
+  border: 1px solid rgba(47, 124, 255, 0.18);
+  border-radius: 18px;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(7, 13, 25, 0.98), rgba(3, 7, 14, 0.96)),
-    radial-gradient(circle at 16% 0%,  rgba(54, 242, 161, 0.10), transparent 34%),
-    radial-gradient(circle at 100% 22%, rgba(47, 124, 255, 0.14), transparent 36%);
+    linear-gradient(180deg, rgba(5, 10, 22, 0.98), rgba(3, 6, 16, 0.97)),
+    radial-gradient(circle at 16% 0%,   rgba(47, 124, 255, 0.12), transparent 36%),
+    radial-gradient(circle at 100% 25%, rgba(47, 124, 255, 0.07), transparent 44%);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-    0 32px 90px rgba(0, 0, 0, 0.72),
-    0 0 34px rgba(54, 242, 161, 0.08);
+    0 28px 80px rgba(0, 0, 0, 0.75),
+    0 0 28px rgba(47, 124, 255, 0.10);
   backdrop-filter: blur(24px) saturate(1.3);
 }
 
 /* Title bar */
 .hs-dev-pane .tp-rotv {
-  background: rgba(3, 7, 14, 0.92) !important;
-  color: rgba(226, 232, 240, 0.88);
+  background: rgba(3, 7, 18, 0.94) !important;
+  color: rgba(210, 228, 255, 0.88);
 }
 
 .hs-dev-pane .tp-rotv_b {
@@ -152,33 +155,33 @@ body.dev-tools #camPanel {
   text-align: left !important;
   min-height: 44px;
   padding: 0 12px !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid rgba(47, 124, 255, 0.14);
   background:
     linear-gradient(90deg,
-      rgba(54, 242, 161, 0.09),
-      rgba(47, 124, 255, 0.07),
+      rgba(47, 124, 255, 0.10),
+      rgba(47, 124, 255, 0.04),
       transparent
     ) !important;
-  color: #fff !important;
+  color: #e8f2ff !important;
   font-family: 'Oxanium', sans-serif !important;
   font-size: 12px !important;
   font-weight: 900 !important;
   letter-spacing: 2.4px !important;
   text-transform: uppercase;
-  text-shadow: 0 0 18px rgba(54, 242, 161, 0.20);
+  text-shadow: 0 0 16px rgba(47, 124, 255, 0.28);
 }
 
-/* "LIVE" badge in title */
+/* "LIVE" badge — green for visibility */
 .hs-dev-pane .tp-rotv_b::after {
   content: 'LIVE';
   margin-left: auto;
   margin-right: 34px;
   flex: 0 0 auto;
   padding: 3px 7px;
-  border: 1px solid rgba(54, 242, 161, 0.22);
+  border: 1px solid rgba(var(--dev-accent-rgb), 0.28);
   border-radius: 999px;
-  color: var(--accent);
-  background: rgba(54, 242, 161, 0.07);
+  color: var(--dev-accent);
+  background: rgba(var(--dev-accent-rgb), 0.08);
   font: 700 8px / 1 'JetBrains Mono', monospace;
   letter-spacing: 1.5px;
   animation: dev-live-pulse 2.4s ease-in-out infinite;
@@ -186,7 +189,7 @@ body.dev-tools #camPanel {
 
 @keyframes dev-live-pulse {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.45; }
+  50%       { opacity: 0.40; }
 }
 
 /* Tab bar */
@@ -198,15 +201,15 @@ body.dev-tools #camPanel {
 
 .hs-dev-pane .tp-tabv_c,
 .hs-dev-pane .tp-rotv_c {
-  background: rgba(3, 7, 14, 0.90) !important;
+  background: rgba(3, 6, 18, 0.90) !important;
 }
 
 /* Tab buttons */
 .hs-dev-pane .tp-tabv_t > * {
   border-radius: 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.07) !important;
-  background: rgba(255, 255, 255, 0.030) !important;
-  color: rgba(226, 232, 240, 0.52) !important;
+  border: 1px solid rgba(47, 124, 255, 0.12) !important;
+  background: rgba(47, 124, 255, 0.05) !important;
+  color: rgba(155, 190, 240, 0.52) !important;
   font-family: 'Oxanium', sans-serif !important;
   font-size: 10px !important;
   font-weight: 800 !important;
@@ -216,24 +219,25 @@ body.dev-tools #camPanel {
 }
 
 .hs-dev-pane .tp-tabv_t > *:hover {
-  background: rgba(255, 255, 255, 0.060) !important;
-  color: rgba(226, 232, 240, 0.75) !important;
+  background: rgba(47, 124, 255, 0.12) !important;
+  color: rgba(180, 215, 255, 0.80) !important;
 }
 
+/* Active tab — green accent for contrast */
 .hs-dev-pane .tp-tabv_t > .tp-tabv_tsel,
 .hs-dev-pane .tp-tabv_t > [aria-selected="true"] {
-  border-color: rgba(54, 242, 161, 0.36) !important;
-  background: rgba(54, 242, 161, 0.10) !important;
-  color: var(--accent) !important;
-  box-shadow: 0 0 14px rgba(54, 242, 161, 0.10);
+  border-color: rgba(var(--dev-accent-rgb), 0.36) !important;
+  background: rgba(var(--dev-accent-rgb), 0.10) !important;
+  color: var(--dev-accent) !important;
+  box-shadow: 0 0 12px rgba(var(--dev-accent-rgb), 0.10);
 }
 
 /* Rows */
 .hs-dev-pane .tp-lblv {
   margin: 2px 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(47, 124, 255, 0.08) !important;
   border-radius: 8px !important;
-  background: rgba(255, 255, 255, 0.022) !important;
+  background: rgba(47, 124, 255, 0.03) !important;
 }
 
 .hs-dev-pane .tp-fldv,
@@ -246,14 +250,14 @@ body.dev-tools #camPanel {
 
 /* Label text */
 .hs-dev-pane .tp-lblv_l {
-  color: rgba(203, 213, 225, 0.62) !important;
+  color: rgba(140, 168, 210, 0.65) !important;
   font-size: 10px !important;
   letter-spacing: 0.3px !important;
 }
 
 /* Value column — truncate overflow, JS marquee on hover */
 .hs-dev-pane .tp-lblv_v {
-  min-width: 108px !important;
+  min-width: 140px !important;
   overflow: hidden;
 }
 
@@ -264,7 +268,6 @@ body.dev-tools #camPanel {
   text-overflow: ellipsis !important;
 }
 
-/* While marquee-scrolling (class added by JS) */
 .hs-dev-pane .tp-lblv_v .tp-mllv_i.dev-scrolling,
 .hs-dev-pane .tp-lblv_v .tp-sglv_i.dev-scrolling {
   text-overflow: clip !important;
@@ -277,21 +280,43 @@ body.dev-tools #camPanel {
   font-family: 'JetBrains Mono', monospace !important;
 }
 
+/* Checkbox — larger hit area and accent colour tick */
+.hs-dev-pane .tp-chkv_i {
+  width: 18px !important;
+  height: 18px !important;
+  border: 2px solid rgba(var(--dev-accent-rgb), 0.45) !important;
+  border-radius: 5px !important;
+  background: rgba(3, 6, 18, 0.80) !important;
+  transition: border-color 0.15s, background 0.15s !important;
+}
+
+.hs-dev-pane .tp-chkv_i:checked {
+  border-color: rgba(var(--dev-accent-rgb), 0.90) !important;
+  background: rgba(var(--dev-accent-rgb), 0.20) !important;
+}
+
+.hs-dev-pane .tp-chkv_i::before {
+  width: 10px !important;
+  height: 10px !important;
+  background: rgba(var(--dev-accent-rgb), 1) !important;
+  border-radius: 2px !important;
+}
+
 /* Graph canvases */
 .hs-dev-pane canvas {
   border-radius: 6px;
 }
 
-/* ── Stats.js panel ── */
+/* ── Stats.js panel ───────────────────────────────────────────────────────── */
 .hs-stats-panel {
-  border: 1px solid rgba(142, 200, 255, 0.16);
+  border: 1px solid rgba(47, 124, 255, 0.18);
   border-radius: 12px;
   overflow: hidden;
   opacity: 0.92;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-    0 14px 38px rgba(0, 0, 0, 0.56),
-    0 0 20px rgba(47, 124, 255, 0.10);
+    0 12px 32px rgba(0, 0, 0, 0.60),
+    0 0 18px rgba(47, 124, 255, 0.10);
   transform-origin: top right;
 }
 
@@ -299,7 +324,7 @@ body.dev-tools #camPanel {
   display: block !important;
 }
 
-/* ── Mobile ── */
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
 @media (max-width: 760px) {
   .hs-dev-pane.tp-dfwv {
     top: 12px !important;

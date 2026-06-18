@@ -90,6 +90,7 @@ export interface Settings {
   milestoneSoundVolume: number;
   noFail: boolean;
   developerMode: boolean;
+  devAccent: string;
   oneHandMode: OneHandMode;
   audioOffsetMs: number;
   performanceMode: PerformanceMode;
