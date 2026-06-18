@@ -35,7 +35,7 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled   = false;
 renderer.toneMapping         = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = ['lowest', 'very-low', 'low'].includes(initialPerfProfile.qualityMode) ? 1.0 : 1.2;
-(renderer as unknown as { outputEncoding: number }).outputEncoding = (THREE as unknown as { sRGBEncoding: number }).sRGBEncoding;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 export const scene = new THREE.Scene();
 scene.background = new THREE.Color(THEME.dark);
@@ -176,7 +176,7 @@ function makeGlowTexture(hex: number): THREE.CanvasTexture {
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 96, 96);
   const tex = new THREE.CanvasTexture(c);
-  (tex as unknown as { encoding: number }).encoding = (THREE as unknown as { sRGBEncoding: number }).sRGBEncoding;
+  tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
