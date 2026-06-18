@@ -854,7 +854,7 @@ function initMainMenu(): void {
 
   function updateSettingsSliderValue(input: HTMLInputElement): void {
     if (!input?.id) return;
-    const valueEl = document.querySelector<HTMLElement>(`.settings-slider-value[data-for="${input.id}"]`);
+    const valueEl = document.querySelector<HTMLElement>(`.sp-value[data-for="${input.id}"]`);
     if (!valueEl) return;
     const min   = Number(input.min   || 0);
     const max   = Number(input.max   || 100);
