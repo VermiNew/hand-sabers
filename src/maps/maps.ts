@@ -180,7 +180,7 @@ async function importMapFile(file: File): Promise<void> {
       const msg = localErr instanceof Error ? localErr.message : String(localErr);
       showToast(`Błąd importu: ${msg}`, { type: 'error' });
       void showAlert(`Błąd importu: ${msg}`, { title: 'Import nie powiódł się' });
-      void serverErr;
+      console.error('Server import failed:', serverErr);
     }
   }
 }
@@ -438,39 +438,47 @@ async function exportMap(id: string): Promise<void> {
 
 // ── Load maps ─────────────────────────────────────────────────────────────────
 
+let loadMapsInProgress = false;
+
 async function loadMaps(): Promise<void> {
-  document.getElementById('mapList')!.innerHTML = renderSkeleton();
-  renderDetail(null);
+  if (loadMapsInProgress) return;
+  loadMapsInProgress = true;
+  try {
+    document.getElementById('mapList')!.innerHTML = renderSkeleton();
+    renderDetail(null);
 
-  const localMaps  = (readLocalMaps() as unknown) as MapEntry[];
-  const autosave   = getAutosaveMap();
-  if (autosave && !localMaps.some(m => m.id === autosave.id)) localMaps.unshift(autosave);
+    const localMaps  = (readLocalMaps() as unknown) as MapEntry[];
+    const autosave   = getAutosaveMap();
+    if (autosave && !localMaps.some(m => m.id === autosave.id)) localMaps.unshift(autosave);
 
-  let serverMaps: MapEntry[] = [];
-  let serverError: Error | null = null;
-  try { serverMaps = await loadServerMaps(); }
-  catch (e) {
-    serverError = e instanceof Error ? e : new Error(String(e));
-    // Network errors during startup (server still booting) — retry once after 2s
-    if (serverError.message.includes('Failed to fetch') || serverError.message.includes('NetworkError') || serverError.message.startsWith('0 ')) {
-      await new Promise(r => setTimeout(r, 2000));
-      try { serverMaps = await loadServerMaps(); serverError = null; }
-      catch { /* keep serverError set */ }
+    let serverMaps: MapEntry[] = [];
+    let serverError: Error | null = null;
+    try { serverMaps = await loadServerMaps(); }
+    catch (e) {
+      serverError = e instanceof Error ? e : new Error(String(e));
+      // Network errors during startup (server still booting) — retry once after 2s
+      if (serverError.message.includes('Failed to fetch') || serverError.message.includes('NetworkError') || serverError.message.startsWith('0 ')) {
+        await new Promise(r => setTimeout(r, 2000));
+        try { serverMaps = await loadServerMaps(); serverError = null; }
+        catch { /* keep serverError set */ }
+      }
     }
-  }
 
-  allScores = readLocalScores({ limit: 1000 }) as ScoreEntry[];
-  allMaps   = mergeMaps(serverMaps, localMaps);
-  rebuildFuse();
+    allScores = readLocalScores({ limit: 1000 }) as ScoreEntry[];
+    allMaps   = mergeMaps(serverMaps, localMaps);
+    rebuildFuse();
 
-  const offlineEl = document.getElementById('offlineNotice');
-  if (offlineEl) offlineEl.hidden = !serverError;
+    const offlineEl = document.getElementById('offlineNotice');
+    if (offlineEl) offlineEl.hidden = !serverError;
 
-  renderMapList(getFilteredMaps());
+    renderMapList(getFilteredMaps());
 
-  if (selectedId) {
-    const still = allMaps.find(m => m.id === selectedId);
-    if (still) renderDetail(still); else { selectedId = null; renderDetail(null); }
+    if (selectedId) {
+      const still = allMaps.find(m => m.id === selectedId);
+      if (still) renderDetail(still); else { selectedId = null; renderDetail(null); }
+    }
+  } finally {
+    loadMapsInProgress = false;
   }
 }
 
