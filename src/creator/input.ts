@@ -89,6 +89,17 @@ export function tapBeat(side: BeatSide): void {
   scheduleAutosave();
 }
 
+export function tapRandom(): void {
+  if (!state.isPlaying) return;
+  const t: number = snapTime(getPlayPos());
+  pushUndo();
+  state.map.beats.push({ t, side: 'random', type: 'block', cut: state.activeCut });
+  sortBeatsByTime(state.map.beats);
+  checkOverlaps();
+  flashTap('rand');
+  scheduleAutosave();
+}
+
 export function tapBomb(): void {
   if (!state.isPlaying) return;
   const t    = snapTime(getPlayPos());
@@ -98,6 +109,34 @@ export function tapBomb(): void {
   sortBeatsByTime(state.map.beats);
   flashTap('bomb');
   scheduleAutosave();
+}
+
+export function startHeld(side: 'left' | 'right'): void {
+  if (!state.isPlaying) return;
+  // already holding this side — ignore
+  if (side === 'left'  && state.heldLeft)  return;
+  if (side === 'right' && state.heldRight) return;
+  const t = snapTime(getPlayPos());
+  pushUndo();
+  const beat = { t, side, type: 'held', cut: state.activeCut, duration: 0 };
+  state.map.beats.push(beat);
+  sortBeatsByTime(state.map.beats);
+  if (side === 'left')  state.heldLeft  = beat;
+  if (side === 'right') state.heldRight = beat;
+  flashTap(side);
+  scheduleAutosave();
+}
+
+export function endHeld(side: 'left' | 'right'): void {
+  const beat = side === 'left' ? state.heldLeft : state.heldRight;
+  if (!beat) return;
+  const now = getPlayPos();
+  beat.duration = Math.max(0.05, now - beat.t);
+  if (side === 'left')  state.heldLeft  = null;
+  if (side === 'right') state.heldRight = null;
+  checkOverlaps();
+  scheduleAutosave();
+  renderAll();
 }
 
 export function flashTap(side: string): void {
@@ -442,11 +481,12 @@ export function bindTimelineEvents(callbacks: {
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
     // ── Transport ──
-    if (e.code === 'KeyF' && !e.ctrlKey) { e.preventDefault(); tapBeat('left');  return; }
-    if (e.code === 'KeyJ' && !e.ctrlKey) { e.preventDefault(); tapBeat('right'); return; }
+    if (e.code === 'KeyF' && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); tapBeat('left');  return; }
+    if (e.code === 'KeyJ' && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); tapBeat('right'); return; }
+    if (e.code === 'KeyR' && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); tapRandom(); return; }
+    if (e.code === 'KeyB' && !e.ctrlKey) { e.preventDefault(); tapBomb(); return; }
     if (e.code === 'Space') {
       e.preventDefault();
-      if (e.shiftKey) { tapBomb(); return; }
       callbacks.onPlay();
       return;
     }
@@ -456,7 +496,6 @@ export function bindTimelineEvents(callbacks: {
       stopAudio(true);
       return;
     }
-    if (e.code === 'KeyR' && !e.ctrlKey) { e.preventDefault(); cycleCutForSelectionOrTap(); return; }
 
     // ── Navigation ──
     if (e.code === 'Home') {
@@ -683,6 +722,20 @@ export function bindTimelineEvents(callbacks: {
     state.currentTime = 0;
     state.viewStart   = 0;
     renderAll();
+  });
+
+  // ── Held blocks: Shift+F / Shift+J start on keydown, end on keyup ──
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+    if (e.repeat) return; // ignore auto-repeat
+    if (e.code === 'KeyF' && e.shiftKey && !e.ctrlKey) { e.preventDefault(); startHeld('left');  return; }
+    if (e.code === 'KeyJ' && e.shiftKey && !e.ctrlKey) { e.preventDefault(); startHeld('right'); return; }
+  });
+
+  window.addEventListener('keyup', (e: KeyboardEvent) => {
+    if (e.code === 'KeyF' && state.heldLeft)  { endHeld('left');  return; }
+    if (e.code === 'KeyJ' && state.heldRight) { endHeld('right'); return; }
   });
 
   void formatTime;

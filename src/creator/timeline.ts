@@ -224,28 +224,87 @@ export function renderTimeline(): void {
   }
 
   // ── Beats ──
+  const rr = ctx as unknown as { roundRect: (x: number, y: number, w: number, h: number, r: number) => void };
+
   for (const beat of state.map.beats) {
     const x = LABEL_W + (beat.t - state.viewStart) * state.pxPerSec;
-    if (x < LABEL_W - 20 || x > w + 20) continue;
 
     const isBomb   = beat.type === 'bomb';
-    const trackY   = isBomb ? TRACK_B_Y : beat.side === 'left' ? TRACK_L_Y : TRACK_R_Y;
-    const color    = isBomb ? '#ff4444' : beat.side === 'left' ? '#36f2a1' : '#2f7cff';
+    const isHeld   = beat.type === 'held';
+    const sideKey  = beat.side === 'left' ? TRACK_L_Y : beat.side === 'right' ? TRACK_R_Y : TRACK_L_Y;
+    const trackY   = isBomb ? TRACK_B_Y : sideKey;
+    const color    = isBomb ? '#ff4444' : beat.side === 'left' ? '#36f2a1' : beat.side === 'right' ? '#2f7cff' : '#a78bfa';
     const selected = state.selectedBeats.has(beat);
 
-    const bw = Math.max(10, Math.min(26, state.pxPerSec * 0.20));
     const bh = TRACK_H - 10;
-    const bx = x - bw / 2;
     const by = trackY + 5;
 
-    // Shadow glow for selected
-    if (selected) {
-      ctx.shadowColor = '#fff';
-      ctx.shadowBlur  = 8;
+    // ── Held block (wall) ──────────────────────────────────────────
+    if (isHeld) {
+      // duration may be 0 while still recording — use live playhead
+      const dur  = (beat.duration ?? 0) > 0
+        ? beat.duration!
+        : Math.max(0, getPlayPos() - beat.t);
+      const barW = Math.max(4, dur * state.pxPerSec);
+      const barX = x;
+
+      if (barX > w + barW || barX + barW < LABEL_W) continue;
+
+      ctx.globalAlpha = selected ? 1 : 0.82;
+      if (selected) { ctx.shadowColor = '#fff'; ctx.shadowBlur = 8; }
+
+      // Fill bar
+      const grad = ctx.createLinearGradient(barX, 0, barX + barW, 0);
+      grad.addColorStop(0,   color);
+      grad.addColorStop(1,   color + '88');
+      ctx.fillStyle = selected ? 'rgba(255,255,255,0.85)' : grad;
+      rr.roundRect(barX, by, barW, bh, 4);
+      ctx.fill();
+
+      // Border
+      ctx.strokeStyle = selected ? '#fff' : color;
+      ctx.lineWidth   = selected ? 2 : 1.5;
+      ctx.beginPath();
+      rr.roundRect(barX, by, barW, bh, 4);
+      ctx.stroke();
+
+      // Start cap glow
+      ctx.strokeStyle = selected ? '#fff' : '#fff';
+      ctx.lineWidth   = selected ? 3 : 2;
+      ctx.globalAlpha = selected ? 1 : 0.6;
+      ctx.beginPath(); ctx.moveTo(barX, by); ctx.lineTo(barX, by + bh); ctx.stroke();
+
+      // Duration label if wide enough
+      if (barW > 36) {
+        ctx.fillStyle    = selected ? '#000' : 'rgba(2,5,11,0.85)';
+        ctx.font         = `bold ${Math.max(9, Math.min(13, bh * 0.5))}px JetBrains Mono`;
+        ctx.textAlign    = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`${dur.toFixed(2)}s`, barX + 5, by + bh / 2);
+      }
+
+      ctx.textBaseline = 'alphabetic';
+      ctx.globalAlpha  = 1;
+      ctx.shadowBlur   = 0;
+
+      if (beat._overlap) {
+        ctx.fillStyle = '#ffaa44';
+        ctx.font      = 'bold 10px JetBrains Mono';
+        ctx.textAlign = 'center';
+        ctx.fillText('!', x, by - 2);
+      }
+      continue;
     }
 
+    // Out-of-view cull for point beats
+    if (x < LABEL_W - 26 || x > w + 26) continue;
+
+    const bw = Math.max(10, Math.min(26, state.pxPerSec * 0.20));
+    const bx = x - bw / 2;
+
+    if (selected) { ctx.shadowColor = '#fff'; ctx.shadowBlur = 8; }
+
     if (isBomb) {
-      // Circle for bomb
       ctx.fillStyle   = selected ? '#ff8888' : '#ff4444';
       ctx.strokeStyle = selected ? '#ffffff' : '#ff6666';
       ctx.lineWidth   = selected ? 2 : 1;
@@ -254,23 +313,19 @@ export function renderTimeline(): void {
       ctx.arc(x, trackY + TRACK_H / 2, Math.min(bw / 2, bh / 2) - 1, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-      // ✕ symbol
       ctx.fillStyle    = selected ? '#fff' : '#02050b';
       ctx.font         = `bold ${Math.max(9, Math.min(14, bh * 0.5))}px JetBrains Mono`;
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('✕', x, trackY + TRACK_H / 2 + 0.5);
     } else {
-      // Rounded rect for block
       ctx.fillStyle   = selected ? '#ffffff' : color;
       ctx.strokeStyle = selected ? '#fff' : color;
       ctx.lineWidth   = selected ? 2 : 1;
       ctx.globalAlpha = selected ? 1 : 0.88;
       ctx.beginPath();
-      (ctx as unknown as { roundRect: (x: number, y: number, w: number, h: number, r: number) => void }).roundRect(bx, by, bw, bh, 4);
+      rr.roundRect(bx, by, bw, bh, 4);
       ctx.fill();
-
-      // Cut direction symbol
       const cut = normalizeCutDirection(beat.cut);
       ctx.fillStyle    = selected ? '#111' : '#02050b';
       ctx.font         = `bold ${Math.max(10, Math.min(18, bh * 0.58))}px JetBrains Mono`;

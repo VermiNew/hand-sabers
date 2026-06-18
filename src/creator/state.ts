@@ -5,6 +5,7 @@ export interface CreatorBeat {
   side: string;
   type: string;
   cut: CutDirection;
+  duration?: number; // held block — length in seconds
   _overlap?: boolean;
 }
 
@@ -69,4 +70,8 @@ export const state = {
   rafId:         null as number | null,
 
   precountTimer: null as ReturnType<typeof setInterval> | null,
+
+  // held-block recording (Shift+F / Shift+J)
+  heldLeft:  null as CreatorBeat | null,
+  heldRight: null as CreatorBeat | null,
 };
