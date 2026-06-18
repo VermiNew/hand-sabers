@@ -104,7 +104,7 @@ export function renderRuler(): void {
 const LABEL_W  = 48; // fixed left panel width for track labels
 const RULER_H  = 24;
 
-function getTrackLayout(h: number): { TRACK_H: number; TRACK_L_Y: number; TRACK_R_Y: number; TRACK_B_Y: number } {
+export function getTrackLayout(h: number): { TRACK_H: number; TRACK_L_Y: number; TRACK_R_Y: number; TRACK_B_Y: number } {
   const available = h - RULER_H - 8;
   const TRACK_H   = Math.floor(available / 3);
   return {

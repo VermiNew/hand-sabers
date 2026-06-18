@@ -2,7 +2,7 @@ import { state, SNAP_VALUES } from './state.ts';
 import { markOverlaps, removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
 import { cutButtonText, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
 import { getPlayPos, playAudio, pauseAudio, stopAudio } from './audio.ts';
-import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, formatTime, getLabelWidth, xToTime } from './timeline.ts';
+import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, formatTime, getLabelWidth, xToTime, getTrackLayout } from './timeline.ts';
 import { scheduleAutosave } from './storage.ts';
 import { t } from '../i18n/index.ts';
 import type { BeatSide, CutDirection } from '../types/index.js';
@@ -162,6 +162,49 @@ export function handlePlay(onPlay: () => void): void {
   startPrecount(onPlay);
 }
 
+// ── Drag-select state ─────────────────────────────────────────────
+let dragSelectActive = false;
+let dragSelectStartX = 0;
+let dragSelectStartY = 0;
+let dragSelectEndX   = 0;
+let dragSelectEndY   = 0;
+
+function updateDragSelection(canvas: HTMLCanvasElement): void {
+  const { TRACK_H, TRACK_L_Y, TRACK_R_Y, TRACK_B_Y } = getTrackLayout(canvas.height);
+  const x1 = Math.min(dragSelectStartX, dragSelectEndX);
+  const x2 = Math.max(dragSelectStartX, dragSelectEndX);
+  const y1 = Math.min(dragSelectStartY, dragSelectEndY);
+  const y2 = Math.max(dragSelectStartY, dragSelectEndY);
+  state.selectedBeats.clear();
+  for (const beat of state.map.beats) {
+    const bx   = getLabelWidth() + (beat.t - state.viewStart) * state.pxPerSec;
+    const isBomb = beat.type === 'bomb';
+    const ty   = isBomb ? TRACK_B_Y : beat.side === 'left' ? TRACK_L_Y : TRACK_R_Y;
+    const by   = ty + TRACK_H / 2;
+    if (bx >= x1 && bx <= x2 && by >= y1 && by <= y2) state.selectedBeats.add(beat);
+  }
+  renderDragSelectRect(canvas, x1, y1, x2 - x1, y2 - y1);
+}
+
+function commitDragSelection(canvas: HTMLCanvasElement): void {
+  updateDragSelection(canvas);
+}
+
+function renderDragSelectRect(canvas: HTMLCanvasElement, x: number, y: number, w: number, h: number): void {
+  requestTimelineRender();
+  // Overlay drawn directly on top after timeline render
+  const ctx = canvas.getContext('2d')!;
+  ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillStyle   = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth   = 1;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
 let contextMenu: HTMLElement | null = null;
 
 function removeContextMenu(): void {
@@ -293,16 +336,24 @@ export function bindTimelineEvents(callbacks: {
     if (beat) {
       if (!e.shiftKey) state.selectedBeats.clear();
       state.selectedBeats.add(beat);
+      // Push undo snapshot BEFORE drag starts, so drag is undoable
+      pushUndo();
       state.dragBeat    = beat;
       state.dragOffsetT = clickT - beat.t;
       state.isDragging  = false;
       requestTimelineRender();
     } else {
       if (x >= getLabelWidth()) {
+        // Start drag-select
         state.selectedBeats.clear();
-        state.dragBeat = null;
-        const wasPlaying = state.isPlaying;
-        state.currentTime = Math.max(0, Math.min(clickT, state.map.meta.duration));
+        state.dragBeat      = null;
+        dragSelectActive    = true;
+        dragSelectStartX    = x;
+        dragSelectStartY    = e.offsetY;
+        dragSelectEndX      = x;
+        dragSelectEndY      = e.offsetY;
+        const wasPlaying    = state.isPlaying;
+        state.currentTime   = Math.max(0, Math.min(clickT, state.map.meta.duration));
         if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
         renderAll();
       }
@@ -318,6 +369,12 @@ export function bindTimelineEvents(callbacks: {
       renderAll();
       return;
     }
+    if (dragSelectActive) {
+      dragSelectEndX = e.offsetX;
+      dragSelectEndY = e.offsetY;
+      updateDragSelection(timelineCanvas);
+      return;
+    }
     if (!state.dragBeat) return;
     state.isDragging = true;
     const raw = xToTime(e.offsetX) - state.dragOffsetT;
@@ -327,11 +384,20 @@ export function bindTimelineEvents(callbacks: {
 
   timelineCanvas.addEventListener('mouseup', (e: MouseEvent) => {
     if (e.button === 1) { middleMouseDown = false; return; }
+    if (dragSelectActive) {
+      commitDragSelection(timelineCanvas);
+      dragSelectActive = false;
+      renderAll();
+      return;
+    }
     if (state.isDragging) {
       sortBeatsByTime(state.map.beats);
       checkOverlaps();
       scheduleAutosave();
       renderAll();
+    } else if (state.dragBeat) {
+      // Click without drag — undo snapshot was pushed unnecessarily, pop it
+      state.undoStack.pop();
     }
     state.dragBeat   = null;
     state.isDragging = false;
@@ -339,6 +405,10 @@ export function bindTimelineEvents(callbacks: {
 
   window.addEventListener('mouseup', (e: MouseEvent) => {
     if (e.button === 1) middleMouseDown = false;
+    if (dragSelectActive) {
+      dragSelectActive = false;
+      renderAll();
+    }
   });
 
   timelineCanvas.addEventListener('contextmenu', (e: Event) => e.preventDefault());
@@ -507,6 +577,26 @@ export function bindTimelineEvents(callbacks: {
       const sorted = [...state.selectedBeats].sort((a, b) => a.t - b.t);
       const minT   = sorted[0]!.t;
       state.clipboard = sorted.map(b => ({ ...b, t: b.t - minT }));
+      return;
+    }
+
+    if (e.ctrlKey && e.code === 'KeyD') {
+      e.preventDefault();
+      if (!state.selectedBeats.size) return;
+      pushUndo();
+      const sorted = [...state.selectedBeats].sort((a, b) => a.t - b.t);
+      const minT   = sorted[0]!.t;
+      const maxT   = sorted[sorted.length - 1]!.t;
+      const span   = maxT - minT;
+      const offset = span + Math.max(0.1, span > 0 ? span / sorted.length : 0.25);
+      const duped  = sorted.map(b => ({ ...b, t: snapTime(b.t + offset) }));
+      state.map.beats.push(...duped);
+      sortBeatsByTime(state.map.beats);
+      state.selectedBeats.clear();
+      duped.forEach(b => state.selectedBeats.add(b));
+      checkOverlaps();
+      scheduleAutosave();
+      renderAll();
       return;
     }
 
