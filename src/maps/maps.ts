@@ -4,6 +4,7 @@ import { getJSZip } from '../jszip-loader.ts';
 import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } from '../core/map-format.ts';
 import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
 import { t } from '../i18n/index.ts';
+import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -269,8 +270,9 @@ function renderMapList(maps: MapEntry[]): void {
     const subParts = [artist, dur ? dur : null, beats ? `${beats} beatów` : null].filter(Boolean);
 
     return `
-      <div class="map-row${selectedId === m.id ? ' is-selected' : ''}"
+      <div class="map-row map-item${selectedId === m.id ? ' is-selected' : ''}"
            data-id="${attr(m.id)}"
+           tabindex="0" role="button" aria-label="${attr(title)}"
            style="animation-delay:${i * 0.025}s">
         <div class="map-row-icon">
           <span class="material-symbols-rounded">music_note</span>
@@ -288,6 +290,9 @@ function renderMapList(maps: MapEntry[]): void {
 
   container.querySelectorAll<HTMLElement>('.map-row').forEach(row => {
     row.addEventListener('click', () => selectMap(row.dataset['id'] ?? ''));
+    row.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectMap(row.dataset['id'] ?? ''); }
+    });
   });
 }
 
@@ -603,4 +608,5 @@ export function init(): void {
 
   initDragDrop();
   void loadMaps();
+  initKeyboardNav({ isMapsPage: true });
 }

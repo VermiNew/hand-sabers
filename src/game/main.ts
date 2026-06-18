@@ -19,6 +19,7 @@ import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeat
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
 import { t, setLang, getCurrentLang } from '../i18n/index.ts';
+import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
 declare global {
@@ -727,6 +728,19 @@ ui.calibAbortBtn?.addEventListener('click', returnToMainMenu);
 window.addEventListener('resize',  resizeRenderer);
 window.addEventListener('keydown', handleKeydown);
 setGameOverHandler(endGame);
+
+// Keyboard navigation — focus traps, arrow keys, escape stack
+initKeyboardNav({
+  onEscapePause: () => {
+    if (state.appState === S.PAUSED && state.pauseReason === PAUSE_REASONS.MANUAL) {
+      resumeGame(performance.now());
+    }
+  },
+  onEscapeSettings: () => {
+    const backdrop = document.getElementById('mainSettingsBackdrop');
+    if (backdrop && !backdrop.hidden) backdrop.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+  },
+});
 setCalibAutoAdvanceHandler(() => { if (state.appState === S.CALIB) void advanceCalib(); });
 initDevPanel(renderer, null);
 initMapDrop();

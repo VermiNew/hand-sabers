@@ -822,3 +822,10 @@ body.drag-over::after {
   .topbar-tab span { display: none; }
   .filter-bar { flex-wrap: wrap; }
 }
+
+/* ── Keyboard focus styles ── */
+.map-row:focus-visible {
+  outline: 2px solid var(--main-soft);
+  outline-offset: -2px;
+  background: rgba(47,124,255,0.08);
+}

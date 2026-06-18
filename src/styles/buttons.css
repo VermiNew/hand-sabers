@@ -7,7 +7,8 @@
   justify-content:center; gap:10px; min-width:150px; white-space:nowrap;
 }
 .btn-label { letter-spacing:4px; }
-.ov-btn:hover { background:rgba(47,124,255,0.1); border-color:var(--main); box-shadow:0 0 24px rgba(47,124,255,0.28); }
+.ov-btn:hover,
+.ov-btn:focus-visible { background:rgba(47,124,255,0.1); border-color:var(--main); box-shadow:0 0 24px rgba(47,124,255,0.28); outline:2px solid rgba(47,124,255,0.6); outline-offset:2px; }
 .ov-btn:disabled { opacity:0.3; cursor:not-allowed; }
 .ov-btn.danger { border-color:rgba(255,58,58,0.42); color:var(--bomb); }
 .ov-btn.danger:hover { background:rgba(255,58,58,0.1); border-color:var(--bomb); box-shadow:0 0 24px rgba(255,58,58,0.28); }
