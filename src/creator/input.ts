@@ -532,6 +532,28 @@ export function bindTimelineEvents(callbacks: {
       return;
     }
 
+    // ── Escape — clear selection / close panels ──
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      const panel = document.getElementById('shortcutsPanel');
+      if (panel && !panel.classList.contains('hidden')) {
+        panel.classList.add('hidden');
+        return;
+      }
+      if (state.selectedBeats.size) {
+        state.selectedBeats.clear();
+        renderAll();
+      }
+      return;
+    }
+
+    // ── ? — toggle shortcuts panel ──
+    if (e.key === '?') {
+      e.preventDefault();
+      document.getElementById('shortcutsPanel')?.classList.toggle('hidden');
+      return;
+    }
+
     // ── Zoom with +/- (no Ctrl) ──
     if (e.key === '+' || e.key === '=') {
       e.preventDefault();

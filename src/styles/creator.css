@@ -370,3 +370,93 @@ body {
 /* ── CUT DIRECTION BUTTON ── */
 #btnCutDirection { border-color:rgba(255,170,68,0.42); color:#ffaa44; min-width:92px; }
 #btnCutDirection.active { background:rgba(255,170,68,0.10); }
+
+/* ── BPM GROUP ── */
+.bpm-group { display:flex; align-items:center; gap:5px; }
+.bpm-label { font-size:9px; letter-spacing:2px; color:var(--dim); flex-shrink:0; }
+
+#bpmInput {
+  width:56px; height:26px; padding:0 6px;
+  background:rgba(255,200,80,0.05); border:1px solid rgba(255,200,80,0.28);
+  color:#ffc850; font:700 11px 'JetBrains Mono', monospace;
+  border-radius:3px; outline:0; text-align:center;
+  transition:border-color .15s, background .15s;
+  -moz-appearance:textfield;
+}
+#bpmInput::-webkit-outer-spin-button,
+#bpmInput::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+#bpmInput:focus { border-color:rgba(255,200,80,0.7); background:rgba(255,200,80,0.08); }
+#bpmInput::placeholder { color:rgba(255,200,80,0.3); }
+
+#btnTapTempo {
+  border-color:rgba(255,200,80,0.3); color:rgba(255,200,80,0.75);
+  padding:3px 9px; font-size:10px; height:26px;
+}
+#btnTapTempo:hover { border-color:rgba(255,200,80,0.7); color:#ffc850; background:rgba(255,200,80,0.07); }
+#btnTapTempo:active { background:rgba(255,200,80,0.18); }
+
+#btnShortcuts {
+  width:26px; height:26px; padding:0; font-size:13px; font-weight:700;
+  border-color:rgba(148,163,184,0.2); color:rgba(148,163,184,0.5);
+}
+#btnShortcuts:hover { border-color:rgba(148,163,184,0.5); color:var(--text); }
+
+/* ── SHORTCUTS PANEL ── */
+.shortcuts-panel {
+  position:fixed; top:90px; right:12px; z-index:500;
+  background:rgba(6,10,20,0.97); border:1px solid rgba(47,124,255,0.22);
+  border-radius:10px; padding:14px 16px 12px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.65), 0 0 30px rgba(47,124,255,0.08);
+  min-width:640px; max-width:90vw;
+}
+.shortcuts-panel.hidden { display:none; }
+
+.shortcuts-header {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:12px; padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,0.06);
+}
+.shortcuts-header span {
+  font-family:'Oxanium', sans-serif; font-weight:800;
+  font-size:11px; letter-spacing:4px; color:var(--main);
+}
+.shortcuts-header button {
+  background:transparent; border:0; color:var(--dim);
+  font-size:14px; cursor:pointer; line-height:1; padding:2px 4px;
+}
+.shortcuts-header button:hover { color:var(--text); }
+
+.shortcuts-body {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:0 20px;
+}
+
+.shortcuts-section {
+  font-size:9px; letter-spacing:2.5px; color:var(--dim);
+  margin-bottom:6px; margin-top:2px;
+}
+
+.shortcut-row {
+  display:flex; align-items:baseline; gap:7px;
+  margin-bottom:4px; font-size:10px;
+}
+.shortcut-row span { color:rgba(226,232,240,0.6); }
+
+kbd {
+  display:inline-block; padding:1px 5px;
+  background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.14);
+  border-radius:3px; font-family:'JetBrains Mono', monospace;
+  font-size:9px; color:rgba(226,232,240,0.85); white-space:nowrap; flex-shrink:0;
+}
+
+.shortcuts-cuts {
+  margin-top:10px; padding-top:8px;
+  border-top:1px solid rgba(255,255,255,0.06);
+}
+.cuts-grid {
+  display:grid; grid-template-columns:repeat(9,1fr); gap:4px; margin-top:6px;
+}
+.cuts-grid span {
+  font-size:10px; color:rgba(255,200,80,0.7); text-align:center;
+  background:rgba(255,200,80,0.05); border:1px solid rgba(255,200,80,0.12);
+  border-radius:3px; padding:3px 2px;
+}

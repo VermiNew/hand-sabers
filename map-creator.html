@@ -59,10 +59,76 @@
   <button class="transport-btn" id="btnLoop">LOOP: WYŁ</button>
 
   <div class="transport-sep"></div>
+  <div class="bpm-group">
+    <label for="bpmInput" class="bpm-label">BPM</label>
+    <input id="bpmInput" type="number" min="20" max="400" step="0.5" placeholder="—" title="Tempo utworu. Wyznacza siatkę BPM na timeline.">
+    <button class="transport-btn" id="btnTapTempo" title="Klikaj w rytm aby wyznaczyć BPM">TAP</button>
+  </div>
+
+  <div class="transport-sep"></div>
   <div class="zoom-group">
     <span class="zoom-label" data-i18n="creator.zoom">ZOOM</span>
     <button class="transport-btn" id="zoomOut">−</button>
     <button class="transport-btn" id="zoomIn">+</button>
+  </div>
+
+  <div class="transport-sep"></div>
+  <button class="transport-btn" id="btnShortcuts" title="Pokaż skróty klawiszowe (?)">?</button>
+</div>
+
+<!-- SHORTCUTS PANEL -->
+<div id="shortcutsPanel" class="shortcuts-panel hidden">
+  <div class="shortcuts-header">
+    <span>SKRÓTY KLAWISZOWE</span>
+    <button id="btnShortcutsClose">✕</button>
+  </div>
+  <div class="shortcuts-body">
+    <div class="shortcuts-col">
+      <div class="shortcuts-section">TRANSPORT</div>
+      <div class="shortcut-row"><kbd>Space</kbd><span>Play / Pause</span></div>
+      <div class="shortcut-row"><kbd>Shift+Space</kbd><span>Dodaj bombę</span></div>
+      <div class="shortcut-row"><kbd>Shift+R</kbd><span>Stop (wróć do początku)</span></div>
+      <div class="shortcut-row"><kbd>Home</kbd><span>Skocz na początek</span></div>
+      <div class="shortcut-row"><kbd>End</kbd><span>Skocz na koniec</span></div>
+      <div class="shortcut-row"><kbd>Tab</kbd><span>Następny beat</span></div>
+      <div class="shortcut-row"><kbd>Shift+Tab</kbd><span>Poprzedni beat</span></div>
+    </div>
+    <div class="shortcuts-col">
+      <div class="shortcuts-section">TAPPING</div>
+      <div class="shortcut-row"><kbd>F</kbd><span>Tap LEWO</span></div>
+      <div class="shortcut-row"><kbd>J</kbd><span>Tap PRAWO</span></div>
+      <div class="shortcut-row"><kbd>1–9</kbd><span>Kierunek cięcia</span></div>
+      <div class="shortcut-row"><kbd>R</kbd><span>Następny kierunek cięcia</span></div>
+      <div class="shortcut-row"><kbd>[</kbd><span>Loop START tu</span></div>
+      <div class="shortcut-row"><kbd>]</kbd><span>Loop END tu</span></div>
+    </div>
+    <div class="shortcuts-col">
+      <div class="shortcuts-section">EDYCJA</div>
+      <div class="shortcut-row"><kbd>Delete</kbd><span>Usuń zaznaczone / nearest</span></div>
+      <div class="shortcut-row"><kbd>Esc</kbd><span>Odznacz wszystko</span></div>
+      <div class="shortcut-row"><kbd>Ctrl+Z</kbd><span>Undo</span></div>
+      <div class="shortcut-row"><kbd>Ctrl+Y</kbd><span>Redo</span></div>
+      <div class="shortcut-row"><kbd>Ctrl+A</kbd><span>Zaznacz wszystko</span></div>
+      <div class="shortcut-row"><kbd>Ctrl+C / V</kbd><span>Kopiuj / Wklej</span></div>
+      <div class="shortcut-row"><kbd>Ctrl+S</kbd><span>Zapisz</span></div>
+    </div>
+    <div class="shortcuts-col">
+      <div class="shortcuts-section">WIDOK</div>
+      <div class="shortcut-row"><kbd>+</kbd> / <kbd>−</kbd><span>Zoom</span></div>
+      <div class="shortcut-row"><kbd>Ctrl+Kółko</kbd><span>Zoom na kursorze</span></div>
+      <div class="shortcut-row"><kbd>Środk.przycisk</kbd><span>Przewijanie widoku</span></div>
+      <div class="shortcut-row"><kbd>PPM (puste)</kbd><span>Menu kontekstowe</span></div>
+      <div class="shortcut-row"><kbd>PPM (beat)</kbd><span>Usuń beat</span></div>
+      <div class="shortcut-row"><kbd>Shift+klik</kbd><span>Loop marker / multi-select</span></div>
+    </div>
+  </div>
+  <div class="shortcuts-cuts">
+    <div class="shortcuts-section">KIERUNKI CIĘCIA (1–9)</div>
+    <div class="cuts-grid">
+      <span>1 • any</span><span>2 ↓ down</span><span>3 ↑ up</span>
+      <span>4 ← left</span><span>5 → right</span><span>6 ↙ down-left</span>
+      <span>7 ↘ down-right</span><span>8 ↖ up-left</span><span>9 ↗ up-right</span>
+    </div>
   </div>
 </div>
 

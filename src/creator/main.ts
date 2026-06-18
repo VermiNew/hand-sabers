@@ -19,12 +19,14 @@ import {
   restoreAudioForCurrentMap,
 } from './audio.ts';
 
-import { drawWaveform } from './waveform.ts';
+import { drawWaveform, drawWaveformOverlay, bindWaveformHover } from './waveform.ts';
 
 import {
   renderAll,
   requestTimelineRender,
   resizeCanvases,
+  getLabelWidth,
+  updateZoomLabel,
 } from './timeline.ts';
 
 import {
@@ -67,10 +69,10 @@ function startRafLoop(): void {
       state.currentTime = getPlayPos();
       const timelineCanvas = document.getElementById('timelineCanvas') as HTMLCanvasElement | null;
       if (timelineCanvas) {
-        const w  = timelineCanvas.width;
-        const px = (state.currentTime - state.viewStart) * state.pxPerSec;
-        if (px > w * 0.78) state.viewStart = state.currentTime - (w * 0.22) / state.pxPerSec;
-        if (px < 0)        state.viewStart = state.currentTime;
+        const trackW = timelineCanvas.width - getLabelWidth();
+        const px     = (state.currentTime - state.viewStart) * state.pxPerSec;
+        if (px > trackW * 0.78) state.viewStart = state.currentTime - (trackW * 0.22) / state.pxPerSec;
+        if (px < 0)             state.viewStart = state.currentTime;
         state.viewStart = Math.max(0, state.viewStart);
       }
 
@@ -83,7 +85,14 @@ function startRafLoop(): void {
         playAudio(state.loopStart ?? 0, onPlayEnd);
       }
     }
-    if (state.isPlaying || state.timelineDirty) renderAll();
+    if (state.isPlaying || state.timelineDirty) {
+      renderAll();
+      // Redraw waveform overlay (playhead marker + beats) every frame during playback
+      if (state.isPlaying && state.audioBuffer) {
+        const wc = document.getElementById('waveCanvas') as HTMLCanvasElement | null;
+        if (wc) drawWaveformOverlay(wc.getContext('2d')!, wc.width, wc.height);
+      }
+    }
     state.rafId = requestAnimationFrame(tick);
   }
   state.rafId = requestAnimationFrame(tick);
@@ -189,6 +198,68 @@ function buildGameTestUrl(mapId: string): string {
   return `./beat-sabers-3d.html?${params.toString()}`;
 }
 
+// ── BPM input + tap tempo ─────────────────────────────────────────
+function getBpm(): number {
+  return Number((state.map.meta as Record<string, unknown>)['bpm'] ?? 0);
+}
+
+function setBpm(bpm: number): void {
+  (state.map.meta as Record<string, unknown>)['bpm'] = bpm > 0 ? bpm : undefined;
+  const input = document.getElementById('bpmInput') as HTMLInputElement | null;
+  if (input) input.value = bpm > 0 ? String(bpm) : '';
+  renderAll();
+}
+
+const tapTimes: number[] = [];
+
+function bindBpm(): void {
+  const bpmInput = document.getElementById('bpmInput') as HTMLInputElement | null;
+  if (bpmInput) {
+    bpmInput.value = getBpm() > 0 ? String(getBpm()) : '';
+    bpmInput.addEventListener('input', () => {
+      const v = parseFloat(bpmInput.value);
+      setBpm(isFinite(v) && v >= 20 && v <= 400 ? v : 0);
+    });
+    bpmInput.addEventListener('keydown', (e: KeyboardEvent) => e.stopPropagation());
+  }
+
+  document.getElementById('btnTapTempo')?.addEventListener('click', () => {
+    const now = performance.now();
+    tapTimes.push(now);
+    // Keep only taps within 3 seconds of each other
+    while (tapTimes.length > 1 && now - tapTimes[0]! > 3000) tapTimes.shift();
+    if (tapTimes.length < 2) return;
+    const intervals: number[] = [];
+    for (let i = 1; i < tapTimes.length; i++) intervals.push(tapTimes[i]! - tapTimes[i - 1]!);
+    const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+    const bpm = Math.round(60000 / avg * 10) / 10;
+    if (bpm >= 20 && bpm <= 400) setBpm(bpm);
+  });
+}
+
+// ── Shortcuts panel ───────────────────────────────────────────────
+function bindShortcutsPanel(): void {
+  const panel     = document.getElementById('shortcutsPanel');
+  const btnOpen   = document.getElementById('btnShortcuts');
+  const btnClose  = document.getElementById('btnShortcutsClose');
+  if (!panel || !btnOpen || !btnClose) return;
+
+  const toggle = (): void => { panel.classList.toggle('hidden'); };
+  btnOpen.addEventListener('click', toggle);
+  btnClose.addEventListener('click', () => panel.classList.add('hidden'));
+  panel.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape') panel.classList.add('hidden');
+  });
+}
+
+// ── Waveform scroll → timeline sync ──────────────────────────────
+function bindWaveformScroll(): void {
+  document.getElementById('waveCanvas')?.addEventListener('waveform-scroll', () => {
+    updateZoomLabel();
+    renderAll();
+  });
+}
+
 // ── Volume ────────────────────────────────────────────────────────
 function bindVolume(): void {
   const songVolumeEl = document.getElementById('songVolume') as HTMLInputElement | null;
@@ -205,9 +276,13 @@ function onPlay(): void {
 }
 
 bindVolume();
+bindBpm();
+bindShortcutsPanel();
+bindWaveformScroll();
 initAudioCtx();
 resizeCanvases();
 drawWaveform();
+bindWaveformHover();
 startRafLoop();
 syncCutButton();
 bindDropZone();
