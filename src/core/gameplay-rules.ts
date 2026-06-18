@@ -1,6 +1,7 @@
 import type { CutDirection } from '../types/index.js';
 
-export const CUT_DIRECTIONS = ['any', 'down', 'up', 'left', 'right', 'down-left', 'down-right', 'up-left', 'up-right'] as const;
+// Numpad layout: 7=up-left 8=up 9=up-right / 4=left 5=any 6=right / 1=down-left 2=down 3=down-right
+export const CUT_DIRECTIONS = ['down-left', 'down', 'down-right', 'left', 'any', 'right', 'up-left', 'up', 'up-right'] as const;
 
 const CUT_ALIASES = new Map<string, CutDirection>([
   ['', 'any'], ['none', 'any'], ['no-dot', 'any'], ['dot', 'any'], ['free', 'any'], ['any', 'any'],
