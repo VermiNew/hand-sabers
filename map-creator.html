@@ -67,7 +67,24 @@
   <div class="transport-sep"></div>
   <button class="transport-btn" id="btnUndo">↩ UNDO</button>
   <button class="transport-btn" id="btnRedo">↪ REDO</button>
-  <button class="transport-btn" id="btnCutDirection" title="Kierunek cięcia — układ numeryczny (najlepiej numpad):&#10;7↖  8↑  9↗&#10;4←  5•  6→&#10;1↙  2↓  3↘">CIĘCIE: •</button>
+  <div class="cut-dir-wrap">
+    <button class="transport-btn" id="btnCutDirection">CIĘCIE: •</button>
+    <div id="cutDirPanel" class="cut-dir-panel" role="tooltip">
+      <div class="cut-dir-title">KIERUNEK CIĘCIA</div>
+      <div class="cut-dir-subtitle">Numpad lub klawisze 1–9</div>
+      <div class="cut-dir-grid">
+        <span data-cut="up-left">7 ↖</span>
+        <span data-cut="up">8 ↑</span>
+        <span data-cut="up-right">9 ↗</span>
+        <span data-cut="left">4 ←</span>
+        <span data-cut="any">5 •</span>
+        <span data-cut="right">6 →</span>
+        <span data-cut="down-left">1 ↙</span>
+        <span data-cut="down">2 ↓</span>
+        <span data-cut="down-right">3 ↘</span>
+      </div>
+    </div>
+  </div>
 
   <div class="transport-spacer"></div>
   <button class="transport-btn" id="btnShortcuts" title="Skróty klawiszowe (?)">?</button>

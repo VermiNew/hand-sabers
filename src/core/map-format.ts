@@ -4,7 +4,7 @@ export const MAP_FORMAT_VERSION = 1;
 export const MAX_BEATS_DEFAULT = 10_000;
 export const MAX_BEATS_EXTENDED = 100_000;
 export const MAX_MAP_DURATION_SEC = 24 * 60 * 60;
-export const MAX_IMPORT_BYTES = 100 * 1024 * 1024; // 100 MB
+export const MAX_IMPORT_BYTES = 200 * 1024 * 1024; // 200 MB
 export const AUDIO_EXT_RE = /\.(mp3|ogg|wav|flac)$/i;
 export const JSON_EXT_RE = /\.json$/i;
 

@@ -166,6 +166,61 @@ body {
 #tapFlash.flash-rand  { background:var(--gray); }
 #tapFlash.flash-bomb  { background:var(--bomb);  box-shadow:0 0 8px var(--bomb);  }
 
+/* ── CUT DIRECTION PANEL ── */
+.cut-dir-wrap {
+  position:relative; display:flex; align-items:center;
+}
+.cut-dir-panel {
+  position:absolute; bottom:calc(100% + 8px); left:50%;
+  transform:translateX(-50%) translateY(4px);
+  opacity:0; pointer-events:none;
+  transition:opacity .15s, transform .15s;
+  z-index:600;
+  background:rgba(5,9,18,0.97);
+  border:1px solid rgba(47,124,255,0.28);
+  border-radius:10px;
+  padding:12px 14px 10px;
+  box-shadow:0 16px 48px rgba(0,0,0,0.7), 0 0 28px rgba(47,124,255,0.07);
+  white-space:nowrap;
+}
+.cut-dir-wrap:hover .cut-dir-panel,
+.cut-dir-wrap:focus-within .cut-dir-panel {
+  opacity:1; pointer-events:auto;
+  transform:translateX(-50%) translateY(0);
+}
+.cut-dir-title {
+  font-family:'Oxanium', sans-serif; font-size:10px; font-weight:900;
+  letter-spacing:4px; color:var(--main); margin-bottom:2px; text-align:center;
+}
+.cut-dir-subtitle {
+  font-size:9px; letter-spacing:1.5px; color:rgba(148,163,184,0.4);
+  text-align:center; margin-bottom:10px;
+}
+.cut-dir-grid {
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:5px;
+}
+.cut-dir-grid span {
+  display:flex; align-items:center; justify-content:center;
+  font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:700;
+  padding:7px 10px; border-radius:6px; cursor:default;
+  background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.08);
+  color:rgba(226,232,240,0.7);
+  transition:background .1s, color .1s, border-color .1s;
+  user-select:none;
+}
+.cut-dir-grid span:hover {
+  background:rgba(47,124,255,0.12);
+  border-color:rgba(47,124,255,0.4);
+  color:#fff;
+}
+.cut-dir-grid span.is-active {
+  background:rgba(47,124,255,0.16);
+  border-color:rgba(47,124,255,0.55);
+  color:var(--main);
+  box-shadow:0 0 10px rgba(47,124,255,0.2);
+}
+
 /* ── ZOOM ── */
 .zoom-group { display:flex; align-items:center; gap:5px; }
 .zoom-label { font-size:10px; letter-spacing:2px; color:var(--dim); }

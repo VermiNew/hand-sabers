@@ -40,6 +40,7 @@ import {
 import {
   syncCutButton,
   checkOverlaps,
+  setActiveCut,
   bindTimelineEvents,
   handlePlay,
 } from './input.ts';
@@ -121,7 +122,7 @@ function onPlayEnd(): void {
 }
 
 // ── File handling ─────────────────────────────────────────────────
-const MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024;
 
 async function handleFile(file: File): Promise<void> {
   try {
@@ -277,11 +278,36 @@ function bindVolume(): void {
   setCreatorSongVolume(state.songVolume, { persist: false });
 }
 
+// ── Cut direction panel ────────────────────────────────────────────
+function bindCutDirPanel(): void {
+  const panel = document.getElementById('cutDirPanel');
+  if (!panel) return;
+
+  const p = panel;
+
+  function syncActive(): void {
+    p.querySelectorAll<HTMLElement>('[data-cut]').forEach(el => {
+      el.classList.toggle('is-active', el.dataset['cut'] === state.activeCut);
+    });
+  }
+
+  p.querySelectorAll<HTMLElement>('[data-cut]').forEach(el => {
+    el.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+      const cut = el.dataset['cut'];
+      if (cut) { setActiveCut(cut as import('../types/index.js').CutDirection); syncActive(); }
+    });
+  });
+
+  document.querySelector('.cut-dir-wrap')?.addEventListener('mouseenter', syncActive);
+}
+
 // ── Bootstrap ─────────────────────────────────────────────────────
 function onPlay(): void {
   handlePlay(() => playAudio(state.currentTime, onPlayEnd));
 }
 
+bindCutDirPanel();
 bindVolume();
 bindBpm();
 bindShortcutsPanel();

@@ -213,7 +213,7 @@
     "exportCancel": "ANULUJ",
     "exportError": "Eksport ZIP nie powiódł się: ",
     "exportErrorTitle": "Błąd eksportu ZIP",
-    "fileTooBig": "Plik jest za duży (maks. 100 MB)",
+    "fileTooBig": "Plik jest za duży (maks. 200 MB)",
     "fileTooBigTitle": "Plik za duży",
     "audioLoaded": "Audio wczytane",
     "mapJsonLoaded": "Mapa JSON wczytana",
