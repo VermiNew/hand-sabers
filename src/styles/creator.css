@@ -81,11 +81,20 @@ body {
 
 /* ── TRANSPORT ── */
 #transport {
-  display:flex; align-items:center; gap:7px;
-  padding:0 18px; height:46px;
+  display:flex; flex-direction:column;
   border-bottom:2px solid rgba(255,255,255,0.06);
   background:rgba(5,8,16,0.97); flex-shrink:0;
 }
+
+.transport-row {
+  display:flex; align-items:center; gap:7px;
+  padding:0 18px; height:42px;
+}
+.transport-row-tap {
+  border-top:1px solid rgba(255,255,255,0.05);
+  height:38px; padding:0 18px;
+}
+.transport-spacer { flex:1; }
 
 .transport-btn {
   background:transparent; border:1px solid rgba(148,163,184,0.18);
@@ -408,7 +417,7 @@ body {
 
 /* ── SHORTCUTS PANEL ── */
 .shortcuts-panel {
-  position:fixed; top:98px; right:14px; z-index:500;
+  position:fixed; top:136px; right:14px; z-index:500;
   background:rgba(5,9,18,0.98); border:1px solid rgba(47,124,255,0.24);
   border-radius:12px; padding:16px 18px 14px;
   box-shadow:0 24px 70px rgba(0,0,0,0.7), 0 0 35px rgba(47,124,255,0.08);

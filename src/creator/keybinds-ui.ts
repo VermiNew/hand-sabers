@@ -1,4 +1,5 @@
 import { allBindings, setBinding, resetKeybinds, bindingLabel, getBinding, type ActionId, type Binding } from './keybinds.ts';
+import { t } from '../i18n/index.ts';
 
 let recordingAction: ActionId | null = null;
 let recordingBtn: HTMLButtonElement | null = null;
@@ -17,7 +18,7 @@ function startRecording(action: ActionId, btn: HTMLButtonElement): void {
   recordingAction = action;
   recordingBtn    = btn;
   btn.classList.add('is-recording');
-  btn.textContent = 'naciśnij klawisz…';
+  btn.textContent = t('creator.kbRecording');
 }
 
 function onRecordKeydown(e: KeyboardEvent): void {
@@ -47,7 +48,7 @@ export function initKeybindsUI(): void {
   window.addEventListener('keydown', onRecordKeydown, { capture: true });
 
   document.getElementById('kbResetAll')?.addEventListener('click', () => {
-    if (confirm('Przywrócić domyślne skróty klawiszowe?')) {
+    if (confirm(t('creator.kbResetConfirm'))) {
       resetKeybinds();
       stopRecording();
       renderKbEditor();

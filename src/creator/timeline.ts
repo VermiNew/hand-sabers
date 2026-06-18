@@ -299,22 +299,23 @@ export function renderTimeline(): void {
     // Out-of-view cull for point beats
     if (x < LABEL_W - 26 || x > w + 26) continue;
 
-    const bw = Math.max(10, Math.min(26, state.pxPerSec * 0.20));
+    const bw = Math.max(14, Math.min(bh - 2, state.pxPerSec * 0.22));
     const bx = x - bw / 2;
 
     if (selected) { ctx.shadowColor = '#fff'; ctx.shadowBlur = 8; }
 
     if (isBomb) {
+      const r = Math.min(bw / 2, bh / 2) - 1;
       ctx.fillStyle   = selected ? '#ff8888' : '#ff4444';
       ctx.strokeStyle = selected ? '#ffffff' : '#ff6666';
       ctx.lineWidth   = selected ? 2 : 1;
       ctx.globalAlpha = selected ? 1 : 0.9;
       ctx.beginPath();
-      ctx.arc(x, trackY + TRACK_H / 2, Math.min(bw / 2, bh / 2) - 1, 0, Math.PI * 2);
+      ctx.arc(x, trackY + TRACK_H / 2, r, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       ctx.fillStyle    = selected ? '#fff' : '#02050b';
-      ctx.font         = `bold ${Math.max(9, Math.min(14, bh * 0.5))}px JetBrains Mono`;
+      ctx.font         = `bold ${Math.max(11, Math.min(18, bh * 0.55))}px JetBrains Mono`;
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('✕', x, trackY + TRACK_H / 2 + 0.5);
@@ -328,7 +329,7 @@ export function renderTimeline(): void {
       ctx.fill();
       const cut = normalizeCutDirection(beat.cut);
       ctx.fillStyle    = selected ? '#111' : '#02050b';
-      ctx.font         = `bold ${Math.max(10, Math.min(18, bh * 0.58))}px JetBrains Mono`;
+      ctx.font         = `bold ${Math.max(13, Math.min(bh - 4, bw - 2))}px JetBrains Mono`;
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(CUT_SYMBOLS[cut] ?? '•', x, by + bh / 2 + 0.5);

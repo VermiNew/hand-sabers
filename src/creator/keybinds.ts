@@ -2,6 +2,8 @@
 // Each action has a default binding; users can override via the keybinds editor.
 // Bindings are persisted to localStorage under KEY_STORE.
 
+import { t } from '../i18n/index.ts';
+
 const KEY_STORE = 'hs-creator-keybinds';
 
 export type ActionId =
@@ -45,47 +47,34 @@ export type ActionId =
 export interface ActionMeta {
   label: string;
   group: string;
-  hint?: string;
+  hint?: string | undefined;
 }
 
-export const ACTION_META: Record<ActionId, ActionMeta> = {
-  play:           { label: 'Play / Pause',          group: 'Transport' },
-  stop:           { label: 'Stop (wróć do początku)', group: 'Transport' },
-  tapLeft:        { label: 'Tap LEWO',              group: 'Tapping' },
-  tapRight:       { label: 'Tap PRAWO',             group: 'Tapping' },
-  tapRandom:      { label: 'Tap RANDOM',            group: 'Tapping' },
-  tapBomb:        { label: 'Tap BOMBA',             group: 'Tapping' },
-  heldLeft:       { label: 'Held block LEWO',       group: 'Tapping', hint: 'trzymaj podczas nagrywania' },
-  heldRight:      { label: 'Held block PRAWO',      group: 'Tapping', hint: 'trzymaj podczas nagrywania' },
-  nextBeat:       { label: 'Następny beat',         group: 'Nawigacja' },
-  prevBeat:       { label: 'Poprzedni beat',        group: 'Nawigacja' },
-  jumpStart:      { label: 'Skocz na początek',     group: 'Nawigacja' },
-  jumpEnd:        { label: 'Skocz na koniec',       group: 'Nawigacja' },
-  loopStart:      { label: 'Loop START tu',         group: 'Loop' },
-  loopEnd:        { label: 'Loop END tu',           group: 'Loop' },
-  deleteSelected: { label: 'Usuń zaznaczone / nearest', group: 'Edycja' },
-  selectAll:      { label: 'Zaznacz wszystko',      group: 'Edycja' },
-  undo:           { label: 'Undo',                  group: 'Edycja' },
-  redo:           { label: 'Redo',                  group: 'Edycja' },
-  save:           { label: 'Zapisz',                group: 'Edycja' },
-  copy:           { label: 'Kopiuj zaznaczone',     group: 'Edycja' },
-  paste:          { label: 'Wklej',                 group: 'Edycja' },
-  duplicate:      { label: 'Duplikuj zaznaczone',   group: 'Edycja' },
-  zoomIn:         { label: 'Zoom in',               group: 'Widok' },
-  zoomOut:        { label: 'Zoom out',              group: 'Widok' },
-  cycleSnap:      { label: 'Cycle snap',            group: 'Widok' },
-  toggleLoop:     { label: 'Toggle loop',           group: 'Loop' },
-  cutDir1:        { label: 'Cięcie 1: any',         group: 'Kierunki cięcia' },
-  cutDir2:        { label: 'Cięcie 2: ↓ down',      group: 'Kierunki cięcia' },
-  cutDir3:        { label: 'Cięcie 3: ↑ up',        group: 'Kierunki cięcia' },
-  cutDir4:        { label: 'Cięcie 4: ← left',      group: 'Kierunki cięcia' },
-  cutDir5:        { label: 'Cięcie 5: → right',     group: 'Kierunki cięcia' },
-  cutDir6:        { label: 'Cięcie 6: ↙ down-left', group: 'Kierunki cięcia' },
-  cutDir7:        { label: 'Cięcie 7: ↘ down-right',group: 'Kierunki cięcia' },
-  cutDir8:        { label: 'Cięcie 8: ↖ up-left',   group: 'Kierunki cięcia' },
-  cutDir9:        { label: 'Cięcie 9: ↗ up-right',  group: 'Kierunki cięcia' },
-  shortcutsPanel: { label: 'Panel skrótów',         group: 'Widok' },
+// Groups are keyed by the Polish identifier used in i18n (acts as a stable ID)
+const ACTION_GROUPS: Record<ActionId, string> = {
+  play: 'Transport', stop: 'Transport',
+  tapLeft: 'Tapping', tapRight: 'Tapping', tapRandom: 'Tapping', tapBomb: 'Tapping',
+  heldLeft: 'Tapping', heldRight: 'Tapping',
+  nextBeat: 'Nawigacja', prevBeat: 'Nawigacja', jumpStart: 'Nawigacja', jumpEnd: 'Nawigacja',
+  loopStart: 'Loop', loopEnd: 'Loop', toggleLoop: 'Loop',
+  deleteSelected: 'Edycja', selectAll: 'Edycja', undo: 'Edycja', redo: 'Edycja',
+  save: 'Edycja', copy: 'Edycja', paste: 'Edycja', duplicate: 'Edycja',
+  zoomIn: 'Widok', zoomOut: 'Widok', cycleSnap: 'Widok', shortcutsPanel: 'Widok',
+  cutDir1: 'Kierunki cięcia', cutDir2: 'Kierunki cięcia', cutDir3: 'Kierunki cięcia',
+  cutDir4: 'Kierunki cięcia', cutDir5: 'Kierunki cięcia', cutDir6: 'Kierunki cięcia',
+  cutDir7: 'Kierunki cięcia', cutDir8: 'Kierunki cięcia', cutDir9: 'Kierunki cięcia',
 };
+
+const HINT_ACTIONS = new Set<ActionId>(['heldLeft', 'heldRight']);
+
+export function getActionMeta(action: ActionId): ActionMeta {
+  const groupKey = ACTION_GROUPS[action] ?? 'Widok';
+  return {
+    label: t(`creator.kbActions.${action}`),
+    group: t(`creator.kbGroups.${groupKey}`),
+    hint:  HINT_ACTIONS.has(action) ? t(`creator.kbHints.${action}`) : undefined,
+  };
+}
 
 export interface Binding {
   code: string;       // KeyboardEvent.code, e.g. 'Space', 'KeyF'
@@ -225,6 +214,6 @@ export function allBindings(): Array<{ action: ActionId; binding: Binding; meta:
   return (Object.keys(bindings) as ActionId[]).map(action => ({
     action,
     binding: bindings[action],
-    meta:    ACTION_META[action],
+    meta:    getActionMeta(action),
   }));
 }
