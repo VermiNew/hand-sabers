@@ -1,164 +1,175 @@
 # Hand Sabers
 
-Beat Saber bez VR: gra rytmiczna sterowana rękami przez kamerę. Frontend działa na Vite, backend to Express zapisujący mapy, audio i wyniki.
+Beat Saber without VR: a rhythm game controlled by your hands via webcam. The frontend runs on Vite, the backend is an Express server that stores maps, audio and scores.
 
-## Wymagania
+> **Polish version:** [README.pl.md](README.pl.md)
+
+## Requirements
 
 - Node.js 22.18+
 - npm
-- Kamera
-- Chrome albo Edge z WebGL
+- Webcam
+- Chrome or Edge with WebGL
 
-## Instalacja
+## Installation
 
 ```bash
 npm install
 ```
 
-## Najprostsze uruchomienie
+## Quickstart
 
 ```bash
 npm start
 ```
 
-Otwórz w przeglądarce:
+Open in your browser:
 
-```text
+```
 http://localhost:3000
 ```
 
-To buduje frontend Vite, kompiluje `server.ts` do `dist-server/` i uruchamia skompilowany serwer Express. Ten tryb jest najprostszy do normalnego grania.
+This builds the Vite frontend, compiles `server.ts` to `dist-server/` and starts the compiled Express server. This is the simplest way to play the game.
 
-## Tryb developerski
+## Development mode
 
-Najwygodniej uruchomić backend i Vite razem:
+The easiest way to run both the backend and Vite together:
 
 ```bash
 npm run dev:vite
 ```
 
-Adresy:
+URLs:
 
-- gra przez Vite: `http://localhost:5173`
-- backend/API: `http://localhost:3000`
-- Vite proxy przekazuje `/api` do Expressa
-
-Można też uruchomić osobno:
-
-```bash
-npm run server
-npm run dev
-```
-
-`npm run dev` odpala tylko Vite. Bez backendu część funkcji przejdzie w fallback przeglądarkowy.
-`npm run server` buduje frontend i backend, a następnie uruchamia Express na porcie 3000.
-
-## Przydatne adresy
-
-| URL | Opis |
+| Address | Description |
 | --- | --- |
-| `http://localhost:3000` | Gra |
-| `http://localhost:3000?dev` | Gra z panelem diagnostycznym |
-| `http://localhost:3000/maps.html` | Biblioteka map i leaderboard |
-| `http://localhost:3000/map-creator.html` | Kreator map |
+| `http://localhost:5173` | Game (via Vite dev server) |
+| `http://localhost:3000` | Backend / API |
 
-W trybie Vite użyj tych samych ścieżek na porcie `5173`.
+Vite proxies all `/api` requests to Express.
 
-## Komendy
+You can also run them separately:
 
 ```bash
-npm run build
+npm run server   # build frontend + backend, then start Express on port 3000
+npm run dev      # Vite only (no backend — some features fall back to browser storage)
 ```
 
-Typecheck frontendu i build produkcyjny Vite.
+## URLs
 
-```bash
-npm run typecheck
-npm run typecheck:server
-```
-
-Sprawdzenie TypeScript dla frontendu i serwera.
-
-```bash
-npm run server:build
-```
-
-Kompilacja `server.ts` do `dist-server/`.
-
-```bash
-npm run check
-npm run lint
-npm run unit
-npm run smoke
-npm test
-npm run verify
-```
-
-`check` sprawdza składnię JS, `lint` jest aliasem na `check`, `unit` odpala testy jednostkowe, a `smoke` uruchamia skompilowany serwer testowy i sprawdza API oraz stronę główną. `npm test` odpala podstawowy zestaw testów, a `npm run verify` pełną bramkę jakości: lint, build, typecheck serwera, build serwera, unit i smoke.
-
-## Sterowanie
-
-| Akcja | Opis |
+| URL | Description |
 | --- | --- |
-| `Escape` | Pauza |
-| Drag & drop `.json` lub `.zip` na grę | Wczytaj mapę |
-| Panel ustawień | No Fail, kolory mieczy, tryb jednej ręki, limit beatów, wydajność |
+| `http://localhost:3000` | Game |
+| `http://localhost:3000?dev` | Game with diagnostics panel |
+| `http://localhost:3000/maps.html` | Map library and leaderboard |
+| `http://localhost:3000/map-creator.html` | Map creator (DAW-style editor) |
 
-## Dane lokalne
+In Vite mode use the same paths on port `5173`.
 
-Serwer zapisuje pliki w katalogu `maps/`:
+## Commands
 
-- `maps/beatdata/<id>.json` - mapy
-- `maps/audio/<id>.<ext>` - audio map
-- `maps/_scores.json` - leaderboard
+| Command | Description |
+| --- | --- |
+| `npm run build` | TypeScript check + production Vite build |
+| `npm run typecheck` | TypeScript check (frontend) |
+| `npm run typecheck:server` | TypeScript check (server) |
+| `npm run server:build` | Compile `server.ts` → `dist-server/` |
+| `npm run check` / `npm run lint` | JS syntax check |
+| `npm run unit` | Unit tests |
+| `npm run smoke` | Smoke test: start compiled server, check API + homepage |
+| `npm test` | Core test suite |
+| `npm run verify` | Full quality gate: lint → build → typecheck server → server build → unit → smoke |
 
-Jeśli API nie działa, aplikacja używa fallbacku w przeglądarce:
+## Controls
 
-- mapy i wyniki w `localStorage`
-- audio kreatora w IndexedDB
+| Action | Description |
+| --- | --- |
+| `Escape` | Pause / resume |
+| Drag & drop `.json` or `.zip` onto the game | Load a map |
+| Settings panel | No Fail mode, saber colors, one-hand mode, beat limit, performance |
 
-## Format mapy
+### Map creator keyboard shortcuts
+
+| Shortcut | Action |
+| --- | --- |
+| `Space` | Play / Pause |
+| `Shift+Space` | Place bomb |
+| `F` / `J` | Tap left / right block |
+| `1`–`9` | Set cut direction (or apply to selection) |
+| `R` | Cycle cut direction |
+| `Shift+R` | Stop (return to start) |
+| `Home` / `End` | Jump to start / end |
+| `Tab` / `Shift+Tab` | Jump to next / previous beat |
+| `[` / `]` | Set loop start / end at play position |
+| `Delete` | Delete selection (or nearest beat to cursor) |
+| `Escape` | Clear selection |
+| `Ctrl+Z` / `Y` | Undo / Redo |
+| `Ctrl+A` | Select all |
+| `Ctrl+C` / `V` | Copy / Paste |
+| `Ctrl+D` | Duplicate selection |
+| `Ctrl+S` | Save |
+| `+` / `−` | Zoom in / out |
+| `Ctrl+Wheel` | Zoom centered on cursor |
+| Middle-click drag | Scroll timeline |
+| Right-click (empty) | Context menu (seek, loop markers, paste) |
+| Right-click (beat) | Delete beat |
+| `?` | Toggle keyboard shortcut cheatsheet |
+
+## Local data
+
+The server writes files to the `maps/` directory:
+
+- `maps/beatdata/<id>.json` — map data
+- `maps/audio/<id>.<ext>` — map audio
+- `maps/_scores.json` — leaderboard
+
+If the API is unavailable, the app falls back to browser storage:
+
+- Maps and scores in `localStorage`
+- Creator audio in IndexedDB
+
+## Map format
 
 ```json
 {
   "formatVersion": 1,
   "id": "map-123",
   "meta": {
-    "title": "Nazwa utworu",
+    "title": "Song title",
     "duration": 180
   },
   "beats": [
-    { "t": 1.2, "side": "left", "type": "block", "cut": "any" },
+    { "t": 1.2, "side": "left",  "type": "block", "cut": "any"  },
     { "t": 1.7, "side": "right", "type": "block", "cut": "down" },
-    { "t": 3.1, "side": "left", "type": "bomb", "cut": "any" }
+    { "t": 3.1, "side": "left",  "type": "bomb",  "cut": "any"  }
   ]
 }
 ```
 
-Dozwolone wartości:
+Allowed values:
 
 - `side`: `left`, `right`, `random`
 - `type`: `block`, `bomb`
 - `cut`: `any`, `down`, `up`, `left`, `right`, `down-left`, `down-right`, `up-left`, `up-right`
 
-## API
+## REST API
 
-| Endpoint | Metoda | Opis |
+| Endpoint | Method | Description |
 | --- | --- | --- |
-| `/api/health` | GET | Status serwera |
-| `/api/maps` | GET | Lista map |
-| `/api/maps/:id` | GET | Pobierz mapę |
-| `/api/maps/:id/audio` | GET | Pobierz audio mapy |
-| `/api/maps/:id/export.zip` | GET | Eksport ZIP |
-| `/api/maps` | POST | Zapis mapy JSON |
-| `/api/maps/save` | POST | Zapis z kreatora z opcjonalnym audio |
-| `/api/maps/import` | POST | Import `.json` albo `.zip` |
-| `/api/maps/:id` | DELETE | Usuń mapę |
-| `/api/scores` | GET/POST | Leaderboard |
+| `/api/health` | GET | Server status |
+| `/api/maps` | GET | List all maps |
+| `/api/maps/:id` | GET | Get a map |
+| `/api/maps/:id/audio` | GET | Get map audio |
+| `/api/maps/:id/export.zip` | GET | Export as ZIP |
+| `/api/maps` | POST | Save map JSON |
+| `/api/maps/save` | POST | Save from creator (with optional audio) |
+| `/api/maps/import` | POST | Import `.json` or `.zip` |
+| `/api/maps/:id` | DELETE | Delete a map |
+| `/api/scores` | GET / POST | Leaderboard |
 
-## Wskazówki do kamery
+## Camera tips
 
-- Stań około 1-1.5 m od kamery.
-- Ręce powinny być dobrze widoczne.
-- Unikaj mocnego światła za plecami.
-- Jeśli strony są zamienione, włącz `Odwróć strony kamery` w ustawieniach.
+- Stand about 1–1.5 m from the camera.
+- Make sure your hands are clearly visible.
+- Avoid strong backlighting.
+- If left and right sides are swapped, enable **Flip camera sides** in Settings.
