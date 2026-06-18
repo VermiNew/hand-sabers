@@ -86,7 +86,8 @@ let saberTargetSetter: ((side: 'left' | 'right', pos: { x: number; y: number; z:
 
 const DEFAULT_CALIB: CalibData = { minX: 0.1, maxX: 0.9, minY: 0.1, maxY: 0.9, rangeX: 3.2, rangeY: 3.0 };
 const calibData: CalibData = { ...DEFAULT_CALIB };
-let calibPoints:   Landmark[] = [];
+let calibPoints:        Landmark[] = [];
+let latestLandmarks:    Landmark[][] = [];
 let calibAutoTimer:  ReturnType<typeof setTimeout> | null = null;
 let calibAutoScheduled = false;
 let calibFeedLoop:   ReturnType<typeof setTimeout> | null = null;
@@ -239,6 +240,25 @@ function setupCalibFeed(): void {
         calibCtx!.scale(-1, 1);
         calibCtx!.drawImage(videoEl, 0, 0, w, h);
         calibCtx!.restore();
+
+        // Draw ML hand skeleton overlay
+        for (const hand of latestLandmarks) {
+          calibCtx!.strokeStyle = 'rgba(47,124,255,0.85)';
+          calibCtx!.lineWidth   = 2;
+          for (const [a, b] of HAND_CONNECTIONS) {
+            const pa = hand[a]!, pb = hand[b]!;
+            calibCtx!.beginPath();
+            calibCtx!.moveTo((1 - pa.x) * w, pa.y * h);
+            calibCtx!.lineTo((1 - pb.x) * w, pb.y * h);
+            calibCtx!.stroke();
+          }
+          for (const lm of hand) {
+            calibCtx!.fillStyle = '#7eb8ff';
+            calibCtx!.beginPath();
+            calibCtx!.arc((1 - lm.x) * w, lm.y * h, 4, 0, Math.PI * 2);
+            calibCtx!.fill();
+          }
+        }
 
         if (calibPoints.length) {
           let minX = 1, maxX = 0, minY = 1, maxY = 0;
@@ -400,6 +420,7 @@ function runDetect(): void {
 
   if (ui.dDetect) ui.dDetect.textContent = `${detectMs.toFixed(1)}ms`;
 
+  latestLandmarks = result?.landmarks ?? [];
   drawLandmarks(result);
   collectAutoFlipSamples(result);
 
