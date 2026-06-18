@@ -43,10 +43,12 @@
 
   <div id="tapModeGroup">
     <span class="tap-label">TAP:</span>
-    <button class="transport-btn" id="tapModeF" data-i18n="creator.tapLeft">F — LEWO</button>
-    <button class="transport-btn" id="tapModeJ" data-i18n="creator.tapRight">J — PRAWO</button>
-    <button class="transport-btn active" id="tapModeSpace" data-i18n="creator.tapRandom">SPACJA — RANDOM</button>
-    <button class="transport-btn" id="btnCutDirection" title="R zmienia kierunek cięcia zaznaczonych bloków albo nowych tapów">CIĘCIE: •</button>
+    <button class="transport-btn" id="tapModeF">F — LEWO</button>
+    <button class="transport-btn" id="tapModeJ">J — PRAWO</button>
+    <button class="transport-btn" id="tapModeR">R — RANDOM</button>
+    <button class="transport-btn" id="tapModeB">B — BOMBA</button>
+    <button class="transport-btn held-hint" title="Trzymaj Shift+F lub Shift+J podczas nagrywania — długość bloku = czas trzymania">⬛ Shift+F/J — HELD</button>
+    <button class="transport-btn" id="btnCutDirection" title="Klawisze 1–9 ustawiają kierunek cięcia">CIĘCIE: •</button>
     <div id="tapFlash"></div>
   </div>
 
@@ -86,7 +88,6 @@
     <div class="shortcuts-col">
       <div class="shortcuts-section">TRANSPORT</div>
       <div class="shortcut-row"><kbd>Space</kbd><span>Play / Pause</span></div>
-      <div class="shortcut-row"><kbd>Shift+Space</kbd><span>Dodaj bombę</span></div>
       <div class="shortcut-row"><kbd>Shift+R</kbd><span>Stop (wróć do początku)</span></div>
       <div class="shortcut-row"><kbd>Home</kbd><span>Skocz na początek</span></div>
       <div class="shortcut-row"><kbd>End</kbd><span>Skocz na koniec</span></div>
@@ -97,8 +98,11 @@
       <div class="shortcuts-section">TAPPING</div>
       <div class="shortcut-row"><kbd>F</kbd><span>Tap LEWO</span></div>
       <div class="shortcut-row"><kbd>J</kbd><span>Tap PRAWO</span></div>
+      <div class="shortcut-row"><kbd>R</kbd><span>Tap RANDOM</span></div>
+      <div class="shortcut-row"><kbd>B</kbd><span>Tap BOMBA</span></div>
+      <div class="shortcut-row"><kbd>Shift+F</kbd><span>Held LEWO (trzymaj)</span></div>
+      <div class="shortcut-row"><kbd>Shift+J</kbd><span>Held PRAWO (trzymaj)</span></div>
       <div class="shortcut-row"><kbd>1–9</kbd><span>Kierunek cięcia</span></div>
-      <div class="shortcut-row"><kbd>R</kbd><span>Następny kierunek cięcia</span></div>
       <div class="shortcut-row"><kbd>[</kbd><span>Loop START tu</span></div>
       <div class="shortcut-row"><kbd>]</kbd><span>Loop END tu</span></div>
     </div>
