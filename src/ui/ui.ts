@@ -240,7 +240,7 @@ export function showGameOver(state: GameState): void {
       <span class="go-label">${t('gameover.bestCombo')}</span>
       <span class="go-value go-combo">×${combo}</span>
     </div>
-    <div class="go-hint">${t('gameover.resetCalibration')}</div>`;
+    `;
   setIconButton(ui.ovBtn,      t('gameover.playAgain'), 'rotate-ccw');
   setIconButton(ui.ovBtnCalib, t('gameover.calibration'), 'settings');
   setIconButton(ui.ovBtnMenu,  t('gameover.mainMenu'), 'house');

@@ -719,6 +719,7 @@ body.menu-open #pauseMenu { display:none !important; }
   padding:52px 60px;
 }
 #overlay.is-gameover .ov-step {
+  font-family:'JetBrains Mono', monospace;
   font-size:clamp(28px,5vw,52px);
   letter-spacing:10px;
   color:#fff;
@@ -747,8 +748,4 @@ body.menu-open #pauseMenu { display:none !important; }
 .go-combo {
   font-size:clamp(22px,3.8vw,38px); letter-spacing:4px; color:var(--main);
   text-shadow:0 0 24px rgba(47,124,255,0.7);
-}
-.go-hint {
-  font-size:10px; letter-spacing:2.5px; color:var(--dim);
-  margin-top:22px; animation:goSlideIn 0.5s ease-out 0.2s both;
 }

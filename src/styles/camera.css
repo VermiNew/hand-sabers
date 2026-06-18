@@ -1,20 +1,120 @@
 /* ── CAMERA PANEL ── */
+
 #camPanel {
-  position:fixed; bottom:16px; right:16px; z-index:200;
-  display:flex; gap:8px; align-items:flex-end;
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: stretch;
+  pointer-events: none;
+  z-index: 8900;
 }
+
+body:not(.dev-tools) #camPanel { display: none; }
+
+body.dev-tools #camPanel {
+  pointer-events: auto;
+  border: 1px solid rgba(47, 124, 255, 0.22);
+  border-radius: 14px;
+  overflow: hidden;
+  background:
+    linear-gradient(160deg, rgba(5, 10, 22, 0.92), rgba(3, 6, 16, 0.84)),
+    radial-gradient(circle at 80% 0%, rgba(47, 124, 255, 0.10), transparent 55%);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 16px 48px rgba(0, 0, 0, 0.75),
+    0 0 24px rgba(47, 124, 255, 0.10);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+/* ── Feeds row ───────────────────────────────────────────────────────────── */
+.cam-feeds {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  padding: 8px;
+}
+
+/* ── Camera / canvas box ─────────────────────────────────────────────────── */
 .cam-box {
-  width:200px; height:130px; border-radius:6px; overflow:hidden;
-  border:1px solid rgba(148,163,184,0.14); background:#02050b;
-  position:relative; box-shadow:0 4px 24px rgba(0,0,0,0.8);
+  position: relative;
+  width: 200px;
+  height: 126px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #03060f;
+  flex-shrink: 0;
+  border: 1px solid rgba(47, 124, 255, 0.16);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
 }
-.cam-box video,.cam-box canvas { width:100%; height:100%; object-fit:cover; }
-#rawVideo { transform:scaleX(-1); }
+
+.cam-box video,
+.cam-box canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+/* Vignette — darkens bottom for label legibility */
+.cam-box::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    transparent 45%,
+    rgba(3, 6, 18, 0.72) 100%
+  );
+}
+
+/* ── Label ───────────────────────────────────────────────────────────────── */
 .cam-tag {
-  position:absolute; top:5px; left:6px;
-  font-size:8px; letter-spacing:1.5px; color:var(--gray-soft);
-  font-family:'JetBrains Mono',monospace;
-  background:rgba(5,7,13,0.72); padding:2px 5px; border-radius:2px;
-  z-index:1; pointer-events:none;
+  position: absolute;
+  bottom: 6px;
+  left: 7px;
+  z-index: 2;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(3, 6, 18, 0.65);
+  color: rgba(148, 185, 240, 0.70);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(47, 124, 255, 0.12);
+  pointer-events: none;
 }
-.cam-tag.ml { color:var(--main); }
+
+.cam-tag.ml {
+  color: rgba(var(--dev-accent-rgb), 0.90);
+  border-color: rgba(var(--dev-accent-rgb), 0.20);
+}
+
+#rawVideo { transform: scaleX(-1); }
+
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  body.dev-tools #camPanel {
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+  }
+
+  .cam-feeds {
+    overflow-x: auto;
+  }
+
+  .cam-box {
+    flex: 0 0 168px;
+    width: 168px;
+    height: 106px;
+  }
+}

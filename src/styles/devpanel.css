@@ -171,27 +171,6 @@ body.dev-tools #camPanel {
   text-shadow: 0 0 16px rgba(47, 124, 255, 0.28);
 }
 
-/* "LIVE" badge — green for visibility */
-.hs-dev-pane .tp-rotv_b::after {
-  content: 'LIVE';
-  margin-left: auto;
-  margin-right: 34px;
-  flex: 0 0 auto;
-  padding: 3px 7px;
-  border: 1px solid rgba(var(--dev-accent-rgb), 0.28);
-  border-radius: 999px;
-  color: var(--dev-accent);
-  background: rgba(var(--dev-accent-rgb), 0.08);
-  font: 700 8px / 1 'JetBrains Mono', monospace;
-  letter-spacing: 1.5px;
-  animation: dev-live-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes dev-live-pulse {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.40; }
-}
-
 /* Tab bar */
 .hs-dev-pane .tp-tabv_t {
   gap: 5px;
