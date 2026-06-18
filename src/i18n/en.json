@@ -106,6 +106,7 @@
       "customColor": "Custom color",
       "custom": "Custom",
       "apply": "Apply",
+      "reject": "Discard",
       "saberModel": "Saber model",
       "saberModelLabel": "Blade shape",
       "modelClassic": "Classic",

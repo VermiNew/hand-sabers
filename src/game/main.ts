@@ -1149,7 +1149,7 @@ function initMainMenu(): void {
     'right', rightHex
   );
 
-  // ── Custom color picker ─────────────────────────────────────────────────
+  // ── Custom color picker modal ────────────────────────────────────────────
   function hexToHsl(hex: string): [number, number, number] {
     const r = parseInt(hex.slice(1,3),16)/255;
     const g = parseInt(hex.slice(3,5),16)/255;
@@ -1183,70 +1183,112 @@ function initMainMenu(): void {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   }
 
-  function initColorPicker(panelId: string, swatchId: string, hexInputId: string, side: 'left' | 'right', initHex: string): void {
-    const panelEl    = document.getElementById(panelId);
-    const swatchEl   = document.getElementById(swatchId);
-    const hexInputEl = document.getElementById(hexInputId) as HTMLInputElement | null;
-    if (!panelEl || !swatchEl || !hexInputEl) return;
-    const panel    = panelEl;
-    const swatch   = swatchEl;
-    const hexInput = hexInputEl;
-
-    let [h, s, l] = hexToHsl(initHex);
-    const slH = panel.querySelector<HTMLInputElement>('.cp-h')!;
-    const slS = panel.querySelector<HTMLInputElement>('.cp-s')!;
-    const slL = panel.querySelector<HTMLInputElement>('.cp-l')!;
-    const vH  = panel.querySelector<HTMLElement>('.cp-hval')!;
-    const vS  = panel.querySelector<HTMLElement>('.cp-sval')!;
-    const vL  = panel.querySelector<HTMLElement>('.cp-lval')!;
-
-    function syncFromHsl(): void {
-      slH.value = String(h); vH.textContent = String(h);
-      slS.value = String(s); vS.textContent = String(s);
-      slL.value = String(l); vL.textContent = String(l);
-      const hex = hslToHex(h, s, l);
-      swatch.style.background = hex;
-      swatch.style.boxShadow  = `0 0 8px 3px ${hex}88`;
-      hexInput.value = hex;
-      panel.style.setProperty('--cp-hue', String(h));
-    }
-
-    slH.addEventListener('input', () => { h = Number(slH.value); syncFromHsl(); });
-    slS.addEventListener('input', () => { s = Number(slS.value); syncFromHsl(); });
-    slL.addEventListener('input', () => { l = Number(slL.value); syncFromHsl(); });
-    hexInput.addEventListener('input', () => {
-      const v = hexInput.value.trim();
-      if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-        [h, s, l] = hexToHsl(v);
-        syncFromHsl();
-      }
-    });
-
-    panel.querySelector<HTMLButtonElement>('.cp-apply')?.addEventListener('click', () => {
-      const hex = hexInput.value.trim();
-      if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return;
-      setSaberColor(side, hex);
-      setBlockColor(side, parseInt(hex.replace('#', ''), 16));
-      const key = side === 'left' ? 'saberColorLeft' : 'saberColorRight';
-      (settings as unknown as Record<string, unknown>)[key] = hex;
-      setSetting(key as keyof Settings, hex);
-      const previewBar  = document.getElementById(side === 'left' ? 'saberColorPreviewLeft' : 'saberColorPreviewRight');
-      const previewName = document.getElementById(side === 'left' ? 'saberColorNameLeft'    : 'saberColorNameRight');
-      updateColorPreview(previewBar, previewName, { hex, label: t('settings.gameplay.custom') });
-    });
-
-    syncFromHsl();
+  function hexToRgb(hex: string): [number, number, number] {
+    return [
+      parseInt(hex.slice(1,3),16),
+      parseInt(hex.slice(3,5),16),
+      parseInt(hex.slice(5,7),16),
+    ];
   }
 
-  initColorPicker('cpLeft',  'cpSwatchLeft',  'cpHexLeft',  'left',  leftHex);
-  initColorPicker('cpRight', 'cpSwatchRight', 'cpHexRight', 'right', rightHex);
+  {
+    const modal      = document.getElementById('cpModal');
+    const backdrop   = modal?.querySelector<HTMLElement>('.cp-modal-backdrop');
+    const sideBadge  = document.getElementById('cpModalSideBadge');
+    const swatch     = document.getElementById('cpModalSwatch');
+    const hexVal     = document.getElementById('cpModalHexVal');
+    const rgbVal     = document.getElementById('cpModalRgbVal');
+    const slH        = document.getElementById('cpModalH')  as HTMLInputElement | null;
+    const slS        = document.getElementById('cpModalS')  as HTMLInputElement | null;
+    const slL        = document.getElementById('cpModalL')  as HTMLInputElement | null;
+    const vH         = document.getElementById('cpModalHVal');
+    const vS         = document.getElementById('cpModalSVal');
+    const vL         = document.getElementById('cpModalLVal');
+    const rVal       = document.getElementById('cpModalR');
+    const gVal       = document.getElementById('cpModalG');
+    const bVal       = document.getElementById('cpModalB');
+    const hexInput   = document.getElementById('cpModalHexInput') as HTMLInputElement | null;
+    const applyBtn   = document.getElementById('cpModalApply');
+    const rejectBtn  = document.getElementById('cpModalReject');
 
-  document.querySelectorAll<HTMLButtonElement>('.cp-toggle').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = document.getElementById(btn.dataset['target'] ?? '');
-      if (target) target.classList.toggle('is-open');
+    let cpSide: 'left' | 'right' = 'left';
+    let cpH = 0, cpS = 100, cpL = 55;
+
+    function cpSync(): void {
+      if (slH) { slH.value = String(cpH); }
+      if (slS) { slS.value = String(cpS); }
+      if (slL) { slL.value = String(cpL); }
+      if (vH) vH.textContent = String(cpH);
+      if (vS) vS.textContent = String(cpS);
+      if (vL) vL.textContent = String(cpL);
+      const hex = hslToHex(cpH, cpS, cpL);
+      const [r, g, b] = hexToRgb(hex);
+      if (swatch) {
+        swatch.style.background = hex;
+        swatch.style.setProperty('--cp-glow', `${hex}88`);
+      }
+      if (hexVal)  hexVal.textContent  = hex.toUpperCase();
+      if (rgbVal)  rgbVal.textContent  = `RGB(${r}, ${g}, ${b})`;
+      if (rVal)    rVal.textContent    = String(r);
+      if (gVal)    gVal.textContent    = String(g);
+      if (bVal)    bVal.textContent    = String(b);
+      if (hexInput) hexInput.value     = hex;
+    }
+
+    function cpOpen(side: 'left' | 'right'): void {
+      cpSide = side;
+      const initHex = side === 'left'
+        ? (settings.saberColorLeft  || '#36f2a1')
+        : (settings.saberColorRight || '#2f7cff');
+      [cpH, cpS, cpL] = hexToHsl(initHex);
+      if (sideBadge) sideBadge.textContent = side === 'left'
+        ? t('settings.gameplay.leftHand')
+        : t('settings.gameplay.rightHand');
+      cpSync();
+      modal?.classList.add('is-open');
+    }
+
+    function cpClose(): void {
+      modal?.classList.remove('is-open');
+    }
+
+    function cpApply(): void {
+      const hex = hslToHex(cpH, cpS, cpL);
+      setSaberColor(cpSide, hex);
+      setBlockColor(cpSide, parseInt(hex.replace('#', ''), 16));
+      const key = cpSide === 'left' ? 'saberColorLeft' : 'saberColorRight';
+      (settings as unknown as Record<string, unknown>)[key] = hex;
+      setSetting(key as keyof Settings, hex);
+      const previewBar  = document.getElementById(cpSide === 'left' ? 'saberColorPreviewLeft'  : 'saberColorPreviewRight');
+      const previewName = document.getElementById(cpSide === 'left' ? 'saberColorNameLeft'      : 'saberColorNameRight');
+      updateColorPreview(previewBar, previewName, { hex, label: t('settings.gameplay.custom') });
+      cpClose();
+    }
+
+    slH?.addEventListener('input', () => { cpH = Number(slH.value); cpSync(); });
+    slS?.addEventListener('input', () => { cpS = Number(slS.value); cpSync(); });
+    slL?.addEventListener('input', () => { cpL = Number(slL.value); cpSync(); });
+    hexInput?.addEventListener('input', () => {
+      const v = hexInput.value.trim();
+      if (/^#[0-9a-fA-F]{6}$/.test(v)) {
+        [cpH, cpS, cpL] = hexToHsl(v);
+        cpSync();
+      }
     });
-  });
+    applyBtn?.addEventListener('click',  cpApply);
+    rejectBtn?.addEventListener('click', cpClose);
+    backdrop?.addEventListener('pointerdown', cpClose);
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal?.classList.contains('is-open')) cpClose();
+    });
+
+    document.querySelectorAll<HTMLButtonElement>('.cp-toggle').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const side = (btn.dataset['side'] ?? 'left') as 'left' | 'right';
+        cpOpen(side);
+      });
+    });
+  }
 
   // ── Picker modelu miecza ──────────────────────────────────────────────────
   const modelPicker = document.getElementById('saberModelPicker');

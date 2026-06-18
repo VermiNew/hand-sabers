@@ -221,19 +221,7 @@
                 <div class="saber-color-preview-bar" id="saberColorPreviewLeft"></div>
                 <span id="saberColorNameLeft"></span>
               </div>
-              <div class="cp-panel" id="cpLeft">
-                <div class="cp-sliders">
-                  <div class="cp-row"><label>H</label><input type="range" class="cp-h" min="0" max="360" step="1"><span class="cp-val cp-hval">0</span></div>
-                  <div class="cp-row"><label>S</label><input type="range" class="cp-s" min="0" max="100" step="1"><span class="cp-val cp-sval">100</span></div>
-                  <div class="cp-row"><label>L</label><input type="range" class="cp-l" min="10" max="90" step="1"><span class="cp-val cp-lval">55</span></div>
-                </div>
-                <div class="cp-hex-row">
-                  <span class="cp-swatch" id="cpSwatchLeft"></span>
-                  <input type="text" class="cp-hex" maxlength="7" placeholder="#rrggbb" id="cpHexLeft">
-                  <button type="button" class="cp-apply" data-side="left" data-i18n="settings.gameplay.apply">Zastosuj</button>
-                </div>
-              </div>
-              <button type="button" class="cp-toggle" data-target="cpLeft" data-i18n="settings.gameplay.customColor">Własny kolor</button>
+              <button type="button" class="cp-toggle" data-side="left" data-i18n="settings.gameplay.customColor">Własny kolor</button>
             </div>
             <div class="sp-color-side">
               <div class="sp-color-label" data-i18n="settings.gameplay.rightHand">Prawa ręka</div>
@@ -242,19 +230,7 @@
                 <div class="saber-color-preview-bar" id="saberColorPreviewRight"></div>
                 <span id="saberColorNameRight"></span>
               </div>
-              <div class="cp-panel" id="cpRight">
-                <div class="cp-sliders">
-                  <div class="cp-row"><label>H</label><input type="range" class="cp-h" min="0" max="360" step="1"><span class="cp-val cp-hval">210</span></div>
-                  <div class="cp-row"><label>S</label><input type="range" class="cp-s" min="0" max="100" step="1"><span class="cp-val cp-sval">100</span></div>
-                  <div class="cp-row"><label>L</label><input type="range" class="cp-l" min="10" max="90" step="1"><span class="cp-val cp-lval">55</span></div>
-                </div>
-                <div class="cp-hex-row">
-                  <span class="cp-swatch" id="cpSwatchRight"></span>
-                  <input type="text" class="cp-hex" maxlength="7" placeholder="#rrggbb" id="cpHexRight">
-                  <button type="button" class="cp-apply" data-side="right" data-i18n="settings.gameplay.apply">Zastosuj</button>
-                </div>
-              </div>
-              <button type="button" class="cp-toggle" data-target="cpRight" data-i18n="settings.gameplay.customColor">Własny kolor</button>
+              <button type="button" class="cp-toggle" data-side="right" data-i18n="settings.gameplay.customColor">Własny kolor</button>
             </div>
           </div>
         </div>
@@ -479,6 +455,74 @@
         <button class="calib-btn-secondary" id="calibBtnRetry"  style="display:none" data-i18n="overlay.retryCalibration">PONÓW KALIBRACJĘ</button>
         <button class="calib-btn-secondary" id="calibBtnMenu"   style="display:none" data-i18n="gameover.mainMenu">MENU GŁÓWNE</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- COLOR PICKER MODAL -->
+<div id="cpModal" role="dialog" aria-modal="true" aria-labelledby="cpModalTitle">
+  <div class="cp-modal-backdrop"></div>
+  <div class="cp-modal-panel">
+    <div class="cp-modal-head">
+      <span class="cp-modal-title" id="cpModalTitle" data-i18n="settings.gameplay.customColor">Własny kolor</span>
+      <span class="cp-modal-side-badge" id="cpModalSideBadge"></span>
+    </div>
+
+    <div class="cp-modal-body">
+      <!-- Preview swatch -->
+      <div class="cp-modal-preview">
+        <span class="cp-modal-swatch" id="cpModalSwatch"></span>
+        <div class="cp-modal-codes">
+          <span class="cp-modal-hex-val" id="cpModalHexVal">#000000</span>
+          <span class="cp-modal-rgb-val" id="cpModalRgbVal">RGB(0, 0, 0)</span>
+        </div>
+      </div>
+
+      <!-- HSL sliders -->
+      <div class="cp-modal-sliders">
+        <div class="cp-modal-row">
+          <label class="cp-modal-lbl">H</label>
+          <input type="range" id="cpModalH" min="0" max="360" step="1" value="0">
+          <span class="cp-modal-val" id="cpModalHVal">0</span>
+        </div>
+        <div class="cp-modal-row">
+          <label class="cp-modal-lbl">S</label>
+          <input type="range" id="cpModalS" min="0" max="100" step="1" value="100">
+          <span class="cp-modal-val" id="cpModalSVal">100</span>
+        </div>
+        <div class="cp-modal-row">
+          <label class="cp-modal-lbl">L</label>
+          <input type="range" id="cpModalL" min="10" max="90" step="1" value="55">
+          <span class="cp-modal-val" id="cpModalLVal">55</span>
+        </div>
+      </div>
+
+      <!-- RGB values -->
+      <div class="cp-modal-rgb-grid">
+        <div class="cp-modal-channel">
+          <label class="cp-modal-ch-lbl">R</label>
+          <span class="cp-modal-ch-val" id="cpModalR">0</span>
+        </div>
+        <div class="cp-modal-channel">
+          <label class="cp-modal-ch-lbl">G</label>
+          <span class="cp-modal-ch-val" id="cpModalG">0</span>
+        </div>
+        <div class="cp-modal-channel">
+          <label class="cp-modal-ch-lbl">B</label>
+          <span class="cp-modal-ch-val" id="cpModalB">0</span>
+        </div>
+      </div>
+
+      <!-- Hex input -->
+      <div class="cp-modal-hex-row">
+        <label class="cp-modal-hex-lbl">HEX</label>
+        <input type="text" id="cpModalHexInput" class="cp-modal-hex-input" maxlength="7" placeholder="#rrggbb" spellcheck="false">
+      </div>
+    </div>
+
+    <div class="cp-modal-actions">
+      <button type="button" class="cp-modal-btn-reject" id="cpModalReject" data-i18n="settings.gameplay.reject">Odrzuć</button>
+      <button type="button" class="cp-modal-btn-apply" id="cpModalApply" data-i18n="settings.gameplay.apply">Zatwierdź</button>
     </div>
   </div>
 </div>
