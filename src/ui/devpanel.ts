@@ -4,10 +4,10 @@ import { applyTrackingSettings } from '../tracking/tracking.ts';
 import { setVolume, setMusicVolume, setSfxVolume, setSoundVolume } from '../game/audio.ts';
 import { getPerformanceMode, getPerformanceModes } from '../core/performance.ts';
 import { scene, reflectTarget, getScenePerformanceProfile, setScenePerformanceProfile, setWireframeVisible } from '../game/scene.ts';
-import type * as THREE from 'three';
+import * as THREE from 'three';
 import type { PerformanceMode, Settings } from '../types/index.js';
 
-const THREE_RT = (window as unknown as { THREE: typeof THREE }).THREE;
+const THREE_RT = THREE;
 
 // ── Typy ──────────────────────────────────────────────────────────────────────
 interface GameStats {
