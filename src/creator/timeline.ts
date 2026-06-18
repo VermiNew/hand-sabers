@@ -31,42 +31,88 @@ export function renderRuler(): void {
   const h   = canvas.height;
   const ctx = canvas.getContext('2d')!;
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = 'rgba(5,7,13,0.95)';
-  ctx.fillRect(0, 0, w, h);
 
-  const secInView = w / state.pxPerSec;
+  // Label panel background in ruler
+  ctx.fillStyle = 'rgba(4,6,14,0.95)';
+  ctx.fillRect(0, 0, LABEL_W, h);
+  ctx.fillStyle = 'rgba(5,7,13,0.92)';
+  ctx.fillRect(LABEL_W, 0, w - LABEL_W, h);
+
+  const secInView = (w - LABEL_W) / state.pxPerSec;
   const startSec  = state.viewStart;
   const endSec    = state.viewStart + secInView;
 
-  let interval = 1;
-  if (state.pxPerSec < 20)       interval = 10;
-  else if (state.pxPerSec < 40)  interval = 5;
-  else if (state.pxPerSec > 200) interval = 0.5;
+  // BPM beat/bar markers
+  const bpm = state.map.meta && (state.map.meta as Record<string, unknown>)['bpm']
+    ? Number((state.map.meta as Record<string, unknown>)['bpm'])
+    : 0;
 
-  ctx.strokeStyle = 'rgba(148,163,184,0.15)';
-  ctx.fillStyle   = 'rgba(148,163,184,0.55)';
-  ctx.font        = '9px JetBrains Mono';
-  ctx.textAlign   = 'center';
-  ctx.lineWidth   = 1;
-
-  let t = Math.floor(startSec / interval) * interval;
-  while (t <= endSec + interval) {
-    const x = Math.round((t - state.viewStart) * state.pxPerSec);
-    if (x >= 0 && x <= w) {
-      ctx.beginPath();
-      ctx.moveTo(x, h - 6);
-      ctx.lineTo(x, h);
-      ctx.stroke();
-      ctx.fillText(formatTime(t), x, h - 8);
+  if (bpm > 0 && bpm < 400) {
+    const beatSec = 60 / bpm;
+    const barSec  = beatSec * 4;
+    let t = Math.floor(startSec / beatSec) * beatSec;
+    while (t <= endSec + beatSec) {
+      const x = Math.round(LABEL_W + (t - state.viewStart) * state.pxPerSec);
+      if (x > LABEL_W && x <= w) {
+        const isBar = Math.abs(t % barSec) < beatSec * 0.02;
+        ctx.strokeStyle = isBar ? 'rgba(255,200,80,0.45)' : 'rgba(255,200,80,0.12)';
+        ctx.lineWidth   = isBar ? 1.5 : 1;
+        ctx.beginPath(); ctx.moveTo(x, isBar ? h - 10 : h - 5); ctx.lineTo(x, h); ctx.stroke();
+        if (isBar) {
+          ctx.fillStyle = 'rgba(255,200,80,0.7)';
+          ctx.font      = '8px JetBrains Mono';
+          ctx.textAlign = 'center';
+          ctx.fillText(formatTime(t), x, h - 12);
+        }
+      }
+      t += beatSec;
     }
-    t += interval;
+  } else {
+    // Fallback: time interval markers
+    let interval = 1;
+    if (state.pxPerSec < 20)       interval = 10;
+    else if (state.pxPerSec < 40)  interval = 5;
+    else if (state.pxPerSec > 200) interval = 0.5;
+
+    ctx.strokeStyle = 'rgba(148,163,184,0.2)';
+    ctx.fillStyle   = 'rgba(148,163,184,0.65)';
+    ctx.font        = '9px JetBrains Mono';
+    ctx.textAlign   = 'center';
+    ctx.lineWidth   = 1;
+
+    let t = Math.floor(startSec / interval) * interval;
+    while (t <= endSec + interval) {
+      const x = Math.round(LABEL_W + (t - state.viewStart) * state.pxPerSec);
+      if (x > LABEL_W && x <= w) {
+        ctx.beginPath(); ctx.moveTo(x, h - 6); ctx.lineTo(x, h); ctx.stroke();
+        ctx.fillText(formatTime(t), x, h - 8);
+      }
+      t += interval;
+    }
   }
 
-  ctx.strokeStyle = 'rgba(148,163,184,0.2)';
-  ctx.beginPath();
-  ctx.moveTo(0, h - 1);
-  ctx.lineTo(w, h - 1);
-  ctx.stroke();
+  // Bottom border
+  ctx.strokeStyle = 'rgba(148,163,184,0.15)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath(); ctx.moveTo(0, h - 1); ctx.lineTo(w, h - 1); ctx.stroke();
+
+  // Label panel border
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.beginPath(); ctx.moveTo(LABEL_W, 0); ctx.lineTo(LABEL_W, h); ctx.stroke();
+}
+
+const LABEL_W  = 48; // fixed left panel width for track labels
+const RULER_H  = 24;
+
+function getTrackLayout(h: number): { TRACK_H: number; TRACK_L_Y: number; TRACK_R_Y: number; TRACK_B_Y: number } {
+  const available = h - RULER_H - 8;
+  const TRACK_H   = Math.floor(available / 3);
+  return {
+    TRACK_H,
+    TRACK_L_Y: RULER_H + 4,
+    TRACK_R_Y: RULER_H + 4 + TRACK_H + 4,
+    TRACK_B_Y: RULER_H + 4 + (TRACK_H + 4) * 2,
+  };
 }
 
 export function renderTimeline(): void {
@@ -76,66 +122,166 @@ export function renderTimeline(): void {
   const h   = canvas.height;
   const ctx = canvas.getContext('2d')!;
   ctx.clearRect(0, 0, w, h);
-  ctx.fillStyle = '#030610';
+
+  // Background
+  ctx.fillStyle = '#020509';
   ctx.fillRect(0, 0, w, h);
 
-  const RULER_H   = 24;
-  const secInView = w / state.pxPerSec;
+  const { TRACK_H, TRACK_L_Y, TRACK_R_Y, TRACK_B_Y } = getTrackLayout(h);
+  const secInView = (w - LABEL_W) / state.pxPerSec;
 
-  ctx.strokeStyle = 'rgba(47,124,255,0.07)';
-  ctx.lineWidth   = 1;
-  let t = Math.floor(state.viewStart / 0.5) * 0.5;
-  while (t <= state.viewStart + secInView) {
-    const x = (t - state.viewStart) * state.pxPerSec;
-    ctx.beginPath();
-    ctx.moveTo(x, RULER_H);
-    ctx.lineTo(x, h);
-    ctx.stroke();
-    t += 0.5;
+  // ── Track backgrounds (full width including label panel) ──
+  const tracks = [
+    { y: TRACK_L_Y, fill: 'rgba(54,242,161,0.06)', border: 'rgba(54,242,161,0.18)', label: 'LEWO',  labelColor: '#36f2a1' },
+    { y: TRACK_R_Y, fill: 'rgba(47,124,255,0.06)',  border: 'rgba(47,124,255,0.18)',  label: 'PRAWO', labelColor: '#2f7cff' },
+    { y: TRACK_B_Y, fill: 'rgba(255,58,58,0.06)',   border: 'rgba(255,58,58,0.18)',   label: 'BOMBY', labelColor: '#ff5555' },
+  ];
+
+  for (const tr of tracks) {
+    ctx.fillStyle = tr.fill;
+    ctx.fillRect(0, tr.y, w, TRACK_H);
+    ctx.strokeStyle = tr.border;
+    ctx.lineWidth   = 1;
+    ctx.strokeRect(0, tr.y, w, TRACK_H);
   }
 
-  const TRACK_H   = Math.floor((h - RULER_H - 8) / 3);
-  const TRACK_L_Y = RULER_H + 4;
-  const TRACK_R_Y = TRACK_L_Y + TRACK_H + 4;
-  const TRACK_B_Y = TRACK_R_Y + TRACK_H + 4;
+  // ── Label panel ──
+  ctx.fillStyle = 'rgba(4,6,14,0.82)';
+  ctx.fillRect(0, RULER_H, LABEL_W, h - RULER_H);
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath(); ctx.moveTo(LABEL_W, RULER_H); ctx.lineTo(LABEL_W, h); ctx.stroke();
 
-  drawTrackBg(ctx, w, TRACK_L_Y, TRACK_H, 'rgba(54,242,161,0.04)',  'LEWO');
-  drawTrackBg(ctx, w, TRACK_R_Y, TRACK_H, 'rgba(47,124,255,0.04)',  'PRAWO');
-  drawTrackBg(ctx, w, TRACK_B_Y, TRACK_H, 'rgba(255,58,58,0.04)',   'BOMBY');
+  ctx.font         = 'bold 9px JetBrains Mono';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  for (const tr of tracks) {
+    ctx.fillStyle = tr.labelColor;
+    ctx.fillText(tr.label, LABEL_W / 2, tr.y + TRACK_H / 2);
+  }
+  ctx.textBaseline = 'alphabetic';
 
-  for (const beat of state.map.beats) {
-    const x = (beat.t - state.viewStart) * state.pxPerSec;
-    if (x < -20 || x > w + 20) continue;
+  // ── Vertical grid (BPM + half-second lines) ──
+  const bpm = state.map.meta && (state.map.meta as Record<string, unknown>)['bpm']
+    ? Number((state.map.meta as Record<string, unknown>)['bpm'])
+    : 0;
 
-    const isBomb   = beat.type === 'bomb';
-    const trackY   = isBomb ? TRACK_B_Y : beat.side === 'left' ? TRACK_L_Y : beat.side === 'right' ? TRACK_R_Y : TRACK_L_Y;
-    const color    = isBomb ? '#ff3a3a' : beat.side === 'left' ? '#36f2a1' : beat.side === 'right' ? '#2f7cff' : '#94a3b8';
-    const selected = state.selectedBeats.has(beat);
+  if (bpm > 0 && bpm < 400) {
+    const beatSec = 60 / bpm;
+    const barSec  = beatSec * 4;
+    let t = Math.floor(state.viewStart / beatSec) * beatSec;
+    const end = state.viewStart + secInView;
+    while (t <= end + beatSec) {
+      const x = LABEL_W + (t - state.viewStart) * state.pxPerSec;
+      if (x > LABEL_W && x <= w) {
+        const isBar = Math.abs(t % barSec) < beatSec * 0.02;
+        ctx.strokeStyle = isBar ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
+        ctx.lineWidth   = isBar ? 1.5 : 1;
+        ctx.beginPath(); ctx.moveTo(x, RULER_H); ctx.lineTo(x, h); ctx.stroke();
+      }
+      t += beatSec;
+    }
+  } else {
+    ctx.strokeStyle = 'rgba(47,124,255,0.09)';
+    ctx.lineWidth   = 1;
+    let t = Math.floor(state.viewStart / 0.5) * 0.5;
+    while (t <= state.viewStart + secInView) {
+      const x = LABEL_W + (t - state.viewStart) * state.pxPerSec;
+      if (x > LABEL_W && x <= w) {
+        ctx.beginPath(); ctx.moveTo(x, RULER_H); ctx.lineTo(x, h); ctx.stroke();
+      }
+      t += 0.5;
+    }
+  }
 
-    ctx.fillStyle   = selected ? '#ffffff' : color;
-    ctx.strokeStyle = selected ? '#ffffff' : color;
-    ctx.globalAlpha = selected ? 1 : 0.85;
-
-    const bw = Math.max(8, Math.min(22, state.pxPerSec * 0.18));
-    const bh = TRACK_H - 8;
-    const bx = x - bw / 2;
-    const by = trackY + 4;
-
-    ctx.beginPath();
-    (ctx as unknown as { roundRect: (x: number, y: number, w: number, h: number, r: number) => void }).roundRect(bx, by, bw, bh, 3);
-    ctx.fill();
-
-    if (!isBomb) {
-      const cut = normalizeCutDirection(beat.cut);
-      if (cut !== 'any') {
-        ctx.fillStyle    = '#02050b';
-        ctx.font         = `bold ${Math.max(10, Math.min(18, bh * 0.58))}px JetBrains Mono`;
-        ctx.textAlign    = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(CUT_SYMBOLS[cut] ?? '•', x, by + bh / 2 + 0.5);
-        ctx.textBaseline = 'alphabetic';
+  // ── Loop region ──
+  if (state.loopEnabled && state.loopStart !== null && state.loopEnd !== null) {
+    const lx1 = LABEL_W + (state.loopStart - state.viewStart) * state.pxPerSec;
+    const lx2 = LABEL_W + (state.loopEnd   - state.viewStart) * state.pxPerSec;
+    const rx   = Math.max(LABEL_W, lx1);
+    const rw   = Math.min(w, lx2) - rx;
+    if (rw > 0) {
+      ctx.fillStyle = 'rgba(54,242,161,0.08)';
+      ctx.fillRect(rx, RULER_H, rw, h - RULER_H);
+    }
+    ctx.strokeStyle = 'rgba(54,242,161,0.65)';
+    ctx.lineWidth   = 1.5;
+    for (const lx of [lx1, lx2]) {
+      if (lx >= LABEL_W && lx <= w) {
+        ctx.beginPath(); ctx.moveTo(lx, RULER_H); ctx.lineTo(lx, h); ctx.stroke();
       }
     }
+    ctx.font      = '9px JetBrains Mono';
+    ctx.fillStyle = 'rgba(54,242,161,0.9)';
+    if (lx1 >= LABEL_W && lx1 <= w) {
+      ctx.textAlign = 'left';
+      ctx.fillText('[ LOOP', lx1 + 3, RULER_H + 14);
+    }
+    if (lx2 >= LABEL_W && lx2 <= w) {
+      ctx.textAlign = 'right';
+      ctx.fillText('LOOP ]', lx2 - 3, RULER_H + 14);
+    }
+  }
+
+  // ── Beats ──
+  for (const beat of state.map.beats) {
+    const x = LABEL_W + (beat.t - state.viewStart) * state.pxPerSec;
+    if (x < LABEL_W - 20 || x > w + 20) continue;
+
+    const isBomb   = beat.type === 'bomb';
+    const trackY   = isBomb ? TRACK_B_Y : beat.side === 'left' ? TRACK_L_Y : TRACK_R_Y;
+    const color    = isBomb ? '#ff4444' : beat.side === 'left' ? '#36f2a1' : '#2f7cff';
+    const selected = state.selectedBeats.has(beat);
+
+    const bw = Math.max(10, Math.min(26, state.pxPerSec * 0.20));
+    const bh = TRACK_H - 10;
+    const bx = x - bw / 2;
+    const by = trackY + 5;
+
+    // Shadow glow for selected
+    if (selected) {
+      ctx.shadowColor = '#fff';
+      ctx.shadowBlur  = 8;
+    }
+
+    if (isBomb) {
+      // Circle for bomb
+      ctx.fillStyle   = selected ? '#ff8888' : '#ff4444';
+      ctx.strokeStyle = selected ? '#ffffff' : '#ff6666';
+      ctx.lineWidth   = selected ? 2 : 1;
+      ctx.globalAlpha = selected ? 1 : 0.9;
+      ctx.beginPath();
+      ctx.arc(x, trackY + TRACK_H / 2, Math.min(bw / 2, bh / 2) - 1, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // ✕ symbol
+      ctx.fillStyle    = selected ? '#fff' : '#02050b';
+      ctx.font         = `bold ${Math.max(9, Math.min(14, bh * 0.5))}px JetBrains Mono`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('✕', x, trackY + TRACK_H / 2 + 0.5);
+    } else {
+      // Rounded rect for block
+      ctx.fillStyle   = selected ? '#ffffff' : color;
+      ctx.strokeStyle = selected ? '#fff' : color;
+      ctx.lineWidth   = selected ? 2 : 1;
+      ctx.globalAlpha = selected ? 1 : 0.88;
+      ctx.beginPath();
+      (ctx as unknown as { roundRect: (x: number, y: number, w: number, h: number, r: number) => void }).roundRect(bx, by, bw, bh, 4);
+      ctx.fill();
+
+      // Cut direction symbol
+      const cut = normalizeCutDirection(beat.cut);
+      ctx.fillStyle    = selected ? '#111' : '#02050b';
+      ctx.font         = `bold ${Math.max(10, Math.min(18, bh * 0.58))}px JetBrains Mono`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(CUT_SYMBOLS[cut] ?? '•', x, by + bh / 2 + 0.5);
+    }
+
+    ctx.textBaseline = 'alphabetic';
+    ctx.globalAlpha  = 1;
+    ctx.shadowBlur   = 0;
 
     if (beat._overlap) {
       ctx.fillStyle = '#ffaa44';
@@ -143,62 +289,23 @@ export function renderTimeline(): void {
       ctx.textAlign = 'center';
       ctx.fillText('!', x, by - 2);
     }
-
-    ctx.globalAlpha = 1;
   }
 
+  // ── Ghost playhead (not playing) ──
   const pos = getPlayPos();
-  const px  = (pos - state.viewStart) * state.pxPerSec;
-  if (px >= 0 && px <= w) {
-    ctx.strokeStyle = 'rgba(226,232,240,0.25)';
+  const px  = LABEL_W + (pos - state.viewStart) * state.pxPerSec;
+  if (!state.isPlaying && px >= LABEL_W && px <= w) {
+    ctx.strokeStyle = 'rgba(226,232,240,0.18)';
     ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(px, RULER_H);
-    ctx.lineTo(px, h);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(px, RULER_H); ctx.lineTo(px, h); ctx.stroke();
   }
-
-  if (state.loopEnabled && state.loopStart !== null && state.loopEnd !== null) {
-    const lx1 = (state.loopStart - state.viewStart) * state.pxPerSec;
-    const lx2 = (state.loopEnd   - state.viewStart) * state.pxPerSec;
-    ctx.fillStyle   = 'rgba(54,242,161,0.07)';
-    ctx.fillRect(Math.max(0, lx1), RULER_H, Math.min(w, lx2) - Math.max(0, lx1), h - RULER_H);
-    ctx.strokeStyle = 'rgba(54,242,161,0.5)';
-    ctx.lineWidth   = 1.5;
-    if (lx1 >= 0 && lx1 <= w) {
-      ctx.beginPath(); ctx.moveTo(lx1, RULER_H); ctx.lineTo(lx1, h); ctx.stroke();
-      ctx.fillStyle = 'rgba(54,242,161,0.8)';
-      ctx.font      = '9px JetBrains Mono';
-      ctx.textAlign = 'left';
-      ctx.fillText('◀ LOOP', lx1 + 3, RULER_H + 14);
-    }
-    if (lx2 >= 0 && lx2 <= w) {
-      ctx.beginPath(); ctx.moveTo(lx2, RULER_H); ctx.lineTo(lx2, h); ctx.stroke();
-      ctx.fillStyle = 'rgba(54,242,161,0.8)';
-      ctx.font      = '9px JetBrains Mono';
-      ctx.textAlign = 'right';
-      ctx.fillText('LOOP', lx2 - 3, RULER_H + 14);
-    }
-  }
-}
-
-export function drawTrackBg(ctx: CanvasRenderingContext2D, w: number, y: number, h: number, fill: string, label: string): void {
-  ctx.fillStyle   = fill;
-  ctx.fillRect(0, y, w, h);
-  ctx.strokeStyle = 'rgba(148,163,184,0.08)';
-  ctx.lineWidth   = 1;
-  ctx.strokeRect(0, y, w, h);
-  ctx.fillStyle   = 'rgba(148,163,184,0.2)';
-  ctx.font        = '9px JetBrains Mono';
-  ctx.textAlign   = 'left';
-  ctx.fillText(label, 6, y + h / 2 + 3);
 }
 
 export function renderPlayhead(): void {
   const playheadEl = document.getElementById('playhead');
   if (!playheadEl) return;
   const pos = getPlayPos();
-  const x   = (pos - state.viewStart) * state.pxPerSec;
+  const x   = LABEL_W + (pos - state.viewStart) * state.pxPerSec;
   playheadEl.style.transform = `translateX(${x}px)`;
 }
 
@@ -225,7 +332,7 @@ export function updateZoomLabel(): void {
   const canvas = document.getElementById('timelineCanvas') as HTMLCanvasElement | null;
   const stZoom = document.getElementById('stZoom');
   if (!canvas || !stZoom) return;
-  const secInView = canvas.width / state.pxPerSec;
+  const secInView = (canvas.width - LABEL_W) / state.pxPerSec;
   stZoom.textContent = `${secInView.toFixed(1)}s`;
 }
 
@@ -246,20 +353,24 @@ export function resizeCanvases(): void {
 export function hitTestBeat(mx: number, my: number) {
   const canvas = document.getElementById('timelineCanvas') as HTMLCanvasElement | null;
   if (!canvas) return null;
-  const h       = canvas.height;
-  const RULER_H = 24;
-  const TRACK_H = Math.floor((h - RULER_H - 8) / 3);
-  const TRACK_L_Y = RULER_H + 4;
-  const TRACK_R_Y = TRACK_L_Y + TRACK_H + 4;
-  const TRACK_B_Y = TRACK_R_Y + TRACK_H + 4;
-  const bw = Math.max(8, Math.min(22, state.pxPerSec * 0.18));
+  const h = canvas.height;
+  const { TRACK_H, TRACK_L_Y, TRACK_R_Y, TRACK_B_Y } = getTrackLayout(h);
+  const bw = Math.max(10, Math.min(26, state.pxPerSec * 0.20));
 
   for (const beat of state.map.beats) {
-    const x = (beat.t - state.viewStart) * state.pxPerSec;
+    const x = LABEL_W + (beat.t - state.viewStart) * state.pxPerSec;
     if (Math.abs(mx - x) > bw) continue;
     const isBomb = beat.type === 'bomb';
     const ty     = isBomb ? TRACK_B_Y : beat.side === 'left' ? TRACK_L_Y : TRACK_R_Y;
     if (my >= ty && my <= ty + TRACK_H) return beat;
   }
   return null;
+}
+
+export function xToTime(canvasX: number): number {
+  return state.viewStart + (canvasX - LABEL_W) / state.pxPerSec;
+}
+
+export function getLabelWidth(): number {
+  return LABEL_W;
 }

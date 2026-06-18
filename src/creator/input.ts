@@ -2,10 +2,11 @@ import { state, SNAP_VALUES } from './state.ts';
 import { markOverlaps, removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
 import { cutButtonText, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
 import { getPlayPos, playAudio, pauseAudio, stopAudio } from './audio.ts';
-import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, formatTime } from './timeline.ts';
+import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, formatTime, getLabelWidth, xToTime } from './timeline.ts';
 import { scheduleAutosave } from './storage.ts';
 import { t } from '../i18n/index.ts';
 import type { BeatSide, CutDirection } from '../types/index.js';
+import { CUT_DIRECTIONS } from '../core/gameplay-rules.ts';
 
 const MAX_UNDO = 60;
 
@@ -161,6 +162,81 @@ export function handlePlay(onPlay: () => void): void {
   startPrecount(onPlay);
 }
 
+let contextMenu: HTMLElement | null = null;
+
+function removeContextMenu(): void {
+  if (contextMenu) { contextMenu.remove(); contextMenu = null; }
+}
+
+function showTimelineContextMenu(
+  clientX: number, clientY: number, clickT: number,
+  onPlay: () => void
+): void {
+  removeContextMenu();
+  const menu = document.createElement('div');
+  menu.className = 'ctx-menu';
+  menu.style.left = `${clientX}px`;
+  menu.style.top  = `${clientY}px`;
+
+  const items: Array<{ label: string; action: () => void }> = [
+    {
+      label: '⏸ Seekuj tutaj',
+      action: () => {
+        const wasPlaying = state.isPlaying;
+        state.currentTime = Math.max(0, Math.min(clickT, state.map.meta.duration));
+        if (wasPlaying) playAudio(state.currentTime, onPlay);
+        renderAll();
+      },
+    },
+    {
+      label: '[ Ustaw LOOP START',
+      action: () => {
+        state.loopStart = snapTime(clickT);
+        if (state.loopEnd !== null && state.loopStart > state.loopEnd) state.loopEnd = null;
+        renderAll();
+      },
+    },
+    {
+      label: '] Ustaw LOOP END',
+      action: () => {
+        state.loopEnd = snapTime(clickT);
+        if (state.loopStart !== null && state.loopEnd < state.loopStart) state.loopStart = null;
+        renderAll();
+      },
+    },
+  ];
+
+  if (state.clipboard.length) {
+    items.push({
+      label: '📋 Wklej tutaj',
+      action: () => {
+        pushUndo();
+        const pasted = state.clipboard.map(b => ({ ...b, t: snapTime(clickT + b.t) }));
+        state.map.beats.push(...pasted);
+        sortBeatsByTime(state.map.beats);
+        state.selectedBeats.clear();
+        pasted.forEach(b => state.selectedBeats.add(b));
+        checkOverlaps();
+        scheduleAutosave();
+        renderAll();
+      },
+    });
+  }
+
+  for (const item of items) {
+    const btn = document.createElement('button');
+    btn.textContent = item.label;
+    btn.addEventListener('click', () => { item.action(); removeContextMenu(); });
+    menu.appendChild(btn);
+  }
+
+  document.body.appendChild(menu);
+  contextMenu = menu;
+
+  const close = () => removeContextMenu();
+  setTimeout(() => window.addEventListener('mousedown', close, { once: true }), 0);
+}
+
 export function bindTimelineEvents(callbacks: {
   onSave:     () => void;
   onUndo:     () => void;
@@ -171,16 +247,27 @@ export function bindTimelineEvents(callbacks: {
   const waveCanvas     = document.getElementById('waveCanvas')     as HTMLCanvasElement | null;
   if (!timelineCanvas || !waveCanvas) return;
 
+  let middleMouseDown = false;
+  let middleMouseLastX = 0;
+
   timelineCanvas.addEventListener('mousedown', (e: MouseEvent) => {
+    // Middle mouse — start scrubbing
+    if (e.button === 1) {
+      e.preventDefault();
+      middleMouseDown  = true;
+      middleMouseLastX = e.offsetX;
+      return;
+    }
+
     const x    = e.offsetX;
-    const t    = state.viewStart + x / state.pxPerSec;
+    const clickT = xToTime(x);
     const beat = hitTestBeat(x, e.offsetY);
 
     if (e.shiftKey && !beat && state.loopEnabled) {
       const mid = state.loopStart !== null && state.loopEnd !== null
         ? (state.loopStart + state.loopEnd) / 2 : state.currentTime;
-      if (t < mid) state.loopStart = snapTime(t);
-      else          state.loopEnd   = snapTime(t);
+      if (clickT < mid) state.loopStart = snapTime(clickT);
+      else               state.loopEnd   = snapTime(clickT);
       if (state.loopStart !== null && state.loopEnd !== null && state.loopStart > state.loopEnd) {
         [state.loopStart, state.loopEnd] = [state.loopEnd, state.loopStart];
       }
@@ -188,13 +275,18 @@ export function bindTimelineEvents(callbacks: {
       return;
     }
 
-    if (e.button === 2 && beat) {
-      pushUndo();
-      removeBeatByReference(state.map.beats, beat);
-      state.selectedBeats.delete(beat);
-      checkOverlaps();
-      scheduleAutosave();
-      renderAll();
+    if (e.button === 2) {
+      e.preventDefault();
+      if (beat) {
+        pushUndo();
+        removeBeatByReference(state.map.beats, beat);
+        state.selectedBeats.delete(beat);
+        checkOverlaps();
+        scheduleAutosave();
+        renderAll();
+      } else {
+        showTimelineContextMenu(e.clientX, e.clientY, clickT, callbacks.onPlay);
+      }
       return;
     }
 
@@ -202,28 +294,39 @@ export function bindTimelineEvents(callbacks: {
       if (!e.shiftKey) state.selectedBeats.clear();
       state.selectedBeats.add(beat);
       state.dragBeat    = beat;
-      state.dragOffsetT = t - beat.t;
+      state.dragOffsetT = clickT - beat.t;
       state.isDragging  = false;
       requestTimelineRender();
     } else {
-      state.selectedBeats.clear();
-      state.dragBeat = null;
-      const wasPlaying = state.isPlaying;
-      state.currentTime = Math.max(0, Math.min(t, state.map.meta.duration));
-      if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
-      renderAll();
+      if (x >= getLabelWidth()) {
+        state.selectedBeats.clear();
+        state.dragBeat = null;
+        const wasPlaying = state.isPlaying;
+        state.currentTime = Math.max(0, Math.min(clickT, state.map.meta.duration));
+        if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
+        renderAll();
+      }
     }
   });
 
   timelineCanvas.addEventListener('mousemove', (e: MouseEvent) => {
+    if (middleMouseDown) {
+      const dx = e.offsetX - middleMouseLastX;
+      state.viewStart = Math.max(0, state.viewStart - dx / state.pxPerSec);
+      middleMouseLastX = e.offsetX;
+      updateZoomLabel();
+      renderAll();
+      return;
+    }
     if (!state.dragBeat) return;
     state.isDragging = true;
-    const raw = state.viewStart + e.offsetX / state.pxPerSec - state.dragOffsetT;
+    const raw = xToTime(e.offsetX) - state.dragOffsetT;
     state.dragBeat.t = snapTime(Math.max(0, Math.min(raw, state.map.meta.duration)));
     requestTimelineRender();
   });
 
-  timelineCanvas.addEventListener('mouseup', () => {
+  timelineCanvas.addEventListener('mouseup', (e: MouseEvent) => {
+    if (e.button === 1) { middleMouseDown = false; return; }
     if (state.isDragging) {
       sortBeatsByTime(state.map.beats);
       checkOverlaps();
@@ -234,15 +337,20 @@ export function bindTimelineEvents(callbacks: {
     state.isDragging = false;
   });
 
+  window.addEventListener('mouseup', (e: MouseEvent) => {
+    if (e.button === 1) middleMouseDown = false;
+  });
+
   timelineCanvas.addEventListener('contextmenu', (e: Event) => e.preventDefault());
 
   timelineCanvas.addEventListener('wheel', (e: WheelEvent) => {
     e.preventDefault();
-    if (e.ctrlKey) {
+    if (e.ctrlKey || e.altKey) {
+      // Zoom centered on cursor
       const factor = e.deltaY > 0 ? 0.85 : 1.18;
-      const mouseT = state.viewStart + e.offsetX / state.pxPerSec;
+      const mouseT = xToTime(e.offsetX);
       state.pxPerSec  = Math.max(8, Math.min(800, state.pxPerSec * factor));
-      state.viewStart = Math.max(0, mouseT - e.offsetX / state.pxPerSec);
+      state.viewStart = Math.max(0, mouseT - (e.offsetX - getLabelWidth()) / state.pxPerSec);
     } else {
       state.viewStart = Math.max(0, state.viewStart + (e.deltaY / 100) * (10 / state.pxPerSec * 20));
     }
@@ -263,8 +371,9 @@ export function bindTimelineEvents(callbacks: {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
-    if (e.code === 'KeyF') { e.preventDefault(); tapBeat('left');  return; }
-    if (e.code === 'KeyJ') { e.preventDefault(); tapBeat('right'); return; }
+    // ── Transport ──
+    if (e.code === 'KeyF' && !e.ctrlKey) { e.preventDefault(); tapBeat('left');  return; }
+    if (e.code === 'KeyJ' && !e.ctrlKey) { e.preventDefault(); tapBeat('right'); return; }
     if (e.code === 'Space') {
       e.preventDefault();
       if (e.shiftKey) { tapBomb(); return; }
@@ -277,17 +386,117 @@ export function bindTimelineEvents(callbacks: {
       stopAudio(true);
       return;
     }
-    if (e.code === 'KeyR') { e.preventDefault(); cycleCutForSelectionOrTap(); return; }
-    if (e.key === 'Delete' || e.key === 'Backspace') {
-      if (!state.selectedBeats.size) return;
-      pushUndo();
-      state.map.beats = removeBeatsByReference(state.map.beats, state.selectedBeats);
-      state.selectedBeats.clear();
-      checkOverlaps();
-      scheduleAutosave();
+    if (e.code === 'KeyR' && !e.ctrlKey) { e.preventDefault(); cycleCutForSelectionOrTap(); return; }
+
+    // ── Navigation ──
+    if (e.code === 'Home') {
+      e.preventDefault();
+      const wasPlaying = state.isPlaying;
+      state.currentTime = 0;
+      state.viewStart   = 0;
+      if (wasPlaying) playAudio(0, callbacks.onPlay);
       renderAll();
       return;
     }
+    if (e.code === 'End') {
+      e.preventDefault();
+      const wasPlaying = state.isPlaying;
+      state.currentTime = state.map.meta.duration;
+      if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
+      renderAll();
+      return;
+    }
+
+    // ── Loop markers ──
+    if (e.key === '[' && !e.ctrlKey) {
+      e.preventDefault();
+      state.loopStart = snapTime(getPlayPos());
+      if (state.loopEnd !== null && state.loopStart > state.loopEnd) state.loopEnd = null;
+      renderAll();
+      return;
+    }
+    if (e.key === ']' && !e.ctrlKey) {
+      e.preventDefault();
+      state.loopEnd = snapTime(getPlayPos());
+      if (state.loopStart !== null && state.loopEnd < state.loopStart) state.loopStart = null;
+      renderAll();
+      return;
+    }
+
+    // ── Tab — jump between beats ──
+    if (e.code === 'Tab') {
+      e.preventDefault();
+      const beats = state.map.beats;
+      if (!beats.length) return;
+      const pos = getPlayPos();
+      if (e.shiftKey) {
+        const prev = [...beats].reverse().find(b => b.t < pos - 0.01);
+        if (prev) {
+          const wasPlaying = state.isPlaying;
+          state.currentTime = prev.t;
+          if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
+          renderAll();
+        }
+      } else {
+        const next = beats.find(b => b.t > pos + 0.01);
+        if (next) {
+          const wasPlaying = state.isPlaying;
+          state.currentTime = next.t;
+          if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
+          renderAll();
+        }
+      }
+      return;
+    }
+
+    // ── Cut direction keys 1-9 ──
+    const digit = parseInt(e.key, 10);
+    if (digit >= 1 && digit <= 9 && !e.ctrlKey && !e.altKey) {
+      const dir = CUT_DIRECTIONS[digit - 1];
+      if (dir) {
+        e.preventDefault();
+        if (state.selectedBeats.size) {
+          pushUndo();
+          for (const beat of state.selectedBeats) {
+            if (beat.type !== 'bomb') beat.cut = dir;
+          }
+          checkOverlaps();
+          scheduleAutosave();
+          renderAll();
+        } else {
+          setActiveCut(dir);
+        }
+        return;
+      }
+    }
+
+    // ── Delete / Backspace ──
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault();
+      if (state.selectedBeats.size) {
+        pushUndo();
+        state.map.beats = removeBeatsByReference(state.map.beats, state.selectedBeats);
+        state.selectedBeats.clear();
+        checkOverlaps();
+        scheduleAutosave();
+        renderAll();
+      } else {
+        // Delete nearest beat to cursor
+        const pos    = getPlayPos();
+        const sorted = [...state.map.beats].sort((a, b) => Math.abs(a.t - pos) - Math.abs(b.t - pos));
+        const nearest = sorted[0];
+        if (nearest && Math.abs(nearest.t - pos) < 0.5) {
+          pushUndo();
+          removeBeatByReference(state.map.beats, nearest);
+          checkOverlaps();
+          scheduleAutosave();
+          renderAll();
+        }
+      }
+      return;
+    }
+
+    // ── Edit shortcuts ──
     if (e.ctrlKey && e.code === 'KeyZ') { e.preventDefault(); undo(); return; }
     if (e.ctrlKey && e.code === 'KeyY') { e.preventDefault(); redo(); return; }
     if (e.ctrlKey && e.code === 'KeyS') { e.preventDefault(); callbacks.onSave(); return; }
@@ -320,6 +529,20 @@ export function bindTimelineEvents(callbacks: {
       e.preventDefault();
       state.map.beats.forEach(b => state.selectedBeats.add(b));
       renderAll();
+      return;
+    }
+
+    // ── Zoom with +/- (no Ctrl) ──
+    if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      state.pxPerSec = Math.min(800, state.pxPerSec * 1.3);
+      updateZoomLabel(); renderAll();
+      return;
+    }
+    if (e.key === '-') {
+      e.preventDefault();
+      state.pxPerSec = Math.max(8, state.pxPerSec / 1.3);
+      updateZoomLabel(); renderAll();
       return;
     }
   });
