@@ -25,55 +25,65 @@
   <button id="btnTest"><span class="material-symbols-rounded inline-icon">play_arrow</span><span data-i18n="creator.test">TEST</span></button>
 </div>
 
-<!-- TRANSPORT -->
+<!-- TRANSPORT (single row, FL Studio style) -->
 <div id="transport">
-  <!-- Row 1: playback + timecode + volume -->
-  <div class="transport-row transport-row-main">
-    <button class="transport-btn play" id="btnPlay"><span class="material-symbols-rounded inline-icon">play_arrow</span><span data-i18n="creator.play">PLAY</span></button>
-    <button class="transport-btn"      id="btnStop">■ <span data-i18n="creator.stop">STOP</span></button>
-    <div class="transport-sep"></div>
-    <span id="timecode">0:00.0</span>
-    <div class="transport-sep"></div>
-    <div class="creator-volume" title="Głośność odsłuchu utworu w edytorze">
-      <label for="songVolume" data-i18n="creator.track">UTWÓR</label>
-      <input id="songVolume" type="range" min="0" max="100" value="50" step="1">
-      <span id="songVolumeValue">50%</span>
-    </div>
-    <div class="transport-sep"></div>
-    <div class="bpm-group">
-      <label for="bpmInput" class="bpm-label">BPM</label>
-      <input id="bpmInput" type="number" min="20" max="400" step="0.5" placeholder="—" title="Tempo utworu. Wyznacza siatkę BPM na timeline.">
-      <button class="transport-btn" id="btnTapTempo" title="Klikaj w rytm aby wyznaczyć BPM">TAP</button>
-    </div>
-    <div class="transport-sep"></div>
-    <div class="zoom-group">
-      <span class="zoom-label" data-i18n="creator.zoom">ZOOM</span>
-      <button class="transport-btn" id="zoomOut">−</button>
-      <button class="transport-btn" id="zoomIn">+</button>
-    </div>
-    <div class="transport-sep"></div>
-    <button class="transport-btn" id="btnUndo">↩ <span data-i18n="creator.undo">UNDO</span></button>
-    <button class="transport-btn" id="btnRedo">↪ <span data-i18n="creator.redo">REDO</span></button>
-    <div class="transport-spacer"></div>
-    <button class="transport-btn" id="btnShortcuts" title="Pokaż skróty klawiszowe (?)">?</button>
+  <button class="transport-btn play-stop" id="btnPlayStop">
+    <span class="material-symbols-rounded" id="btnPlayStopIcon">play_arrow</span>
+    <span id="btnPlayStopLabel">PLAY</span>
+  </button>
+  <!-- hidden stop kept for JS compat -->
+  <button id="btnStop" style="display:none"></button>
+  <!-- hidden play kept for JS compat -->
+  <button id="btnPlay" style="display:none"></button>
+
+  <div class="transport-sep"></div>
+  <span id="timecode">0:00.0</span>
+  <div class="transport-sep"></div>
+
+  <div class="creator-volume" title="Głośność odsłuchu">
+    <label for="songVolume" data-i18n="creator.track">UTWÓR</label>
+    <input id="songVolume" type="range" min="0" max="100" value="50" step="1">
+    <span id="songVolumeValue">50%</span>
   </div>
 
-  <!-- Row 2: tapping + snap + loop -->
-  <div class="transport-row transport-row-tap">
-    <div id="tapModeGroup">
-      <span class="tap-label">TAP:</span>
-      <button class="transport-btn" id="tapModeF">F — LEWO</button>
-      <button class="transport-btn" id="tapModeJ">J — PRAWO</button>
-      <button class="transport-btn" id="tapModeR">R — RANDOM</button>
-      <button class="transport-btn" id="tapModeB">B — BOMBA</button>
-      <button class="transport-btn held-hint" title="Trzymaj Shift+F lub Shift+J podczas nagrywania">⬛ Shift+F/J — HELD</button>
-      <button class="transport-btn" id="btnCutDirection" title="Klawisze 1–9 ustawiają kierunek cięcia">CIĘCIE: •</button>
-      <div id="tapFlash"></div>
-    </div>
-    <div class="transport-sep"></div>
-    <button class="transport-btn" id="btnSnap">SNAP: WYŁ</button>
-    <button class="transport-btn" id="btnLoop">LOOP: WYŁ</button>
+  <div class="transport-sep"></div>
+  <div class="bpm-group">
+    <label for="bpmInput" class="bpm-label">BPM</label>
+    <input id="bpmInput" type="number" min="20" max="400" step="0.5" placeholder="—" title="Tempo. Wyznacza siatkę BPM na timeline.">
+    <button class="transport-btn" id="btnTapTempo" title="Klikaj w rytm aby wyznaczyć BPM">TAP</button>
   </div>
+
+  <div class="transport-sep"></div>
+  <button class="transport-btn" id="btnSnap">SNAP: WYŁ</button>
+  <button class="transport-btn" id="btnLoop">LOOP: WYŁ</button>
+
+  <div class="transport-sep"></div>
+  <div class="zoom-group">
+    <span class="zoom-label" data-i18n="creator.zoom">ZOOM</span>
+    <button class="transport-btn" id="zoomOut">−</button>
+    <button class="transport-btn" id="zoomIn">+</button>
+  </div>
+
+  <div class="transport-sep"></div>
+  <button class="transport-btn" id="btnUndo">↩ UNDO</button>
+  <button class="transport-btn" id="btnRedo">↪ REDO</button>
+  <button class="transport-btn" id="btnCutDirection" title="Klawisze 1–9 zmieniają kierunek cięcia">CIĘCIE: •</button>
+
+  <div class="transport-spacer"></div>
+  <button class="transport-btn" id="btnShortcuts" title="Skróty klawiszowe (?)">?</button>
+
+  <!-- Tap flash indicator -->
+  <div id="tapFlash"></div>
+</div>
+
+<!-- TAP HINTS BAR (below timeline, minimal) -->
+<div id="tapHints">
+  <span class="tap-hint-label">TAP:</span>
+  <span class="tap-hint tap-hint-left"  id="tapModeF">F — LEWO</span>
+  <span class="tap-hint tap-hint-right" id="tapModeJ">J — PRAWO</span>
+  <span class="tap-hint tap-hint-rand"  id="tapModeR">R — RANDOM</span>
+  <span class="tap-hint tap-hint-bomb"  id="tapModeB">B — BOMBA</span>
+  <span class="tap-hint tap-hint-held"  title="Shift+F/J podczas nagrywania">Shift+F/J — HELD</span>
 </div>
 
 <!-- SHORTCUTS PANEL -->

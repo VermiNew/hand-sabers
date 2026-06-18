@@ -63,6 +63,18 @@ const audioCallbacks = {
   },
 };
 
+// ── Play/Stop toggle button sync ────────────────────────────────
+function syncPlayStopBtn(): void {
+  const btn   = document.getElementById('btnPlayStop');
+  const icon  = document.getElementById('btnPlayStopIcon');
+  const label = document.getElementById('btnPlayStopLabel');
+  if (!btn) return;
+  const playing = state.isPlaying || !!state.precountTimer;
+  btn.classList.toggle('is-playing', playing);
+  if (icon)  icon.textContent  = playing ? 'stop'       : 'play_arrow';
+  if (label) label.textContent = playing ? 'STOP'       : 'PLAY';
+}
+
 // ── RAF render loop ───────────────────────────────────────────────
 function startRafLoop(): void {
   if (state.rafId) return;
@@ -89,12 +101,12 @@ function startRafLoop(): void {
     }
     if (state.isPlaying || state.timelineDirty) {
       renderAll();
-      // Redraw waveform overlay (playhead marker + beats) every frame during playback
       if (state.isPlaying && state.audioBuffer) {
         const wc = document.getElementById('waveCanvas') as HTMLCanvasElement | null;
         if (wc) drawWaveformOverlay(wc.getContext('2d')!, wc.width, wc.height);
       }
     }
+    syncPlayStopBtn();
     state.rafId = requestAnimationFrame(tick);
   }
   state.rafId = requestAnimationFrame(tick);

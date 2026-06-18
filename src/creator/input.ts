@@ -747,6 +747,23 @@ export function bindTimelineEvents(callbacks: {
     renderAll();
   });
 
+  // ── Play/Stop toggle button ──
+  document.getElementById('btnPlayStop')?.addEventListener('click', () => {
+    if (state.isPlaying || state.precountTimer) {
+      cancelPrecount();
+      stopAudio(true);
+      state.currentTime = 0;
+      state.viewStart   = 0;
+      renderAll();
+    } else {
+      callbacks.onPlay();
+    }
+  });
+
+  // Keep play/stop button label in sync
+  const origRenderAll = renderAll;
+  void origRenderAll; // renderAll is called elsewhere; we hook isPlaying changes via RAF in main.ts
+
   // ── Held blocks: keyup ends them ──
   window.addEventListener('keyup', (e: KeyboardEvent) => {
     const action = matchAction(e);
