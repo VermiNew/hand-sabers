@@ -19,7 +19,7 @@
     "node": ">=22.18.0"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev-vite.mjs",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "lint": "npm run check",
