@@ -532,9 +532,6 @@ body.menu-open #pauseMenu { display:none !important; }
   letter-spacing:6px; color:var(--main);
   text-shadow:0 0 20px rgba(47,124,255,0.4);
 }
-.ov-load-sub {
-  font-size:11px; letter-spacing:3px; color:var(--dim); margin-top:2px;
-}
 
 /* Center content — vertically centered in remaining space */
 .ov-load-center {

@@ -1221,6 +1221,7 @@ function initMainMenu(): void {
       if (vH) vH.textContent = String(cpH);
       if (vS) vS.textContent = String(cpS);
       if (vL) vL.textContent = String(cpL);
+      modal?.style.setProperty('--cp-h', String(cpH));
       const hex = hslToHex(cpH, cpS, cpL);
       const [r, g, b] = hexToRgb(hex);
       if (swatch) {

@@ -209,7 +209,39 @@
   font-family:'JetBrains Mono',monospace; font-size:12px;
   letter-spacing:2px; color:var(--muted); text-align:center;
 }
-.cp-modal-row input[type=range] { width:100%; accent-color:var(--accent); }
+.cp-modal-row input[type=range] {
+  width:100%;
+  -webkit-appearance:none;
+  appearance:none;
+  height:6px;
+  border-radius:999px;
+  outline:none;
+  cursor:pointer;
+  background: var(--cp-track-bg, rgba(148,163,184,0.15));
+}
+#cpModal #cpModalH { background: linear-gradient(to right,hsl(0,90%,55%),hsl(60,90%,55%),hsl(120,90%,55%),hsl(180,90%,55%),hsl(240,90%,55%),hsl(300,90%,55%),hsl(360,90%,55%)); }
+#cpModal #cpModalS { background: linear-gradient(to right, hsl(var(--cp-h,180),0%,55%), hsl(var(--cp-h,180),100%,55%)); }
+#cpModal #cpModalL { background: linear-gradient(to right, hsl(var(--cp-h,180),80%,10%), hsl(var(--cp-h,180),80%,55%), hsl(var(--cp-h,180),80%,90%)); }
+.cp-modal-row input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none;
+  width:18px; height:18px;
+  border-radius:50%;
+  background:#fff;
+  border:2px solid rgba(0,0,0,0.25);
+  box-shadow:0 1px 6px rgba(0,0,0,0.4);
+  cursor:pointer;
+  transition:transform 0.1s;
+}
+.cp-modal-row input[type=range]::-moz-range-thumb {
+  width:18px; height:18px;
+  border-radius:50%;
+  background:#fff;
+  border:2px solid rgba(0,0,0,0.25);
+  box-shadow:0 1px 6px rgba(0,0,0,0.4);
+  cursor:pointer;
+}
+.cp-modal-row input[type=range]:hover::-webkit-slider-thumb { transform:scale(1.15); }
+.cp-modal-row input[type=range]:hover::-moz-range-thumb    { transform:scale(1.15); }
 .cp-modal-val {
   font-family:'JetBrains Mono',monospace; font-size:12px;
   letter-spacing:1px; color:var(--dim); text-align:right;
