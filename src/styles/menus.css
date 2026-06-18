@@ -510,7 +510,8 @@ body.menu-open #pauseMenu { display:none !important; }
 /* Topbar — mirrors calib-topbar */
 .ov-load-topbar {
   display:flex; align-items:center; gap:20px;
-  padding:14px 28px;
+  padding:0 28px;
+  min-height:61px;
   border-bottom:1px solid rgba(148,163,184,0.1);
   flex-shrink:0;
   position:relative; z-index:1;
@@ -603,12 +604,12 @@ body.menu-open #pauseMenu { display:none !important; }
 }
 .ov-load-progress-fill {
   height:100%; border-radius:999px;
-  background:linear-gradient(90deg, var(--main), var(--accent));
-  box-shadow:0 0 12px rgba(47,124,255,0.6);
+  background:linear-gradient(90deg, #7eb8ff, #2f7cff);
+  box-shadow:0 0 14px rgba(47,124,255,0.7);
   transition:width 0.5s cubic-bezier(.4,0,.2,1);
 }
 .ov-load-progress.indeterminate .ov-load-progress-fill {
-  width:35% !important;
+  width:40% !important;
   animation:progressSlide 1.3s ease-in-out infinite;
 }
 .ov-load-progress-pct {
@@ -692,8 +693,10 @@ body.menu-open #pauseMenu { display:none !important; }
   width:38%; animation:progressSlide 1.15s ease-in-out infinite;
 }
 @keyframes progressSlide {
-  0%   { transform:translateX(-115%); }
-  100% { transform:translateX(265%); }
+  0%   { transform:translateX(-115%); opacity:0; }
+  10%  { opacity:1; }
+  90%  { opacity:1; }
+  100% { transform:translateX(265%); opacity:0; }
 }
 
 /* ── GAME OVER ── */
