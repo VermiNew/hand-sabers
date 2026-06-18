@@ -214,16 +214,16 @@ bindDropZone();
 applyCreatorTranslations();
 
 bindTimelineEvents({
-  onSave:  () => void saveMap(audioCallbacks),
+  onSave:  () => void saveMap(),
   onUndo:  () => { /* handled inside input.ts */ },
   onRedo:  () => { /* handled inside input.ts */ },
   onPlay,
 });
 
-document.getElementById('btnSave')?.addEventListener('click',   () => void saveMap(audioCallbacks));
+document.getElementById('btnSave')?.addEventListener('click',   () => void saveMap());
 document.getElementById('btnExport')?.addEventListener('click', () => void exportZip(audioCallbacks));
 document.getElementById('btnTest')?.addEventListener('click',   () => {
-  void saveMap(audioCallbacks).then(() => window.open(buildGameTestUrl(state.map.id), '_blank'));
+  void saveMap().then(() => window.open(buildGameTestUrl(state.map.id), '_blank'));
 });
 
 window.addEventListener('resize', () => {

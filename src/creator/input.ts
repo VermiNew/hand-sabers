@@ -77,7 +77,7 @@ export function cycleCutForSelectionOrTap(): void {
   setActiveCut(nextCutDirection(state.activeCut));
 }
 
-export function tapBeat(side: BeatSide, playAudioFn: typeof playAudio): void {
+export function tapBeat(side: BeatSide): void {
   if (!state.isPlaying) return;
   const t = snapTime(getPlayPos());
   pushUndo();
@@ -86,7 +86,6 @@ export function tapBeat(side: BeatSide, playAudioFn: typeof playAudio): void {
   checkOverlaps();
   flashTap(side);
   scheduleAutosave();
-  void playAudioFn;
 }
 
 export function tapBomb(): void {
@@ -264,8 +263,8 @@ export function bindTimelineEvents(callbacks: {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
 
-    if (e.code === 'KeyF') { e.preventDefault(); tapBeat('left',  playAudio); return; }
-    if (e.code === 'KeyJ') { e.preventDefault(); tapBeat('right', playAudio); return; }
+    if (e.code === 'KeyF') { e.preventDefault(); tapBeat('left');  return; }
+    if (e.code === 'KeyJ') { e.preventDefault(); tapBeat('right'); return; }
     if (e.code === 'Space') {
       e.preventDefault();
       if (e.shiftKey) { tapBomb(); return; }

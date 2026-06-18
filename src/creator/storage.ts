@@ -52,7 +52,7 @@ function downloadMapJsonFallback(mapToDownload: CreatorMap): void {
   URL.revokeObjectURL(url);
 }
 
-export async function saveMap(callbacks: { onDecoded: () => void }): Promise<void> {
+export async function saveMap(): Promise<void> {
   state.map = normalizeMap(state.map, { fallbackId: state.map.id, requireBeats: false }) as unknown as CreatorMap;
   saveLocalMap(state.map as unknown as Parameters<typeof saveLocalMap>[0]);
   if (state.audioArrayBuffer) {
@@ -77,7 +77,6 @@ export async function saveMap(callbacks: { onDecoded: () => void }): Promise<voi
     if (autosaveLbl) autosaveLbl.textContent = `${t('creator.autosaveLocal')}: ${state.lastSavedAt.toLocaleTimeString()} — ${(err as Error).message}`;
     showToast(t('creator.savedLocal'), { type: 'error' });
   }
-  void callbacks;
 }
 
 export async function exportZip(callbacks: { onDecoded: () => void }): Promise<void> {
