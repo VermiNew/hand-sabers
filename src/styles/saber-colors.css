@@ -203,7 +203,7 @@
 /* HSL sliders */
 .cp-modal-sliders { display:flex; flex-direction:column; gap:10px; }
 .cp-modal-row {
-  display:grid; grid-template-columns:18px 1fr 40px; gap:10px; align-items:center;
+  display:grid; grid-template-columns:64px 1fr 40px; gap:10px; align-items:center;
 }
 .cp-modal-lbl {
   font-family:'JetBrains Mono',monospace; font-size:12px;
@@ -213,7 +213,7 @@
   width:100%;
   -webkit-appearance:none;
   appearance:none;
-  height:6px;
+  height:10px;
   border-radius:999px;
   outline:none;
   cursor:pointer;
