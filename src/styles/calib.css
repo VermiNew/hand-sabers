@@ -129,7 +129,7 @@
 .calib-body {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 420px;
+  grid-template-columns: 1fr 540px;
   overflow: hidden;
 }
 
@@ -295,8 +295,8 @@
 .calib-progress-bar {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--main), var(--accent));
-  box-shadow: 0 0 12px rgba(47,124,255,0.5);
+  background: linear-gradient(90deg, #7eb8ff, #2f7cff);
+  box-shadow: 0 0 14px rgba(47,124,255,0.7);
   transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
   width: 0%;
 }
