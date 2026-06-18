@@ -359,6 +359,22 @@
   color: var(--text);
 }
 
+/* ── Entrance animations ── */
+@keyframes calibTopbarIn {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes calibBodyIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+#calibPanel.show .calib-topbar {
+  animation: calibTopbarIn 0.35s cubic-bezier(0.4,0,0.2,1) both;
+}
+#calibPanel.show .calib-body {
+  animation: calibBodyIn 0.45s 0.1s cubic-bezier(0.4,0,0.2,1) both;
+}
+
 /* ── Responsive ── */
 @media (max-width: 860px) {
   .calib-body {

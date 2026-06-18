@@ -528,9 +528,10 @@ body.menu-open #pauseMenu { display:none !important; }
   box-shadow:0 0 20px rgba(47,124,255,0.25);
 }
 .ov-load-title {
-  font-family:'Oxanium',sans-serif; font-weight:900; font-size:15px;
+  font-family:'Oxanium',sans-serif; font-weight:900; font-size:16px;
   letter-spacing:6px; color:var(--main);
   text-shadow:0 0 20px rgba(47,124,255,0.4);
+  flex-shrink:0;
 }
 
 /* Center content — vertically centered in remaining space */
@@ -619,6 +620,22 @@ body.menu-open #pauseMenu { display:none !important; }
 .ov-load-footer {
   font-size:11px; letter-spacing:3px; color:var(--dim); text-transform:uppercase;
   margin-top:8px;
+}
+
+/* ── Loading screen entrance animations ── */
+@keyframes ovTopbarIn {
+  from { opacity:0; transform:translateY(-12px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+@keyframes ovCenterIn {
+  from { opacity:0; transform:translateY(20px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+#overlay.show .ov-load-topbar {
+  animation: ovTopbarIn 0.35s cubic-bezier(0.4,0,0.2,1) both;
+}
+#overlay.show .ov-load-center {
+  animation: ovCenterIn 0.45s 0.1s cubic-bezier(0.4,0,0.2,1) both;
 }
 
 /* Game over box — hidden unless is-gameover */

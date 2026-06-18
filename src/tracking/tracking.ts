@@ -2,6 +2,7 @@ import { state, S } from '../core/state.ts';
 import { ui, setLoadingProgress, showCameraError, setCalibFeedback } from '../ui/ui.ts';
 import { getSettings } from '../core/settings.ts';
 import { getDetectIntervalMs, getPerformanceProfile } from '../core/performance.ts';
+import { t } from '../i18n/index.ts';
 import type { Settings, SaberQuat } from '../types/index.js';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
@@ -196,13 +197,14 @@ export function renderCalibStep(): void {
   scheduleCalibAuto();
 }
 
-async function loadMediaPipe(onProgress: (msg: string, ratio: number) => void): Promise<void> {
+async function loadMediaPipe(onProgress: (msg: string, detail: string, ratio: number) => void): Promise<void> {
+  onProgress(t('overlay.loadingRuntime'), t('overlay.loadingRuntimeDetail'), 0.1);
   const { HandLandmarker, FilesetResolver } = await import(
     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js' as string
   );
-  onProgress('Inicjalizacja FilesetResolver…', 0.3);
+  onProgress(t('overlay.initializingResolver'), t('overlay.initializingResolverDetail'), 0.35);
   const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_CDN);
-  onProgress('Ładowanie modelu HandLandmarker…', 0.6);
+  onProgress(t('overlay.loadingLandmarker'), t('overlay.loadingLandmarkerDetail'), 0.65);
   handLandmarker = await HandLandmarker.createFromOptions(vision, {
     baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
     runningMode:                 'VIDEO',
@@ -211,7 +213,7 @@ async function loadMediaPipe(onProgress: (msg: string, ratio: number) => void): 
     minHandPresenceConfidence:   0.42,
     minTrackingConfidence:       0.42,
   });
-  onProgress('Model gotowy', 1.0);
+  onProgress(t('overlay.modelReady'), t('overlay.modelReadyDetail'), 1.0);
 }
 
 function setupCalibFeed(): void {
@@ -527,13 +529,17 @@ export async function initMP(onReady: () => void): Promise<void> {
   setupCalibFeed();
 
   try {
-    setLoadingProgress('Ładowanie modelu…', 'Proszę czekać…', null);
-    await loadMediaPipe((msg, ratio) => setLoadingProgress(msg, '', ratio));
+    setLoadingProgress(t('overlay.loadingModel'), t('overlay.loadingRuntimeDetail'), null);
+    await loadMediaPipe((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
+    setLoadingProgress(t('overlay.startingCamera'), t('overlay.startingCameraDetail'), null);
     await startCamera();
+    setLoadingProgress(t('overlay.cameraReady'), t('overlay.cameraReadyDetail'), null);
     setupCalibFeed();
+    setLoadingProgress(t('overlay.initializingWorker'), t('overlay.initializingWorkerDetail'), null);
     initWorker();
     trackingActive = true;
     scheduleDetect();
+    setLoadingProgress(t('overlay.allReady'), t('overlay.allReadyDetail'), 1.0);
 
     if (ui.dStatus) ui.dStatus.textContent = 'TRACKING OK';
     scheduleCalibAuto();
