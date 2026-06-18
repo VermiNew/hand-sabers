@@ -1,246 +1,328 @@
-/* Performance pass: kamera/debug nie powinny stale malować DOM poza trybem dev. */
-body:not(.dev-tools) #camPanel { display:none; }
+/* ── Camera panel base (always rendered, hidden outside dev mode) ── */
+#camPanel {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-end;
+  padding: 0;
+  pointer-events: none;
+  z-index: 8900;
+}
 
-/* Modern developer/debug chrome */
+body:not(.dev-tools) #camPanel { display: none; }
+
 body.dev-tools #camPanel {
-  z-index:8900;
-  gap:10px;
-  align-items:flex-end;
-  padding:9px;
-  border:1px solid rgba(142,200,255,0.14);
-  border-radius:18px;
+  pointer-events: auto;
+  padding: 10px;
+  border: 1px solid rgba(142, 200, 255, 0.14);
+  border-radius: 18px;
   background:
-    linear-gradient(145deg,rgba(7,13,25,0.68),rgba(3,7,14,0.46)),
-    radial-gradient(circle at 82% 18%,rgba(47,124,255,0.16),transparent 40%);
+    linear-gradient(145deg, rgba(7, 13, 25, 0.72), rgba(3, 7, 14, 0.50)),
+    radial-gradient(circle at 82% 18%, rgba(47, 124, 255, 0.16), transparent 40%);
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.035) inset,
-    0 26px 70px rgba(0,0,0,0.58),
-    0 0 36px rgba(47,124,255,0.12);
-  backdrop-filter:blur(18px) saturate(1.25);
+    0 0 0 1px rgba(255, 255, 255, 0.035) inset,
+    0 26px 70px rgba(0, 0, 0, 0.60),
+    0 0 36px rgba(47, 124, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(1.25);
 }
 
-body.dev-tools .cam-box {
-  width:202px;
-  height:128px;
-  border-radius:14px;
-  border:1px solid rgba(142,200,255,0.18);
-  background:
-    linear-gradient(180deg,rgba(2,6,14,0.64),rgba(2,6,14,0.92));
+/* ── Camera / canvas box ── */
+.cam-box {
+  position: relative;
+  width: 202px;
+  height: 128px;
+  border-radius: 12px;
+  border: 1px solid rgba(142, 200, 255, 0.18);
+  overflow: hidden;
+  background: rgba(2, 6, 14, 0.86);
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.035) inset,
-    0 14px 36px rgba(0,0,0,0.46);
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 12px 32px rgba(0, 0, 0, 0.48);
+  flex-shrink: 0;
 }
 
-body.dev-tools .cam-box::after {
-  content:'';
-  position:absolute;
-  inset:0;
-  pointer-events:none;
+.cam-box video,
+.cam-box canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+/* Scanline overlay */
+.cam-box::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
   background:
-    linear-gradient(180deg,rgba(255,255,255,0.07),transparent 32%),
-    repeating-linear-gradient(0deg,rgba(255,255,255,0.025) 0 1px,transparent 1px 4px);
-  opacity:.42;
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, transparent 30%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.022) 0 1px,
+      transparent 1px 4px
+    );
+  opacity: 0.5;
 }
 
-body.dev-tools .cam-tag {
-  top:9px;
-  left:9px;
-  padding:4px 7px;
-  border:1px solid rgba(142,200,255,0.18);
-  border-radius:999px;
-  background:rgba(3,7,14,0.70);
-  color:rgba(226,232,240,0.72);
-  font-size:8px;
-  letter-spacing:1.2px;
-  box-shadow:0 8px 18px rgba(0,0,0,0.32);
-  backdrop-filter:blur(8px);
+/* Label tag */
+.cam-tag {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 3px 7px;
+  border: 1px solid rgba(142, 200, 255, 0.18);
+  border-radius: 999px;
+  background: rgba(3, 7, 14, 0.72);
+  color: rgba(226, 232, 240, 0.72);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.32);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
 }
 
-body.dev-tools .cam-tag.ml {
-  color:var(--accent);
-  border-color:rgba(54,242,161,0.22);
+.cam-tag.ml {
+  color: var(--accent);
+  border-color: rgba(54, 242, 161, 0.26);
+  background: rgba(3, 7, 14, 0.76);
 }
 
+/* ── Tweakpane dev pane ── */
 .hs-dev-pane {
-  --tp-base-background-color: rgba(4, 8, 16, 0.97);
-  --tp-base-shadow-color: rgba(0, 0, 0, 0.55);
-  --tp-button-background-color: rgba(54, 242, 161, 0.11);
+  --tp-base-background-color:          rgba(4, 8, 16, 0.97);
+  --tp-base-shadow-color:              rgba(0, 0, 0, 0.55);
+  --tp-button-background-color:        rgba(54, 242, 161, 0.11);
   --tp-button-background-color-active: rgba(54, 242, 161, 0.24);
-  --tp-button-background-color-focus: rgba(54, 242, 161, 0.18);
-  --tp-button-background-color-hover: rgba(54, 242, 161, 0.18);
-  --tp-button-foreground-color: rgba(226, 232, 240, 0.92);
-  --tp-container-background-color: rgba(255, 255, 255, 0.060);
+  --tp-button-background-color-focus:  rgba(54, 242, 161, 0.18);
+  --tp-button-background-color-hover:  rgba(54, 242, 161, 0.18);
+  --tp-button-foreground-color:        rgba(226, 232, 240, 0.92);
+  --tp-container-background-color:       rgba(255, 255, 255, 0.055);
   --tp-container-background-color-active: rgba(47, 124, 255, 0.20);
-  --tp-container-background-color-focus: rgba(47, 124, 255, 0.16);
-  --tp-container-background-color-hover: rgba(255, 255, 255, 0.085);
-  --tp-container-foreground-color: rgba(226, 232, 240, 0.86);
-  --tp-groove-foreground-color: rgba(142, 200, 255, 0.18);
-  --tp-input-background-color: rgba(2, 6, 14, 0.82);
-  --tp-input-background-color-active: rgba(47, 124, 255, 0.22);
-  --tp-input-background-color-focus: rgba(47, 124, 255, 0.18);
-  --tp-input-background-color-hover: rgba(255, 255, 255, 0.08);
-  --tp-input-foreground-color: rgba(235, 248, 255, 0.96);
-  --tp-label-foreground-color: rgba(148, 163, 184, 0.86);
-  --tp-monitor-background-color: rgba(2, 6, 14, 0.84);
-  --tp-monitor-foreground-color: rgba(54, 242, 161, 0.92);
-  font-family:'JetBrains Mono',monospace !important;
+  --tp-container-background-color-focus:  rgba(47, 124, 255, 0.16);
+  --tp-container-background-color-hover:  rgba(255, 255, 255, 0.080);
+  --tp-container-foreground-color:       rgba(226, 232, 240, 0.86);
+  --tp-groove-foreground-color:          rgba(142, 200, 255, 0.16);
+  --tp-input-background-color:           rgba(2, 6, 14, 0.82);
+  --tp-input-background-color-active:    rgba(47, 124, 255, 0.22);
+  --tp-input-background-color-focus:     rgba(47, 124, 255, 0.18);
+  --tp-input-background-color-hover:     rgba(255, 255, 255, 0.07);
+  --tp-input-foreground-color:           rgba(235, 248, 255, 0.96);
+  --tp-label-foreground-color:           rgba(148, 163, 184, 0.82);
+  --tp-monitor-background-color:         rgba(2, 6, 14, 0.84);
+  --tp-monitor-foreground-color:         rgba(54, 242, 161, 0.92);
+  font-family: 'JetBrains Mono', monospace !important;
 }
 
+/* Outer panel shell */
 .hs-dev-pane.tp-dfwv {
-  border:1px solid rgba(142,200,255,0.16);
-  border-radius:20px;
-  overflow:hidden;
+  border: 1px solid rgba(142, 200, 255, 0.16);
+  border-radius: 20px;
+  overflow: hidden;
   background:
-    linear-gradient(180deg,rgba(7,13,25,0.98),rgba(3,7,14,0.96)),
-    radial-gradient(circle at 16% 0%,rgba(54,242,161,0.12),transparent 34%),
-    radial-gradient(circle at 100% 22%,rgba(47,124,255,0.16),transparent 36%);
+    linear-gradient(180deg, rgba(7, 13, 25, 0.98), rgba(3, 7, 14, 0.96)),
+    radial-gradient(circle at 16% 0%,  rgba(54, 242, 161, 0.10), transparent 34%),
+    radial-gradient(circle at 100% 22%, rgba(47, 124, 255, 0.14), transparent 36%);
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.04) inset,
-    0 32px 90px rgba(0,0,0,0.72),
-    0 0 34px rgba(54,242,161,0.10);
-  backdrop-filter:blur(24px) saturate(1.3);
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 32px 90px rgba(0, 0, 0, 0.72),
+    0 0 34px rgba(54, 242, 161, 0.08);
+  backdrop-filter: blur(24px) saturate(1.3);
 }
 
+/* Title bar */
 .hs-dev-pane .tp-rotv {
-  background:rgba(3,7,14,0.92) !important;
-  color:rgba(226,232,240,0.88);
+  background: rgba(3, 7, 14, 0.92) !important;
+  color: rgba(226, 232, 240, 0.88);
 }
 
 .hs-dev-pane .tp-rotv_b {
-  display:flex !important;
-  align-items:center !important;
-  gap:8px !important;
-  text-align:left !important;
-  min-height:43px;
-  padding:0 12px !important;
-  border-bottom:1px solid rgba(255,255,255,0.07);
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  text-align: left !important;
+  min-height: 44px;
+  padding: 0 12px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
   background:
-    linear-gradient(90deg,rgba(54,242,161,0.09),rgba(47,124,255,0.08),transparent) !important;
-  color:#fff !important;
-  font-family:'Oxanium',sans-serif !important;
-  font-size:12px !important;
-  font-weight:900 !important;
-  letter-spacing:2.4px !important;
-  text-transform:uppercase;
-  text-shadow:0 0 18px rgba(54,242,161,0.22);
+    linear-gradient(90deg,
+      rgba(54, 242, 161, 0.09),
+      rgba(47, 124, 255, 0.07),
+      transparent
+    ) !important;
+  color: #fff !important;
+  font-family: 'Oxanium', sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  letter-spacing: 2.4px !important;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(54, 242, 161, 0.20);
 }
 
+/* "LIVE" badge in title */
 .hs-dev-pane .tp-rotv_b::after {
-  content:'LIVE';
-  margin-left:auto;
-  margin-right:34px;
-  flex:0 0 auto;
-  padding:3px 7px;
-  border:1px solid rgba(54,242,161,0.22);
-  border-radius:999px;
-  color:var(--accent);
-  background:rgba(54,242,161,0.075);
-  font:700 8px/1 'JetBrains Mono',monospace;
-  letter-spacing:1.5px;
+  content: 'LIVE';
+  margin-left: auto;
+  margin-right: 34px;
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border: 1px solid rgba(54, 242, 161, 0.22);
+  border-radius: 999px;
+  color: var(--accent);
+  background: rgba(54, 242, 161, 0.07);
+  font: 700 8px / 1 'JetBrains Mono', monospace;
+  letter-spacing: 1.5px;
+  animation: dev-live-pulse 2.4s ease-in-out infinite;
 }
 
+@keyframes dev-live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+/* Tab bar */
 .hs-dev-pane .tp-tabv_t {
-  gap:6px;
-  padding:10px 10px 8px !important;
-  background:transparent !important;
+  gap: 5px;
+  padding: 8px 8px 6px !important;
+  background: transparent !important;
 }
 
 .hs-dev-pane .tp-tabv_c,
 .hs-dev-pane .tp-rotv_c {
-  background:rgba(3,7,14,0.90) !important;
+  background: rgba(3, 7, 14, 0.90) !important;
 }
 
-.hs-dev-pane .tp-lblv {
-  margin:3px 10px !important;
-  border:1px solid rgba(255,255,255,0.045) !important;
-  background:rgba(255,255,255,0.026) !important;
-}
-
+/* Tab buttons */
 .hs-dev-pane .tp-tabv_t > * {
-  border-radius:10px !important;
-  border:1px solid rgba(255,255,255,0.075) !important;
-  background:rgba(255,255,255,0.035) !important;
-  color:rgba(226,232,240,0.60) !important;
-  font-family:'Oxanium',sans-serif !important;
-  font-size:10px !important;
-  font-weight:800 !important;
-  letter-spacing:1.5px !important;
-  text-transform:uppercase;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.07) !important;
+  background: rgba(255, 255, 255, 0.030) !important;
+  color: rgba(226, 232, 240, 0.52) !important;
+  font-family: 'Oxanium', sans-serif !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 1.4px !important;
+  text-transform: uppercase;
+  transition: background 0.15s, color 0.15s, border-color 0.15s !important;
+}
+
+.hs-dev-pane .tp-tabv_t > *:hover {
+  background: rgba(255, 255, 255, 0.060) !important;
+  color: rgba(226, 232, 240, 0.75) !important;
 }
 
 .hs-dev-pane .tp-tabv_t > .tp-tabv_tsel,
 .hs-dev-pane .tp-tabv_t > [aria-selected="true"] {
-  border-color:rgba(54,242,161,0.36) !important;
-  background:rgba(54,242,161,0.11) !important;
-  color:var(--accent) !important;
-  box-shadow:0 0 18px rgba(54,242,161,0.12);
+  border-color: rgba(54, 242, 161, 0.36) !important;
+  background: rgba(54, 242, 161, 0.10) !important;
+  color: var(--accent) !important;
+  box-shadow: 0 0 14px rgba(54, 242, 161, 0.10);
+}
+
+/* Rows */
+.hs-dev-pane .tp-lblv {
+  margin: 2px 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+  border-radius: 8px !important;
+  background: rgba(255, 255, 255, 0.022) !important;
 }
 
 .hs-dev-pane .tp-fldv,
-.hs-dev-pane .tp-lblv,
 .hs-dev-pane .tp-sldtxtv,
 .hs-dev-pane .tp-txtv,
 .hs-dev-pane .tp-lstv,
 .hs-dev-pane .tp-chkv {
-  border-radius:10px !important;
+  border-radius: 8px !important;
 }
 
+/* Label text */
 .hs-dev-pane .tp-lblv_l {
-  color:rgba(203,213,225,0.68) !important;
-  font-size:10px !important;
-  letter-spacing:.35px !important;
+  color: rgba(203, 213, 225, 0.62) !important;
+  font-size: 10px !important;
+  letter-spacing: 0.3px !important;
 }
 
+/* Value column — truncate overflow, JS marquee on hover */
 .hs-dev-pane .tp-lblv_v {
-  min-width:116px !important;
+  min-width: 108px !important;
+  overflow: hidden;
 }
 
+.hs-dev-pane .tp-lblv_v .tp-mllv_i,
+.hs-dev-pane .tp-lblv_v .tp-sglv_i {
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+/* While marquee-scrolling (class added by JS) */
+.hs-dev-pane .tp-lblv_v .tp-mllv_i.dev-scrolling,
+.hs-dev-pane .tp-lblv_v .tp-sglv_i.dev-scrolling {
+  text-overflow: clip !important;
+}
+
+/* Inputs */
 .hs-dev-pane input,
 .hs-dev-pane select,
 .hs-dev-pane button {
-  font-family:'JetBrains Mono',monospace !important;
+  font-family: 'JetBrains Mono', monospace !important;
 }
 
+/* Graph canvases */
 .hs-dev-pane canvas {
-  border-radius:8px;
+  border-radius: 6px;
 }
 
+/* ── Stats.js panel ── */
 .hs-stats-panel {
-  border:1px solid rgba(142,200,255,0.16);
-  border-radius:14px;
-  overflow:hidden;
-  opacity:.92;
+  border: 1px solid rgba(142, 200, 255, 0.16);
+  border-radius: 12px;
+  overflow: hidden;
+  opacity: 0.92;
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.035) inset,
-    0 16px 42px rgba(0,0,0,0.56),
-    0 0 22px rgba(47,124,255,0.12);
-  transform-origin:top right;
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+    0 14px 38px rgba(0, 0, 0, 0.56),
+    0 0 20px rgba(47, 124, 255, 0.10);
+  transform-origin: top right;
 }
 
 .hs-stats-panel canvas {
-  display:block !important;
+  display: block !important;
 }
 
-@media (max-width:760px) {
+/* ── Mobile ── */
+@media (max-width: 760px) {
   .hs-dev-pane.tp-dfwv {
-    top:12px !important;
-    left:12px !important;
-    width:calc(100vw - 24px) !important;
-    max-height:52vh;
-    overflow:auto;
+    top: 12px !important;
+    left: 12px !important;
+    width: calc(100vw - 24px) !important;
+    max-height: 52vh;
+    overflow: auto;
   }
+
   body.dev-tools #camPanel {
-    left:12px;
-    right:12px;
-    bottom:12px;
-    overflow-x:auto;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    overflow-x: auto;
   }
+
   body.dev-tools .cam-box {
-    flex:0 0 178px;
-    width:178px;
-    height:112px;
+    flex: 0 0 168px;
+    width: 168px;
+    height: 106px;
   }
+
   .hs-stats-panel {
-    display:none !important;
+    display: none !important;
   }
 }

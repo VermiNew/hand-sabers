@@ -33,6 +33,8 @@ interface DevData {
   volume: number; musicVolume: number; sfxVolume: number;
   hitSoundVolume: number; comboSoundVolume: number; missSoundVolume: number; bombSoundVolume: number; beatSoundVolume: number; milestoneSoundVolume: number;
   oneHandMode: string; performanceMode: string;
+  mapTitle: string; mapArtist: string; mapDifficulty: string; mapBpm: string; mapDuration: string; mapBeats: number;
+  appState: string;
 }
 
 declare global {
@@ -94,6 +96,8 @@ const devData: DevData = {
   volume: 0.8, musicVolume: 1.0, sfxVolume: 1.0,
   hitSoundVolume: 0.85, comboSoundVolume: 0.55, missSoundVolume: 0.75, bombSoundVolume: 0.8, beatSoundVolume: 0.65, milestoneSoundVolume: 0.7,
   oneHandMode: 'both', performanceMode: 'auto',
+  mapTitle: '—', mapArtist: '—', mapDifficulty: '—', mapBpm: '—', mapDuration: '—', mapBeats: 0,
+  appState: '—',
 };
 
 function isDevModeRequested(): boolean {
@@ -354,6 +358,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     const tabs = pane.addTab({ pages: [
       { title: 'PERF'  },
       { title: 'GAME'  },
+      { title: 'MAP'   },
       { title: 'TRACK' },
       { title: 'CFG'   },
     ]});
@@ -386,14 +391,12 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
 
     // ── GAME ──
     const game = tabs.pages[1]!;
+    game.addMonitor(devData, 'appState',     { label: 'State',   interval: 200 });
+    addSeparator(game);
     game.addMonitor(devData, 'score',        { label: 'Score',   interval: 200 });
     game.addMonitor(devData, 'combo',        { label: 'Combo',   interval: 200 });
     game.addMonitor(devData, 'lives',        { label: 'Lives',   interval: 200 });
-    game.addMonitor(devData, 'activeBlocks', { label: 'Blocks',  view: 'graph', min: 0, max: 30, interval: 200 });
-    game.addMonitor(devData, 'activeSparks', { label: 'Sparks',  interval: 200 });
-    game.addMonitor(devData, 'pooledBlocks', { label: 'Pool blocks', interval: 1000 });
-    game.addMonitor(devData, 'pooledBombs',  { label: 'Pool bombs',  interval: 1000 });
-    game.addMonitor(devData, 'pooledShards', { label: 'Pool shards', interval: 1000 });
+    addSeparator(game);
     game.addMonitor(devData, 'songTime',           { label: 'Song time', interval: 100 });
     game.addMonitor(devData, 'nearestBeatDeltaMs', { label: 'Beat Δ ms', interval: 100 });
     const nearestFolder = game.addFolder?.({ title: 'Nearest beats' });
@@ -402,9 +405,24 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
       nearestFolder.addMonitor(devData, 'nearestBeat2', { label: 'Beat 2', interval: 100 });
       nearestFolder.addMonitor(devData, 'nearestBeat3', { label: 'Beat 3', interval: 100 });
     }
+    addSeparator(game);
+    game.addMonitor(devData, 'activeBlocks', { label: 'Blocks',  view: 'graph', min: 0, max: 30, interval: 200 });
+    game.addMonitor(devData, 'activeSparks', { label: 'Sparks',  interval: 200 });
+    game.addMonitor(devData, 'pooledBlocks', { label: 'Pool blocks', interval: 1000 });
+    game.addMonitor(devData, 'pooledBombs',  { label: 'Pool bombs',  interval: 1000 });
+    game.addMonitor(devData, 'pooledShards', { label: 'Pool shards', interval: 1000 });
+
+    // ── MAP ──
+    const map = tabs.pages[2]!;
+    map.addMonitor(devData, 'mapTitle',      { label: 'Title',      interval: 1000 });
+    map.addMonitor(devData, 'mapArtist',     { label: 'Artist',     interval: 1000 });
+    map.addMonitor(devData, 'mapDifficulty', { label: 'Difficulty', interval: 1000 });
+    map.addMonitor(devData, 'mapBpm',        { label: 'BPM',        interval: 1000 });
+    map.addMonitor(devData, 'mapDuration',   { label: 'Duration',   interval: 1000 });
+    map.addMonitor(devData, 'mapBeats',      { label: 'Beats total', interval: 1000 });
 
     // ── TRACK ──
-    const track = tabs.pages[2]!;
+    const track = tabs.pages[3]!;
     track.addMonitor(devData, 'leftActive',    { label: 'L hand' });
     track.addMonitor(devData, 'rightActive',   { label: 'R hand' });
     track.addMonitor(devData, 'conf',          { label: 'Conf',    view: 'graph', min: 0, max: 1, interval: 100 });
@@ -413,7 +431,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     track.addMonitor(devData, 'latMs',         { label: 'Latency', view: 'graph', min: 0, max: 80, interval: 500 });
 
     // ── CFG ──
-    const cfg = tabs.pages[3]!;
+    const cfg = tabs.pages[4]!;
     cfg.addInput(devData, 'wireframe', { label: 'Hitbox wire' }).on('change', ev => {
       setWireframeVisible(Boolean(ev.value));
     });
@@ -482,6 +500,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     panelEl.setAttribute('aria-label', 'Hand Sabers developer panel');
     panelEl.style.cssText = 'position:fixed;top:16px;left:16px;z-index:9000;width:min(320px,calc(100vw - 32px));';
     makeDraggable(panelEl);
+    attachMarqueeScroll(panelEl);
   });
 }
 
@@ -525,12 +544,69 @@ export function tickDevPanel(renderer: THREE.WebGLRenderer, now: number, renderM
   devData.rightActive  = state.handsRightActive;
   devData.filteredHands = gameStats.filteredHands;
   devData.rawHands      = gameStats.rawHands;
+  devData.appState      = state.appState;
+
+  const meta = state.map?.meta;
+  devData.mapTitle      = meta?.title      || '—';
+  devData.mapArtist     = meta?.artist     || '—';
+  devData.mapDifficulty = meta?.difficulty || '—';
+  devData.mapBpm        = meta?.bpm        ? String(meta.bpm) : '—';
+  devData.mapDuration   = meta?.duration   ? `${meta.duration.toFixed(1)}s` : '—';
+  devData.mapBeats      = state.map?.beats?.length ?? 0;
 
   const refreshMs = Math.max(400, getScenePerformanceProfile().devRefreshMs || 750);
   if (pane && now - lastPaneRefreshMs >= refreshMs) {
     lastPaneRefreshMs = now;
     pane.refresh();
   }
+}
+
+function attachMarqueeScroll(panelEl: HTMLElement): void {
+  panelEl.addEventListener('mouseover', (e: MouseEvent) => {
+    const input = (e.target as Element).closest('.tp-mllv_i, .tp-sglv_i') as HTMLInputElement | HTMLTextAreaElement | null;
+    if (!input || input.dataset['marquee'] === '1') return;
+    if (input.scrollWidth <= input.clientWidth) return;
+    input.dataset['marquee'] = '1';
+    input.classList.add('dev-scrolling');
+    const distance = input.scrollWidth - input.clientWidth;
+    const duration = Math.max(1500, distance * 12);
+    const pauseMs  = 1000;
+    // phase: 'scroll' | 'pause-end' | 'pause-start'
+    let phase: 'scroll' | 'pause-end' | 'pause-start' = 'pause-start';
+    let phaseStart = 0;
+    let scrollStart = 0;
+    let raf = 0;
+    function step(ts: number): void {
+      if (phaseStart === 0) phaseStart = ts;
+      if (phase === 'pause-start' || phase === 'pause-end') {
+        if (ts - phaseStart >= pauseMs) {
+          phaseStart = ts;
+          if (phase === 'pause-end') {
+            input!.scrollLeft = 0;
+            phase = 'pause-start';
+          } else {
+            phase = 'scroll';
+            scrollStart = ts;
+          }
+        }
+      } else {
+        const progress = Math.min((ts - scrollStart) / duration, 1);
+        input!.scrollLeft = progress * distance;
+        if (progress >= 1) {
+          phase = 'pause-end';
+          phaseStart = ts;
+        }
+      }
+      raf = requestAnimationFrame(step);
+    }
+    raf = requestAnimationFrame(step);
+    input.addEventListener('mouseleave', () => {
+      cancelAnimationFrame(raf);
+      input!.scrollLeft = 0;
+      input!.classList.remove('dev-scrolling');
+      delete input!.dataset['marquee'];
+    }, { once: true });
+  });
 }
 
 function makeDraggable(el: HTMLElement): void {

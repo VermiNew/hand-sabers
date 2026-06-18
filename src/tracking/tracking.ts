@@ -7,8 +7,10 @@ import type { Settings, SaberQuat } from '../types/index.js';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
 const MODEL_URL     = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
-const URL_PARAMS    = new URLSearchParams(location.search);
-const DEBUG_VISUALS = URL_PARAMS.has('dev') || URL_PARAMS.has('testing');
+const URL_PARAMS = new URLSearchParams(location.search);
+function isDebugVisuals(): boolean {
+  return URL_PARAMS.has('dev') || URL_PARAMS.has('testing') || Boolean(getSettings().developerMode);
+}
 const HAND_CONNECTIONS: readonly [number, number][] = Object.freeze([
   [0,1],[1,2],[2,3],[3,4],
   [0,5],[5,6],[6,7],[7,8],
@@ -326,13 +328,24 @@ function onWorkerMessage(e: MessageEvent<{ type: string; payload: WorkerResult }
 }
 
 function drawLandmarks(result: DetectResult): void {
-  if (!DEBUG_VISUALS || !trackCtx || !trackCanvas) return;
+  if (!isDebugVisuals() || !trackCtx || !trackCanvas) return;
   const w = trackCanvas.width, h = trackCanvas.height;
   trackCtx.clearRect(0, 0, w, h);
 
+  if (videoEl && videoEl.readyState >= 2) {
+    trackCtx.save();
+    trackCtx.translate(w, 0);
+    trackCtx.scale(-1, 1);
+    trackCtx.drawImage(videoEl, 0, 0, w, h);
+    trackCtx.restore();
+  } else {
+    trackCtx.fillStyle = 'rgba(5,7,13,0.9)';
+    trackCtx.fillRect(0, 0, w, h);
+  }
+
   if (!result?.landmarks) return;
   for (const hand of result.landmarks) {
-    trackCtx.strokeStyle = 'rgba(54,242,161,0.7)';
+    trackCtx.strokeStyle = 'rgba(47,124,255,0.85)';
     trackCtx.lineWidth   = 1.5;
     for (const [a, b] of HAND_CONNECTIONS) {
       const pa = hand[a]!, pb = hand[b]!;
@@ -342,7 +355,7 @@ function drawLandmarks(result: DetectResult): void {
       trackCtx.stroke();
     }
     for (const lm of hand) {
-      trackCtx.fillStyle = '#2f7cff';
+      trackCtx.fillStyle = '#7eb8ff';
       trackCtx.beginPath();
       trackCtx.arc((1 - lm.x) * w, lm.y * h, 3, 0, Math.PI * 2);
       trackCtx.fill();
@@ -541,7 +554,7 @@ function updateCalibFeedback(ok: boolean, hint: string): void {
 
 export async function initMP(onReady: () => void): Promise<void> {
   trackCanvas = document.getElementById('trackCanvas') as HTMLCanvasElement | null;
-  if (trackCanvas && DEBUG_VISUALS) {
+  if (trackCanvas) {
     trackCanvas.width  = 240;
     trackCanvas.height = 156;
     trackCtx = trackCanvas.getContext('2d', { alpha: false });
