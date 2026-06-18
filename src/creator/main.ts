@@ -323,10 +323,11 @@ bindDropZone();
 applyCreatorTranslations();
 
 bindTimelineEvents({
-  onSave:  () => void saveMap(),
-  onUndo:  () => { /* handled inside input.ts */ },
-  onRedo:  () => { /* handled inside input.ts */ },
+  onSave:    () => void saveMap(),
+  onUndo:    () => { /* handled inside input.ts */ },
+  onRedo:    () => { /* handled inside input.ts */ },
   onPlay,
+  onPlayEnd,
 });
 
 document.getElementById('btnSave')?.addEventListener('click',   () => void saveMap());

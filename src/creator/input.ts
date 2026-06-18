@@ -253,7 +253,7 @@ function removeContextMenu(): void {
 
 function showTimelineContextMenu(
   clientX: number, clientY: number, clickT: number,
-  onPlay: () => void
+  onPlayEnd: () => void
 ): void {
   removeContextMenu();
   const menu = document.createElement('div');
@@ -267,7 +267,7 @@ function showTimelineContextMenu(
       action: () => {
         const wasPlaying = state.isPlaying;
         state.currentTime = Math.max(0, Math.min(clickT, state.map.meta.duration));
-        if (wasPlaying) playAudio(state.currentTime, onPlay);
+        if (wasPlaying) playAudio(state.currentTime, onPlayEnd);
         renderAll();
       },
     },
@@ -325,6 +325,7 @@ export function bindTimelineEvents(callbacks: {
   onUndo:     () => void;
   onRedo:     () => void;
   onPlay:     () => void;
+  onPlayEnd:  () => void;
 }): void {
   loadKeybinds();
 
@@ -370,7 +371,7 @@ export function bindTimelineEvents(callbacks: {
         scheduleAutosave();
         renderAll();
       } else {
-        showTimelineContextMenu(e.clientX, e.clientY, clickT, callbacks.onPlay);
+        showTimelineContextMenu(e.clientX, e.clientY, clickT, callbacks.onPlayEnd);
       }
       return;
     }
@@ -396,7 +397,8 @@ export function bindTimelineEvents(callbacks: {
         dragSelectEndY      = e.offsetY;
         const wasPlaying    = state.isPlaying;
         state.currentTime   = Math.max(0, Math.min(clickT, state.map.meta.duration));
-        if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
+        // Seek directly — don't go through handlePlay/precount
+        if (wasPlaying) playAudio(state.currentTime, callbacks.onPlayEnd);
         renderAll();
       }
     }
@@ -475,7 +477,7 @@ export function bindTimelineEvents(callbacks: {
     const ratio = e.offsetX / waveCanvas.width;
     const wasPlaying = state.isPlaying;
     state.currentTime = Math.max(0, Math.min(ratio * state.audioBuffer.duration, state.map.meta.duration));
-    if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
+    if (wasPlaying) playAudio(state.currentTime, callbacks.onPlayEnd);
     renderAll();
   });
 
@@ -572,7 +574,7 @@ export function bindTimelineEvents(callbacks: {
         if (next) {
           const wasPlaying  = state.isPlaying;
           state.currentTime = next.t;
-          if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
+          if (wasPlaying) playAudio(state.currentTime, callbacks.onPlayEnd);
           renderAll();
         }
         break;
@@ -585,7 +587,7 @@ export function bindTimelineEvents(callbacks: {
         if (prev) {
           const wasPlaying  = state.isPlaying;
           state.currentTime = prev.t;
-          if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
+          if (wasPlaying) playAudio(state.currentTime, callbacks.onPlayEnd);
           renderAll();
         }
         break;
@@ -595,7 +597,7 @@ export function bindTimelineEvents(callbacks: {
         const wasPlaying  = state.isPlaying;
         state.currentTime = 0;
         state.viewStart   = 0;
-        if (wasPlaying) playAudio(0, callbacks.onPlay);
+        if (wasPlaying) playAudio(0, callbacks.onPlayEnd);
         renderAll();
         break;
       }
@@ -603,7 +605,7 @@ export function bindTimelineEvents(callbacks: {
       case 'jumpEnd': {
         const wasPlaying  = state.isPlaying;
         state.currentTime = state.map.meta.duration;
-        if (wasPlaying) playAudio(state.currentTime, callbacks.onPlay);
+        if (wasPlaying) playAudio(state.currentTime, callbacks.onPlayEnd);
         renderAll();
         break;
       }
