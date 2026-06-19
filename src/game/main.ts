@@ -20,7 +20,7 @@ import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
 import { t, setLang, getCurrentLang } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
-import { narratorShow } from './narrator.ts';
+import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
 declare global {
@@ -1398,10 +1398,17 @@ initMainMenu();
   await tryLoadMapFromUrl();
   startRenderLoop();
 
-  // Dev/test: ?narrator&text=Hello+world!
+  // Dev/test: ?narrator&text=Hello+world!&speed=slow&narrator_timeout_start=1000&narrator_timeout_end=5000
   const params = new URLSearchParams(location.search);
   if (params.has('narrator')) {
-    const text = params.get('text') ?? 'Hej! Jestem Lyra.';
-    await narratorShow({ text });
+    const text       = params.get('text') ?? 'Hej! Jestem Lyra.';
+    const speedKey   = params.get('speed') ?? 'default';
+    const charMs     = NARRATOR_SPEEDS[speedKey] ?? NARRATOR_SPEEDS['default']!;
+    const timeoutStart = params.has('narrator_timeout_start') ? Number(params.get('narrator_timeout_start')) : 0;
+    const timeoutEnd   = params.has('narrator_timeout_end')   ? Number(params.get('narrator_timeout_end'))   : 0;
+
+    if (timeoutStart > 0) await new Promise<void>(r => setTimeout(r, timeoutStart));
+    await narratorShow({ text, charMs });
+    if (timeoutEnd > 0) await new Promise<void>(r => setTimeout(r, timeoutEnd));
   }
 })();

@@ -541,14 +541,15 @@
 
 <!-- NARRATOR -->
 <div id="narratorBox" role="dialog" aria-modal="false" aria-label="Lyra" aria-live="polite">
-  <div id="narratorAvatar" aria-hidden="true"></div>
+  <div id="narratorAvatarCol" aria-hidden="true">
+    <div id="narratorAvatar"></div>
+    <span id="narratorHint">←→ strzałki · Enter</span>
+  </div>
   <div id="narratorBody">
     <div id="narratorSpeech">
       <span id="narratorText"></span><span id="narratorCursor" aria-hidden="true"></span>
     </div>
-    <div id="narratorButtons" role="group">
-      <span id="narratorHint" aria-hidden="true">↑↓ strzałki · Enter</span>
-    </div>
+    <div id="narratorButtons" role="group"></div>
   </div>
 </div>
 
