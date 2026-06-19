@@ -455,33 +455,59 @@ function isMainMenuOpen(): boolean {
   return state.appState === S.MENU;
 }
 
+const lSmoothed = new THREE.Vector3(-0.72, 1.08, 1.55);
+const rSmoothed = new THREE.Vector3( 0.72, 1.08, 1.55);
+
 function updateMenuAutoplay(now: number, t: number): void {
   updateMenuDemo(now, t);
   const target = window.__menuDemoTarget;
 
-  const idleLeft  = { x: -0.72 + Math.sin(t * 1.35) * 0.22,      y: 1.08 + Math.sin(t * 1.75) * 0.26,      z: 1.55 };
-  const idleRight = { x:  0.72 + Math.sin(t * 1.35 + 1.6) * 0.22, y: 1.08 + Math.sin(t * 1.65 + 0.8) * 0.26, z: 1.55 };
+  // Gentle breathing idle — low frequency, small amplitude, offset phases
+  const idleLx = -0.72 + Math.sin(t * 0.55) * 0.07 + Math.sin(t * 0.31) * 0.04;
+  const idleLy =  1.10 + Math.sin(t * 0.42) * 0.06 + Math.sin(t * 0.73) * 0.03;
+  const idleRx =  0.72 + Math.sin(t * 0.55 + 1.9) * 0.07 + Math.sin(t * 0.28 + 0.8) * 0.04;
+  const idleRy =  1.10 + Math.sin(t * 0.39 + 1.2) * 0.06 + Math.sin(t * 0.67 + 0.5) * 0.03;
 
-  lTarget.set(idleLeft.x,  idleLeft.y,  idleLeft.z);
-  rTarget.set(idleRight.x, idleRight.y, idleRight.z);
+  let desiredLx = idleLx, desiredLy = idleLy, desiredLz = 1.55;
+  let desiredRx = idleRx, desiredRy = idleRy, desiredRz = 1.55;
 
   if (target) {
-    const hitWindow  = THREE.MathUtils.clamp((target.z + 1.9) / 3.4, 0, 1);
-    const slash      = Math.sin(hitWindow * Math.PI) * 0.72;
-    const activeTarget = target.side === 'left' ? lTarget : rTarget;
-    const cross      = target.side === 'left' ? -slash : slash;
-    activeTarget.set(
-      target.x + cross * 0.42,
-      target.y + Math.cos(hitWindow * Math.PI) * 0.24,
-      1.48 + Math.sin(hitWindow * Math.PI) * 0.12
-    );
+    // hitWindow: 0 = block far away, 1 = block at hit plane
+    const hitWindow = THREE.MathUtils.clamp((target.z + 2.2) / 4.0, 0, 1);
+    const swingArc  = Math.sin(hitWindow * Math.PI);
+    const cross     = swingArc * 0.55;
+    if (target.side === 'left') {
+      desiredLx = target.x - cross * 0.38;
+      desiredLy = target.y + Math.cos(hitWindow * Math.PI) * 0.18;
+      desiredLz = 1.48 + swingArc * 0.10;
+    } else {
+      desiredRx = target.x + cross * 0.38;
+      desiredRy = target.y + Math.cos(hitWindow * Math.PI) * 0.18;
+      desiredRz = 1.48 + swingArc * 0.10;
+    }
   }
+
+  // Speed-capped move: constant units/s so distant and close targets feel the same
+  const SABER_SPEED = 3.2; // world units per second
+  const dt = THREE.MathUtils.clamp((state.deltaSec ?? 0.016), 0, 0.1);
+  const maxStep = SABER_SPEED * dt;
+
+  const moveAxis = (cur: number, des: number) => cur + THREE.MathUtils.clamp(des - cur, -maxStep, maxStep);
+  lSmoothed.x = moveAxis(lSmoothed.x, desiredLx);
+  lSmoothed.y = moveAxis(lSmoothed.y, desiredLy);
+  lSmoothed.z = moveAxis(lSmoothed.z, desiredLz);
+  rSmoothed.x = moveAxis(rSmoothed.x, desiredRx);
+  rSmoothed.y = moveAxis(rSmoothed.y, desiredRy);
+  rSmoothed.z = moveAxis(rSmoothed.z, desiredRz);
+
+  lTarget.copy(lSmoothed);
+  rTarget.copy(rSmoothed);
 
   updateSabers(now);
 
-  const idleDeltaScale = THREE.MathUtils.clamp(state.deltaScale || 1, 0, 3);
-  lSaber.rotation.z += Math.sin(t * 5.2) * 0.035 * idleDeltaScale;
-  rSaber.rotation.z += Math.sin(t * 5.2 + 1.4) * 0.035 * idleDeltaScale;
+  // Gentle tilt matching idle drift — no additive accumulation
+  lSaber.rotation.z = THREE.MathUtils.lerp(lSaber.rotation.z, -0.18 + Math.sin(t * 0.44) * 0.08, 0.04);
+  rSaber.rotation.z = THREE.MathUtils.lerp(rSaber.rotation.z,  0.18 + Math.sin(t * 0.44 + 1.9) * 0.08, 0.04);
 
   cam3d.position.x = 0.36 + Math.sin(t * 0.18) * 0.06;
   cam3d.position.y = 1.56 + Math.sin(t * 0.23) * 0.018;
