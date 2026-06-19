@@ -20,6 +20,7 @@ import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
 import { t, setLang, getCurrentLang } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
+import { narratorShow } from './narrator.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
 declare global {
@@ -1396,4 +1397,11 @@ initMainMenu();
 (async () => {
   await tryLoadMapFromUrl();
   startRenderLoop();
+
+  // Dev/test: ?narrator&text=Hello+world!
+  const params = new URLSearchParams(location.search);
+  if (params.has('narrator')) {
+    const text = params.get('text') ?? 'Hej! Jestem Lyra.';
+    await narratorShow({ text });
+  }
 })();
