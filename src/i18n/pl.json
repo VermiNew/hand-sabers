@@ -228,6 +228,8 @@
     "kbTabEdit": "EDYTUJ",
     "kbResetAll": "PRZYWRÓĆ DOMYŚLNE",
     "kbRecording": "naciśnij klawisz…",
+    "kbConflictShort": "konflikt: {{action}}",
+    "kbConflictHint": "Konflikt z: {{actions}}",
     "kbResetConfirm": "Przywrócić domyślne skróty klawiszowe?",
     "kbGroups": {
       "Transport": "Transport",

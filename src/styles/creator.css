@@ -625,9 +625,16 @@ kbd {
   transition:background .12s;
 }
 .kb-row:hover { background:rgba(255,255,255,0.03); }
+.kb-row.is-conflict {
+  background:rgba(255,80,80,0.045);
+  box-shadow:inset 2px 0 0 rgba(255,95,95,0.7);
+}
 
 .kb-label {
   font-size:11px; color:rgba(226,232,240,0.7);
+}
+.kb-conflict {
+  font-size:10px; color:rgba(255,145,145,0.9); margin-top:2px;
 }
 .kb-hint {
   font-size:10px; color:rgba(148,163,184,0.4); margin-top:1px;
@@ -647,6 +654,10 @@ kbd {
 .kb-bind-btn.is-recording {
   background:rgba(255,200,0,0.12); border-color:rgba(255,200,0,0.5);
   color:#ffc800; animation:kb-blink .7s step-start infinite;
+}
+.kb-bind-btn.has-conflict {
+  background:rgba(255,60,60,0.12); border-color:rgba(255,80,80,0.52);
+  color:#ff8f8f;
 }
 @keyframes kb-blink { 50% { opacity:.4; } }
 

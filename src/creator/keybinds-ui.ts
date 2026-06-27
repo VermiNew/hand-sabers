@@ -1,4 +1,4 @@
-import { allBindings, setBinding, resetKeybinds, bindingLabel, getBinding, type ActionId, type Binding } from './keybinds.ts';
+import { allBindings, setBinding, resetKeybinds, bindingLabel, getBinding, getActionMeta, findBindingConflict, type ActionId, type Binding } from './keybinds.ts';
 import { t } from '../i18n/index.ts';
 
 let recordingAction: ActionId | null = null;
@@ -6,7 +6,7 @@ let recordingBtn: HTMLButtonElement | null = null;
 
 function stopRecording(): void {
   if (recordingBtn) {
-    recordingBtn.classList.remove('is-recording');
+    recordingBtn.classList.remove('is-recording', 'has-conflict');
     recordingBtn.textContent = bindingLabel(getBinding(recordingAction!));
   }
   recordingAction = null;
@@ -17,8 +17,14 @@ function startRecording(action: ActionId, btn: HTMLButtonElement): void {
   if (recordingAction) stopRecording();
   recordingAction = action;
   recordingBtn    = btn;
+  btn.classList.remove('has-conflict');
   btn.classList.add('is-recording');
   btn.textContent = t('creator.kbRecording');
+}
+
+function formatConflictMessage(key: string, actions: ActionId[]): string {
+  const labels = actions.map(action => getActionMeta(action).label).join(', ');
+  return t(key).replace('{{actions}}', labels).replace('{{action}}', labels);
 }
 
 function onRecordKeydown(e: KeyboardEvent): void {
@@ -39,6 +45,14 @@ function onRecordKeydown(e: KeyboardEvent): void {
   if (e.shiftKey) binding.shift = true;
   if (e.ctrlKey)  binding.ctrl  = true;
   if (e.altKey)   binding.alt   = true;
+
+  const conflict = findBindingConflict(recordingAction, binding);
+  if (conflict) {
+    recordingBtn.classList.add('has-conflict');
+    recordingBtn.textContent = formatConflictMessage('creator.kbConflictShort', [conflict]);
+    return;
+  }
+
   setBinding(recordingAction, binding);
   stopRecording();
   renderKbEditor();
@@ -84,9 +98,8 @@ export function renderKbEditor(): void {
 
   container.innerHTML = '';
 
-  // Group actions
-  const groups = new Map<string, typeof bindings>();
   const bindings = allBindings();
+  const groups = new Map<string, typeof bindings>();
   for (const item of bindings) {
     const g = item.meta.group;
     if (!groups.has(g)) groups.set(g, []);
@@ -99,15 +112,22 @@ export function renderKbEditor(): void {
     title.textContent = group;
     container.appendChild(title);
 
-    for (const { action, binding, meta } of items) {
+    for (const { action, binding, meta, conflicts } of items) {
       const row = document.createElement('div');
       row.className = 'kb-row';
+      if (conflicts.length) row.classList.add('is-conflict');
 
       const labelCol = document.createElement('div');
       const name = document.createElement('div');
       name.className = 'kb-label';
       name.textContent = meta.label;
       labelCol.appendChild(name);
+      if (conflicts.length) {
+        const conflict = document.createElement('div');
+        conflict.className = 'kb-conflict';
+        conflict.textContent = formatConflictMessage('creator.kbConflictHint', conflicts);
+        labelCol.appendChild(conflict);
+      }
       if (meta.hint) {
         const hint = document.createElement('div');
         hint.className = 'kb-hint';
@@ -117,6 +137,7 @@ export function renderKbEditor(): void {
 
       const btn = document.createElement('button');
       btn.className = 'kb-bind-btn';
+      if (conflicts.length) btn.classList.add('has-conflict');
       btn.textContent = bindingLabel(binding);
       btn.dataset['action'] = action;
       btn.addEventListener('click', () => {

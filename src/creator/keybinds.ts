@@ -83,7 +83,7 @@ export interface Binding {
   alt?: boolean;
 }
 
-function key(b: Binding): string {
+export function bindingKey(b: Binding): string {
   return [b.ctrl && 'Ctrl', b.shift && 'Shift', b.alt && 'Alt', b.code]
     .filter(Boolean).join('+');
 }
@@ -163,7 +163,8 @@ let keyMap: Map<string, ActionId> = new Map();
 function rebuildKeyMap(): void {
   keyMap.clear();
   for (const [action, binding] of Object.entries(bindings) as [ActionId, Binding][]) {
-    keyMap.set(key(binding), action);
+    const serialized = bindingKey(binding);
+    if (!keyMap.has(serialized)) keyMap.set(serialized, action);
   }
 }
 
@@ -202,6 +203,22 @@ export function setBinding(action: ActionId, binding: Binding): void {
   saveKeybinds();
 }
 
+export function findBindingConflict(action: ActionId, binding: Binding): ActionId | null {
+  const serialized = bindingKey(binding);
+  for (const [otherAction, otherBinding] of Object.entries(bindings) as [ActionId, Binding][]) {
+    if (otherAction !== action && bindingKey(otherBinding) === serialized) return otherAction;
+  }
+  return null;
+}
+
+export function getBindingConflicts(action: ActionId): ActionId[] {
+  const binding = bindings[action];
+  const serialized = bindingKey(binding);
+  return (Object.entries(bindings) as [ActionId, Binding][])
+    .filter(([otherAction, otherBinding]) => otherAction !== action && bindingKey(otherBinding) === serialized)
+    .map(([otherAction]) => otherAction);
+}
+
 /** Returns the ActionId if the keyboard event matches a binding, otherwise null. */
 export function matchAction(e: KeyboardEvent): ActionId | null {
   const k = [e.ctrlKey && 'Ctrl', e.shiftKey && 'Shift', e.altKey && 'Alt', e.code]
@@ -210,10 +227,11 @@ export function matchAction(e: KeyboardEvent): ActionId | null {
 }
 
 /** Returns all bindings for display / editor UI. */
-export function allBindings(): Array<{ action: ActionId; binding: Binding; meta: ActionMeta }> {
+export function allBindings(): Array<{ action: ActionId; binding: Binding; meta: ActionMeta; conflicts: ActionId[] }> {
   return (Object.keys(bindings) as ActionId[]).map(action => ({
     action,
     binding: bindings[action],
     meta:    getActionMeta(action),
+    conflicts: getBindingConflicts(action),
   }));
 }

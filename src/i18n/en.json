@@ -228,6 +228,8 @@
     "kbTabEdit": "EDIT",
     "kbResetAll": "RESTORE DEFAULTS",
     "kbRecording": "press a key…",
+    "kbConflictShort": "conflict: {{action}}",
+    "kbConflictHint": "Conflict with: {{actions}}",
     "kbResetConfirm": "Restore default keyboard shortcuts?",
     "kbGroups": {
       "Transport": "Transport",
