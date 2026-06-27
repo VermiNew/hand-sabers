@@ -209,6 +209,7 @@ let previewToken = 0;
 let previewRemainingMs = PREVIEW_MAX_MS;
 let previewStartedAtMs = 0;
 let previewPaused = false;
+let currentPreviewMap: MapEntry | null = null;
 
 let fuse: Fuse<MapEntry> | null = null;
 
@@ -393,10 +394,16 @@ function renderDetail(map: MapEntry | null): void {
           <div class="detail-title">${escHtml(title)}</div>
           ${artist ? `<div class="detail-artist">${escHtml(artist)}</div>` : ''}
           ${diff ? `<span class="diff-badge diff-${escHtml(diff.toLowerCase())}" style="margin-bottom:16px;display:inline-block">${escHtml(diff)}</span>` : ''}
-          <button id="previewStatus" class="preview-status" type="button">
+          <div class="preview-panel">
+          <div id="previewStatus" class="preview-status" role="status" aria-live="polite">
             <span class="material-symbols-rounded">graphic_eq</span>
             <span>Wybierz mapę, aby usłyszeć preview</span>
+          </div>
+          <button id="previewToggle" class="preview-toggle" type="button">
+            <span class="material-symbols-rounded">play_arrow</span>
+            <span>Preview</span>
           </button>
+          </div>
 
           <div class="detail-stats">
             <div class="detail-stat">
@@ -454,7 +461,7 @@ function renderDetail(map: MapEntry | null): void {
 
   document.querySelector<HTMLAnchorElement>('.btn-play')?.addEventListener('click', () => stopMapPreview());
   document.querySelector<HTMLAnchorElement>('.detail-secondary-actions a')?.addEventListener('click', () => stopMapPreview());
-  document.getElementById('previewStatus')?.addEventListener('click', toggleMapPreview);
+  document.getElementById('previewToggle')?.addEventListener('click', toggleMapPreview);
   bindDetailTilt();
 }
 
@@ -496,18 +503,35 @@ function selectMap(id: string): void {
 
 function setPreviewStatus(message: string, state: 'idle' | 'loading' | 'playing' | 'paused' | 'warning' | 'error' = 'idle'): void {
   const el = document.getElementById('previewStatus');
-  if (!el) return;
-  el.className = `preview-status is-${state}`;
-  const icon = el.querySelector<HTMLElement>('.material-symbols-rounded');
-  if (icon) {
-    icon.textContent = state === 'playing' ? 'pause'
-      : state === 'paused' ? 'play_arrow'
-      : state === 'warning' || state === 'error' ? 'warning'
-      : 'graphic_eq';
+  if (el) {
+    el.className = `preview-status is-${state}`;
+    const icon = el.querySelector<HTMLElement>('.material-symbols-rounded');
+    if (icon) {
+      icon.textContent = state === 'warning' || state === 'error' ? 'warning' : 'graphic_eq';
+    }
+    const text = el.querySelector<HTMLElement>('span:last-child');
+    if (text) text.textContent = message;
   }
-  const text = el.querySelector<HTMLElement>('span:last-child');
-  if (text) text.textContent = message;
-  el.setAttribute('aria-label', message);
+  updatePreviewToggle(state);
+}
+
+function updatePreviewToggle(state: 'idle' | 'loading' | 'playing' | 'paused' | 'warning' | 'error'): void {
+  const btn = document.getElementById('previewToggle') as HTMLButtonElement | null;
+  if (!btn) return;
+  const icon = btn.querySelector<HTMLElement>('.material-symbols-rounded');
+  const label = btn.querySelector<HTMLElement>('span:last-child');
+  btn.className = `preview-toggle is-${state}`;
+  btn.disabled = state === 'loading';
+  if (state === 'playing') {
+    if (icon) icon.textContent = 'pause';
+    if (label) label.textContent = 'Pause';
+  } else if (state === 'paused') {
+    if (icon) icon.textContent = 'play_arrow';
+    if (label) label.textContent = 'Resume';
+  } else {
+    if (icon) icon.textContent = 'play_arrow';
+    if (label) label.textContent = 'Preview';
+  }
 }
 
 function clearPreviewTimers(): void {
@@ -533,6 +557,7 @@ function stopMapPreview(clearStatus = false): void {
 
 function scheduleMapPreview(map: MapEntry): void {
   stopMapPreview();
+  currentPreviewMap = map;
   if (getPreviewVolume() <= 0) {
     setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
     return;
@@ -626,6 +651,10 @@ async function resumePreview(): Promise<void> {
 }
 
 function toggleMapPreview(): void {
+  if (!previewAudio.src && currentPreviewMap) {
+    scheduleMapPreview(currentPreviewMap);
+    return;
+  }
   if (!previewAudio.src) return;
   if (!previewAudio.paused) {
     pausePreview();

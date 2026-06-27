@@ -653,12 +653,20 @@ option { background: #0a1628; }
   margin-bottom: 20px;
 }
 
+.preview-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: stretch;
+  margin: 0 0 18px;
+}
+
 .preview-status {
   display: flex;
   align-items: center;
   gap: 8px;
   width: 100%;
-  margin: 0 0 18px;
+  margin: 0;
   padding: 9px 11px;
   border-radius: 10px;
   border: 1px solid rgba(148, 163, 184, 0.13);
@@ -668,12 +676,40 @@ option { background: #0a1628; }
   font-size: 10px;
   letter-spacing: 1.2px;
   text-align: left;
-  cursor: pointer;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
-.preview-status:hover { border-color: rgba(142, 200, 255, 0.28); }
-.preview-status:focus-visible { outline: 2px solid rgba(47, 124, 255, 0.45); outline-offset: 2px; }
 .preview-status .material-symbols-rounded { font-size: 16px; }
+
+.preview-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 104px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(54, 242, 161, 0.28);
+  background: rgba(54, 242, 161, 0.065);
+  color: rgba(54, 242, 161, 0.9);
+  font: 800 10px 'JetBrains Mono', monospace;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, opacity 0.15s;
+}
+.preview-toggle:hover { border-color: rgba(54, 242, 161, 0.58); background: rgba(54, 242, 161, 0.11); }
+.preview-toggle:focus-visible { outline: 2px solid rgba(47, 124, 255, 0.45); outline-offset: 2px; }
+.preview-toggle:disabled { cursor: wait; opacity: 0.6; }
+.preview-toggle.is-playing {
+  border-color: rgba(255, 200, 80, 0.34);
+  background: rgba(255, 200, 80, 0.07);
+  color: rgba(255, 220, 120, 0.94);
+}
+.preview-toggle.is-paused {
+  border-color: rgba(47, 124, 255, 0.34);
+  background: rgba(47, 124, 255, 0.07);
+  color: rgba(142, 200, 255, 0.94);
+}
 .preview-status.is-loading {
   border-color: rgba(47, 124, 255, 0.24);
   color: rgba(142, 200, 255, 0.82);
