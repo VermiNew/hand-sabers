@@ -1,8 +1,9 @@
-import { allBindings, setBinding, resetKeybinds, bindingLabel, getBinding, getActionMeta, findBindingConflict, type ActionId, type Binding } from './keybinds.ts';
+import { allBindings, setBinding, resetBinding, resetKeybinds, bindingLabel, getBinding, getActionMeta, findBindingConflict, type ActionId, type Binding } from './keybinds.ts';
 import { t } from '../i18n/index.ts';
 
 let recordingAction: ActionId | null = null;
 let recordingBtn: HTMLButtonElement | null = null;
+let filterText = '';
 
 function stopRecording(): void {
   if (recordingBtn) {
@@ -25,6 +26,14 @@ function startRecording(action: ActionId, btn: HTMLButtonElement): void {
 function formatConflictMessage(key: string, actions: ActionId[]): string {
   const labels = actions.map(action => getActionMeta(action).label).join(', ');
   return t(key).replace('{{actions}}', labels).replace('{{action}}', labels);
+}
+
+function matchesFilter(item: ReturnType<typeof allBindings>[number], query: string): boolean {
+  if (!query) return true;
+  const haystack = [item.action, item.meta.label, item.meta.group, bindingLabel(item.binding), item.binding.code]
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(query);
 }
 
 function onRecordKeydown(e: KeyboardEvent): void {
@@ -64,6 +73,7 @@ export function initKeybindsUI(): void {
   document.getElementById('kbResetAll')?.addEventListener('click', () => {
     if (confirm(t('creator.kbResetConfirm'))) {
       resetKeybinds();
+      filterText = '';
       stopRecording();
       renderKbEditor();
     }
@@ -92,13 +102,37 @@ export function initKeybindsUI(): void {
   });
 }
 
-export function renderKbEditor(): void {
+export function renderKbEditor(focusFilter = false): void {
   const container = document.getElementById('kbEditor');
   if (!container) return;
 
   container.innerHTML = '';
 
-  const bindings = allBindings();
+  const tools = document.createElement('div');
+  tools.className = 'kb-editor-tools';
+  const search = document.createElement('input');
+  search.className = 'kb-search-input';
+  search.type = 'search';
+  search.placeholder = t('creator.kbSearchPlaceholder');
+  search.value = filterText;
+  search.addEventListener('input', () => {
+    filterText = search.value;
+    renderKbEditor(true);
+  });
+  tools.appendChild(search);
+  container.appendChild(tools);
+
+  const query = filterText.trim().toLowerCase();
+  const bindings = allBindings().filter(item => matchesFilter(item, query));
+  if (!bindings.length) {
+    const empty = document.createElement('div');
+    empty.className = 'kb-empty';
+    empty.textContent = t('creator.kbNoMatches');
+    container.appendChild(empty);
+    if (focusFilter) search.focus();
+    return;
+  }
+
   const groups = new Map<string, typeof bindings>();
   for (const item of bindings) {
     const g = item.meta.group;
@@ -112,7 +146,7 @@ export function renderKbEditor(): void {
     title.textContent = group;
     container.appendChild(title);
 
-    for (const { action, binding, meta, conflicts } of items) {
+    for (const { action, binding, meta, conflicts, isDefault } of items) {
       const row = document.createElement('div');
       row.className = 'kb-row';
       if (conflicts.length) row.classList.add('is-conflict');
@@ -145,9 +179,30 @@ export function renderKbEditor(): void {
         startRecording(action, btn);
       });
 
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'kb-reset-one';
+      resetBtn.type = 'button';
+      resetBtn.textContent = t('creator.kbResetOne');
+      resetBtn.disabled = isDefault;
+      resetBtn.addEventListener('click', () => {
+        stopRecording();
+        resetBinding(action);
+        renderKbEditor();
+      });
+
+      const actions = document.createElement('div');
+      actions.className = 'kb-row-actions';
+      actions.appendChild(btn);
+      actions.appendChild(resetBtn);
+
       row.appendChild(labelCol);
-      row.appendChild(btn);
+      row.appendChild(actions);
       container.appendChild(row);
     }
+  }
+
+  if (focusFilter) {
+    search.focus();
+    search.setSelectionRange(search.value.length, search.value.length);
   }
 }

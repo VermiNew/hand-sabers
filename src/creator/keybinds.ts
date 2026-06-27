@@ -193,8 +193,18 @@ export function resetKeybinds(): void {
   saveKeybinds();
 }
 
+export function resetBinding(action: ActionId): void {
+  bindings[action] = { ...DEFAULTS[action] };
+  rebuildKeyMap();
+  saveKeybinds();
+}
+
 export function getBinding(action: ActionId): Binding {
   return bindings[action];
+}
+
+export function isDefaultBinding(action: ActionId): boolean {
+  return bindingKey(bindings[action]) === bindingKey(DEFAULTS[action]);
 }
 
 export function setBinding(action: ActionId, binding: Binding): void {
@@ -227,11 +237,12 @@ export function matchAction(e: KeyboardEvent): ActionId | null {
 }
 
 /** Returns all bindings for display / editor UI. */
-export function allBindings(): Array<{ action: ActionId; binding: Binding; meta: ActionMeta; conflicts: ActionId[] }> {
+export function allBindings(): Array<{ action: ActionId; binding: Binding; meta: ActionMeta; conflicts: ActionId[]; isDefault: boolean }> {
   return (Object.keys(bindings) as ActionId[]).map(action => ({
     action,
     binding: bindings[action],
     meta:    getActionMeta(action),
     conflicts: getBindingConflicts(action),
+    isDefault: isDefaultBinding(action),
   }));
 }
