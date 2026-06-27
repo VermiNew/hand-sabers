@@ -5,7 +5,7 @@ import { assertFileSize, findPreferredAudioEntry, normalizeMap, validateZipEntry
 import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
 import { t } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
-import { loadSettings } from '../core/settings.ts';
+import { loadSettings, setSetting } from '../core/settings.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -404,6 +404,11 @@ function renderDetail(map: MapEntry | null): void {
             <span>Preview</span>
           </button>
           </div>
+          <div class="preview-volume-row">
+            <label for="previewVolume">Preview vol</label>
+            <input id="previewVolume" type="range" min="0" max="100" step="1" value="${getPreviewMusicPercent()}">
+            <span id="previewVolumeValue">${getPreviewMusicPercent()}%</span>
+          </div>
 
           <div class="detail-stats">
             <div class="detail-stat">
@@ -462,6 +467,7 @@ function renderDetail(map: MapEntry | null): void {
   document.querySelector<HTMLAnchorElement>('.btn-play')?.addEventListener('click', () => stopMapPreview());
   document.querySelector<HTMLAnchorElement>('.detail-secondary-actions a')?.addEventListener('click', () => stopMapPreview());
   document.getElementById('previewToggle')?.addEventListener('click', toggleMapPreview);
+  bindPreviewVolumeControl();
   bindDetailTilt();
 }
 
@@ -615,6 +621,37 @@ function getPreviewVolume(): number {
   const master = Math.max(0, Math.min(1, Number(settings.volume) || 0));
   const music = Math.max(0, Math.min(1, Number(settings.musicVolume) || 0));
   return Math.max(0, Math.min(1, master * music * PREVIEW_BASE_VOLUME));
+}
+
+function getPreviewMusicPercent(): number {
+  const settings = loadSettings();
+  return Math.round(Math.max(0, Math.min(1, Number(settings.musicVolume) || 0)) * 100);
+}
+
+function bindPreviewVolumeControl(): void {
+  const input = document.getElementById('previewVolume') as HTMLInputElement | null;
+  const value = document.getElementById('previewVolumeValue');
+  if (!input || !value) return;
+
+  const updateVisual = () => {
+    const numeric = Math.max(0, Math.min(100, Number(input.value) || 0));
+    input.style.setProperty('--range-progress', `${numeric}%`);
+    value.textContent = `${Math.round(numeric)}%`;
+  };
+
+  updateVisual();
+  input.addEventListener('input', () => {
+    updateVisual();
+    setSetting('musicVolume', (Math.max(0, Math.min(100, Number(input.value) || 0)) / 100));
+    const effectiveVolume = getPreviewVolume();
+    previewAudio.volume = effectiveVolume;
+    if (effectiveVolume <= 0) {
+      previewAudio.pause();
+      setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
+    } else if (previewPaused) {
+      setPreviewStatus('Preview w pauzie. Kliknij Resume, aby wznowić.', 'paused');
+    }
+  });
 }
 
 function armPreviewStopTimer(ms: number): void {
