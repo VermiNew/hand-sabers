@@ -205,6 +205,7 @@ const PREVIEW_BASE_VOLUME = 0.34;
 const previewAudio = new Audio();
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
 let previewStopTimer: ReturnType<typeof setTimeout> | null = null;
+let previewProgressFrame: number | null = null;
 let previewObjectUrl: string | null = null;
 let previewToken = 0;
 let previewRemainingMs = PREVIEW_MAX_MS;
@@ -405,6 +406,15 @@ function renderDetail(map: MapEntry | null): void {
             <span>Preview</span>
           </button>
           </div>
+          <div class="preview-progress" aria-label="Postęp preview">
+            <div class="preview-progress-track">
+              <div id="previewProgressFill" class="preview-progress-fill"></div>
+            </div>
+            <div class="preview-progress-meta">
+              <span>Preview max 30s</span>
+              <span id="previewProgressTime">30s</span>
+            </div>
+          </div>
           <div class="preview-volume-row">
             <label for="previewVolume">Preview vol</label>
             <input id="previewVolume" type="range" min="0" max="100" step="1" value="${getPreviewMusicPercent()}">
@@ -544,8 +554,29 @@ function updatePreviewToggle(state: 'idle' | 'loading' | 'playing' | 'paused' | 
 function clearPreviewTimers(): void {
   if (previewTimer) clearTimeout(previewTimer);
   if (previewStopTimer) clearTimeout(previewStopTimer);
+  if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
   previewTimer = null;
   previewStopTimer = null;
+  previewProgressFrame = null;
+}
+
+function setPreviewProgress(progress: number, remainingMs = PREVIEW_MAX_MS): void {
+  const clamped = Math.max(0, Math.min(1, progress));
+  const fill = document.getElementById('previewProgressFill');
+  const time = document.getElementById('previewProgressTime');
+  if (fill) fill.style.width = `${Math.round(clamped * 100)}%`;
+  if (time) time.textContent = `${Math.max(0, Math.ceil(remainingMs / 1000))}s`;
+}
+
+function updatePreviewProgress(): void {
+  const elapsedMs = PREVIEW_MAX_MS - previewRemainingMs + (performance.now() - previewStartedAtMs);
+  const remainingMs = Math.max(0, PREVIEW_MAX_MS - elapsedMs);
+  setPreviewProgress(elapsedMs / PREVIEW_MAX_MS, remainingMs);
+  if (!previewAudio.paused && remainingMs > 0) {
+    previewProgressFrame = requestAnimationFrame(updatePreviewProgress);
+  } else {
+    previewProgressFrame = null;
+  }
 }
 
 function stopMapPreview(clearStatus = false): void {
@@ -559,6 +590,7 @@ function stopMapPreview(clearStatus = false): void {
   previewRemainingMs = PREVIEW_MAX_MS;
   previewStartedAtMs = 0;
   previewPaused = false;
+  setPreviewProgress(0);
   if (clearStatus) setPreviewStatus('Preview zatrzymane');
 }
 
@@ -647,7 +679,7 @@ function bindPreviewVolumeControl(): void {
     const effectiveVolume = getPreviewVolume();
     previewAudio.volume = effectiveVolume;
     if (effectiveVolume <= 0) {
-      previewAudio.pause();
+      if (!previewAudio.paused) pausePreview();
       setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
     } else if (previewPaused) {
       setPreviewStatus('Preview w pauzie. Kliknij Resume, aby wznowić.', 'paused');
@@ -657,21 +689,32 @@ function bindPreviewVolumeControl(): void {
 
 function armPreviewStopTimer(ms: number): void {
   if (previewStopTimer) clearTimeout(previewStopTimer);
+  if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
+  previewProgressFrame = null;
   previewStartedAtMs = performance.now();
   previewStopTimer = setTimeout(() => {
+    if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
+    previewProgressFrame = null;
+    previewStopTimer = null;
     previewAudio.pause();
     previewPaused = false;
     previewRemainingMs = PREVIEW_MAX_MS;
+    setPreviewProgress(1, 0);
     setPreviewStatus('Preview zakończone');
   }, Math.max(0, ms));
+  updatePreviewProgress();
 }
 
 function pausePreview(): void {
   if (previewAudio.paused) return;
   if (previewStopTimer) clearTimeout(previewStopTimer);
+  if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
+  previewStopTimer = null;
+  previewProgressFrame = null;
   previewRemainingMs = Math.max(0, previewRemainingMs - (performance.now() - previewStartedAtMs));
   previewAudio.pause();
   previewPaused = true;
+  setPreviewProgress((PREVIEW_MAX_MS - previewRemainingMs) / PREVIEW_MAX_MS, previewRemainingMs);
   setPreviewStatus('Preview w pauzie. Kliknij, aby wznowić.', 'paused');
 }
 

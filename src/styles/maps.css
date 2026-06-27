@@ -711,6 +711,36 @@ option { background: #0a1628; }
   color: rgba(142, 200, 255, 0.94);
 }
 
+.preview-progress {
+  margin: -8px 0 12px;
+  padding: 0 2px;
+}
+.preview-progress-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+.preview-progress-fill {
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(47, 124, 255, 0.95), rgba(54, 242, 161, 0.95));
+  box-shadow: 0 0 14px rgba(54, 242, 161, 0.22);
+  transition: width 0.12s linear;
+}
+.preview-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 6px;
+  color: rgba(148, 163, 184, 0.62);
+  font: 800 9px 'JetBrains Mono', monospace;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
 .preview-volume-row {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) 42px;
