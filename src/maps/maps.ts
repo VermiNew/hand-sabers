@@ -202,10 +202,13 @@ let searchQuery: string     = '';
 const PREVIEW_DELAY_MS = 850;
 const PREVIEW_MAX_MS = 30_000;
 const PREVIEW_BASE_VOLUME = 0.34;
+const PREVIEW_FADE_IN_MS = 420;
+const PREVIEW_FADE_OUT_MS = 360;
 const previewAudio = new Audio();
 let previewTimer: ReturnType<typeof setTimeout> | null = null;
 let previewStopTimer: ReturnType<typeof setTimeout> | null = null;
 let previewProgressFrame: number | null = null;
+let previewFadeFrame: number | null = null;
 let previewObjectUrl: string | null = null;
 let previewToken = 0;
 let previewRemainingMs = PREVIEW_MAX_MS;
@@ -411,7 +414,7 @@ function renderDetail(map: MapEntry | null): void {
               <div id="previewProgressFill" class="preview-progress-fill"></div>
             </div>
             <div class="preview-progress-meta">
-              <span>Preview max 30s</span>
+              <span>Preview duration</span>
               <span id="previewProgressTime">30s</span>
             </div>
           </div>
@@ -555,9 +558,50 @@ function clearPreviewTimers(): void {
   if (previewTimer) clearTimeout(previewTimer);
   if (previewStopTimer) clearTimeout(previewStopTimer);
   if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
+  if (previewFadeFrame !== null) cancelAnimationFrame(previewFadeFrame);
   previewTimer = null;
   previewStopTimer = null;
   previewProgressFrame = null;
+  previewFadeFrame = null;
+}
+
+function unloadPreviewAudio(): void {
+  previewAudio.pause();
+  previewAudio.removeAttribute('src');
+  previewAudio.load();
+  if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+  previewObjectUrl = null;
+}
+
+function fadePreviewVolume(fromVolume: number, toVolume: number, durationMs: number, token: number, onDone?: () => void): void {
+  if (previewFadeFrame !== null) cancelAnimationFrame(previewFadeFrame);
+  previewFadeFrame = null;
+
+  const from = Math.max(0, Math.min(1, fromVolume));
+  const to = Math.max(0, Math.min(1, toVolume));
+  const startedAt = performance.now();
+  previewAudio.volume = from;
+
+  const step = (now: number) => {
+    if (token !== previewToken) {
+      previewFadeFrame = null;
+      return;
+    }
+
+    const progress = durationMs <= 0 ? 1 : Math.max(0, Math.min(1, (now - startedAt) / durationMs));
+    const eased = progress * progress * (3 - 2 * progress);
+    previewAudio.volume = from + (to - from) * eased;
+
+    if (progress < 1) {
+      previewFadeFrame = requestAnimationFrame(step);
+      return;
+    }
+
+    previewFadeFrame = null;
+    onDone?.();
+  };
+
+  previewFadeFrame = requestAnimationFrame(step);
 }
 
 function setPreviewProgress(progress: number, remainingMs = PREVIEW_MAX_MS): void {
@@ -580,18 +624,24 @@ function updatePreviewProgress(): void {
 }
 
 function stopMapPreview(clearStatus = false): void {
+  const shouldFadeOut = Boolean(previewAudio.src) && !previewAudio.paused && previewAudio.volume > 0;
+  const srcToStop = previewAudio.src;
   clearPreviewTimers();
-  previewToken++;
-  previewAudio.pause();
-  previewAudio.removeAttribute('src');
-  previewAudio.load();
-  if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
-  previewObjectUrl = null;
+  const token = ++previewToken;
   previewRemainingMs = PREVIEW_MAX_MS;
   previewStartedAtMs = 0;
   previewPaused = false;
   setPreviewProgress(0);
   if (clearStatus) setPreviewStatus('Preview zatrzymane');
+
+  if (!shouldFadeOut) {
+    unloadPreviewAudio();
+    return;
+  }
+
+  fadePreviewVolume(previewAudio.volume, 0, PREVIEW_FADE_OUT_MS, token, () => {
+    if (token === previewToken && previewAudio.src === srcToStop) unloadPreviewAudio();
+  });
 }
 
 function scheduleMapPreview(map: MapEntry): void {
@@ -601,7 +651,7 @@ function scheduleMapPreview(map: MapEntry): void {
     setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
     return;
   }
-  const token = ++previewToken;
+  const token = previewToken;
   setPreviewStatus('Preview wystartuje za chwilę...', 'loading');
   previewTimer = setTimeout(() => {
     void startMapPreview(map, token);
@@ -627,8 +677,12 @@ async function startMapPreview(map: MapEntry, token: number): Promise<void> {
       return;
     }
 
+    if (previewFadeFrame !== null) cancelAnimationFrame(previewFadeFrame);
+    previewFadeFrame = null;
+    unloadPreviewAudio();
+
     previewObjectUrl = source.url;
-    previewAudio.volume = effectiveVolume;
+    previewAudio.volume = 0;
     previewAudio.src = source.url;
     await waitForPreviewMetadata();
 
@@ -639,6 +693,7 @@ async function startMapPreview(map: MapEntry, token: number): Promise<void> {
     previewPaused = false;
     previewRemainingMs = PREVIEW_MAX_MS;
     armPreviewStopTimer(previewRemainingMs);
+    fadePreviewVolume(0, effectiveVolume, PREVIEW_FADE_IN_MS, token);
     setPreviewStatus('Odtwarzam preview', 'playing');
   } catch (error) {
     if (token !== previewToken) return;
@@ -691,17 +746,24 @@ function armPreviewStopTimer(ms: number): void {
   if (previewStopTimer) clearTimeout(previewStopTimer);
   if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
   previewProgressFrame = null;
+  const fadeMs = Math.min(PREVIEW_FADE_OUT_MS, Math.max(0, ms));
+  const stopDelayMs = Math.max(0, ms - fadeMs);
+  const token = previewToken;
+  const srcToStop = previewAudio.src;
   previewStartedAtMs = performance.now();
   previewStopTimer = setTimeout(() => {
-    if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
-    previewProgressFrame = null;
     previewStopTimer = null;
-    previewAudio.pause();
-    previewPaused = false;
-    previewRemainingMs = PREVIEW_MAX_MS;
-    setPreviewProgress(1, 0);
-    setPreviewStatus('Preview zakończone');
-  }, Math.max(0, ms));
+    fadePreviewVolume(previewAudio.volume, 0, fadeMs, token, () => {
+      if (token !== previewToken || previewAudio.src !== srcToStop) return;
+      if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
+      previewProgressFrame = null;
+      unloadPreviewAudio();
+      previewPaused = false;
+      previewRemainingMs = PREVIEW_MAX_MS;
+      setPreviewProgress(1, 0);
+      setPreviewStatus('Preview zakończone');
+    });
+  }, stopDelayMs);
   updatePreviewProgress();
 }
 
@@ -711,11 +773,14 @@ function pausePreview(): void {
   if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
   previewStopTimer = null;
   previewProgressFrame = null;
+  const token = previewToken;
   previewRemainingMs = Math.max(0, previewRemainingMs - (performance.now() - previewStartedAtMs));
-  previewAudio.pause();
   previewPaused = true;
   setPreviewProgress((PREVIEW_MAX_MS - previewRemainingMs) / PREVIEW_MAX_MS, previewRemainingMs);
   setPreviewStatus('Preview w pauzie. Kliknij, aby wznowić.', 'paused');
+  fadePreviewVolume(previewAudio.volume, 0, PREVIEW_FADE_OUT_MS, token, () => {
+    if (token === previewToken && previewPaused) previewAudio.pause();
+  });
 }
 
 async function resumePreview(): Promise<void> {
@@ -724,10 +789,12 @@ async function resumePreview(): Promise<void> {
     setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
     return;
   }
-  previewAudio.volume = effectiveVolume;
+  const token = previewToken;
+  const startVolume = Math.max(0, Math.min(1, previewAudio.volume));
   await previewAudio.play();
   previewPaused = false;
   armPreviewStopTimer(previewRemainingMs || PREVIEW_MAX_MS);
+  fadePreviewVolume(startVolume, effectiveVolume, PREVIEW_FADE_IN_MS, token);
   setPreviewStatus('Odtwarzam preview', 'playing');
 }
 
@@ -737,12 +804,12 @@ function toggleMapPreview(): void {
     return;
   }
   if (!previewAudio.src) return;
-  if (!previewAudio.paused) {
-    pausePreview();
-    return;
-  }
   if (previewPaused) {
     void resumePreview().catch(() => setPreviewStatus('Nie udało się wznowić preview', 'error'));
+    return;
+  }
+  if (!previewAudio.paused) {
+    pausePreview();
   }
 }
 
