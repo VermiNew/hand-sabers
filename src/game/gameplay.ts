@@ -21,6 +21,12 @@ interface ActiveBlock {
   mapBeat: boolean;
   hitTimeSec: number | null;
   approachSec: number;
+  isHeld: boolean;
+  heldDuration: number;
+  heldProgress: number;
+  heldMesh: THREE.Mesh | null;
+  heldLen: number;
+  heldDrainAccum: number;
 }
 
 interface BladeCache {
@@ -61,6 +67,7 @@ const REGEN_EVERY_HITS    = 8;
 export const APPROACH_TIME_MS = 1800;
 export const MAP_APPROACH_TIME_SEC = APPROACH_TIME_MS / 1000;
 const MENU_DEMO_BEAT_MS   = 540;
+const HELD_MISS_GRACE_SEC = 0.45;
 
 // Perfect hit: środek ostrza (25% długości od centrum)
 const BLADE_CENTER = new THREE.Vector3();
@@ -86,6 +93,8 @@ const MATS = {
   arrow: new THREE.MeshBasicMaterial({ color: THEME.white, transparent: true, opacity: 0.9 }),
   bomb: new THREE.MeshStandardMaterial({ color: THEME.bomb, emissive: THEME.bomb, emissiveIntensity: 0.4, roughness: 0.4, metalness: 0.6 }),
   bombSpike: new THREE.MeshBasicMaterial({ color: 0xff6060 }),
+  heldL: new THREE.MeshStandardMaterial({ color: THEME.left,  emissive: THEME.left,  emissiveIntensity: 0.45, roughness: 0.35, metalness: 0.5, transparent: true, opacity: 0.75 }),
+  heldR: new THREE.MeshStandardMaterial({ color: THEME.right, emissive: THEME.right, emissiveIntensity: 0.45, roughness: 0.35, metalness: 0.5, transparent: true, opacity: 0.75 }),
 };
 
 // Current block colors, kept in sync with saber color (used for shards)
@@ -525,8 +534,15 @@ export function startGameplay() {
   updateHUD(state);
 }
 
+function disposeHeldMesh(entry: ActiveBlock): void {
+  if (!entry.heldMesh) return;
+  scene.remove(entry.heldMesh);
+  entry.heldMesh.geometry.dispose();
+  entry.heldMesh = null;
+}
+
 export function clearGameplayEntities() {
-  for (const b of activeBlocks) releaseBlock(b.mesh);
+  for (const b of activeBlocks) { disposeHeldMesh(b); releaseBlock(b.mesh); }
   activeBlocks.length = 0;
 
   // Pool zostaje w pamięci między restartami. Dzięki temu restart nie powoduje
@@ -545,7 +561,7 @@ export function clearGameplayEntities() {
 
 
 export function resetMenuDemo() {
-  for (const b of activeBlocks) releaseBlock(b.mesh);
+  for (const b of activeBlocks) { disposeHeldMesh(b); releaseBlock(b.mesh); }
   activeBlocks.length = 0;
   for (let s = 0; s < MAX_BURSTS; s++) sparkLives[s] = 0;
   sparkSystem.visible = false;
@@ -577,6 +593,7 @@ interface SpawnOptions {
   mapBeat?: boolean;
   hitTimeSec?: number;
   approachSec?: number;
+  heldDuration?: number;
 }
 
 // ── Spawn ────────────────────────────────────────────────────────────────────
@@ -588,9 +605,25 @@ function spawnBlock(side: SaberSide | null = null, isBomb = false, options: Spaw
   const x    = Number.isFinite(options.x) ? options.x! : (isBomb ? (Math.random() * 2 - 1) * 1.2 : (side === 'left' ? -1 : 1) * (0.4 + Math.random() * 0.8));
   const y    = Number.isFinite(options.y) ? options.y! : 0.7 + Math.random() * 1.0;
   const z    = Number.isFinite(options.z) ? options.z! : SPAWN_Z;
+  const heldDuration = (!isBomb && Number.isFinite(options.heldDuration) && options.heldDuration! > 0)
+    ? options.heldDuration! : 0;
+  const MAX_HELD_LEN = (HIT_Z - SPAWN_Z) * 0.85;
+  const heldLen = heldDuration > 0 ? Math.min(heldDuration * BLOCK_SPEED_PER_MS * 1000, MAX_HELD_LEN) : 0;
+
   mesh.position.set(x, y, z);
   mesh.userData = { side, alive: true, isBomb, cut };
   if (!isBomb) configureBlockArrow(mesh, cut);
+
+  let heldMesh: THREE.Mesh | null = null;
+  if (heldLen > 0) {
+    const geo = new THREE.BoxGeometry(0.38, 0.38, heldLen);
+    const mat = side === 'left' ? MATS.heldL : MATS.heldR;
+    heldMesh = new THREE.Mesh(geo, mat);
+    heldMesh.frustumCulled = false;
+    heldMesh.position.set(x, y, z - (heldLen * 0.5 + 0.19));
+    scene.add(heldMesh);
+  }
+
   activeBlocks.push({
     mesh,
     side,
@@ -600,6 +633,12 @@ function spawnBlock(side: SaberSide | null = null, isBomb = false, options: Spaw
     mapBeat: Boolean(options.mapBeat),
     hitTimeSec: Number.isFinite(options.hitTimeSec) ? options.hitTimeSec! : null,
     approachSec: Number.isFinite(options.approachSec) ? options.approachSec! : MAP_APPROACH_TIME_SEC,
+    isHeld: heldLen > 0,
+    heldDuration,
+    heldProgress: 0,
+    heldMesh,
+    heldLen,
+    heldDrainAccum: 0,
   });
   publishGameplayStats();
 }
@@ -774,7 +813,42 @@ function showHitLabel(pos3d: THREE.Vector3, label: string, perfect: boolean, _re
   setTimeout(() => el.remove(), 380);
 }
 
-function checkHits() {
+function bladeInsideHeld(entry: ActiveBlock, cache: BladeCache): boolean {
+  if (!cache.hasCurrent) return false;
+  const bx = entry.mesh.position.x;
+  const by = entry.mesh.position.y;
+  const zFront = entry.mesh.position.z + 0.19;
+  const zBack  = entry.mesh.position.z - entry.heldLen - 0.19;
+  const HIT_R  = 0.55;
+
+  const checkPoint = (start: THREE.Vector3, end: THREE.Vector3): boolean => {
+    // Project blade segment onto XY plane to find closest point in XY,
+    // then verify that point's Z falls within the hold bar range.
+    const lx = end.x - start.x, ly = end.y - start.y;
+    const lenSq2 = lx * lx + ly * ly;
+    const t = lenSq2 > 1e-10
+      ? Math.max(0, Math.min(1, ((bx - start.x) * lx + (by - start.y) * ly) / lenSq2))
+      : 0;
+    const cx = start.x + t * lx, cy = start.y + t * ly;
+    const cz = start.z + t * (end.z - start.z);
+    const dx = cx - bx, dy = cy - by;
+    return dx * dx + dy * dy <= HIT_R * HIT_R && cz >= zBack && cz <= zFront;
+  };
+
+  if (checkPoint(cache.currentStart, cache.currentEnd)) return true;
+  if (cache.hasPrevious && checkPoint(cache.previousStart, cache.previousEnd)) return true;
+  return false;
+}
+
+function isPastRemovalPoint(entry: ActiveBlock, mapTimeSec: number): boolean {
+  if (!entry.isHeld) return entry.mesh.position.z > 4.5;
+  if (entry.mapBeat && Number.isFinite(entry.hitTimeSec) && Number.isFinite(mapTimeSec)) {
+    return mapTimeSec > entry.hitTimeSec! + entry.heldDuration + HELD_MISS_GRACE_SEC;
+  }
+  return entry.mesh.position.z - entry.heldLen - 0.19 > 4.5;
+}
+
+function checkHits(deltaSec: number, mapTimeSec: number) {
   captureBladeHitbox(lSaber, bladeHitboxes.left);
   captureBladeHitbox(rSaber, bladeHitboxes.right);
   const lSpeed = getSwingSpeed(bladeHitboxes.left);
@@ -784,7 +858,8 @@ function checkHits() {
     const entry = activeBlocks[i]!;
     if (!entry.alive) { swapRemoveActiveBlock(i); continue; }
 
-    if (entry.mesh.position.z > 4.5) {
+    if (isPastRemovalPoint(entry, mapTimeSec)) {
+      disposeHeldMesh(entry);
       releaseBlock(entry.mesh);
       swapRemoveActiveBlock(i);
       if (!entry.isBomb) {
@@ -805,6 +880,51 @@ function checkHits() {
     if (entry.isBomb) {
       if (useLeft && bladeHits(entry.mesh, bladeHitboxes.left)  && lSpeed > MIN_SWING_SPEED) { hitBomb(entry); swapRemoveActiveBlock(i); }
       else if (useRight && bladeHits(entry.mesh, bladeHitboxes.right) && rSpeed > MIN_SWING_SPEED) { hitBomb(entry); swapRemoveActiveBlock(i); }
+      continue;
+    }
+
+    if (entry.isHeld) {
+      const touchingLeft  = (state.oneHandMode === 'left'  || entry.side === 'left')  && useLeft  && bladeInsideHeld(entry, bladeHitboxes.left);
+      const touchingRight = (state.oneHandMode === 'right' || entry.side === 'right') && useRight && bladeInsideHeld(entry, bladeHitboxes.right);
+      const touching = touchingLeft || touchingRight;
+
+      // Accumulate progress once the head reaches the player
+      if (touching && entry.mesh.position.z >= HIT_Z) {
+        entry.heldProgress += deltaSec;
+        entry.heldDrainAccum = 0;
+        if (entry.heldProgress >= entry.heldDuration) {
+          const pos = entry.mesh.position.clone();
+          const light = entry.side === 'left' ? lLight : rLight;
+          disposeHeldMesh(entry);
+          releaseBlock(entry.mesh);
+          swapRemoveActiveBlock(i);
+          state.lives = Math.min(state.maxLives, state.lives + 3);
+          state.score += 300;
+          const next = registerComboHit(state);
+          state.combo = next.combo;
+          state.maxCombo = next.maxCombo;
+          hitStreakForRegen++;
+          lastHitMs = performance.now();
+          updateHUD(state);
+          playHit(Math.max(1, state.combo));
+          showHitLabel(pos, 'HOLD', true, '', 0);
+          light.intensity = 12;
+          if (light.userData.hitTimer) clearTimeout(light.userData.hitTimer);
+          light.userData.hitTimer = setTimeout(() => { light.intensity = 4; light.userData.hitTimer = null; }, 120);
+          continue;
+        }
+      } else if (!touching && entry.mesh.position.z >= HIT_Z) {
+        entry.heldDrainAccum += deltaSec;
+        if (entry.heldDrainAccum >= 1.0) {
+          entry.heldDrainAccum -= 1.0;
+          ({ combo: state.combo, maxCombo: state.maxCombo } = resetCombo(state));
+          state.lives = Math.max(0, state.lives - 1);
+          hitStreakForRegen = 0;
+          updateHUD(state);
+          triggerShake(0.04);
+          if (state.lives <= 0 && !state.noFail) gameOverHandler();
+        }
+      }
       continue;
     }
 
@@ -910,6 +1030,7 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
       y: lane.y,
       z: SPAWN_Z,
       cut: b.cut,
+      heldDuration: b.type === 'held' ? (b.duration ?? 0.05) : 0,
     });
   }
 }
@@ -942,23 +1063,27 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
   }
 
   const spd = BLOCK_SPEED_PER_MS * elapsed;
+  const deltaSec = elapsed / 1000;
   for (const entry of activeBlocks) {
     if (!entry.alive) continue;
     if (entry.mapBeat && Number.isFinite(entry.hitTimeSec)) {
-      entry.mesh.position.z = noteZAtSongTime({
+      const newZ = noteZAtSongTime({
         hitTimeSec: entry.hitTimeSec!,
         songTimeSec: mapTimeSec,
         spawnZ: SPAWN_Z,
         hitZ: HIT_Z,
         approachSec: entry.approachSec || MAP_APPROACH_TIME_SEC,
       });
+      entry.mesh.position.z = newZ;
+      if (entry.heldMesh) entry.heldMesh.position.z = newZ - (entry.heldLen * 0.5 + 0.19);
     } else {
       entry.mesh.position.z += spd;
+      if (entry.heldMesh) entry.heldMesh.position.z += spd;
     }
-    entry.mesh.rotation.y += 0.025 * dtScale;
+    if (!entry.isHeld) entry.mesh.rotation.y += 0.025 * dtScale;
   }
 
-  checkHits();
+  checkHits(deltaSec, mapTimeSec);
   publishGameplayStats();
 }
 
@@ -991,6 +1116,10 @@ export function setBlockColor(side: 'left' | 'right', hex: number): void {
   mat.color.setHex(hex);
   mat.emissive.setHex(hex);
   mat.needsUpdate = true;
+  const held = side === 'left' ? MATS.heldL : MATS.heldR;
+  held.color.setHex(hex);
+  held.emissive.setHex(hex);
+  held.needsUpdate = true;
   outl.color.setHex(hex);
   outl.needsUpdate = true;
   if (side === 'left') currentColorLeft = hex;

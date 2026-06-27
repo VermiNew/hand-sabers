@@ -65,7 +65,25 @@ const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
 
 app.use(express.json({ limit: '100mb' }));
 
-const BLOCKED_STATIC_RE = /^\/(?:node_modules|maps|scripts)(?:\/|$)|^\/(?:server\.js|package(?:-lock)?\.json|TODO\.md|README\.md|vite\.config\.js)$/i;
+app.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  const origin = req.get('origin');
+  if (!origin) return next();
+
+  try {
+    const host = req.get('host');
+    const originUrl = new URL(origin);
+    if (host && originUrl.host === host) return next();
+    const [hostName = '', hostPort = ''] = String(host || '').toLowerCase().split(':');
+    if (originUrl.hostname.toLowerCase() === hostName && ['3000', '5173'].includes(originUrl.port) && ['3000', '5173'].includes(hostPort)) {
+      return next();
+    }
+  } catch {}
+
+  return res.status(403).json({ error: 'Niedozwolone źródło żądania.' });
+});
+
+const BLOCKED_STATIC_RE = /^\/(?:node_modules|maps|scripts|server|src|tests|dist-server|\.claude|\.git)(?:\/|$)|^\/(?:server\.(?:js|ts)|package(?:-lock)?\.json|TODO\.md|README(?:\.pl)?\.md|vite\.config\.js|tsconfig(?:\.server)?\.json|AGENTS\.md)$/i;
 app.use((req, res, next) => {
   if ((req.method === 'GET' || req.method === 'HEAD') && BLOCKED_STATIC_RE.test(req.path)) {
     return res.status(404).type('text/plain').send('Not found');
@@ -96,7 +114,10 @@ const scoreStorage = createScoreStorage(SCORES_FILE);
 registerScoreRoutes({ app, storage: scoreStorage, rateLimit });
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
-  if (err?.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'Plik jest za duży. Limit: 100 MB.' });
+  if (err?.code === 'LIMIT_FILE_SIZE') {
+    const limitMb = Math.round(MAX_IMPORT_BYTES / 1024 / 1024);
+    return res.status(413).json({ error: `Plik jest za duży. Limit: ${limitMb} MB.` });
+  }
   res.status(400).json({ error: err?.message || 'Błędne żądanie.' });
 };
 app.use(errorHandler);

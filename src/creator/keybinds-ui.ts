@@ -72,6 +72,8 @@ export function initKeybindsUI(): void {
   // Close button
   document.getElementById('btnShortcutsClose')?.addEventListener('click', () => {
     document.getElementById('shortcutsPanel')?.classList.add('hidden');
+    document.getElementById('btnShortcuts')?.classList.remove('active');
+    document.getElementById('btnShortcuts')?.setAttribute('aria-expanded', 'false');
     stopRecording();
   });
 }

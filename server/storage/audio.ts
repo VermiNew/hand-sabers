@@ -1,7 +1,7 @@
-import { readdir, unlink, writeFile } from 'fs/promises';
+import { readdir, rename, unlink, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
-import { AUDIO_EXT_RE, sanitizeMapId } from '../../src/core/map-format.js';
+import { AUDIO_EXT_RE, MAX_IMPORT_BYTES, findPreferredAudioEntry, sanitizeMapId } from '../../src/core/map-format.js';
 import type { StoredMap } from './maps.js';
 
 export interface StoredAudio {
@@ -59,7 +59,7 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
       const stored = safeStoredAudioName(map?.meta?.serverAudioFile);
       const candidates: Array<{ dir: string; fileName: string }> = [];
 
-      if (stored) {
+      if (stored && stored.startsWith(`${id}.`)) {
         candidates.push({ dir: audioDir, fileName: stored });
         candidates.push({ dir: legacyAudioDir, fileName: stored });
       }
@@ -119,11 +119,16 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
       if (!AUDIO_EXT_RE.test(cleanName)) {
         throw new Error('Nieobsługiwany format audio. Dozwolone: mp3, ogg, wav, flac.');
       }
+      if (buffer.byteLength > MAX_IMPORT_BYTES) {
+        throw new Error(`Audio jest za duże. Limit: ${Math.round(MAX_IMPORT_BYTES / 1024 / 1024)} MB.`);
+      }
 
       const storedFile = `${map.id}${ext}`;
       const storedPath = path.join(audioDir, storedFile);
+      const tmpPath = `${storedPath}.${process.pid}.${Date.now()}.tmp`;
       await storage.remove(map.id, storedPath);
-      await writeFile(storedPath, Buffer.from(buffer));
+      await writeFile(tmpPath, Buffer.from(buffer));
+      await rename(tmpPath, storedPath);
 
       map.meta = {
         ...(map.meta || {}),
@@ -132,11 +137,11 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
         audioUrl: `/api/maps/${encodeURIComponent(map.id)}/audio`,
       };
 
-      return { originalName: cleanName, storedFile, size: Buffer.byteLength(buffer) };
+      return { originalName: cleanName, storedFile, size: buffer.byteLength };
     },
 
     async persistZip(entries: ZipAudioEntry[], map: StoredMap): Promise<PersistedAudio | null> {
-      const audioFile = entries.find(file => !file.dir && AUDIO_EXT_RE.test(file.name));
+      const audioFile = findPreferredAudioEntry(entries, map.meta?.audioFile);
       if (!audioFile) return null;
 
       const originalName = path.posix.basename(audioFile.name);

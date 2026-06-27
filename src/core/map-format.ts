@@ -80,7 +80,25 @@ export function isPlainObject(value: unknown): value is UnknownRecord {
 export function isSafeZipPath(name: unknown): boolean {
   const zipPath = String(name || '').replace(/\\/g, '/');
   if (!zipPath || zipPath.startsWith('/') || zipPath.startsWith('~')) return false;
-  return !zipPath.split('/').some(part => part === '..' || part === '');
+  const parts = zipPath.endsWith('/') ? zipPath.slice(0, -1).split('/') : zipPath.split('/');
+  return parts.length > 0 && !parts.some(part => part === '..' || part === '');
+}
+
+export function findPreferredAudioEntry<T extends { dir?: boolean; name?: string }>(
+  entries: readonly T[],
+  preferredName: unknown,
+): T | null {
+  const audioEntries = entries.filter(entry => !entry.dir && AUDIO_EXT_RE.test(String(entry.name || '')));
+  if (!audioEntries.length) return null;
+
+  const preferredPath = String(preferredName || '').replace(/\\/g, '/').toLowerCase();
+  const preferredBase = preferredPath.split('/').pop() || '';
+  if (!preferredBase) return audioEntries[0]!;
+
+  return audioEntries.find(entry => {
+    const entryPath = String(entry.name || '').replace(/\\/g, '/').toLowerCase();
+    return entryPath === preferredPath || entryPath.split('/').pop() === preferredBase;
+  }) || audioEntries[0]!;
 }
 
 export function assertFileSize(fileLike: FileLike, limitBytes = MAX_IMPORT_BYTES): void {
@@ -103,7 +121,7 @@ function normalizeBeat(rawBeat: unknown, index = 0): NormalizedBeat {
   const side: BeatSide = beat.side === 'right' || beat.side === 'left' || beat.side === 'random'
     ? beat.side
     : index % 2 ? 'right' : 'left';
-  const type: BeatType = beat.type === 'bomb' ? 'bomb' : 'block';
+  const type: BeatType = beat.type === 'bomb' ? 'bomb' : beat.type === 'held' ? 'held' : 'block';
   const out: NormalizedBeat = {
     ...beat,
     t: Number.isFinite(t) ? Math.max(0, t) : 0,
@@ -111,8 +129,10 @@ function normalizeBeat(rawBeat: unknown, index = 0): NormalizedBeat {
     type,
     cut: normalizeCut(beat.cut ?? beat.direction ?? beat.cutDirection),
   };
+  delete out._overlap;
   if (Number.isFinite(Number(beat.x))) out.x = Number(beat.x);
   if (Number.isFinite(Number(beat.y))) out.y = Number(beat.y);
+  if (type === 'held' && Number.isFinite(Number(beat.duration))) out.duration = Math.max(0.05, Number(beat.duration));
   return out;
 }
 

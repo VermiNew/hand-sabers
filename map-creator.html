@@ -103,6 +103,16 @@
   <span class="tap-hint tap-hint-held"  title="Shift+F/J podczas nagrywania">Shift+F/J — HELD</span>
 </div>
 
+<!-- CREATOR COACH -->
+<div id="creatorCoach" aria-label="Szybki workflow edytora">
+  <div class="coach-title">WORKFLOW</div>
+  <div class="coach-step"><kbd>1</kbd><span>Wczytaj audio lub ZIP</span></div>
+  <div class="coach-step"><kbd>Space</kbd><span>Start / pauza z odliczaniem</span></div>
+  <div class="coach-step"><kbd>F</kbd><kbd>J</kbd><span>Tapuj beaty w rytmie</span></div>
+  <div class="coach-step"><kbd>Shift+F/J</kbd><span>Held notes</span></div>
+  <div class="coach-step"><kbd>?</kbd><span>Pełna mapa skrótów</span></div>
+</div>
+
 <!-- SHORTCUTS PANEL -->
 <div id="shortcutsPanel" class="shortcuts-panel hidden">
   <div class="shortcuts-header">
@@ -198,6 +208,11 @@
       <div class="drop-icon material-symbols-rounded">music_note</div>
       <div data-i18n="creator.dropAudio">Przeciągnij plik MP3 / OGG / WAV</div>
       <div class="drop-hint" data-i18n="creator.dropAudioSub">lub kliknij aby wybrać</div>
+      <div class="drop-mini-guide">
+        <span><kbd>Space</kbd> odsłuch</span>
+        <span><kbd>F/J</kbd> tap</span>
+        <span><kbd>Ctrl+S</kbd> zapis</span>
+      </div>
     </div>
     <input type="file" id="fileInput" accept="audio/*,.json,.zip">
   </div>

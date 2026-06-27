@@ -305,6 +305,7 @@ function endGame(): void {
   const progress = dur > 0 ? Math.max(0, Math.min(1, pos / dur)) : undefined;
   stopMapAudio();
   resetMapTimeline();
+  clearGameplayEntities();
   void submitScore(progress);
   fadeTransition(() => { showGameOver(state); });
 }

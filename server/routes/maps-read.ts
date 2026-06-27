@@ -1,4 +1,4 @@
-import { readFile } from 'fs/promises';
+import { createReadStream } from 'fs';
 import type { Express } from 'express';
 import { createRequire } from 'module';
 import { sanitizeMapId } from '../../src/core/map-format.js';
@@ -86,9 +86,13 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage }: MapRead
       if (!map) return res.status(404).json({ error: 'Mapa nie znaleziona.' });
       const audio = await audioStorage.find(id, map);
       if (!audio) return res.status(404).json({ error: 'Audio nie znalezione.' });
-      const bytes = await readFile(audio.fullPath);
       res.type(audioStorage.mimeForFile(audio.publicName || audio.fileName));
-      res.send(bytes);
+      createReadStream(audio.fullPath)
+        .on('error', err => {
+          if (!res.headersSent) res.status(500).json({ error: err.message });
+          else res.destroy(err);
+        })
+        .pipe(res);
     } catch (error) {
       res.status(500).json({ error: errorMessage(error) });
     }

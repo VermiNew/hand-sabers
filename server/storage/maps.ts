@@ -1,4 +1,4 @@
-import { readdir, readFile, unlink, writeFile } from 'fs/promises';
+import { readdir, readFile, rename, unlink, writeFile } from 'fs/promises';
 import path from 'path';
 import type { GameMap } from '../../src/types/index.js';
 
@@ -47,7 +47,10 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [] }: MapSt
     },
 
     async write(map: StoredMap): Promise<void> {
-      await writeFile(mapFilePath(map.id), JSON.stringify(map, null, 2));
+      const finalPath = mapFilePath(map.id);
+      const tmpPath = `${finalPath}.${process.pid}.${Date.now()}.tmp`;
+      await writeFile(tmpPath, JSON.stringify(map, null, 2));
+      await rename(tmpPath, finalPath);
     },
 
     async list(): Promise<StoredMapFile[]> {

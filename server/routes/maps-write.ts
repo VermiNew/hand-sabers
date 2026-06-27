@@ -3,6 +3,7 @@ import type { Express, RequestHandler } from 'express';
 import JSZip from 'jszip';
 import {
   MAX_BEATS_EXTENDED,
+  MAX_IMPORT_BYTES,
   assertFileSize,
   normalizeMap,
   sanitizeMapId,
@@ -24,6 +25,20 @@ interface MapWriteRoutesOptions {
 }
 
 const ZIP_TIMEOUT_MS = 15_000;
+
+type SizedZipEntry = ZipAudioEntry & { _data?: { uncompressedSize?: number } };
+
+function zipUncompressedSize(entry: SizedZipEntry): number {
+  const size = Number(entry._data?.uncompressedSize ?? 0);
+  return Number.isFinite(size) && size > 0 ? size : 0;
+}
+
+function assertZipUncompressedLimit(entries: SizedZipEntry[]): void {
+  const total = entries.reduce((sum, entry) => sum + zipUncompressedSize(entry), 0);
+  if (total > MAX_IMPORT_BYTES) {
+    throw new Error(`ZIP po rozpakowaniu jest za duży. Limit: ${Math.round(MAX_IMPORT_BYTES / 1024 / 1024)} MB.`);
+  }
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
@@ -105,11 +120,16 @@ export function registerMapWriteRoutes({
           ZIP_TIMEOUT_MS,
           'Parsowanie ZIP'
         );
-        const entries = Object.values(zip.files) as ZipAudioEntry[];
+        const entries = Object.values(zip.files) as SizedZipEntry[];
         validateZipEntryNames(entries);
+        assertZipUncompressedLimit(entries);
         const jsonFile = zip.file('map.json');
         if (!jsonFile) return res.status(400).json({ error: 'Brak map.json w ZIP.' });
-        const rawMap = parseJsonSafe(await jsonFile.async('string'));
+        const rawMapText = await jsonFile.async('string');
+        if (Buffer.byteLength(rawMapText, 'utf8') > MAX_IMPORT_BYTES) {
+          throw new Error(`map.json jest za duży. Limit: ${Math.round(MAX_IMPORT_BYTES / 1024 / 1024)} MB.`);
+        }
+        const rawMap = parseJsonSafe(rawMapText);
         const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
         const audio = await audioStorage.persistZip(entries, map);
         await mapStorage.write(map);
@@ -131,6 +151,10 @@ export function registerMapWriteRoutes({
 
   app.delete('/api/maps/:id', async (req, res) => {
     try {
+      const ip = getIp(req);
+      if (rateLimit(ip, 'maps-delete', 20)) {
+        return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
+      }
       const id = sanitizeMapId(req.params['id'], '');
       if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
       const deleted = await mapStorage.delete(id);

@@ -1,10 +1,11 @@
 import Fuse from 'fuse.js';
-import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, saveLocalMap, saveLocalMapAudio } from '../core/localstore.ts';
+import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, saveLocalMap, saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.ts';
 import { getJSZip } from '../jszip-loader.ts';
-import { AUDIO_EXT_RE, assertFileSize, normalizeMap, validateZipEntryNames } from '../core/map-format.ts';
+import { assertFileSize, findPreferredAudioEntry, normalizeMap, validateZipEntryNames } from '../core/map-format.ts';
 import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
 import { t } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
+import { loadSettings } from '../core/settings.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -54,6 +55,9 @@ interface MapEntry {
     difficulty?: string;
     duration?: number;
     bpm?: number;
+    audioFile?: string;
+    audioUrl?: string;
+    previewStartSec?: number;
   };
   beats?: unknown[];
   updatedAt?: string;
@@ -152,7 +156,7 @@ async function importLocally(file: File): Promise<{ id: string; beats: number; a
     const jsonFile = zip.file('map.json');
     if (!jsonFile) throw new Error('Brak map.json w ZIP.');
     map = normalizeMap(JSON.parse(await jsonFile.async('string')), { fallbackId: file.name.replace(/\.[^.]+$/, '') }) as unknown as MapEntry;
-    const audioFile = entries.find(f => !f.dir && AUDIO_EXT_RE.test(f.name));
+    const audioFile = findPreferredAudioEntry(entries, map.meta?.audioFile);
     if (audioFile) {
       audioName  = audioFile.name.split('/').pop() ?? null;
       if (map.meta) (map.meta as Record<string, unknown>)['audioFile'] = audioName;
@@ -193,6 +197,18 @@ let selectedId: string | null = null;
 let activeDiff: string      = '';
 let activeSort: string      = 'newest';
 let searchQuery: string     = '';
+
+const PREVIEW_DELAY_MS = 850;
+const PREVIEW_MAX_MS = 30_000;
+const PREVIEW_BASE_VOLUME = 0.34;
+const previewAudio = new Audio();
+let previewTimer: ReturnType<typeof setTimeout> | null = null;
+let previewStopTimer: ReturnType<typeof setTimeout> | null = null;
+let previewObjectUrl: string | null = null;
+let previewToken = 0;
+let previewRemainingMs = PREVIEW_MAX_MS;
+let previewStartedAtMs = 0;
+let previewPaused = false;
 
 let fuse: Fuse<MapEntry> | null = null;
 
@@ -260,7 +276,29 @@ function renderMapList(maps: MapEntry[]): void {
     return;
   }
 
-  container.innerHTML = maps.map((m, i) => {
+  if (!selectedId || !maps.some(m => m.id === selectedId)) {
+    selectedId = maps[0]!.id;
+    renderDetail(maps[0]!);
+  }
+
+  const activeIndex = Math.max(0, maps.findIndex(m => m.id === selectedId));
+
+  container.innerHTML = `
+    <div class="map-picker-stage" aria-label="Wybór map 2.5D">
+      ${maps.map((m, i) => renderMapCard(m, i, activeIndex)).join('')}
+    </div>`;
+
+  container.querySelectorAll<HTMLElement>('.map-card').forEach(row => {
+    row.addEventListener('click', () => selectMap(row.dataset['id'] ?? ''));
+    row.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectMap(row.dataset['id'] ?? ''); }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); selectAdjacentMap(1); }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); selectAdjacentMap(-1); }
+    });
+  });
+}
+
+function renderMapCard(m: MapEntry, i: number, activeIndex: number): string {
     const title  = m.meta?.title   ?? m.id;
     const artist = m.meta?.artist  ?? m.meta?.mapper ?? '';
     const diff   = m.meta?.difficulty ?? '';
@@ -268,32 +306,43 @@ function renderMapList(maps: MapEntry[]): void {
     const dur    = m.meta?.duration ? formatTime(m.meta.duration) : null;
     const isLocal = m.source === 'local' || m.source === 'autosave';
     const subParts = [artist, dur ? dur : null, beats ? `${beats} beatów` : null].filter(Boolean);
+    const score = getMapScoreData(m.id).best?.score ?? 0;
+    const offset = Math.max(-3, Math.min(3, i - activeIndex));
+    const absOffset = Math.abs(offset);
+    const depth = 1 - Math.min(absOffset, 3) * 0.09;
+    const translateX = offset * 22;
+    const rotateY = offset * -8;
+    const translateZ = (3 - absOffset) * 8;
 
     return `
-      <div class="map-row map-item${selectedId === m.id ? ' is-selected' : ''}"
+      <div class="map-card map-item${selectedId === m.id ? ' is-selected' : ''}"
            data-id="${attr(m.id)}"
            tabindex="0" role="button" aria-label="${attr(title)}"
-           style="animation-delay:${i * 0.025}s">
+           style="--card-offset:${offset};--card-depth:${depth.toFixed(2)};--card-x:${translateX}px;--card-ry:${rotateY}deg;--card-z:${translateZ}px;animation-delay:${i * 0.025}s">
+        <div class="map-card-glow"></div>
         <div class="map-row-icon">
           <span class="material-symbols-rounded">music_note</span>
         </div>
-        <div class="map-row-info">
+        <div class="map-row-info map-card-info">
           <div class="map-row-title">${escHtml(title)}</div>
           ${subParts.length ? `<div class="map-row-sub">${subParts.map(escHtml).join(' · ')}</div>` : ''}
+          <div class="map-card-wave" aria-hidden="true">${renderWaveBars(m.id)}</div>
         </div>
         <div class="map-row-badges">
           ${diff ? `<span class="diff-badge diff-${escHtml(diff.toLowerCase())}">${escHtml(diff)}</span>` : ''}
           ${isLocal ? `<span class="local-badge">LOCAL</span>` : ''}
+          ${score ? `<span class="score-badge">${String(score).padStart(6, '0')}</span>` : ''}
         </div>
       </div>`;
-  }).join('');
+}
 
-  container.querySelectorAll<HTMLElement>('.map-row').forEach(row => {
-    row.addEventListener('click', () => selectMap(row.dataset['id'] ?? ''));
-    row.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectMap(row.dataset['id'] ?? ''); }
-    });
-  });
+function renderWaveBars(seed: string): string {
+  let hash = 0;
+  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return Array.from({ length: 18 }, (_, i) => {
+    const value = 18 + ((hash >> (i % 12)) + i * 17) % 46;
+    return `<span style="--h:${value}%"></span>`;
+  }).join('');
 }
 
 // ── Render: detail pane ───────────────────────────────────────────────────────
@@ -337,31 +386,41 @@ function renderDetail(map: MapEntry | null): void {
 
   pane.innerHTML = `
     <div class="detail-scroll">
-      <div class="detail-title">${escHtml(title)}</div>
-      ${artist ? `<div class="detail-artist">${escHtml(artist)}</div>` : ''}
-      ${diff ? `<span class="diff-badge diff-${escHtml(diff.toLowerCase())}" style="margin-bottom:16px;display:inline-block">${escHtml(diff)}</span>` : ''}
+      <div id="detailTiltCard" class="detail-hero-card">
+        <div class="detail-card-glare" aria-hidden="true"></div>
+        <div class="detail-card-depth" aria-hidden="true"></div>
+        <div class="detail-card-content">
+          <div class="detail-title">${escHtml(title)}</div>
+          ${artist ? `<div class="detail-artist">${escHtml(artist)}</div>` : ''}
+          ${diff ? `<span class="diff-badge diff-${escHtml(diff.toLowerCase())}" style="margin-bottom:16px;display:inline-block">${escHtml(diff)}</span>` : ''}
+          <button id="previewStatus" class="preview-status" type="button">
+            <span class="material-symbols-rounded">graphic_eq</span>
+            <span>Wybierz mapę, aby usłyszeć preview</span>
+          </button>
 
-      <div class="detail-stats">
-        <div class="detail-stat">
-          <div class="detail-stat-label">CZAS</div>
-          <div class="detail-stat-value">${escHtml(dur)}</div>
-        </div>
-        <div class="detail-stat">
-          <div class="detail-stat-label">BEATY</div>
-          <div class="detail-stat-value">${beats}</div>
-        </div>
-        <div class="detail-stat">
-          <div class="detail-stat-label">BPM</div>
-          <div class="detail-stat-value">${escHtml(bpm)}</div>
-        </div>
-        <div class="detail-stat">
-          <div class="detail-stat-label">ŹRÓDŁO</div>
-          <div class="detail-stat-value" style="font-size:12px">${isLocal ? 'LOCAL' : 'SERVER'}</div>
+          <div class="detail-stats">
+            <div class="detail-stat">
+              <div class="detail-stat-label">CZAS</div>
+              <div class="detail-stat-value">${escHtml(dur)}</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-stat-label">BEATY</div>
+              <div class="detail-stat-value">${beats}</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-stat-label">BPM</div>
+              <div class="detail-stat-value">${escHtml(bpm)}</div>
+            </div>
+            <div class="detail-stat">
+              <div class="detail-stat-label">ŹRÓDŁO</div>
+              <div class="detail-stat-value" style="font-size:12px">${isLocal ? 'LOCAL' : 'SERVER'}</div>
+            </div>
+          </div>
+
+          <div class="detail-divider"></div>
+          ${scoreSection}
         </div>
       </div>
-
-      <div class="detail-divider"></div>
-      ${scoreSection}
     </div>
 
     <div class="detail-actions">
@@ -384,6 +443,7 @@ function renderDetail(map: MapEntry | null): void {
 
   document.getElementById('btnDelete')?.addEventListener('click', async btn => {
     const el = btn.currentTarget as HTMLButtonElement;
+    stopMapPreview();
     await deleteMap(el.dataset['id']!, el.dataset['server'] === '1');
   });
 
@@ -391,17 +451,232 @@ function renderDetail(map: MapEntry | null): void {
     const el = btn.currentTarget as HTMLButtonElement;
     await exportMap(el.dataset['id']!);
   });
+
+  document.querySelector<HTMLAnchorElement>('.btn-play')?.addEventListener('click', () => stopMapPreview());
+  document.querySelector<HTMLAnchorElement>('.detail-secondary-actions a')?.addEventListener('click', () => stopMapPreview());
+  document.getElementById('previewStatus')?.addEventListener('click', toggleMapPreview);
+  bindDetailTilt();
+}
+
+function bindDetailTilt(): void {
+  const card = document.getElementById('detailTiltCard');
+  if (!card || window.matchMedia('(pointer: coarse)').matches) return;
+
+  card.addEventListener('pointermove', event => {
+    const rect = card.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width;
+    const py = (event.clientY - rect.top) / rect.height;
+    const rotateY = (px - 0.5) * 10;
+    const rotateX = (0.5 - py) * 8;
+    card.style.setProperty('--tilt-x', `${rotateX.toFixed(2)}deg`);
+    card.style.setProperty('--tilt-y', `${rotateY.toFixed(2)}deg`);
+    card.style.setProperty('--glare-x', `${Math.round(px * 100)}%`);
+    card.style.setProperty('--glare-y', `${Math.round(py * 100)}%`);
+  });
+
+  card.addEventListener('pointerleave', () => {
+    card.style.setProperty('--tilt-x', '0deg');
+    card.style.setProperty('--tilt-y', '0deg');
+    card.style.setProperty('--glare-x', '50%');
+    card.style.setProperty('--glare-y', '18%');
+  });
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 function selectMap(id: string): void {
   selectedId = id;
-  document.querySelectorAll<HTMLElement>('.map-row').forEach(r => {
+  document.querySelectorAll<HTMLElement>('.map-card').forEach(r => {
     r.classList.toggle('is-selected', r.dataset['id'] === id);
   });
   const map = allMaps.find(m => m.id === id) ?? null;
   renderDetail(map);
+  if (map) scheduleMapPreview(map);
+}
+
+function setPreviewStatus(message: string, state: 'idle' | 'loading' | 'playing' | 'paused' | 'warning' | 'error' = 'idle'): void {
+  const el = document.getElementById('previewStatus');
+  if (!el) return;
+  el.className = `preview-status is-${state}`;
+  const icon = el.querySelector<HTMLElement>('.material-symbols-rounded');
+  if (icon) {
+    icon.textContent = state === 'playing' ? 'pause'
+      : state === 'paused' ? 'play_arrow'
+      : state === 'warning' || state === 'error' ? 'warning'
+      : 'graphic_eq';
+  }
+  const text = el.querySelector<HTMLElement>('span:last-child');
+  if (text) text.textContent = message;
+  el.setAttribute('aria-label', message);
+}
+
+function clearPreviewTimers(): void {
+  if (previewTimer) clearTimeout(previewTimer);
+  if (previewStopTimer) clearTimeout(previewStopTimer);
+  previewTimer = null;
+  previewStopTimer = null;
+}
+
+function stopMapPreview(clearStatus = false): void {
+  clearPreviewTimers();
+  previewToken++;
+  previewAudio.pause();
+  previewAudio.removeAttribute('src');
+  previewAudio.load();
+  if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+  previewObjectUrl = null;
+  previewRemainingMs = PREVIEW_MAX_MS;
+  previewStartedAtMs = 0;
+  previewPaused = false;
+  if (clearStatus) setPreviewStatus('Preview zatrzymane');
+}
+
+function scheduleMapPreview(map: MapEntry): void {
+  stopMapPreview();
+  if (getPreviewVolume() <= 0) {
+    setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
+    return;
+  }
+  const token = ++previewToken;
+  setPreviewStatus('Preview wystartuje za chwilę...', 'loading');
+  previewTimer = setTimeout(() => {
+    void startMapPreview(map, token);
+  }, PREVIEW_DELAY_MS);
+}
+
+async function startMapPreview(map: MapEntry, token: number): Promise<void> {
+  try {
+    const effectiveVolume = getPreviewVolume();
+    if (effectiveVolume <= 0) {
+      setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
+      return;
+    }
+
+    setPreviewStatus('Ładuję audio preview...', 'loading');
+    const source = await loadPreviewSource(map);
+    if (token !== previewToken) {
+      if (source?.url) URL.revokeObjectURL(source.url);
+      return;
+    }
+    if (!source) {
+      setPreviewStatus('Ta mapa nie ma audio do preview', 'error');
+      return;
+    }
+
+    previewObjectUrl = source.url;
+    previewAudio.volume = effectiveVolume;
+    previewAudio.src = source.url;
+    await waitForPreviewMetadata();
+
+    const requestedStart = Number(map.meta?.previewStartSec ?? 0);
+    const maxStart = Number.isFinite(previewAudio.duration) ? Math.max(0, previewAudio.duration - 2) : 0;
+    previewAudio.currentTime = Math.max(0, Math.min(Number.isFinite(requestedStart) ? requestedStart : 0, maxStart));
+    await previewAudio.play();
+    previewPaused = false;
+    previewRemainingMs = PREVIEW_MAX_MS;
+    armPreviewStopTimer(previewRemainingMs);
+    setPreviewStatus('Odtwarzam preview', 'playing');
+  } catch (error) {
+    if (token !== previewToken) return;
+    const message = error instanceof DOMException && error.name === 'NotAllowedError'
+      ? 'Kliknij mapę ponownie, aby uruchomić preview'
+      : 'Nie udało się odtworzyć preview';
+    setPreviewStatus(message, 'error');
+  }
+}
+
+function getPreviewVolume(): number {
+  const settings = loadSettings();
+  const master = Math.max(0, Math.min(1, Number(settings.volume) || 0));
+  const music = Math.max(0, Math.min(1, Number(settings.musicVolume) || 0));
+  return Math.max(0, Math.min(1, master * music * PREVIEW_BASE_VOLUME));
+}
+
+function armPreviewStopTimer(ms: number): void {
+  if (previewStopTimer) clearTimeout(previewStopTimer);
+  previewStartedAtMs = performance.now();
+  previewStopTimer = setTimeout(() => {
+    previewAudio.pause();
+    previewPaused = false;
+    previewRemainingMs = PREVIEW_MAX_MS;
+    setPreviewStatus('Preview zakończone');
+  }, Math.max(0, ms));
+}
+
+function pausePreview(): void {
+  if (previewAudio.paused) return;
+  if (previewStopTimer) clearTimeout(previewStopTimer);
+  previewRemainingMs = Math.max(0, previewRemainingMs - (performance.now() - previewStartedAtMs));
+  previewAudio.pause();
+  previewPaused = true;
+  setPreviewStatus('Preview w pauzie. Kliknij, aby wznowić.', 'paused');
+}
+
+async function resumePreview(): Promise<void> {
+  const effectiveVolume = getPreviewVolume();
+  if (effectiveVolume <= 0) {
+    setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
+    return;
+  }
+  previewAudio.volume = effectiveVolume;
+  await previewAudio.play();
+  previewPaused = false;
+  armPreviewStopTimer(previewRemainingMs || PREVIEW_MAX_MS);
+  setPreviewStatus('Odtwarzam preview', 'playing');
+}
+
+function toggleMapPreview(): void {
+  if (!previewAudio.src) return;
+  if (!previewAudio.paused) {
+    pausePreview();
+    return;
+  }
+  if (previewPaused) {
+    void resumePreview().catch(() => setPreviewStatus('Nie udało się wznowić preview', 'error'));
+  }
+}
+
+function waitForPreviewMetadata(): Promise<void> {
+  if (previewAudio.readyState >= HTMLMediaElement.HAVE_METADATA) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const cleanup = () => {
+      previewAudio.removeEventListener('loadedmetadata', onReady);
+      previewAudio.removeEventListener('error', onError);
+    };
+    const onReady = () => { cleanup(); resolve(); };
+    const onError = () => { cleanup(); reject(new Error('Preview audio load failed')); };
+    previewAudio.addEventListener('loadedmetadata', onReady, { once: true });
+    previewAudio.addEventListener('error', onError, { once: true });
+  });
+}
+
+async function loadPreviewSource(map: MapEntry): Promise<{ url: string } | null> {
+  const shouldTryServer = map.source === 'server' || map.source === 'server+local';
+  if (shouldTryServer) {
+    const audioUrl = map.meta?.audioUrl ?? `/api/maps/${encodeURIComponent(map.id)}/audio`;
+    try {
+      const res = await fetch(audioUrl);
+      if (res.ok) return { url: URL.createObjectURL(await res.blob()) };
+    } catch {}
+  }
+
+  const local = await loadLocalMapAudio(map.id).catch(() => null);
+  if (!local?.arrayBuffer) return null;
+  const blob = new Blob([local.arrayBuffer], { type: local.mimeType || 'application/octet-stream' });
+  return { url: URL.createObjectURL(blob) };
+}
+
+function selectAdjacentMap(direction: -1 | 1): void {
+  const maps = getFilteredMaps();
+  if (!maps.length) return;
+  const currentIndex = Math.max(0, maps.findIndex(m => m.id === selectedId));
+  const next = maps[Math.max(0, Math.min(maps.length - 1, currentIndex + direction))];
+  if (!next) return;
+  selectMap(next.id);
+  renderMapList(maps);
+  const card = document.querySelector<HTMLElement>(`.map-card[data-id="${CSS.escape(next.id)}"]`);
+  card?.focus({ preventScroll: true });
+  card?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
 
 async function deleteMap(id: string, tryServer: boolean): Promise<void> {
@@ -427,18 +702,50 @@ async function deleteMap(id: string, tryServer: boolean): Promise<void> {
 }
 
 async function exportMap(id: string): Promise<void> {
+  const map = allMaps.find(m => m.id === id) ?? null;
   try {
-    const res = await fetch(`/api/maps/${encodeURIComponent(id)}/export`);
+    const res = await fetch(`/api/maps/${encodeURIComponent(id)}/export.zip`);
     if (!res.ok) throw new Error(`${res.status}`);
     const blob = await res.blob();
-    const url  = URL.createObjectURL(blob);
-    const a    = Object.assign(document.createElement('a'), { href: url, download: `${id}.zip` });
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${id}.zip`);
     showToast('Eksport gotowy', { type: 'success' });
   } catch {
-    showToast('Eksport nie powiódł się — brak serwera?', { type: 'error' });
+    if (!map || (map.source !== 'local' && map.source !== 'autosave' && map.source !== 'server+local')) {
+      showToast('Eksport nie powiódł się — brak serwera?', { type: 'error' });
+      return;
+    }
+
+    try {
+      const JSZip = await getJSZip();
+      const zip = new JSZip();
+      const mapJson: Record<string, unknown> = { ...map };
+      for (const key of ['source', 'localOnly', 'updatedAt', '_serverAudioPending', '_localAudioPending', '_audioReady']) {
+        delete mapJson[key];
+      }
+
+      const audio = await loadLocalMapAudio(id).catch(() => null);
+      if (audio) {
+        mapJson['meta'] = { ...(mapJson['meta'] as Record<string, unknown> | undefined), audioFile: audio.fileName };
+        zip.file(audio.fileName || `${id}.ogg`, audio.arrayBuffer);
+      }
+
+      zip.file('map.json', JSON.stringify(mapJson, null, 2));
+      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+      downloadBlob(blob, `${id}.zip`);
+      showToast('Eksport lokalny gotowy', { type: 'success' });
+    } catch {
+      showToast('Eksport lokalny nie powiódł się', { type: 'error' });
+    }
   }
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 // ── Load maps ─────────────────────────────────────────────────────────────────

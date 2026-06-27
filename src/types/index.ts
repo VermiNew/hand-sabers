@@ -35,7 +35,7 @@ export interface SaberQuat {
 export const CUT_DIRECTIONS = ['any', 'down', 'up', 'left', 'right', 'down-left', 'down-right', 'up-left', 'up-right'] as const;
 export type CutDirection = typeof CUT_DIRECTIONS[number];
 
-export type BeatType = 'block' | 'bomb';
+export type BeatType = 'block' | 'bomb' | 'held';
 export type BeatSide = 'left' | 'right' | 'random';
 
 export interface Beat {
@@ -45,6 +45,7 @@ export interface Beat {
   cut: CutDirection;
   x?: number;
   y?: number;
+  duration?: number;
 }
 
 export interface MapMeta {

@@ -2,6 +2,7 @@ import type { CutDirection } from '../types/index.js';
 
 // Numpad layout: 7=up-left 8=up 9=up-right / 4=left 5=any 6=right / 1=down-left 2=down 3=down-right
 export const CUT_DIRECTIONS = ['down-left', 'down', 'down-right', 'left', 'any', 'right', 'up-left', 'up', 'up-right'] as const;
+const CUT_DIRECTION_CYCLE = ['any', 'down', 'up', 'left', 'right', 'down-left', 'down-right', 'up-left', 'up-right'] as const;
 
 const CUT_ALIASES = new Map<string, CutDirection>([
   ['', 'any'], ['none', 'any'], ['no-dot', 'any'], ['dot', 'any'], ['free', 'any'], ['any', 'any'],
@@ -91,8 +92,8 @@ export function getCutVector(cut: unknown): Vector2 | null {
 }
 
 export function nextCutDirection(cut: unknown): CutDirection {
-  const idx = CUT_DIRECTIONS.indexOf(normalizeCutDirection(cut));
-  return CUT_DIRECTIONS[(idx + 1) % CUT_DIRECTIONS.length]!;
+  const idx = CUT_DIRECTION_CYCLE.indexOf(normalizeCutDirection(cut));
+  return CUT_DIRECTION_CYCLE[(idx + 1) % CUT_DIRECTION_CYCLE.length]!;
 }
 
 export function cutDirectionLabel(cut: unknown): string {

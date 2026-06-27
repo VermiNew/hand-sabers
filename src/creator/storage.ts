@@ -1,5 +1,5 @@
 import { getJSZip } from '../jszip-loader.ts';
-import { normalizeMap, validateZipEntryNames, AUDIO_EXT_RE } from '../core/map-format.ts';
+import { normalizeMap, validateZipEntryNames, findPreferredAudioEntry } from '../core/map-format.ts';
 import { saveLocalMap, saveLocalMapAudio } from '../core/localstore.ts';
 import { showAlert, showConfirm, showToast } from './dialogs.ts';
 import { restoreAudioForCurrentMap, decodeAndAttachAudio } from './audio.ts';
@@ -56,10 +56,14 @@ export async function saveMap(): Promise<void> {
   state.map = normalizeMap(state.map, { fallbackId: state.map.id, requireBeats: false }) as unknown as CreatorMap;
   saveLocalMap(state.map as unknown as Parameters<typeof saveLocalMap>[0]);
   if (state.audioArrayBuffer) {
-    await saveLocalMapAudio(state.map.id, state.audioArrayBuffer!.slice(0) as ArrayBuffer, {
-      fileName: state.audioFileName,
-      mimeType: state.audioMimeType,
-    });
+    try {
+      await saveLocalMapAudio(state.map.id, state.audioArrayBuffer!.slice(0) as ArrayBuffer, {
+        fileName: state.audioFileName,
+        mimeType: state.audioMimeType,
+      });
+    } catch (err) {
+      console.warn('Local audio save failed:', err);
+    }
   }
   const autosaveLbl = document.getElementById('autosaveLabel');
   try {
@@ -128,7 +132,7 @@ export async function loadZipFile(
   sortBeatsByTime(state.map.beats);
   state.selectedBeats.clear();
 
-  const audioFile = Object.values(zip.files).find(f => !f.dir && AUDIO_EXT_RE.test(f.name));
+  const audioFile = findPreferredAudioEntry(Object.values(zip.files), state.map.meta?.audioFile);
   if (audioFile) {
     await decodeAndAttachAudio(
       await audioFile.async('arraybuffer') as ArrayBuffer,

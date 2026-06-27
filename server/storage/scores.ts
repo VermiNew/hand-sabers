@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'fs/promises';
+import { readFile, rename, writeFile } from 'fs/promises';
 import { FileMutex } from '../utils.js';
 
 export interface ScoreEntry {
@@ -36,7 +36,9 @@ export function createScoreStorage(filePath: string): ScoreStorage {
         const scores = await readRaw();
         scores.push(entry);
         scores.sort((a, b) => b.score - a.score);
-        await writeFile(filePath, JSON.stringify(scores.slice(0, 1000), null, 2));
+        const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+        await writeFile(tmpPath, JSON.stringify(scores.slice(0, 1000), null, 2));
+        await rename(tmpPath, filePath);
       } finally {
         release();
       }

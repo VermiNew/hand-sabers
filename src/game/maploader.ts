@@ -4,6 +4,7 @@ import { getSettings } from '../core/settings.ts';
 import { getJSZip } from '../jszip-loader.ts';
 import {
   AUDIO_EXT_RE,
+  findPreferredAudioEntry,
   MAX_BEATS_DEFAULT,
   MAX_BEATS_EXTENDED,
   assertFileSize,
@@ -40,12 +41,14 @@ function beatLimitOptions(extra: Partial<BeatLimitOptions> = {}): BeatLimitOptio
 export async function loadMapFromFile(file: File): Promise<LoadedMap> {
   assertFileSize(file);
 
-  if (file.name.endsWith('.json')) {
+  const lowerName = file.name.toLowerCase();
+
+  if (lowerName.endsWith('.json')) {
     const text = await file.text();
     return normalizeMap(JSON.parse(text) as unknown, beatLimitOptions({ fallbackId: file.name.replace(/\.[^.]+$/, '') }));
   }
 
-  if (file.name.endsWith('.zip')) {
+  if (lowerName.endsWith('.zip')) {
     return loadMapFromZip(file);
   }
 
@@ -75,7 +78,7 @@ async function loadMapFromZip(file: File): Promise<GameMap & Record<string, unkn
     beatLimitOptions({ fallbackId: file.name.replace(/\.[^.]+$/, '') }),
   );
 
-  const audioFile = Object.values(zip.files).find(f => !f.dir && AUDIO_EXT_RE.test(f.name));
+  const audioFile = findPreferredAudioEntry(Object.values(zip.files), mapData.meta?.audioFile);
   if (audioFile) {
     const ab = await audioFile.async('arraybuffer');
     await loadMapAudio(ab.slice ? ab.slice(0) : ab);

@@ -19,7 +19,8 @@ export function registerScoreRoutes({ app, storage, rateLimit }: ScoreRoutesOpti
         const mapId = String(req.query['map']);
         scores = scores.filter(s => s.mapId === mapId);
       }
-      const limit = Math.min(100, parseInt(String(req.query['limit'] ?? '20')) || 20);
+      const requestedLimit = parseInt(String(req.query['limit'] ?? '20'), 10);
+      const limit = Math.max(1, Math.min(100, Number.isFinite(requestedLimit) ? requestedLimit : 20));
       scores.sort((a, b) => b.score - a.score);
       res.json(scores.slice(0, limit));
     } catch (error) {

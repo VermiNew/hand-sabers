@@ -494,6 +494,8 @@ export function bindTimelineEvents(callbacks: {
       const panel = document.getElementById('shortcutsPanel');
       if (panel && !panel.classList.contains('hidden')) {
         panel.classList.add('hidden');
+        document.getElementById('btnShortcuts')?.classList.remove('active');
+        document.getElementById('btnShortcuts')?.setAttribute('aria-expanded', 'false');
         return;
       }
       if (state.selectedBeats.size) {
@@ -696,6 +698,8 @@ export function bindTimelineEvents(callbacks: {
 
       case 'shortcutsPanel':
         document.getElementById('shortcutsPanel')?.classList.toggle('hidden');
+        document.getElementById('btnShortcuts')?.classList.toggle('active', !document.getElementById('shortcutsPanel')?.classList.contains('hidden'));
+        document.getElementById('btnShortcuts')?.setAttribute('aria-expanded', String(!document.getElementById('shortcutsPanel')?.classList.contains('hidden')));
         break;
 
       default: {

@@ -126,6 +126,7 @@ const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024;
 
 async function handleFile(file: File): Promise<void> {
   try {
+    const lowerName = file.name.toLowerCase();
     if (file.size > MAX_FILE_SIZE_BYTES) {
       showAlert(t('creator.fileTooBig'), { title: t('creator.fileTooBigTitle') });
       return;
@@ -141,7 +142,7 @@ async function handleFile(file: File): Promise<void> {
         audioCallbacks,
       );
       showToast(t('creator.audioLoaded'), { type: 'success' });
-    } else if (file.name.endsWith('.json')) {
+    } else if (lowerName.endsWith('.json')) {
       const loaded = JSON.parse(await file.text()) as Record<string, unknown>;
       state.map = normalizeMap(
         { id: (loaded['id'] as string | undefined) || MAP_ID(), ...loaded },
@@ -167,7 +168,7 @@ async function handleFile(file: File): Promise<void> {
       saveLocalMap(state.map as unknown as Parameters<typeof saveLocalMap>[0]);
       renderAll();
       showToast(t('creator.mapJsonLoaded'), { type: 'success' });
-    } else if (file.name.endsWith('.zip')) {
+    } else if (lowerName.endsWith('.zip')) {
       await loadZipFile(file, audioCallbacks);
       checkOverlaps();
       renderAll();
@@ -257,7 +258,20 @@ function bindShortcutsPanel(): void {
   const panel   = document.getElementById('shortcutsPanel');
   const btnOpen = document.getElementById('btnShortcuts');
   if (!panel || !btnOpen) return;
-  btnOpen.addEventListener('click', () => panel.classList.toggle('hidden'));
+
+  const sync = () => {
+    const open = !panel.classList.contains('hidden');
+    btnOpen.classList.toggle('active', open);
+    btnOpen.setAttribute('aria-expanded', String(open));
+  };
+
+  btnOpen.setAttribute('aria-controls', 'shortcutsPanel');
+  sync();
+  btnOpen.addEventListener('click', () => {
+    panel.classList.toggle('hidden');
+    sync();
+  });
+  panel.addEventListener('transitionend', sync);
 }
 
 // ── Waveform scroll → timeline sync ──────────────────────────────

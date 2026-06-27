@@ -122,6 +122,28 @@ body {
 .tap-hint-rand.active  { color:#a78bfa;      border-color:rgba(167,139,250,0.5); background:rgba(167,139,250,0.1); }
 .tap-hint-bomb.active  { color:#ff6060;      border-color:rgba(255,58,58,0.5);   background:rgba(255,58,58,0.1); }
 
+/* ── CREATOR COACH ── */
+#creatorCoach {
+  display:flex; align-items:center; gap:10px;
+  min-height:34px; padding:5px 16px;
+  background:linear-gradient(90deg, rgba(54,242,161,0.06), rgba(47,124,255,0.035));
+  border-bottom:1px solid rgba(54,242,161,0.08);
+  flex-shrink:0; overflow-x:auto; scrollbar-width:none;
+}
+#creatorCoach::-webkit-scrollbar { display:none; }
+.coach-title {
+  font-family:'Oxanium', sans-serif; font-weight:900;
+  font-size:10px; letter-spacing:3px; color:rgba(54,242,161,0.82);
+  padding-right:2px; white-space:nowrap;
+}
+.coach-step {
+  display:inline-flex; align-items:center; gap:6px;
+  color:rgba(226,232,240,0.66); font-size:10px; white-space:nowrap;
+  padding:4px 8px; border:1px solid rgba(148,163,184,0.11);
+  border-radius:999px; background:rgba(2,5,11,0.32);
+}
+.coach-step span { letter-spacing:.3px; }
+
 .transport-btn {
   background:transparent; border:1px solid rgba(148,163,184,0.16);
   color:rgba(148,163,184,0.6); font-family:'JetBrains Mono', monospace;
@@ -356,6 +378,15 @@ body {
 .drop-icon { font-size:72px; color:rgba(47,124,255,0.5); }
 .drop-box > div { font-size:14px; color:rgba(226,232,240,0.65); letter-spacing:0.5px; }
 .drop-hint { font-size:11px; color:var(--dim); letter-spacing:1.5px; }
+.drop-mini-guide {
+  display:flex; flex-wrap:wrap; justify-content:center; gap:8px;
+  margin-top:4px; color:rgba(148,163,184,0.7); font-size:11px;
+}
+.drop-mini-guide span {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 7px; border-radius:999px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
+}
 #fileInput { display:none; }
 
 /* ── PRE-COUNT OVERLAY ── */

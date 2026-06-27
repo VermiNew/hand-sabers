@@ -206,7 +206,7 @@ async function stopServer() {
 
 try {
   const health = await waitForServer();
-  if (!health.ok || health.maxImportBytes !== 100 * 1024 * 1024) throw new Error('health check payload is wrong');
+  if (!health.ok || health.maxImportBytes !== 200 * 1024 * 1024) throw new Error('health check payload is wrong');
 
   const home = await smokeRequest('/');
   if (!home.ok || !home.text().includes('Hand Sabers')) {
@@ -218,7 +218,7 @@ try {
   const scores = await getJson('/api/scores');
   if (!Array.isArray(scores)) throw new Error('/api/scores did not return an array');
 
-  for (const privatePath of ['/package.json', '/package-lock.json', '/server.js', '/node_modules/', '/maps/_scores.json']) {
+  for (const privatePath of ['/package.json', '/package-lock.json', '/server.js', '/server/index.ts', '/src/core/map-format.ts', '/node_modules/', '/maps/_scores.json']) {
     const privateRes = await smokeRequest(privatePath);
     if (privateRes.status !== 404) throw new Error(`${privatePath} should not be served statically, got ${privateRes.status}`);
   }
