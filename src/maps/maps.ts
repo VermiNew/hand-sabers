@@ -171,6 +171,7 @@ async function importLocally(file: File): Promise<{ id: string; beats: number; a
 }
 
 async function importMapFile(file: File): Promise<void> {
+  stopMapPreview(true);
   showToast(`Importuję ${file.name}…`, { type: 'info' });
   try {
     const imported = await importToServer(file);
@@ -752,6 +753,8 @@ async function deleteMap(id: string, tryServer: boolean): Promise<void> {
   );
   if (!confirmed) return;
 
+  stopMapPreview();
+
   let serverDeleted = false;
   if (tryServer) {
     try { await fetchJson(`/api/maps/${encodeURIComponent(id)}`, { method: 'DELETE' }); serverDeleted = true; }
@@ -907,7 +910,10 @@ function showTab(name: 'maps' | 'scores'): void {
   document.querySelectorAll<HTMLElement>('.topbar-tab').forEach(btn => {
     btn.classList.toggle('is-active', btn.dataset['tab'] === name);
   });
-  if (name === 'scores') void loadScores();
+  if (name === 'scores') {
+    stopMapPreview(true);
+    void loadScores();
+  }
 }
 
 // ── Drag & drop import ────────────────────────────────────────────────────────
@@ -980,6 +986,8 @@ export function init(): void {
   });
 
   initDragDrop();
+  window.addEventListener('pagehide', () => stopMapPreview());
+  window.addEventListener('beforeunload', () => stopMapPreview());
   void loadMaps();
   initKeyboardNav({ isMapsPage: true });
 }
