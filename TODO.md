@@ -6,11 +6,11 @@
 ## 2. UX całości gry
 - [ ] Przejrzeć i poprawić flow każdego ekranu (menu, kalibracja, gameplay, game over)
 - [ ] Spójne animacje przejść między ekranami
-- [ ] Lepszy feedback dla gracza (dźwięki, wibracje wizualne)
+- [x] Lepszy feedback dla gracza (dźwięki, wibracje wizualne)
 
 ## 3. Ustawienia
 - [ ] Przeprojektować panel ustawień — czytelne sekcje (audio, grafika, sterowanie, gameplay)
-- [ ] Podgląd zmian na żywo (np. głośność, kolor mieczy) bez restartu
+- [x] Podgląd zmian na żywo (np. głośność, kolor mieczy) bez restartu
 - [ ] Zapisywanie i resetowanie ustawień do domyślnych
 
 ## 4. Panel debugowania
@@ -24,7 +24,7 @@
 
 ## 6. Więcej kolorów i lepszy picker
 - [x] Zastąpić prosty input[type=color] pełnym color pickerem (HSL/HEX/RGB)
-- [ ] Więcej presetów kolorów dla mieczy
+- [x] Więcej presetów kolorów dla mieczy
 
 ## 7. UX / Animacje (backlog)
 - [x] Animacje fade-in/fade-out przy otwieraniu i zamykaniu paneli (ustawienia, game over, pauza, overlay)
@@ -35,7 +35,7 @@
 - [ ] Komunikat "zgubiono ręce": pokazać podgląd ML, auto-resume po 1s stabilności z timerem!
 - [ ] Poprawić kontenery KAMERA RAW / ŚLEDZENIE ML w trybie dev (prawy dolny róg)
 - [x] Całkowity remake systemu cieni i odbić w scenie 3D (subtelne, nieprzesadzone)
-- [ ] Poprawić system wydajności (profile, adaptive quality)
+- [x] Poprawić system wydajności (profile, adaptive quality)
 - [ ] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC
 - [ ] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
 - [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach
@@ -81,7 +81,7 @@
 ## 13. Optymalizacja dla słabych PC
 - [ ] Profilowanie — znaleźć główne wąskie gardła na niskich ustawieniach
 - [ ] Dalsze obniżanie jakości grafiki (wyłączenie mgły, siatek, efektów)
-- [ ] Adaptive quality — automatyczne obniżanie gdy FPS spada poniżej progu
+- [x] Adaptive quality — automatyczne obniżanie gdy FPS spada poniżej progu
 
 ## 14. Kamera/ML na telefon (remote tracking)
 - [ ] Architektura: telefon jako klient kamery + WebRTC lub WebSocket
@@ -91,10 +91,10 @@
 ## 15. Lepsza rozgrywka
 - [ ] Balans trudności — krzywa nauki
 - [ ] Więcej wzorców sekwencji beatów
-- [ ] Efekty trafienia bardziej satysfakcjonujące (shake, flash, dźwięk)
+- [x] Efekty trafienia bardziej satysfakcjonujące (shake, flash, dźwięk)
 
 ## 16. Edytor map
-- [ ] Rozbić `map-creator.html` na moduły: audio, ZIP, storage, waveform, UI, input
+- [x] Rozbić `map-creator.html` na moduły: audio, ZIP, storage, waveform, UI, input
 - [ ] Czytelny preview "hit now" na osi czasu
 - [ ] Lepsze narzędzia do układania beatów (snap do BPM, kopiuj/wklej)
 - [ ] Podgląd mapy w trybie 3D podczas edycji
