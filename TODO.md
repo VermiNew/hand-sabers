@@ -65,8 +65,8 @@
 - [ ] Możliwość pominięcia i powrotu do tutoriala z menu
 
 ## 10. Menu pomocy
-- [ ] Strona/overlay "Jak grać" dostępna z głównego menu
-- [ ] Sekcje: sterowanie, scoring, ustawienia kamery, FAQ
+- [x] Strona/overlay "Jak grać" dostępna z głównego menu
+- [x] Sekcje: sterowanie, scoring, ustawienia kamery, FAQ
 
 ## 11. Multiplayer
 - [ ] Architektura: WebSocket server, synchronizacja stanu gry

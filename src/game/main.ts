@@ -20,6 +20,7 @@ import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
 import { t, setLang, getCurrentLang } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
+import { initHelpOverlay } from '../ui/help.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
@@ -1504,6 +1505,7 @@ window.addEventListener('beforeunload', () => {
   disposeSceneResources();
 });
 
+initHelpOverlay();
 initMainMenu();
 
 (async () => {

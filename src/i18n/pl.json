@@ -46,11 +46,33 @@
     "multiplayer": "Multiplayer",
     "calibration": "Kalibracja",
     "settings": "Ustawienia",
+    "help": "Jak grać",
     "maps": "Mapy",
     "creator": "Kreator",
     "devMode": "[dev]",
     "cameraRhythm": "CAMERA RHYTHM",
     "comingSoon": "wkrótce"
+  },
+  "help": {
+    "title": "JAK GRAĆ",
+    "subtitle": "Szybki przewodnik po Hand Sabers",
+    "close": "Zamknij",
+    "controls": {
+      "title": "Sterowanie",
+      "body": "Stań przed kamerą i tnij bloki mieczem w odpowiednim kolorze. Escape zatrzymuje grę."
+    },
+    "scoring": {
+      "title": "Punktacja",
+      "body": "Trafiaj blisko środka i w rytmie. Poprawny kierunek oraz seria zwiększają wynik."
+    },
+    "camera": {
+      "title": "Kamera",
+      "body": "Ustaw kamerę na wysokości klatki piersiowej, zadbaj o światło z przodu i pokaż całe ręce."
+    },
+    "faq": {
+      "title": "FAQ",
+      "body": "Gdy strony są odwrócone, włącz odwracanie kamery. Przy opóźnieniu dźwięku ustaw offset audio."
+    }
   },
   "settings": {
     "menuKicker": "Menu gry",

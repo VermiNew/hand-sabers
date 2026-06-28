@@ -46,11 +46,33 @@
     "multiplayer": "Multiplayer",
     "calibration": "Calibration",
     "settings": "Settings",
+    "help": "How to play",
     "maps": "Maps",
     "creator": "Creator",
     "devMode": "[dev]",
     "cameraRhythm": "CAMERA RHYTHM",
     "comingSoon": "coming soon"
+  },
+  "help": {
+    "title": "HOW TO PLAY",
+    "subtitle": "A quick guide to Hand Sabers",
+    "close": "Close",
+    "controls": {
+      "title": "Controls",
+      "body": "Stand in front of the camera and cut blocks with the matching saber. Escape pauses the game."
+    },
+    "scoring": {
+      "title": "Scoring",
+      "body": "Cut near the center and on beat. Correct direction and longer combos increase your score."
+    },
+    "camera": {
+      "title": "Camera",
+      "body": "Place the camera at chest height, light yourself from the front, and keep your full arms visible."
+    },
+    "faq": {
+      "title": "FAQ",
+      "body": "If sides are reversed, enable camera flipping. If sound is delayed, adjust the audio offset."
+    }
   },
   "settings": {
     "menuKicker": "Game menu",
