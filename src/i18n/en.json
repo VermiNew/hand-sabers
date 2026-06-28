@@ -291,6 +291,7 @@
     }
   },
   "camera": {
+    "previewTitle": "TRACKING PREVIEW",
     "raw": "CAMERA RAW",
     "mlTracking": "ML TRACKING"
   },

@@ -33,7 +33,7 @@
 - [x] Pasek timera/postępu utworu — wyraźniejszy, z timecodem
 - [x] Wskaźnik rytmu: feedback czy gracz cina za wcześnie / za późno (accuracy ms na ekranie)
 - [x] Komunikat "zgubiono ręce": pokazać podgląd ML, auto-resume po 1s stabilności z timerem!
-- [ ] Poprawić kontenery KAMERA RAW / ŚLEDZENIE ML w trybie dev (prawy dolny róg)
+- [x] Poprawić kontenery KAMERA RAW / ŚLEDZENIE ML w trybie dev (prawy dolny róg)
 - [x] Całkowity remake systemu cieni i odbić w scenie 3D (subtelne, nieprzesadzone)
 - [x] Poprawić system wydajności (profile, adaptive quality)
 - [ ] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC

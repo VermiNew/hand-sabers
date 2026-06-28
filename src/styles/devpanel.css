@@ -17,9 +17,10 @@
   bottom: 16px;
   right: 16px;
   display: flex;
-  flex-direction: row;
-  gap: 8px;
-  align-items: flex-end;
+  flex-direction: column;
+  gap: 0;
+  align-items: stretch;
+  width: min(420px, calc(100vw - 32px));
   padding: 0;
   pointer-events: none;
   z-index: 8900;
@@ -29,29 +30,48 @@ body:not(.dev-tools) #camPanel { display: none; }
 
 body.dev-tools #camPanel {
   pointer-events: auto;
-  padding: 8px;
   border: 1px solid rgba(47, 124, 255, 0.18);
-  border-radius: 14px;
+  border-radius: 12px;
+  overflow: hidden;
   background:
-    linear-gradient(160deg, rgba(5, 10, 22, 0.88), rgba(3, 6, 16, 0.78)),
+    linear-gradient(160deg, rgba(5, 10, 22, 0.96), rgba(3, 6, 16, 0.90)),
     radial-gradient(circle at 80% 0%, rgba(47, 124, 255, 0.10), transparent 55%);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-    0 16px 48px rgba(0, 0, 0, 0.72),
+    0 18px 54px rgba(0, 0, 0, 0.78),
     0 0 24px rgba(47, 124, 255, 0.08);
   backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.cam-panel-head {
+  display:flex; align-items:center; gap:8px; min-height:34px; padding:0 11px;
+  border-bottom:1px solid rgba(47,124,255,.14);
+  color:rgba(180,210,255,.7); font-family:'JetBrains Mono',monospace;
+  font-size:9px; font-weight:700; letter-spacing:1.5px;
+}
+.cam-panel-status {
+  width:6px; height:6px; flex:0 0 auto; border-radius:50%;
+  background:var(--dev-accent); box-shadow:0 0 10px rgba(var(--dev-accent-rgb),.85);
+}
+.cam-feeds {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:7px;
+  padding:7px;
 }
 
 /* ── Camera / canvas box ─────────────────────────────────────────────────── */
 .cam-box {
   position: relative;
-  width: 190px;
-  height: 120px;
-  border-radius: 10px;
-  border: none;
+  width:auto;
+  height:auto;
+  aspect-ratio:20/13;
+  border-radius: 7px;
+  border:1px solid rgba(47,124,255,.16);
   overflow: hidden;
   background: #03060f;
-  flex-shrink: 0;
+  min-width:0;
+  box-shadow:0 8px 20px rgba(0,0,0,.42);
 }
 
 .cam-box video,
@@ -80,24 +100,26 @@ body.dev-tools #camPanel {
 /* Label */
 .cam-tag {
   position: absolute;
-  bottom: 7px;
+  bottom: 8px;
   left: 8px;
   z-index: 2;
-  padding: 2px 6px;
-  border-radius: 3px;
-  background: rgba(3, 6, 18, 0.60);
-  color: rgba(180, 210, 255, 0.65);
+  padding: 3px 7px;
+  border-radius: 4px;
+  border:1px solid rgba(47,124,255,.18);
+  background: rgba(3, 6, 18, 0.76);
+  color: rgba(180, 210, 255, 0.78);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  font-weight: 400;
-  letter-spacing: 0.7px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
   text-transform: uppercase;
   backdrop-filter: blur(4px);
   pointer-events: none;
 }
 
 .cam-tag.ml {
-  color: rgba(var(--dev-accent-rgb), 0.85);
+  color: rgba(var(--dev-accent-rgb), 0.95);
+  border-color:rgba(var(--dev-accent-rgb),.24);
 }
 
 /* ── Tweakpane dev pane ───────────────────────────────────────────────────── */
@@ -317,13 +339,12 @@ body.dev-tools #camPanel {
     left: 12px;
     right: 12px;
     bottom: 12px;
-    overflow-x: auto;
+    width:auto;
   }
 
-  body.dev-tools .cam-box {
-    flex: 0 0 168px;
-    width: 168px;
-    height: 106px;
+  .cam-feeds {
+    grid-template-columns:repeat(2,minmax(150px,1fr));
+    overflow-x:auto;
   }
 
   .hs-stats-panel {

@@ -291,6 +291,7 @@
     }
   },
   "camera": {
+    "previewTitle": "PODGLĄD TRACKINGU",
     "raw": "KAMERA RAW",
     "mlTracking": "ŚLEDZENIE ML"
   },
