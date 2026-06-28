@@ -11,7 +11,7 @@
 ## 3. Ustawienia
 - [ ] Przeprojektować panel ustawień — czytelne sekcje (audio, grafika, sterowanie, gameplay)
 - [x] Podgląd zmian na żywo (np. głośność, kolor mieczy) bez restartu
-- [ ] Zapisywanie i resetowanie ustawień do domyślnych
+- [x] Zapisywanie i resetowanie ustawień do domyślnych
 
 ## 4. Panel debugowania
 - [x] Podstawowy dev panel (FPS, timing, pool)

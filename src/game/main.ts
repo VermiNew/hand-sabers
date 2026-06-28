@@ -12,7 +12,7 @@ import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks,
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
-import { loadSettings, setSetting } from '../core/settings.ts';
+import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
 import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
 import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.ts';
 import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeatDeltaMs, nearestBeats } from '../core/timing.ts';
@@ -824,6 +824,7 @@ function initMainMenu(): void {
   const settingsPanel    = document.getElementById('mainSettingsPanel');
   const settingsButton   = document.getElementById('mainSettings');
   const settingsClose    = document.getElementById('mainSettingsClose');
+  const settingsReset    = document.getElementById('mainSettingsReset');
   const volumeInput      = document.getElementById('menuVolume')    as HTMLInputElement | null;
   const soundInputs      = [...document.querySelectorAll<HTMLInputElement>('[data-audio-setting]')];
   const noFailInput      = document.getElementById('menuNoFail')    as HTMLInputElement | null;
@@ -1360,6 +1361,91 @@ function initMainMenu(): void {
       });
     });
   }
+
+  settingsReset?.addEventListener('click', () => {
+    if (!window.confirm(t('settings.resetConfirm'))) return;
+
+    resetSettings();
+
+    const emit = (element: HTMLElement | null, eventName: 'input' | 'change') => {
+      element?.dispatchEvent(new Event(eventName));
+    };
+
+    if (volumeInput) {
+      volumeInput.value = String(settings.volume);
+      emit(volumeInput, 'input');
+    }
+    for (const input of soundInputs) {
+      const key = input.dataset['audioSetting'] as keyof Settings | undefined;
+      if (!key) continue;
+      input.value = String(settings[key]);
+      emit(input, 'input');
+    }
+    if (audioOffsetInput) {
+      audioOffsetInput.value = String(settings.audioOffsetMs);
+      emit(audioOffsetInput, 'input');
+    }
+    if (noFailInput) {
+      noFailInput.checked = settings.noFail;
+      emit(noFailInput, 'change');
+    }
+    if (beatLimitInput) {
+      beatLimitInput.checked = settings.beatLimitEnabled;
+      emit(beatLimitInput, 'change');
+    }
+    if (performanceInput) {
+      performanceInput.value = settings.performanceMode;
+      emit(performanceInput, 'change');
+    }
+    if (developerModeInput) {
+      developerModeInput.checked = settings.developerMode;
+      emit(developerModeInput, 'change');
+    }
+    if (devAccentInput) {
+      devAccentInput.value = settings.devAccent;
+      emit(devAccentInput, 'change');
+    }
+    if (flipCameraInput) {
+      flipCameraInput.checked = settings.flipCamera;
+      emit(flipCameraInput, 'change');
+    }
+
+    state.oneHandMode = settings.oneHandMode;
+    window.__oneHandMode = settings.oneHandMode ?? 'both';
+    syncOneHandButtons();
+
+    const leftColor = settings.saberColorLeft;
+    const rightColor = settings.saberColorRight;
+    setSaberColor('left', leftColor);
+    setSaberColor('right', rightColor);
+    setBlockColor('left', parseInt(leftColor.slice(1), 16));
+    setBlockColor('right', parseInt(rightColor.slice(1), 16));
+    buildColorGrid(
+      document.getElementById('saberColorGridLeft'),
+      document.getElementById('saberColorPreviewLeft'),
+      document.getElementById('saberColorNameLeft'),
+      'left',
+      leftColor,
+    );
+    buildColorGrid(
+      document.getElementById('saberColorGridRight'),
+      document.getElementById('saberColorPreviewRight'),
+      document.getElementById('saberColorNameRight'),
+      'right',
+      rightColor,
+    );
+
+    const model = settings.saberModel as Parameters<typeof setSaberModel>[1];
+    setSaberModel('left', model);
+    setSaberModel('right', model);
+    modelPicker?.querySelectorAll<HTMLElement>('[data-saber-model]').forEach(button => {
+      button.classList.toggle('is-active', button.dataset['saberModel'] === model);
+    });
+
+    window.__trackingSensitivity = settings.sensitivity;
+    applyAudioSettings(settings);
+    applyTrackingSettings(settings);
+  });
 
   document.getElementById('mainDevMode')?.addEventListener('click', () => {
     const current = new URLSearchParams(location.search);

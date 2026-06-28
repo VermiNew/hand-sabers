@@ -50,8 +50,23 @@
   color:#fff; border-left-color:#00d4ff;
   background:rgba(0,212,255,0.06);
 }
+.sp-reset {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  margin:auto 20px 0; min-height:36px; padding:8px 10px;
+  border:1px solid rgba(255,255,255,0.08); border-radius:8px;
+  background:rgba(255,255,255,0.03); color:rgba(148,163,184,0.58);
+  font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.5px;
+  cursor:pointer; transition:color .15s, border-color .15s, background .15s;
+}
+.sp-reset .material-symbols-rounded { font-size:17px; }
+.sp-reset:hover,
+.sp-reset:focus-visible {
+  color:#ffb86b; border-color:rgba(255,184,107,.35);
+  background:rgba(255,184,107,.08); outline:2px solid rgba(255,184,107,.35);
+  outline-offset:2px;
+}
 .sp-close {
-  margin-top:auto; margin-left:20px; margin-right:20px; margin-bottom:0;
+  margin:8px 20px 0;
   width:auto; border-radius:8px; display:flex; align-items:center; justify-content:center;
   height:36px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08);
   color:rgba(148,163,184,0.5); cursor:pointer; transition:all 0.15s;

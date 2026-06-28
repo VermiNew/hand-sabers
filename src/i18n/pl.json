@@ -51,6 +51,8 @@
     "menuKicker": "Menu gry",
     "title": "Ustawienia",
     "close": "Zamknij ustawienia",
+    "reset": "Przywróć domyślne",
+    "resetConfirm": "Przywrócić wszystkie ustawienia domyślne?",
     "sections": {
       "language": "Język",
       "audio": "Audio",

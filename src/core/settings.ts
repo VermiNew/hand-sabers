@@ -72,6 +72,14 @@ export function saveSettings(): void {
   try { localStorage.setItem(KEY, JSON.stringify(_settings)); } catch {}
 }
 
+export function resetSettings(): Settings {
+  const mutableSettings = _settings as unknown as Record<string, unknown>;
+  for (const key of Object.keys(mutableSettings)) delete mutableSettings[key];
+  Object.assign(_settings, DEFAULTS);
+  saveSettings();
+  return _settings;
+}
+
 export function getSetting<K extends keyof Settings>(key: K): Settings[K] {
   return _settings[key];
 }
