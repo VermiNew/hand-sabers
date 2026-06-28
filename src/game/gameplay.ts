@@ -63,7 +63,7 @@ const BLADE_LOCAL_START   = new THREE.Vector3(0, 0.03, 0);
 const BLADE_LOCAL_END     = new THREE.Vector3(0, 1.18, 0);
 const STARTING_LIVES      = 10;
 const REGEN_EVERY_HITS    = 8;
-// Jedyne źródło prawdy — zmień TU przy difficulty presets
+// Base travel time at 1×. Presets scale approach time without modifying beat.t.
 export const APPROACH_TIME_MS = 1800;
 export const MAP_APPROACH_TIME_SEC = APPROACH_TIME_MS / 1000;
 const MENU_DEMO_BEAT_MS   = 540;
@@ -77,6 +77,14 @@ const SPAWN_Z             = -22;
 const HIT_Z               = 1.5;
 const BLOCK_SPEED_PER_MS  = (HIT_Z - SPAWN_Z) / APPROACH_TIME_MS;
 const MENU_DEMO_HIT_Z     = HIT_Z - 0.15;
+
+function getNoteSpeed(): number {
+  return THREE.MathUtils.clamp(Number(getSettings().noteSpeed) || 1, 0.75, 1.75);
+}
+
+function getMapApproachTimeSec(): number {
+  return MAP_APPROACH_TIME_SEC / getNoteSpeed();
+}
 
 // ── Geometrie (pre-ładowane) ────────────────────────────────────────────────
 const BLOCK_GEO         = new THREE.BoxGeometry(0.38, 0.38, 0.38);
@@ -1008,6 +1016,7 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
   ensureMapSpawnQueue(beats);
   const LOOKAHEAD = 0.12;
   const DROP_LATE_BY = 0.45;
+  const approachSec = getMapApproachTimeSec();
 
   if (currentTimeSec < lastMapSpawnTimeSec - 0.35) {
     nextMapSpawnIndex = 0;
@@ -1016,7 +1025,7 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
 
   while (nextMapSpawnIndex < mapSpawnQueue.length) {
     const { beat: b, hitTime } = mapSpawnQueue[nextMapSpawnIndex]!;
-    if (!shouldSpawnBeat(b, currentTimeSec, MAP_APPROACH_TIME_SEC, LOOKAHEAD)) break;
+    if (!shouldSpawnBeat(b, currentTimeSec, approachSec, LOOKAHEAD)) break;
     nextMapSpawnIndex++;
     if (isBeatTooLate(b, currentTimeSec, DROP_LATE_BY)) continue;
 
@@ -1025,7 +1034,7 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
     spawnBlock(side, b.type === 'bomb', {
       mapBeat: true,
       hitTimeSec: hitTime,
-      approachSec: MAP_APPROACH_TIME_SEC,
+      approachSec,
       x: lane.x,
       y: lane.y,
       z: SPAWN_Z,
@@ -1062,7 +1071,7 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
     }
   }
 
-  const spd = BLOCK_SPEED_PER_MS * elapsed;
+  const spd = BLOCK_SPEED_PER_MS * getNoteSpeed() * elapsed;
   const deltaSec = elapsed / 1000;
   for (const entry of activeBlocks) {
     if (!entry.alive) continue;

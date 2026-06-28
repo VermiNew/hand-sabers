@@ -12,6 +12,7 @@ const PERFORMANCE_MODES: PerformanceMode[] = [
   'ultra',
   'maximum',
 ];
+const NOTE_SPEED_PRESETS = [0.75, 1, 1.35, 1.75] as const;
 const LEGACY_MODE_MAP: Record<string, PerformanceMode> = {
   turbo: 'low',
   performance: 'medium',
@@ -47,6 +48,7 @@ export const DEFAULTS: Settings = {
   audioOffsetMs: 0,
   performanceMode: DEFAULT_PERFORMANCE_MODE,
   playerName: 'Gracz',
+  noteSpeed: 1,
 };
 
 let _settings: Settings = { ...DEFAULTS };
@@ -59,12 +61,21 @@ function normalizePerformanceMode(mode: unknown): PerformanceMode {
     : DEFAULT_PERFORMANCE_MODE;
 }
 
+function normalizeNoteSpeed(value: unknown): number {
+  const speed = Number(value);
+  if (!Number.isFinite(speed)) return DEFAULTS.noteSpeed;
+  return NOTE_SPEED_PRESETS.reduce((closest, preset) => (
+    Math.abs(preset - speed) < Math.abs(closest - speed) ? preset : closest
+  ));
+}
+
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) _settings = { ...DEFAULTS, ...JSON.parse(raw) as Partial<Settings> };
   } catch {}
   _settings.performanceMode = normalizePerformanceMode(_settings.performanceMode);
+  _settings.noteSpeed = normalizeNoteSpeed(_settings.noteSpeed);
   return _settings;
 }
 

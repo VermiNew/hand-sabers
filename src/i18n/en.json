@@ -102,6 +102,12 @@
     },
     "gameplay": {
       "noFailDesc": "Game doesn't end at zero HP",
+      "noteSpeed": "Note speed",
+      "noteSpeedDesc": "Changes approach time without moving beats",
+      "speedRelaxed": "Relaxed",
+      "speedNormal": "Standard",
+      "speedFast": "Fast",
+      "speedExpert": "Expert",
       "flipCamera": "Flip camera sides",
       "flipCameraDesc": "Enable when left saber hits right track",
       "beatLimit": "Beat limit",

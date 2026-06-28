@@ -46,7 +46,7 @@
 - [x] Ujednolicić creator i gameplay wokół `src/core/timing.ts`
 - [x] Dodać komunikat UI przy pliku >100 MB zamiast alertu
 - [x] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`
-- [ ] Dodać ustawienie prędkości nut / difficulty presets (bez zmiany `beat.t`)
+- [x] Dodać ustawienie prędkości nut / difficulty presets (bez zmiany `beat.t`)
 - [ ] Dodać tryb treningowy (wolniejsze tempo, bez zapisu wyniku)
 - [ ] Dodać lepsze feedbacki trafienia: kierunek cięcia, accuracy ms
 - [ ] Rozważyć własne sample audio (import `.wav/.ogg`) dla trafienia/bomby/pudła

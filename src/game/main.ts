@@ -848,6 +848,7 @@ function initMainMenu(): void {
   const audioOffsetInput = document.getElementById('menuAudioOffset')      as HTMLInputElement | null;
   const audioOffsetValue = document.getElementById('menuAudioOffsetValue');
   const oneHandButtons   = [...document.querySelectorAll<HTMLElement>('[data-one-hand]')];
+  const noteSpeedButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-note-speed]')];
 
   function selectItem(item: Element): void {
     navItems.forEach(el => el.classList.toggle('is-selected', el === item));
@@ -887,6 +888,15 @@ function initMainMenu(): void {
   function syncOneHandButtons(): void {
     oneHandButtons.forEach(btn => {
       btn.classList.toggle('is-active', (btn.dataset['oneHand'] ?? '') === (state.oneHandMode ?? ''));
+    });
+  }
+
+  function syncNoteSpeedButtons(): void {
+    const activeSpeed = Number(settings.noteSpeed) || 1;
+    noteSpeedButtons.forEach(button => {
+      const selected = Math.abs(Number(button.dataset['noteSpeed']) - activeSpeed) < 0.001;
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-pressed', String(selected));
     });
   }
 
@@ -1139,6 +1149,17 @@ function initMainMenu(): void {
   }
   syncOneHandButtons();
 
+  for (const button of noteSpeedButtons) {
+    button.addEventListener('click', () => {
+      const speed = Number(button.dataset['noteSpeed']);
+      if (!Number.isFinite(speed)) return;
+      settings.noteSpeed = speed;
+      setSetting('noteSpeed', speed);
+      syncNoteSpeedButtons();
+    });
+  }
+  syncNoteSpeedButtons();
+
   // ── Kolory mieczy ─────────────────────────────────────────────────────────
   function updateColorPreview(previewBar: HTMLElement | null, previewName: HTMLElement | null, colorDef: { hex: string; label: string }): void {
     if (previewBar) {
@@ -1369,6 +1390,7 @@ function initMainMenu(): void {
     if (!window.confirm(t('settings.resetConfirm'))) return;
 
     resetSettings();
+    syncNoteSpeedButtons();
 
     const emit = (element: HTMLElement | null, eventName: 'input' | 'change') => {
       element?.dispatchEvent(new Event(eventName));

@@ -101,6 +101,7 @@ export interface Settings {
   beatLimitEnabled: boolean;
   maxBeats: number;
   playerName: string;
+  noteSpeed: number;
 }
 
 // ── Performance ───────────────────────────────────────────────────────────────

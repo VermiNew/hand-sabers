@@ -195,6 +195,7 @@
 
 /* Segmented */
 .sp-segmented { display:flex; gap:4px; flex-shrink:0; }
+.sp-note-speed { flex-wrap:wrap; justify-content:flex-end; }
 .sp-seg {
   background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
   color:rgba(148,163,184,0.6); font-family:'JetBrains Mono',monospace;

@@ -102,6 +102,12 @@
     },
     "gameplay": {
       "noFailDesc": "Gra nie kończy się przy zerowym HP",
+      "noteSpeed": "Prędkość nut",
+      "noteSpeedDesc": "Zmienia czas dolotu bez przesuwania beatów",
+      "speedRelaxed": "Spokojny",
+      "speedNormal": "Standard",
+      "speedFast": "Szybki",
+      "speedExpert": "Expert",
       "flipCamera": "Odwróć strony kamery",
       "flipCameraDesc": "Włącz, gdy lewy miecz trafia na prawy tor",
       "beatLimit": "Limit beatów",
