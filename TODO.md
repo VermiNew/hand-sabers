@@ -4,12 +4,12 @@
 - [x] Przenieść wszystkie `.js` na `.ts` (zostaje tylko `src/vendor/jszip.min.js`)
 
 ## 2. UX całości gry
-- [ ] Przejrzeć i poprawić flow każdego ekranu (menu, kalibracja, gameplay, game over)
-- [ ] Spójne animacje przejść między ekranami
+- [x] Przejrzeć i poprawić flow każdego ekranu (menu, kalibracja, gameplay, game over)
+- [x] Spójne animacje przejść między ekranami
 - [x] Lepszy feedback dla gracza (dźwięki, wibracje wizualne)
 
 ## 3. Ustawienia
-- [ ] Przeprojektować panel ustawień — czytelne sekcje (audio, grafika, sterowanie, gameplay)
+- [x] Przeprojektować panel ustawień — czytelne sekcje (audio, grafika, sterowanie, gameplay)
 - [x] Podgląd zmian na żywo (np. głośność, kolor mieczy) bez restartu
 - [x] Zapisywanie i resetowanie ustawień do domyślnych
 
