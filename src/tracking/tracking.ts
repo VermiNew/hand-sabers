@@ -80,6 +80,8 @@ let handLandmarker: any = null;
 let videoEl:        HTMLVideoElement | null = null;
 let trackCanvas:    HTMLCanvasElement | null = null;
 let trackCtx:       CanvasRenderingContext2D | null = null;
+let handsPauseCanvas: HTMLCanvasElement | null = null;
+let handsPauseCtx:    CanvasRenderingContext2D | null = null;
 let worker:         Worker | null = null;
 let lastDetectMs    = 0;
 let autoAdvance:    () => void = () => {};
@@ -327,39 +329,51 @@ function onWorkerMessage(e: MessageEvent<{ type: string; payload: WorkerResult }
   latestWorkerResult = e.data.payload;
 }
 
-function drawLandmarks(result: DetectResult): void {
-  if (!isDebugVisuals() || !trackCtx || !trackCanvas) return;
-  const w = trackCanvas.width, h = trackCanvas.height;
-  trackCtx.clearRect(0, 0, w, h);
+function drawLandmarksToCanvas(
+  canvas: HTMLCanvasElement,
+  context: CanvasRenderingContext2D,
+  result: DetectResult,
+): void {
+  const w = canvas.width, h = canvas.height;
+  context.clearRect(0, 0, w, h);
 
   if (videoEl && videoEl.readyState >= 2) {
-    trackCtx.save();
-    trackCtx.translate(w, 0);
-    trackCtx.scale(-1, 1);
-    trackCtx.drawImage(videoEl, 0, 0, w, h);
-    trackCtx.restore();
+    context.save();
+    context.translate(w, 0);
+    context.scale(-1, 1);
+    context.drawImage(videoEl, 0, 0, w, h);
+    context.restore();
   } else {
-    trackCtx.fillStyle = 'rgba(5,7,13,0.9)';
-    trackCtx.fillRect(0, 0, w, h);
+    context.fillStyle = 'rgba(5,7,13,0.9)';
+    context.fillRect(0, 0, w, h);
   }
 
   if (!result?.landmarks) return;
   for (const hand of result.landmarks) {
-    trackCtx.strokeStyle = 'rgba(47,124,255,0.85)';
-    trackCtx.lineWidth   = 1.5;
+    context.strokeStyle = 'rgba(47,124,255,0.85)';
+    context.lineWidth   = 1.5;
     for (const [a, b] of HAND_CONNECTIONS) {
       const pa = hand[a]!, pb = hand[b]!;
-      trackCtx.beginPath();
-      trackCtx.moveTo((1 - pa.x) * w, pa.y * h);
-      trackCtx.lineTo((1 - pb.x) * w, pb.y * h);
-      trackCtx.stroke();
+      context.beginPath();
+      context.moveTo((1 - pa.x) * w, pa.y * h);
+      context.lineTo((1 - pb.x) * w, pb.y * h);
+      context.stroke();
     }
     for (const lm of hand) {
-      trackCtx.fillStyle = '#7eb8ff';
-      trackCtx.beginPath();
-      trackCtx.arc((1 - lm.x) * w, lm.y * h, 3, 0, Math.PI * 2);
-      trackCtx.fill();
+      context.fillStyle = '#7eb8ff';
+      context.beginPath();
+      context.arc((1 - lm.x) * w, lm.y * h, 3, 0, Math.PI * 2);
+      context.fill();
     }
+  }
+}
+
+function drawLandmarks(result: DetectResult): void {
+  if (isDebugVisuals() && trackCtx && trackCanvas) {
+    drawLandmarksToCanvas(trackCanvas, trackCtx, result);
+  }
+  if (state.appState === S.PAUSED && handsPauseCtx && handsPauseCanvas) {
+    drawLandmarksToCanvas(handsPauseCanvas, handsPauseCtx, result);
   }
 }
 
@@ -559,6 +573,8 @@ export async function initMP(onReady: () => void): Promise<void> {
     trackCanvas.height = 156;
     trackCtx = trackCanvas.getContext('2d', { alpha: false });
   }
+  handsPauseCanvas = document.getElementById('handsPauseCanvas') as HTMLCanvasElement | null;
+  handsPauseCtx = handsPauseCanvas?.getContext('2d', { alpha: false }) ?? null;
 
   setupCalibFeed();
 

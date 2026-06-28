@@ -353,7 +353,15 @@
 <!-- PAUSE BANNER (hands lost) -->
 <div id="pauseBanner">
   <div class="pause-title" data-i18n="pause.title">PAUZA</div>
+  <div class="hands-pause-preview">
+    <canvas id="handsPauseCanvas" width="320" height="208"></canvas>
+    <span class="hands-pause-preview-label">ML TRACKING</span>
+  </div>
   <div class="pause-sub" id="pauseSub" data-i18n="pause.handsLost">UTRACONO RĘCE — STAŃ PRZED KAMERĄ</div>
+  <div class="hands-resume-status" id="handsResumeStatus" data-i18n="hands.waitingStable">Czekam na stabilny tracking</div>
+  <div class="hands-resume-track" aria-hidden="true">
+    <div class="hands-resume-fill" id="handsResumeFill"></div>
+  </div>
 </div>
 
 <!-- PAUSE MENU (Escape) -->

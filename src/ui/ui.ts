@@ -50,9 +50,11 @@ interface UiRefs {
   calibVerdict:        HTMLElement | null;
   calibHint:           HTMLElement | null;
   pauseBanner:         HTMLElement | null;
-  pauseSub:        HTMLElement | null;
-  mapTitle:        HTMLElement | null;
-  mapProgress:     HTMLElement | null;
+  pauseSub:            HTMLElement | null;
+  handsResumeStatus:   HTMLElement | null;
+  handsResumeFill:     HTMLElement | null;
+  mapTitle:            HTMLElement | null;
+  mapProgress:         HTMLElement | null;
   mapProgressFill: HTMLElement | null;
 }
 
@@ -104,9 +106,11 @@ export const ui: UiRefs = {
   calibVerdict:        document.getElementById('calibVerdict'),
   calibHint:           document.getElementById('calibHint'),
   pauseBanner:         document.getElementById('pauseBanner'),
-  pauseSub:        document.getElementById('pauseSub'),
-  mapTitle:        document.getElementById('mapTitle'),
-  mapProgress:     document.getElementById('mapProgress'),
+  pauseSub:            document.getElementById('pauseSub'),
+  handsResumeStatus:   document.getElementById('handsResumeStatus'),
+  handsResumeFill:     document.getElementById('handsResumeFill'),
+  mapTitle:            document.getElementById('mapTitle'),
+  mapProgress:         document.getElementById('mapProgress'),
   mapProgressFill: document.getElementById('mapProgressFill'),
 };
 
@@ -128,11 +132,22 @@ function clearDangerPulse(): void {
 
 export function showHandsPaused(text = t('pause.handsLost')): void {
   if (ui.pauseSub)    ui.pauseSub.textContent = text;
+  updateHandsResumeProgress(0);
   if (ui.pauseBanner) ui.pauseBanner.classList.add('show');
 }
 
 export function hideHandsPaused(): void {
   if (ui.pauseBanner) ui.pauseBanner.classList.remove('show');
+  updateHandsResumeProgress(0);
+}
+
+export function updateHandsResumeProgress(progress: number): void {
+  const normalized = Math.max(0, Math.min(1, progress));
+  if (ui.handsResumeFill) ui.handsResumeFill.style.width = `${normalized * 100}%`;
+  if (!ui.handsResumeStatus) return;
+  ui.handsResumeStatus.textContent = normalized > 0
+    ? `${t('hands.resumeIn')} ${(1 - normalized).toFixed(1)} s`
+    : t('hands.waitingStable');
 }
 
 let lastHp: number | null = null;

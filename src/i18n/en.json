@@ -21,7 +21,9 @@
     "leftMissing": "LEFT HAND MISSING — SHOW IT",
     "rightMissing": "RIGHT HAND MISSING — SHOW IT",
     "oneHandLeft": "ONE-HAND MODE — SHOW YOUR LEFT SABER HAND",
-    "oneHandRight": "ONE-HAND MODE — SHOW YOUR RIGHT SABER HAND"
+    "oneHandRight": "ONE-HAND MODE — SHOW YOUR RIGHT SABER HAND",
+    "waitingStable": "Waiting for stable tracking",
+    "resumeIn": "Resuming in"
   },
   "errors": {
     "cameraError": "CAMERA ERROR",

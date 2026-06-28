@@ -21,7 +21,9 @@
     "leftMissing": "BRAK LEWEJ RĘKI — POKAŻ JĄ",
     "rightMissing": "BRAK PRAWEJ RĘKI — POKAŻ JĄ",
     "oneHandLeft": "TRYB 1 RĘKI — POKAŻ RĘKĘ DLA LEWEGO MIECZA",
-    "oneHandRight": "TRYB 1 RĘKI — POKAŻ RĘKĘ DLA PRAWEGO MIECZA"
+    "oneHandRight": "TRYB 1 RĘKI — POKAŻ RĘKĘ DLA PRAWEGO MIECZA",
+    "waitingStable": "Czekam na stabilny tracking",
+    "resumeIn": "Powrót za"
   },
   "errors": {
     "cameraError": "BŁĄD KAMERY",

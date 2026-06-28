@@ -1,5 +1,5 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
+import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateHandsResumeProgress, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
@@ -334,7 +334,7 @@ function restartWithoutCalib(): void {
 
 // ── Pauza ─────────────────────────────────────────────────────────────────────
 const HANDS_LOST_PAUSE_MS = 330;
-const HANDS_RESUME_MS     = 400;
+const HANDS_RESUME_MS     = 1000;
 let handsLostSince     = 0;
 let handsReturnedSince = 0;
 
@@ -393,12 +393,15 @@ function updateHandsPauseState(now: number): void {
   } else if (state.appState === S.PAUSED && state.pauseReason !== null && canAutoResumeFromHands(state.pauseReason)) {
     if (ready) {
       if (!handsReturnedSince) handsReturnedSince = now;
-      if (now - handsReturnedSince >= HANDS_RESUME_MS) {
+      const stableMs = now - handsReturnedSince;
+      updateHandsResumeProgress(stableMs / HANDS_RESUME_MS);
+      if (stableMs >= HANDS_RESUME_MS) {
         resumeGame(now);
         handsReturnedSince = 0;
       }
     } else {
       handsReturnedSince = 0;
+      updateHandsResumeProgress(0);
       if (ui.pauseSub) ui.pauseSub.textContent = missingHandsText();
     }
   }
