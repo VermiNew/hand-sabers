@@ -102,6 +102,7 @@ export interface Settings {
   maxBeats: number;
   playerName: string;
   noteSpeed: number;
+  hitboxSensitivity: number;
 }
 
 // ── Performance ───────────────────────────────────────────────────────────────

@@ -13,6 +13,7 @@ const PERFORMANCE_MODES: PerformanceMode[] = [
   'maximum',
 ];
 const NOTE_SPEED_PRESETS = [0.75, 1, 1.35, 1.75] as const;
+const HITBOX_SENSITIVITY_PRESETS = [0.82, 1, 1.2] as const;
 const LEGACY_MODE_MAP: Record<string, PerformanceMode> = {
   turbo: 'low',
   performance: 'medium',
@@ -49,6 +50,7 @@ export const DEFAULTS: Settings = {
   performanceMode: DEFAULT_PERFORMANCE_MODE,
   playerName: 'Gracz',
   noteSpeed: 1,
+  hitboxSensitivity: 1,
 };
 
 let _settings: Settings = { ...DEFAULTS };
@@ -69,6 +71,14 @@ function normalizeNoteSpeed(value: unknown): number {
   ));
 }
 
+function normalizeHitboxSensitivity(value: unknown): number {
+  const sensitivity = Number(value);
+  if (!Number.isFinite(sensitivity)) return DEFAULTS.hitboxSensitivity;
+  return HITBOX_SENSITIVITY_PRESETS.reduce((closest, preset) => (
+    Math.abs(preset - sensitivity) < Math.abs(closest - sensitivity) ? preset : closest
+  ));
+}
+
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
@@ -76,6 +86,7 @@ export function loadSettings(): Settings {
   } catch {}
   _settings.performanceMode = normalizePerformanceMode(_settings.performanceMode);
   _settings.noteSpeed = normalizeNoteSpeed(_settings.noteSpeed);
+  _settings.hitboxSensitivity = normalizeHitboxSensitivity(_settings.hitboxSensitivity);
   return _settings;
 }
 

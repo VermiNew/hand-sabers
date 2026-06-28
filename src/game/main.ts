@@ -850,6 +850,7 @@ function initMainMenu(): void {
   const audioOffsetValue = document.getElementById('menuAudioOffsetValue');
   const oneHandButtons   = [...document.querySelectorAll<HTMLElement>('[data-one-hand]')];
   const noteSpeedButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-note-speed]')];
+  const hitboxSensitivityButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-hitbox-sensitivity]')];
 
   function selectItem(item: Element): void {
     navItems.forEach(el => el.classList.toggle('is-selected', el === item));
@@ -896,6 +897,15 @@ function initMainMenu(): void {
     const activeSpeed = Number(settings.noteSpeed) || 1;
     noteSpeedButtons.forEach(button => {
       const selected = Math.abs(Number(button.dataset['noteSpeed']) - activeSpeed) < 0.001;
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+  }
+
+  function syncHitboxSensitivityButtons(): void {
+    const activeSensitivity = Number(settings.hitboxSensitivity) || 1;
+    hitboxSensitivityButtons.forEach(button => {
+      const selected = Math.abs(Number(button.dataset['hitboxSensitivity']) - activeSensitivity) < 0.001;
       button.classList.toggle('is-active', selected);
       button.setAttribute('aria-pressed', String(selected));
     });
@@ -1161,6 +1171,17 @@ function initMainMenu(): void {
   }
   syncNoteSpeedButtons();
 
+  for (const button of hitboxSensitivityButtons) {
+    button.addEventListener('click', () => {
+      const sensitivity = Number(button.dataset['hitboxSensitivity']);
+      if (!Number.isFinite(sensitivity)) return;
+      settings.hitboxSensitivity = sensitivity;
+      setSetting('hitboxSensitivity', sensitivity);
+      syncHitboxSensitivityButtons();
+    });
+  }
+  syncHitboxSensitivityButtons();
+
   // ── Kolory mieczy ─────────────────────────────────────────────────────────
   function updateColorPreview(previewBar: HTMLElement | null, previewName: HTMLElement | null, colorDef: { hex: string; label: string }): void {
     if (previewBar) {
@@ -1392,6 +1413,7 @@ function initMainMenu(): void {
 
     resetSettings();
     syncNoteSpeedButtons();
+    syncHitboxSensitivityButtons();
 
     const emit = (element: HTMLElement | null, eventName: 'input' | 'change') => {
       element?.dispatchEvent(new Event(eventName));

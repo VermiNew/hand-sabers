@@ -50,7 +50,7 @@
 - [ ] Dodać tryb treningowy (wolniejsze tempo, bez zapisu wyniku)
 - [x] Dodać lepsze feedbacki trafienia: kierunek cięcia, accuracy ms
 - [ ] Rozważyć własne sample audio (import `.wav/.ogg`) dla trafienia/bomby/pudła
-- [ ] Przejrzeć hitboxy po kalibracji; dodać opcję czułości niezależną od tracking sensitivity
+- [x] Przejrzeć hitboxy po kalibracji; dodać opcję czułości niezależną od tracking sensitivity
 - [ ] Dodać osobny ekran diagnostyczny kamery bez `?dev`
 
 ## 8. i18n — Polski i Angielski

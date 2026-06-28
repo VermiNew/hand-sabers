@@ -663,12 +663,14 @@ function captureBladeHitbox(saber: THREE.Object3D, cache: BladeCache): void {
   cache.currentStart.copy(BLADE_LOCAL_START).applyMatrix4(saber.matrixWorld);
   cache.currentEnd.copy(BLADE_LOCAL_END).applyMatrix4(saber.matrixWorld);
 
-  if (!cache.hasPrevious) { cache.radius = HIT_RADIUS; cache.hasCurrent = true; return; }
+  const hitboxSensitivity = THREE.MathUtils.clamp(Number(getSettings().hitboxSensitivity) || 1, 0.82, 1.2);
+  const baseRadius = HIT_RADIUS * hitboxSensitivity;
+  if (!cache.hasPrevious) { cache.radius = baseRadius; cache.hasCurrent = true; return; }
   const swing = Math.max(
     cache.currentStart.distanceTo(cache.previousStart),
     cache.currentEnd.distanceTo(cache.previousEnd)
   );
-  cache.radius = HIT_RADIUS + Math.min(MAX_SWING_BONUS, swing * SWING_BONUS_FACTOR);
+  cache.radius = baseRadius + Math.min(MAX_SWING_BONUS, swing * SWING_BONUS_FACTOR);
   cache.hasCurrent = true;
 }
 
