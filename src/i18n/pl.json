@@ -38,6 +38,9 @@
     "pauseHands": "PAUZA — RĘCE",
     "pause": "PAUZA"
   },
+  "hit": {
+    "wrongDirection": "ZŁY KIERUNEK — TNIJ"
+  },
   "menu": {
     "singleplayer": "Singleplayer",
     "multiplayer": "Multiplayer",

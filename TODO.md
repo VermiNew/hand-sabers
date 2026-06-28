@@ -48,7 +48,7 @@
 - [x] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`
 - [x] Dodać ustawienie prędkości nut / difficulty presets (bez zmiany `beat.t`)
 - [ ] Dodać tryb treningowy (wolniejsze tempo, bez zapisu wyniku)
-- [ ] Dodać lepsze feedbacki trafienia: kierunek cięcia, accuracy ms
+- [x] Dodać lepsze feedbacki trafienia: kierunek cięcia, accuracy ms
 - [ ] Rozważyć własne sample audio (import `.wav/.ogg`) dla trafienia/bomby/pudła
 - [ ] Przejrzeć hitboxy po kalibracji; dodać opcję czułości niezależną od tracking sensitivity
 - [ ] Dodać osobny ekran diagnostyczny kamery bez `?dev`

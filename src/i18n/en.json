@@ -38,6 +38,9 @@
     "pauseHands": "PAUSE — HANDS",
     "pause": "PAUSE"
   },
+  "hit": {
+    "wrongDirection": "WRONG DIRECTION — CUT"
+  },
   "menu": {
     "singleplayer": "Singleplayer",
     "multiplayer": "Multiplayer",

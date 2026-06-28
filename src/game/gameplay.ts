@@ -5,7 +5,8 @@ import { updateHUD, showComboMilestone } from '../ui/ui.ts';
 import { THEME } from '../core/theme.ts';
 import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.ts';
 import { getBeatHitTimeSec, isBeatTooLate, noteZAtSongTime, shouldSpawnBeat } from '../core/timing.ts';
-import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
+import { classifyHitQuality, cutDirectionLabel, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
+import { t } from '../i18n/index.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import type { CutDirection, Beat, SaberSide } from '../types/index.js';
 
@@ -726,7 +727,7 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
   const points = scoreForHit(quality.basePoints, comboBefore);
 
   shatterBlock(entry.mesh, color, cache, { strong: quality.strong });
-  showHitLabel(entry.mesh.position, quality.label, quality.label === 'PERFECT', quality.reason, deltaMs);
+  showHitLabel(entry.mesh.position, quality.label, quality.label === 'PERFECT', quality.reason, deltaMs, entry.cut);
   releaseBlock(entry.mesh);
 
   state.score += points;
@@ -783,16 +784,27 @@ const hitLabelContainer = document.createElement('div');
 hitLabelContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:300;overflow:hidden;';
 document.body.appendChild(hitLabelContainer);
 
-function showHitLabel(pos3d: THREE.Vector3, label: string, perfect: boolean, _reason = '', deltaMs = 0): void {
+function showHitLabel(
+  pos3d: THREE.Vector3,
+  label: string,
+  perfect: boolean,
+  reason = '',
+  deltaMs = 0,
+  requiredCut: CutDirection = 'any',
+): void {
   const el    = document.createElement('div');
   const isBad = label === 'BAD';
   const col   = isBad ? '#ffaa44' : perfect ? '#36f2a1' : '#8ec8ff';
   const msAbs = Math.abs(Math.round(deltaMs));
   const msSign = deltaMs > 0 ? '+' : deltaMs < 0 ? '−' : '';
   const msCol  = msAbs < 30 ? '#36f2a1' : msAbs < 80 ? '#8ec8ff' : '#ffaa44';
+  const cutFeedback = reason === 'cut'
+    ? `<span style="display:block;font-size:10px;letter-spacing:1.5px;color:#ffb45c;margin-top:3px">${t('hit.wrongDirection')} ${cutDirectionLabel(requiredCut)}</span>`
+    : '';
   el.innerHTML = `
     <span style="display:block">${label}</span>
     <span style="display:block;font-size:11px;letter-spacing:2px;color:${msCol};opacity:0.85;margin-top:2px">${msSign}${msAbs} ms</span>
+    ${cutFeedback}
   `;
   el.style.cssText = `
     position:absolute;
