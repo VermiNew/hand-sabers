@@ -74,6 +74,26 @@
       "body": "If sides are reversed, enable camera flipping. If sound is delayed, adjust the audio offset."
     }
   },
+  "tutorial": {
+    "start": "START TUTORIAL",
+    "skip": "SKIP",
+    "back": "BACK",
+    "next": "NEXT",
+    "finish": "DONE",
+    "step": "STEP",
+    "calibration": {
+      "title": "Calibration",
+      "body": "Stand about 1–1.5 m from the camera. Complete all four calibration steps to match the play area and hand sides."
+    },
+    "movement": {
+      "title": "Saber movement",
+      "body": "Move your full forearms. Keep both hands in frame and guide each blade through the center of incoming blocks."
+    },
+    "hit": {
+      "title": "Hit on beat",
+      "body": "Cut each block with the matching saber and follow its arrow. Better timing and center accuracy earn more points."
+    }
+  },
   "settings": {
     "menuKicker": "Game menu",
     "title": "Settings",

@@ -39,7 +39,7 @@
 - [ ] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC
 - [ ] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
 - [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach
-- [ ] Nowa strona/overlay "Pomoc" w menu — instrukcja gry + mini-tutorial (PL i EN)
+- [x] Nowa strona/overlay "Pomoc" w menu — instrukcja gry + mini-tutorial (PL i EN)
 
 ## 8. TODO techniczne (backlog)
 - [ ] Przetestować `audioOffsetMs` na kilku urządzeniach (Bluetooth, przewodowe, głośniki)
@@ -60,9 +60,9 @@
 - [x] Przetłumaczyć UI na angielski
 
 ## 9. Tutorial
-- [ ] Zaprojektować flow tutoriala (krok po kroku: kalibracja → ruch → trafienie)
-- [ ] Overlay z instrukcjami wyświetlany przy pierwszym uruchomieniu
-- [ ] Możliwość pominięcia i powrotu do tutoriala z menu
+- [x] Zaprojektować flow tutoriala (krok po kroku: kalibracja → ruch → trafienie)
+- [x] Overlay z instrukcjami wyświetlany przy pierwszym uruchomieniu
+- [x] Możliwość pominięcia i powrotu do tutoriala z menu
 
 ## 10. Menu pomocy
 - [x] Strona/overlay "Jak grać" dostępna z głównego menu

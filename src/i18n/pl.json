@@ -74,6 +74,26 @@
       "body": "Gdy strony są odwrócone, włącz odwracanie kamery. Przy opóźnieniu dźwięku ustaw offset audio."
     }
   },
+  "tutorial": {
+    "start": "URUCHOM TUTORIAL",
+    "skip": "POMIŃ",
+    "back": "WSTECZ",
+    "next": "DALEJ",
+    "finish": "GOTOWE",
+    "step": "KROK",
+    "calibration": {
+      "title": "Kalibracja",
+      "body": "Stań około 1–1,5 m od kamery. Wykonaj cztery kroki kalibracji, aby dopasować obszar ruchu i strony rąk."
+    },
+    "movement": {
+      "title": "Ruch mieczy",
+      "body": "Poruszaj całymi przedramionami. Trzymaj ręce w kadrze, a ostrza prowadź przez środek nadlatujących bloków."
+    },
+    "hit": {
+      "title": "Trafienie w rytmie",
+      "body": "Tnij blok mieczem tego samego koloru i zgodnie ze strzałką. Im bliżej rytmu i środka, tym więcej punktów."
+    }
+  },
   "settings": {
     "menuKicker": "Menu gry",
     "title": "Ustawienia",

@@ -333,35 +333,52 @@
         <span class="help-close-label" data-i18n="help.close">Zamknij</span>
       </button>
     </header>
-    <div class="help-sections">
-      <section class="help-section">
-        <span class="material-symbols-rounded" aria-hidden="true">sports_esports</span>
-        <div>
-          <h3 data-i18n="help.controls.title">Sterowanie</h3>
-          <p data-i18n="help.controls.body">Stań przed kamerą i tnij bloki mieczem w odpowiednim kolorze. Escape zatrzymuje grę.</p>
-        </div>
-      </section>
-      <section class="help-section">
-        <span class="material-symbols-rounded" aria-hidden="true">leaderboard</span>
-        <div>
-          <h3 data-i18n="help.scoring.title">Punktacja</h3>
-          <p data-i18n="help.scoring.body">Trafiaj blisko środka i w rytmie. Poprawny kierunek oraz seria zwiększają wynik.</p>
-        </div>
-      </section>
-      <section class="help-section">
-        <span class="material-symbols-rounded" aria-hidden="true">videocam</span>
-        <div>
-          <h3 data-i18n="help.camera.title">Kamera</h3>
-          <p data-i18n="help.camera.body">Ustaw kamerę na wysokości klatki piersiowej, zadbaj o światło z przodu i pokaż całe ręce.</p>
-        </div>
-      </section>
-      <section class="help-section">
-        <span class="material-symbols-rounded" aria-hidden="true">quiz</span>
-        <div>
-          <h3 data-i18n="help.faq.title">FAQ</h3>
-          <p data-i18n="help.faq.body">Gdy strony są odwrócone, włącz odwracanie kamery. Przy opóźnieniu dźwięku ustaw offset audio.</p>
-        </div>
-      </section>
+    <div id="helpGuide">
+      <div class="help-sections">
+        <section class="help-section">
+          <span class="material-symbols-rounded" aria-hidden="true">sports_esports</span>
+          <div>
+            <h3 data-i18n="help.controls.title">Sterowanie</h3>
+            <p data-i18n="help.controls.body">Stań przed kamerą i tnij bloki mieczem w odpowiednim kolorze. Escape zatrzymuje grę.</p>
+          </div>
+        </section>
+        <section class="help-section">
+          <span class="material-symbols-rounded" aria-hidden="true">leaderboard</span>
+          <div>
+            <h3 data-i18n="help.scoring.title">Punktacja</h3>
+            <p data-i18n="help.scoring.body">Trafiaj blisko środka i w rytmie. Poprawny kierunek oraz seria zwiększają wynik.</p>
+          </div>
+        </section>
+        <section class="help-section">
+          <span class="material-symbols-rounded" aria-hidden="true">videocam</span>
+          <div>
+            <h3 data-i18n="help.camera.title">Kamera</h3>
+            <p data-i18n="help.camera.body">Ustaw kamerę na wysokości klatki piersiowej, zadbaj o światło z przodu i pokaż całe ręce.</p>
+          </div>
+        </section>
+        <section class="help-section">
+          <span class="material-symbols-rounded" aria-hidden="true">quiz</span>
+          <div>
+            <h3 data-i18n="help.faq.title">FAQ</h3>
+            <p data-i18n="help.faq.body">Gdy strony są odwrócone, włącz odwracanie kamery. Przy opóźnieniu dźwięku ustaw offset audio.</p>
+          </div>
+        </section>
+      </div>
+      <footer class="help-footer">
+        <button class="help-primary" id="helpStartTutorial" type="button" data-i18n="tutorial.start">URUCHOM TUTORIAL</button>
+      </footer>
+    </div>
+    <div class="tutorial-view" id="tutorialView" hidden>
+      <div class="tutorial-progress" id="tutorialProgress" aria-hidden="true"></div>
+      <div class="tutorial-icon material-symbols-rounded" id="tutorialIcon" aria-hidden="true">center_focus_strong</div>
+      <div class="tutorial-step-label" id="tutorialStepLabel">1 / 3</div>
+      <h3 id="tutorialStepTitle"></h3>
+      <p id="tutorialStepBody"></p>
+      <div class="tutorial-actions">
+        <button class="help-secondary" id="tutorialSkip" type="button" data-i18n="tutorial.skip">POMIŃ</button>
+        <button class="help-secondary" id="tutorialBack" type="button" data-i18n="tutorial.back">WSTECZ</button>
+        <button class="help-primary" id="tutorialNext" type="button" data-i18n="tutorial.next">DALEJ</button>
+      </div>
     </div>
   </section>
 </div>

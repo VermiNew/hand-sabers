@@ -122,6 +122,119 @@
   line-height:1.65;
 }
 
+.help-footer {
+  display:flex;
+  justify-content:flex-end;
+  padding:18px 28px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+
+.help-primary,
+.help-secondary {
+  min-height:38px;
+  padding:9px 18px;
+  border-radius:7px;
+  font-family:'Oxanium',sans-serif;
+  font-size:11px;
+  font-weight:800;
+  letter-spacing:1.5px;
+  cursor:pointer;
+}
+
+.help-primary {
+  border:1px solid rgba(0,212,255,.46);
+  background:rgba(0,212,255,.12);
+  color:#8feaff;
+}
+
+.help-secondary {
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);
+  color:rgba(203,213,225,.68);
+}
+
+.help-primary:hover,
+.help-primary:focus-visible,
+.help-secondary:hover,
+.help-secondary:focus-visible {
+  color:#fff;
+  border-color:rgba(0,212,255,.62);
+  outline:2px solid rgba(0,212,255,.25);
+  outline-offset:2px;
+}
+
+.tutorial-view {
+  min-height:390px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:34px 48px 30px;
+  text-align:center;
+}
+
+.tutorial-view[hidden] { display:none; }
+
+.tutorial-progress {
+  display:flex;
+  gap:8px;
+  margin-bottom:28px;
+}
+
+.tutorial-progress span {
+  width:34px;
+  height:3px;
+  border-radius:999px;
+  background:rgba(148,163,184,.18);
+}
+
+.tutorial-progress span.is-active,
+.tutorial-progress span.is-done {
+  background:#00d4ff;
+  box-shadow:0 0 12px rgba(0,212,255,.5);
+}
+
+.tutorial-icon {
+  color:#00d4ff;
+  font-size:58px;
+  text-shadow:0 0 32px rgba(0,212,255,.38);
+}
+
+.tutorial-step-label {
+  margin-top:16px;
+  color:rgba(148,163,184,.5);
+  font-size:10px;
+  letter-spacing:3px;
+}
+
+.tutorial-view h3 {
+  margin:12px 0 10px;
+  color:#fff;
+  font-family:'Oxanium',sans-serif;
+  font-size:24px;
+  letter-spacing:3px;
+}
+
+.tutorial-view p {
+  max-width:520px;
+  min-height:58px;
+  margin:0;
+  color:rgba(203,213,225,.68);
+  font-size:13px;
+  line-height:1.7;
+}
+
+.tutorial-actions {
+  display:flex;
+  justify-content:center;
+  gap:9px;
+  width:100%;
+  margin-top:28px;
+}
+
+.tutorial-actions #tutorialSkip { margin-right:auto; }
+.tutorial-actions button[hidden] { display:none; }
+
 @media (max-width:640px) {
   .help-overlay { padding:12px; }
   .help-panel { max-height:calc(100vh - 24px); }
@@ -136,4 +249,7 @@
     border-bottom:1px solid rgba(255,255,255,.06);
   }
   .help-section:last-child { border-bottom:0; }
+  .tutorial-view { min-height:420px; padding:28px 20px 22px; }
+  .tutorial-actions { flex-wrap:wrap; }
+  .tutorial-actions #tutorialSkip { width:100%; margin-right:0; order:3; }
 }
