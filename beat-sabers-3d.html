@@ -208,6 +208,13 @@
             </div>
             <div class="sp-toggle-row">
               <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.gameplay.trainingMode">Tryb treningowy</span>
+                <span class="sp-toggle-desc" data-i18n="settings.gameplay.trainingModeDesc">Tempo 75%, bez zapisu wyniku</span>
+              </div>
+              <label class="sp-switch"><input id="menuTrainingMode" type="checkbox"><span class="sp-knob"></span></label>
+            </div>
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
                 <span class="sp-toggle-name" data-i18n="settings.gameplay.flipCamera">Odwróć strony kamery</span>
                 <span class="sp-toggle-desc" data-i18n="settings.gameplay.flipCameraDesc">Włącz, gdy lewy miecz trafia na prawy tor</span>
               </div>
@@ -418,6 +425,7 @@
 <!-- HUD -->
 <div id="hud">
   <div id="hudTop">
+    <div id="trainingBadge" data-i18n="hud.training">TRENING · WYNIK NIEZAPISYWANY</div>
     <div id="score">000000</div>
     <div id="combo">COMBO ×1</div>
     <div id="mapTitle"></div>

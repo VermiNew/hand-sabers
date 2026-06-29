@@ -56,6 +56,7 @@ window.__trackingFlip        = settings.flipCamera;
 state.noFail                 = settings.noFail;
 state.oneHandMode            = settings.oneHandMode || null;
 window.__oneHandMode         = state.oneHandMode || 'both';
+document.body.classList.toggle('training-mode', settings.trainingMode);
 applyAudioSettings(settings);
 setScenePerformanceProfile(settings);
 setHitPlaneVisible(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
@@ -98,6 +99,8 @@ function preserveDevQueryOnMenuLinks(): void {
 
 // ── Score submit ──────────────────────────────────────────────────────────────
 async function submitScore(progress?: number): Promise<void> {
+  if (settings.trainingMode) return;
+
   const payload = {
     mapId:  state.map?.id ?? 'random',
     player: settings.playerName || 'Gracz',
@@ -178,6 +181,7 @@ async function ensureCurrentMapAudio(): Promise<void> {
 }
 
 const MAP_LEAD_IN_MS = 1800;
+const TRAINING_RATE  = 0.75;
 let mapTimelineZeroAtMs  = 0;
 let mapAudioStarted      = false;
 let pausedMapTimelineSec: number | null = null;
@@ -194,11 +198,17 @@ function startMapTimeline(now = performance.now()): void {
   pausedMapTimelineSec = null;
 }
 
+function getPlaybackRate(): number {
+  return settings.trainingMode ? TRAINING_RATE : 1;
+}
+
 function getMapTimelineSec(now = performance.now()): number {
   if (!state.map) return 0;
   if (hasMapAudio() && mapAudioStarted) return getSongTimeSec(getMapTime(), settings, state.map);
   if (!mapTimelineZeroAtMs) return 0;
-  return getSongTimeSec((now - mapTimelineZeroAtMs) / 1000, settings, state.map);
+  const elapsedSec = (now - mapTimelineZeroAtMs) / 1000;
+  const songElapsedSec = elapsedSec < 0 ? elapsedSec : elapsedSec * getPlaybackRate();
+  return getSongTimeSec(songElapsedSec, settings, state.map);
 }
 
 function getCurrentMapDuration(): number {
@@ -218,7 +228,7 @@ function hideOverlay(): void {
 function updateMapAudioSchedule(now = performance.now()): void {
   if (!state.map || !hasMapAudio() || mapAudioStarted || !mapTimelineZeroAtMs) return;
   if (now >= mapTimelineZeroAtMs) {
-    startMapAudio(0);
+    startMapAudio(0, 0, getPlaybackRate());
     mapAudioStarted = true;
   }
 }
@@ -231,10 +241,12 @@ function pauseMapTimeline(now = performance.now()): void {
 
 function resumeMapTimeline(now = performance.now()): void {
   if (!state.map || pausedMapTimelineSec === null) return;
-  mapTimelineZeroAtMs = now - pausedMapTimelineSec * 1000;
+  const rawElapsedSec = pausedMapTimelineSec - getAudioOffsetSec(settings, state.map);
+  const realElapsedSec = rawElapsedSec < 0 ? rawElapsedSec : rawElapsedSec / getPlaybackRate();
+  mapTimelineZeroAtMs = now - realElapsedSec * 1000;
   if (hasMapAudio()) {
-    if (pausedMapTimelineSec >= 0) {
-      startMapAudio(Math.max(0, pausedMapTimelineSec - getAudioOffsetSec(settings, state.map)));
+    if (rawElapsedSec >= 0) {
+      startMapAudio(rawElapsedSec, 0, getPlaybackRate());
       mapAudioStarted = true;
     } else {
       mapAudioStarted = false;
@@ -832,6 +844,7 @@ function initMainMenu(): void {
   const volumeInput      = document.getElementById('menuVolume')    as HTMLInputElement | null;
   const soundInputs      = [...document.querySelectorAll<HTMLInputElement>('[data-audio-setting]')];
   const noFailInput      = document.getElementById('menuNoFail')    as HTMLInputElement | null;
+  const trainingModeInput = document.getElementById('menuTrainingMode') as HTMLInputElement | null;
   const beatLimitInput   = document.getElementById('menuBeatLimit') as HTMLInputElement | null;
   const flipCameraInput  = document.getElementById('menuFlipCamera')as HTMLInputElement | null;
   const performanceInput = document.getElementById('menuPerformanceMode') as HTMLSelectElement | null;
@@ -1078,6 +1091,15 @@ function initMainMenu(): void {
       settings.noFail = noFailInput.checked;
       state.noFail    = noFailInput.checked;
       setSetting('noFail', noFailInput.checked);
+    });
+  }
+
+  if (trainingModeInput) {
+    trainingModeInput.checked = Boolean(settings.trainingMode);
+    trainingModeInput.addEventListener('change', () => {
+      settings.trainingMode = trainingModeInput.checked;
+      document.body.classList.toggle('training-mode', trainingModeInput.checked);
+      setSetting('trainingMode', trainingModeInput.checked);
     });
   }
 
@@ -1436,6 +1458,10 @@ function initMainMenu(): void {
     if (noFailInput) {
       noFailInput.checked = settings.noFail;
       emit(noFailInput, 'change');
+    }
+    if (trainingModeInput) {
+      trainingModeInput.checked = settings.trainingMode;
+      emit(trainingModeInput, 'change');
     }
     if (beatLimitInput) {
       beatLimitInput.checked = settings.beatLimitEnabled;

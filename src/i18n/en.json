@@ -147,6 +147,8 @@
     },
     "gameplay": {
       "noFailDesc": "Game doesn't end at zero HP",
+      "trainingMode": "Training mode",
+      "trainingModeDesc": "75% tempo, score is not saved",
       "noteSpeed": "Note speed",
       "noteSpeedDesc": "Changes approach time without moving beats",
       "speedRelaxed": "Relaxed",
@@ -354,7 +356,8 @@
     "mlTracking": "ML TRACKING"
   },
   "hud": {
-    "progress": "PROGRESS"
+    "progress": "PROGRESS",
+    "training": "TRAINING · SCORE NOT SAVED"
   },
   "overlay": {
     "handTrackingSystem": "HAND TRACKING SYSTEM — MEDIAPIPE",

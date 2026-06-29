@@ -5,6 +5,22 @@
   justify-content:flex-start; padding:18px 0 28px;
 }
 #hudTop { text-align:center; margin-top:10px; }
+#trainingBadge {
+  display:none;
+  width:max-content;
+  margin:0 auto 8px;
+  padding:5px 10px;
+  border:1px solid rgba(255,190,72,0.42);
+  border-radius:999px;
+  background:rgba(40,25,4,0.72);
+  color:#ffd37c;
+  font-family:'Oxanium',sans-serif;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.8px;
+  text-shadow:0 0 12px rgba(255,190,72,0.45);
+}
+body.training-mode #trainingBadge { display:block; }
 #hudBottom {
   position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
   display:flex; flex-direction:column; align-items:center; gap:10px;

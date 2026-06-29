@@ -147,6 +147,8 @@
     },
     "gameplay": {
       "noFailDesc": "Gra nie kończy się przy zerowym HP",
+      "trainingMode": "Tryb treningowy",
+      "trainingModeDesc": "Tempo 75%, bez zapisu wyniku",
       "noteSpeed": "Prędkość nut",
       "noteSpeedDesc": "Zmienia czas dolotu bez przesuwania beatów",
       "speedRelaxed": "Spokojny",
@@ -354,7 +356,8 @@
     "mlTracking": "ŚLEDZENIE ML"
   },
   "hud": {
-    "progress": "POSTĘP"
+    "progress": "POSTĘP",
+    "training": "TRENING · WYNIK NIEZAPISYWANY"
   },
   "overlay": {
     "handTrackingSystem": "SYSTEM ŚLEDZENIA RĄK — MEDIAPIPE",

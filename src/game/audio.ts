@@ -206,6 +206,7 @@ let mapBuffer:    AudioBuffer | null = null;
 let mapStartedAt = 0;
 let mapOffset    = 0;
 let mapPlaying   = false;
+let mapPlaybackRate = 1;
 
 export async function loadMapAudio(arrayBuffer: ArrayBuffer): Promise<void> {
   if (!ctx || !arrayBuffer) return;
@@ -223,14 +224,17 @@ export function clearMapAudio(): void {
   stopMapAudio();
   mapBuffer = null;
   mapOffset = 0;
+  mapPlaybackRate = 1;
 }
 
-export function startMapAudio(offsetSec = 0, delaySec = 0): void {
+export function startMapAudio(offsetSec = 0, delaySec = 0, playbackRate = 1): void {
   if (!ctx || !mapBuffer) return;
   ensureAudioGraph();
   stopMapAudio();
   mapSource = ctx.createBufferSource();
   mapSource.buffer = mapBuffer;
+  mapPlaybackRate = Math.max(0.5, Math.min(1.5, Number(playbackRate) || 1));
+  mapSource.playbackRate.value = mapPlaybackRate;
   mapSource.connect(musicGain ?? masterGain ?? ctx.destination);
 
   const safeOffset = Math.max(0, offsetSec);
@@ -257,7 +261,7 @@ export function pauseMapAudio(): void {
 
 export function getMapTime(): number {
   if (!ctx || !mapPlaying) return mapOffset;
-  return mapOffset + (ctx.currentTime - mapStartedAt);
+  return mapOffset + (ctx.currentTime - mapStartedAt) * mapPlaybackRate;
 }
 
 export function getMapDuration(): number {

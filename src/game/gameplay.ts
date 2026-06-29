@@ -83,6 +83,10 @@ function getNoteSpeed(): number {
   return THREE.MathUtils.clamp(Number(getSettings().noteSpeed) || 1, 0.75, 1.75);
 }
 
+function getTrainingRate(): number {
+  return getSettings().trainingMode ? 0.75 : 1;
+}
+
 function getMapApproachTimeSec(): number {
   return MAP_APPROACH_TIME_SEC / getNoteSpeed();
 }
@@ -535,7 +539,7 @@ export function startGameplay() {
   hitStreakForRegen = 0;
   lastHitMs = 0;
   const now = performance.now();
-  nextBeatMs   = now + BEAT_MS;
+  nextBeatMs   = now + BEAT_MS / getTrainingRate();
   lastBlockMs  = now;
   nextSideLeft = true;
   resetBladeHitboxes();
@@ -1077,7 +1081,7 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
   } else {
     // Tryb losowy
     if (now >= nextBeatMs) {
-      nextBeatMs = now + BEAT_MS;
+      nextBeatMs = now + BEAT_MS / getTrainingRate();
       playBeat();
       const bombChance = 0.12;
       if (Math.random() < bombChance) spawnBlock(null, true);
@@ -1085,7 +1089,7 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
     }
   }
 
-  const spd = BLOCK_SPEED_PER_MS * getNoteSpeed() * elapsed;
+  const spd = BLOCK_SPEED_PER_MS * getNoteSpeed() * getTrainingRate() * elapsed;
   const deltaSec = elapsed / 1000;
   for (const entry of activeBlocks) {
     if (!entry.alive) continue;

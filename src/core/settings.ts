@@ -51,6 +51,7 @@ export const DEFAULTS: Settings = {
   playerName: 'Gracz',
   noteSpeed: 1,
   hitboxSensitivity: 1,
+  trainingMode: false,
 };
 
 let _settings: Settings = { ...DEFAULTS };

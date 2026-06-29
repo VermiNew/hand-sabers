@@ -103,6 +103,7 @@ export interface Settings {
   playerName: string;
   noteSpeed: number;
   hitboxSensitivity: number;
+  trainingMode: boolean;
 }
 
 // ── Performance ───────────────────────────────────────────────────────────────
