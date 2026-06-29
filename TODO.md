@@ -70,8 +70,8 @@
 
 ## 11. Multiplayer
 - [x] Architektura: WebSocket server, synchronizacja stanu gry — [projekt](docs/multiplayer.md)
-- [ ] Tryb współpracy (co-op) i rywalizacji (score attack)
-- [ ] Synchronizacja beatów i wyników w czasie rzeczywistym
+- [x] Tryb współpracy (co-op) i rywalizacji (score attack)
+- [x] Synchronizacja beatów i wyników w czasie rzeczywistym
 
 ## 12. Lobby do Multiplayer
 - [x] Tworzenie i dołączanie do pokoju (kod/link)
