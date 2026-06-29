@@ -83,6 +83,10 @@
           <span class="material-symbols-rounded">language</span>
           <span data-i18n="settings.sections.language">Język</span>
         </button>
+        <button class="sp-nav-item" data-tab="remoteTracking" type="button">
+          <span class="material-symbols-rounded">phonelink</span>
+          <span data-i18n="settings.sections.remoteTracking">Telefon kamera</span>
+        </button>
         <button class="sp-nav-item" data-tab="developer" type="button">
           <span class="material-symbols-rounded">terminal</span>
           <span data-i18n="settings.sections.developer">Developer</span>
@@ -309,6 +313,21 @@
           </div>
         </div>
 
+        <!-- TAB: TELEFON KAMERA -->
+        <div class="sp-tab" data-tab="remoteTracking">
+          <h2 class="sp-tab-title" data-i18n="settings.sections.remoteTracking">Telefon kamera</h2>
+          <div class="sp-group">
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="remoteTracking.hostTitle">TELEFON JAKO KAMERA</span>
+                <span class="sp-toggle-desc" data-i18n="remoteTracking.hostIntro">Utwórz krótką sesję i zeskanuj QR telefonem.</span>
+              </div>
+              <button class="sp-inline-action" id="settingsRemoteTracking" type="button" data-i18n="remoteTracking.configure">KONFIGURUJ</button>
+            </div>
+          </div>
+          <p class="sp-hint" data-i18n="remoteTracking.settingsHint">Parowanie telefonu jest eksperymentalne. Obraz kamery zostaje na telefonie; komputer dostaje tylko dane śledzenia.</p>
+        </div>
+
         <!-- TAB: DEVELOPER -->
         <div class="sp-tab" data-tab="developer">
           <h2 class="sp-tab-title" data-i18n="settings.sections.developer">Developer</h2>
@@ -341,6 +360,39 @@
     </section>
   </div>
 
+</div>
+
+<!-- REMOTE TRACKING -->
+<div id="remoteTrackingOverlay" class="rt-overlay" hidden>
+  <section class="rt-panel" role="dialog" aria-modal="true" aria-labelledby="remoteTrackingTitle">
+    <header class="rt-header">
+      <div>
+        <p class="rt-eyebrow">HAND SABERS / REMOTE TRACKING</p>
+        <h2 id="remoteTrackingTitle" data-i18n="remoteTracking.hostTitle">TELEFON JAKO KAMERA</h2>
+        <p data-i18n="remoteTracking.hostIntro">Utwórz krótką sesję i zeskanuj QR telefonem.</p>
+      </div>
+      <button class="rt-close" id="remoteTrackingClose" type="button" aria-label="Zamknij">
+        <span class="material-symbols-rounded" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <div class="rt-body">
+      <div class="rt-status" id="remoteTrackingStatus" data-state="idle" role="status">
+        <span class="rt-status-dot" aria-hidden="true"></span>
+        <strong id="remoteTrackingStatusText" data-i18n="remoteTracking.hostIdle">SESJA NIEAKTYWNA</strong>
+      </div>
+      <button class="rt-primary" id="remoteTrackingCreate" type="button" data-i18n="remoteTracking.createSession">UTWÓRZ SESJĘ</button>
+      <div class="rt-session" id="remoteTrackingSession" hidden>
+        <img id="remoteTrackingQr" alt="QR telefonu jako kamery">
+        <div class="rt-code-block">
+          <span data-i18n="remoteTracking.pairingCode">KOD PAROWANIA</span>
+          <strong id="remoteTrackingCode">------</strong>
+          <a id="remoteTrackingPhoneLink" href="./remote-camera.html" target="_blank" rel="noopener" data-i18n="remoteTracking.openPhonePage">Otwórz stronę telefonu</a>
+        </div>
+      </div>
+      <p class="rt-hint" id="remoteTrackingHint" data-i18n="remoteTracking.hostPrivacy">Tokeny sesji nie są zapisywane. Po zamknięciu tego okna sesja zostanie unieważniona.</p>
+      <p class="rt-error" id="remoteTrackingError" role="alert" hidden></p>
+    </div>
+  </section>
 </div>
 
 <!-- HELP -->

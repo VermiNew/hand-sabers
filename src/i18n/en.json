@@ -171,6 +171,7 @@
       "audio": "Audio",
       "performance": "Performance",
       "developer": "Developer",
+      "remoteTracking": "Phone camera",
       "gameplay": "Gameplay",
       "saberColors": "Saber colors"
     },
@@ -424,6 +425,18 @@
   "remoteTracking": {
     "phoneTitle": "PHONE AS CAMERA",
     "phoneIntro": "Connect your phone to the game. Camera images remain on this device.",
+    "hostTitle": "PHONE AS CAMERA",
+    "hostIntro": "Create a short session and scan the QR with your phone.",
+    "hostIdle": "SESSION INACTIVE",
+    "hostCreating": "CREATING SESSION…",
+    "scanQr": "SCAN THE QR WITH YOUR PHONE",
+    "phoneClaimed": "PHONE RECEIVED SESSION CREDENTIALS",
+    "phoneConnected": "PHONE CONNECTED",
+    "createSession": "CREATE SESSION",
+    "configure": "CONFIGURE",
+    "openPhonePage": "Open phone page",
+    "hostPrivacy": "Session tokens are not saved. Closing this window revokes the session.",
+    "settingsHint": "Phone pairing is experimental. Camera images stay on the phone; the computer receives tracking data only.",
     "waitingCredential": "SCAN THE QR OR ENTER THE CODE",
     "pairingCode": "PAIRING CODE",
     "connect": "CONNECT",
@@ -432,7 +445,9 @@
     "privacy": "Only hand coordinates will be sent to the computer — never camera images.",
     "invalidCode": "The code must contain six valid characters.",
     "rateLimited": "Too many attempts. Wait a moment.",
-    "sessionNotFound": "No active session was found. Create a new one on the computer."
+    "sessionNotFound": "No active session was found. Create a new one on the computer.",
+    "createFailed": "Failed to create a pairing session.",
+    "statusFailed": "Failed to refresh the session status."
   },
   "hud": {
     "progress": "PROGRESS",

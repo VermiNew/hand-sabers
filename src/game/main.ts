@@ -24,6 +24,7 @@ import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
+import { initRemoteTrackingPairing } from '../remote/host-pairing.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
@@ -1694,6 +1695,7 @@ window.addEventListener('beforeunload', () => {
 
 initHelpOverlay();
 registerMlAssetCache();
+initRemoteTrackingPairing();
 window.addEventListener('hand-sabers:multiplayer-prepare', event => {
   const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
   if (typeof mapId === 'string') void prepareMultiplayerMap(mapId);
