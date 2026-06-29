@@ -36,7 +36,7 @@
 - [x] Poprawić kontenery KAMERA RAW / ŚLEDZENIE ML w trybie dev (prawy dolny róg)
 - [x] Całkowity remake systemu cieni i odbić w scenie 3D (subtelne, nieprzesadzone)
 - [x] Poprawić system wydajności (profile, adaptive quality)
-- [ ] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC
+- [x] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC — [projekt](docs/remote-tracking.md)
 - [x] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
 - [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach
 - [x] Nowa strona/overlay "Pomoc" w menu — instrukcja gry + mini-tutorial (PL i EN)
@@ -84,7 +84,7 @@
 - [x] Adaptive quality — automatyczne obniżanie gdy FPS spada poniżej progu
 
 ## 14. Kamera/ML na telefon (remote tracking)
-- [ ] Architektura: telefon jako klient kamery + WebRTC lub WebSocket
+- [x] Architektura: telefon jako klient kamery + WebRTC lub WebSocket — [projekt](docs/remote-tracking.md)
 - [ ] Parowanie przez QR code lub kod z ekranu
 - [ ] Przekazywanie danych śledzenia rąk z telefonu do przeglądarki PC
 
