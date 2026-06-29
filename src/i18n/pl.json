@@ -54,6 +54,28 @@
     "cameraRhythm": "CAMERA RHYTHM",
     "comingSoon": "wkrótce"
   },
+  "multiplayer": {
+    "title": "MULTIPLAYER",
+    "subtitle": "Utwórz prywatny pokój albo dołącz kodem.",
+    "createTitle": "UTWÓRZ POKÓJ",
+    "createBody": "Otrzymasz kod, bezpieczny link i QR dla pozostałych graczy.",
+    "create": "UTWÓRZ",
+    "joinTitle": "DOŁĄCZ DO POKOJU",
+    "joinBody": "Wpisz sześci znakowy kod wyświetlany u hosta.",
+    "join": "DOŁĄCZ",
+    "playerName": "NAZWA GRACZA",
+    "roomCode": "KOD POKOJU",
+    "copyLink": "KOPIUJ LINK",
+    "copied": "SKOPIOWANO",
+    "copyFailed": "Nie udało się skopiować linku.",
+    "connection": "POŁĄCZENIE",
+    "connecting": "ŁĄCZENIE…",
+    "connected": "POŁĄCZONO",
+    "disconnected": "ROZŁĄCZONO",
+    "connectionError": "Nie udało się połączyć z pokojem.",
+    "invalidCode": "Kod pokoju musi mieć sześć poprawnych znaków.",
+    "invalidResponse": "Serwer zwrócił nieprawidłową odpowiedź."
+  },
   "help": {
     "title": "JAK GRAĆ",
     "subtitle": "Szybki przewodnik po Hand Sabers",

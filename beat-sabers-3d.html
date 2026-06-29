@@ -31,9 +31,8 @@
       <button class="main-nav-item is-selected" id="mainStart" data-menu-action="singleplayer" type="button" style="--i:0">
         <span class="main-nav-label" data-i18n="menu.singleplayer">Singleplayer</span>
       </button>
-      <button class="main-nav-item is-disabled" id="mainMultiplayer" type="button" disabled aria-disabled="true" style="--i:1">
+      <button class="main-nav-item" id="mainMultiplayer" type="button" aria-haspopup="dialog" style="--i:1">
         <span class="main-nav-label" data-i18n="menu.multiplayer">Multiplayer</span>
-        <span class="main-nav-lock material-symbols-rounded" aria-hidden="true">lock</span>
       </button>
       <button class="main-nav-item" id="mainCalibrate" data-menu-action="calibration" type="button" style="--i:2">
         <span class="main-nav-label" data-i18n="menu.calibration">Kalibracja</span>
@@ -404,6 +403,66 @@
         <button class="help-primary" id="tutorialNext" type="button" data-i18n="tutorial.next">DALEJ</button>
       </div>
     </div>
+  </section>
+</div>
+
+<!-- MULTIPLAYER -->
+<div id="multiplayerOverlay" class="mp-overlay" hidden>
+  <section class="mp-panel" role="dialog" aria-modal="true" aria-labelledby="multiplayerTitle">
+    <header class="mp-header">
+      <div>
+        <p class="mp-eyebrow">HAND SABERS / ONLINE</p>
+        <h2 id="multiplayerTitle" data-i18n="multiplayer.title">MULTIPLAYER</h2>
+        <p data-i18n="multiplayer.subtitle">Utwórz prywatny pokój albo dołącz kodem.</p>
+      </div>
+      <button class="mp-close" id="multiplayerClose" type="button" aria-label="Zamknij">
+        <span class="material-symbols-rounded" aria-hidden="true">close</span>
+      </button>
+    </header>
+
+    <div class="mp-setup" id="multiplayerSetup">
+      <section class="mp-action-card">
+        <span class="material-symbols-rounded mp-action-icon" aria-hidden="true">add_circle</span>
+        <h3 data-i18n="multiplayer.createTitle">UTWÓRZ POKÓJ</h3>
+        <p data-i18n="multiplayer.createBody">Otrzymasz kod, bezpieczny link i QR dla pozostałych graczy.</p>
+        <button class="mp-primary" id="multiplayerCreate" type="button" data-i18n="multiplayer.create">UTWÓRZ</button>
+      </section>
+
+      <section class="mp-action-card">
+        <span class="material-symbols-rounded mp-action-icon" aria-hidden="true">login</span>
+        <h3 data-i18n="multiplayer.joinTitle">DOŁĄCZ DO POKOJU</h3>
+        <p data-i18n="multiplayer.joinBody">Wpisz sześci znakowy kod wyświetlany u hosta.</p>
+        <label class="mp-field">
+          <span data-i18n="multiplayer.playerName">NAZWA GRACZA</span>
+          <input id="multiplayerName" maxlength="32" autocomplete="nickname">
+        </label>
+        <label class="mp-field">
+          <span data-i18n="multiplayer.roomCode">KOD POKOJU</span>
+          <input id="multiplayerCode" maxlength="6" autocomplete="off" spellcheck="false">
+        </label>
+        <button class="mp-secondary" id="multiplayerJoin" type="button" data-i18n="multiplayer.join">DOŁĄCZ</button>
+      </section>
+    </div>
+
+    <div class="mp-room" id="multiplayerRoom" hidden>
+      <div class="mp-share-card" id="multiplayerShare" hidden>
+        <img id="multiplayerQr" alt="Kod QR pokoju">
+        <div>
+          <span class="mp-label" data-i18n="multiplayer.roomCode">KOD POKOJU</span>
+          <strong id="multiplayerRoomCode">—</strong>
+          <button class="mp-copy" id="multiplayerCopy" type="button" data-i18n="multiplayer.copyLink">KOPIUJ LINK</button>
+        </div>
+      </div>
+      <div class="mp-connected-card">
+        <span class="material-symbols-rounded" aria-hidden="true">sensors</span>
+        <div>
+          <span class="mp-label" data-i18n="multiplayer.connection">POŁĄCZENIE</span>
+          <strong id="multiplayerStatus" role="status" data-i18n="multiplayer.connecting">ŁĄCZENIE…</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="mp-message" id="multiplayerMessage" role="alert" hidden></div>
   </section>
 </div>
 

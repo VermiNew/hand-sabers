@@ -22,6 +22,7 @@ import { t, setLang, getCurrentLang } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
+import { initMultiplayerOverlay } from '../multiplayer/client.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
@@ -1556,6 +1557,7 @@ window.addEventListener('beforeunload', () => {
 
 initHelpOverlay();
 registerMlAssetCache();
+initMultiplayerOverlay(settings.playerName);
 initMainMenu();
 
 (async () => {

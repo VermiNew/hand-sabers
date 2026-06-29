@@ -54,6 +54,28 @@
     "cameraRhythm": "CAMERA RHYTHM",
     "comingSoon": "coming soon"
   },
+  "multiplayer": {
+    "title": "MULTIPLAYER",
+    "subtitle": "Create a private room or join with a code.",
+    "createTitle": "CREATE ROOM",
+    "createBody": "You will get a code, secure link and QR for other players.",
+    "create": "CREATE",
+    "joinTitle": "JOIN ROOM",
+    "joinBody": "Enter the six-character code shown by the host.",
+    "join": "JOIN",
+    "playerName": "PLAYER NAME",
+    "roomCode": "ROOM CODE",
+    "copyLink": "COPY LINK",
+    "copied": "COPIED",
+    "copyFailed": "Could not copy the link.",
+    "connection": "CONNECTION",
+    "connecting": "CONNECTING…",
+    "connected": "CONNECTED",
+    "disconnected": "DISCONNECTED",
+    "connectionError": "Could not connect to the room.",
+    "invalidCode": "The room code must contain six valid characters.",
+    "invalidResponse": "The server returned an invalid response."
+  },
   "help": {
     "title": "HOW TO PLAY",
     "subtitle": "A quick guide to Hand Sabers",
