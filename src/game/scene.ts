@@ -39,7 +39,8 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 
 export const scene = new THREE.Scene();
 scene.background = new THREE.Color(THEME.dark);
-scene.fog        = new THREE.FogExp2(THEME.dark, 0.028);
+const sceneFog = new THREE.FogExp2(THEME.dark, 0.028);
+scene.fog = sceneFog;
 
 export const cam3d = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.1, 100);
 cam3d.position.set(0, 1.55, 3.2);
@@ -531,6 +532,8 @@ function applyDecorVisibility(): void {
   lReflection.visible   = floorGlowOn;
   rReflection.visible   = floorGlowOn;
   bgMesh.visible        = Boolean(perfProfile.backgroundShader);
+  gridH.visible         = Boolean(perfProfile.grid);
+  scene.fog             = perfProfile.fog ? sceneFog : null;
   for (const s of [lSaber, rSaber]) {
     const ud = s.userData as SaberUserData;
     if (!perfProfile.saberGlints) {

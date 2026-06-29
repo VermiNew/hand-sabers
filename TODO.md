@@ -80,7 +80,7 @@
 
 ## 13. Optymalizacja dla słabych PC
 - [ ] Profilowanie — znaleźć główne wąskie gardła na niskich ustawieniach
-- [ ] Dalsze obniżanie jakości grafiki (wyłączenie mgły, siatek, efektów)
+- [x] Dalsze obniżanie jakości grafiki (wyłączenie mgły, siatek, efektów)
 - [x] Adaptive quality — automatyczne obniżanie gdy FPS spada poniżej progu
 
 ## 14. Kamera/ML na telefon (remote tracking)

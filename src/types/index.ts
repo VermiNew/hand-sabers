@@ -125,6 +125,8 @@ export interface PerformanceProfile {
   floorGlows: boolean;
   saberGlints: boolean;
   backgroundShader: boolean;
+  fog: boolean;
+  grid: boolean;
   menuDemo: boolean;
   hitShards: number;
   camera: CameraProfile;
