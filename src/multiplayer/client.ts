@@ -18,10 +18,35 @@ interface ServerMessage {
   v?: unknown;
   type?: unknown;
   message?: unknown;
+  playerId?: unknown;
+  role?: unknown;
+  room?: unknown;
+}
+
+interface RoomPlayer {
+  id: string;
+  streamId: number;
+  name: string;
+  role: 'host' | 'guest';
+  ready: boolean;
+}
+
+interface RoomSnapshot {
+  code: string;
+  revision: number;
+  mapId: string | null;
+  players: RoomPlayer[];
+}
+
+interface MapListItem {
+  id: string;
 }
 
 let socket: WebSocket | null = null;
 let activeJoinUrl = '';
+let currentPlayerId = '';
+let currentRole: 'host' | 'guest' | null = null;
+let currentRoom: RoomSnapshot | null = null;
 
 function element<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -40,6 +65,51 @@ function websocketUrl(): string {
   return `${protocol}//${location.host}/ws`;
 }
 
+function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const candidate = value as Record<string, unknown>;
+  if (
+    typeof candidate['code'] !== 'string'
+    || !/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/.test(candidate['code'])
+    || !Number.isSafeInteger(candidate['revision'])
+    || Number(candidate['revision']) < 0
+    || !Array.isArray(candidate['players'])
+    || candidate['players'].length > 8
+    || (candidate['mapId'] !== null && typeof candidate['mapId'] !== 'string')
+    || (typeof candidate['mapId'] === 'string' && !/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(candidate['mapId']))
+  ) return null;
+
+  const players: RoomPlayer[] = [];
+  for (const valuePlayer of candidate['players']) {
+    if (!valuePlayer || typeof valuePlayer !== 'object' || Array.isArray(valuePlayer)) return null;
+    const player = valuePlayer as Record<string, unknown>;
+    if (
+      typeof player['id'] !== 'string'
+      || player['id'].length > 64
+      || !Number.isSafeInteger(player['streamId'])
+      || Number(player['streamId']) < 1
+      || Number(player['streamId']) > 0xffff_ffff
+      || typeof player['name'] !== 'string'
+      || player['name'].length > 32
+      || (player['role'] !== 'host' && player['role'] !== 'guest')
+      || typeof player['ready'] !== 'boolean'
+    ) return null;
+    players.push({
+      id: player['id'],
+      streamId: player['streamId'] as number,
+      name: player['name'],
+      role: player['role'],
+      ready: player['ready'],
+    });
+  }
+  return {
+    code: candidate['code'],
+    revision: candidate['revision'] as number,
+    mapId: candidate['mapId'] as string | null,
+    players,
+  };
+}
+
 export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const overlay = element<HTMLElement>('multiplayerOverlay');
   const setup = element<HTMLElement>('multiplayerSetup');
@@ -54,6 +124,12 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const createButton = element<HTMLButtonElement>('multiplayerCreate');
   const joinButton = element<HTMLButtonElement>('multiplayerJoin');
   const copyButton = element<HTMLButtonElement>('multiplayerCopy');
+  const lobby = element<HTMLElement>('multiplayerLobby');
+  const lobbyCode = element<HTMLElement>('multiplayerLobbyCode');
+  const playerCount = element<HTMLElement>('multiplayerPlayerCount');
+  const playerList = element<HTMLElement>('multiplayerPlayers');
+  const mapSelect = element<HTMLSelectElement>('multiplayerMap');
+  const readyButton = element<HTMLButtonElement>('multiplayerReady');
 
   nameInput.value = defaultPlayerName || 'Gracz';
 
@@ -74,9 +150,75 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     room.hidden = false;
     status.textContent = t('multiplayer.connecting');
   };
+  const sendControl = (payload: object) => {
+    if (socket?.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ v: PROTOCOL_VERSION, ...payload }));
+    }
+  };
+
+  const renderRoom = (snapshot: RoomSnapshot) => {
+    if (currentRoom && snapshot.revision < currentRoom.revision) return;
+    currentRoom = snapshot;
+    window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: snapshot }));
+    lobby.hidden = false;
+    lobbyCode.textContent = snapshot.code;
+    playerCount.textContent = `${snapshot.players.length} / 8`;
+    playerList.replaceChildren();
+    for (const player of snapshot.players) {
+      const row = document.createElement('div');
+      row.className = `mp-player-row${player.ready ? ' is-ready' : ''}`;
+      const identity = document.createElement('span');
+      identity.className = 'mp-player-name';
+      identity.textContent = player.name;
+      if (player.role === 'host') {
+        const role = document.createElement('span');
+        role.className = 'mp-player-role';
+        role.textContent = 'HOST';
+        identity.append(role);
+      }
+      const state = document.createElement('span');
+      state.className = 'mp-player-state';
+      state.textContent = player.ready ? t('multiplayer.readyState') : t('multiplayer.waitingState');
+      row.append(identity, state);
+      playerList.append(row);
+    }
+
+    if (snapshot.mapId && ![...mapSelect.options].some(option => option.value === snapshot.mapId)) {
+      mapSelect.add(new Option(snapshot.mapId, snapshot.mapId));
+    }
+    mapSelect.value = snapshot.mapId ?? '';
+    mapSelect.disabled = currentRole !== 'host';
+    const self = snapshot.players.find(player => player.id === currentPlayerId);
+    readyButton.disabled = !snapshot.mapId || !self;
+    readyButton.classList.toggle('is-ready', Boolean(self?.ready));
+    readyButton.textContent = self?.ready ? t('multiplayer.notReady') : t('multiplayer.ready');
+  };
+
+  async function loadMaps(): Promise<void> {
+    try {
+      const response = await fetch('/api/maps');
+      const maps = await responseJson<unknown>(response);
+      if (!Array.isArray(maps)) throw new Error(t('multiplayer.invalidResponse'));
+      const selected = currentRoom?.mapId ?? '';
+      mapSelect.replaceChildren(new Option(t('multiplayer.selectMap'), ''));
+      for (const value of maps) {
+        const map = value as Partial<MapListItem> | null;
+        if (typeof map?.id === 'string' && /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(map.id)) {
+          mapSelect.add(new Option(map.id, map.id));
+        }
+      }
+      mapSelect.value = selected;
+    } catch (error) {
+      showMessage(error instanceof Error ? error.message : t('multiplayer.mapsError'));
+    }
+  }
 
   function connect(code: string, token: string, name: string): void {
     socket?.close(1000, 'Replaced');
+    currentPlayerId = '';
+    currentRole = null;
+    currentRoom = null;
+    lobby.hidden = true;
     showRoom();
     const nextSocket = new WebSocket(websocketUrl());
     nextSocket.binaryType = 'arraybuffer';
@@ -101,8 +243,17 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         const incoming = JSON.parse(event.data) as ServerMessage;
         if (incoming.v !== PROTOCOL_VERSION) return;
         if (incoming.type === 'joined') {
+          currentPlayerId = String(incoming.playerId || '');
+          currentRole = incoming.role === 'host' ? 'host' : 'guest';
           status.textContent = t('multiplayer.connected');
           setBusy(false);
+          const snapshot = parseRoomSnapshot(incoming.room);
+          if (snapshot) renderRoom(snapshot);
+          else showMessage(t('multiplayer.invalidResponse'));
+          void loadMaps();
+        } else if (incoming.type === 'room') {
+          const snapshot = parseRoomSnapshot(incoming.room);
+          if (snapshot) renderRoom(snapshot);
         } else if (incoming.type === 'error') {
           showMessage(String(incoming.message || t('multiplayer.connectionError')));
         }
@@ -180,6 +331,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     } catch {
       showMessage(t('multiplayer.copyFailed'));
     }
+  });
+  readyButton.addEventListener('click', () => {
+    const self = currentRoom?.players.find(player => player.id === currentPlayerId);
+    sendControl({ type: 'ready', ready: !self?.ready });
+  });
+  mapSelect.addEventListener('change', () => {
+    if (currentRole !== 'host' || !mapSelect.value) return;
+    sendControl({ type: 'set-map', mapId: mapSelect.value });
   });
 
   const fragment = new URLSearchParams(location.hash.slice(1));

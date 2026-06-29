@@ -147,6 +147,7 @@ export class RoomRegistry {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player) throw new Error('Gracz nie należy do pokoju.');
+    if (ready && !room.mapId) throw new Error('Najpierw wybierz mapę.');
     player.ready = ready;
     room.revision++;
     return this.snapshot(room);

@@ -74,9 +74,9 @@
 - [ ] Synchronizacja beatów i wyników w czasie rzeczywistym
 
 ## 12. Lobby do Multiplayer
-- [ ] Tworzenie i dołączanie do pokoju (kod/link)
-- [ ] Lista graczy w lobby z gotowością
-- [ ] Wybór mapy przez hosta
+- [x] Tworzenie i dołączanie do pokoju (kod/link)
+- [x] Lista graczy w lobby z gotowością
+- [x] Wybór mapy przez hosta
 
 ## 13. Optymalizacja dla słabych PC
 - [ ] Profilowanie — znaleźć główne wąskie gardła na niskich ustawieniach

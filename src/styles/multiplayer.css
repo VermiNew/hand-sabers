@@ -30,6 +30,7 @@
 }
 .mp-close:hover { color:#fff; border-color:var(--main); }
 .mp-setup { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:22px 28px 28px; }
+.mp-setup[hidden],.mp-room[hidden] { display:none; }
 .mp-action-card,.mp-share-card,.mp-connected-card {
   border:1px solid rgba(142,200,255,.16); border-radius:12px;
   background:rgba(4,10,19,.62);
@@ -70,11 +71,38 @@
 .mp-connected-card strong { display:block; margin-top:8px; color:var(--accent); font:800 13px 'Oxanium',sans-serif; letter-spacing:1.5px; }
 .mp-message { margin:0 28px 24px; padding:12px 14px; border-left:2px solid #ff7180; background:rgba(255,70,90,.08); color:#ff9aa5; font-size:10px; line-height:1.5; }
 .mp-message[hidden] { display:none; }
+.mp-lobby-card {
+  grid-column:1 / -1; padding:18px;
+  border:1px solid rgba(142,200,255,.16); border-radius:12px;
+  background:rgba(4,10,19,.62);
+}
+.mp-lobby-card[hidden] { display:none; }
+.mp-lobby-head { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; border-bottom:1px solid rgba(142,200,255,.12); }
+.mp-lobby-head strong { display:block; margin-top:6px; font:800 17px 'Oxanium',sans-serif; letter-spacing:1.5px; }
+.mp-player-count { color:var(--main-light); font:800 12px 'Oxanium',sans-serif; letter-spacing:2px; }
+.mp-lobby-grid { display:grid; grid-template-columns:1.15fr .85fr; gap:22px; padding-top:16px; }
+.mp-player-list { display:flex; flex-direction:column; gap:7px; margin-top:9px; }
+.mp-player-row {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  min-height:38px; padding:0 11px; border:1px solid rgba(148,163,184,.12); border-radius:7px;
+  background:rgba(6,13,23,.72); color:var(--text); font-size:11px;
+}
+.mp-player-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mp-player-role { margin-left:7px; color:var(--main-light); font-size:8px; letter-spacing:1.3px; }
+.mp-player-state { color:var(--dim); font-size:9px; font-weight:800; letter-spacing:1.2px; }
+.mp-player-row.is-ready .mp-player-state { color:var(--accent); }
+.mp-lobby-controls { display:flex; flex-direction:column; }
+.mp-lobby-controls select {
+  width:100%; height:42px; padding:0 10px; border:1px solid rgba(142,200,255,.2); border-radius:7px;
+  background:#07101c; color:#fff; font:600 11px 'JetBrains Mono',monospace;
+}
+.mp-lobby-controls .mp-primary { margin-top:14px; }
+.mp-lobby-controls > p { margin-top:9px; color:var(--dim); font-size:9px; line-height:1.45; }
 
 @media (max-width:700px) {
   .mp-overlay { padding:10px; }
   .mp-panel { max-height:calc(100vh - 20px); }
   .mp-header,.mp-setup,.mp-room { padding-left:18px; padding-right:18px; }
-  .mp-setup,.mp-room { grid-template-columns:1fr; }
+  .mp-setup,.mp-room,.mp-lobby-grid { grid-template-columns:1fr; }
   .mp-action-card > p { min-height:0; margin-bottom:18px; }
 }

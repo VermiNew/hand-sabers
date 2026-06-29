@@ -74,7 +74,18 @@
     "disconnected": "ROZŁĄCZONO",
     "connectionError": "Nie udało się połączyć z pokojem.",
     "invalidCode": "Kod pokoju musi mieć sześć poprawnych znaków.",
-    "invalidResponse": "Serwer zwrócił nieprawidłową odpowiedź."
+    "invalidResponse": "Serwer zwrócił nieprawidłową odpowiedź.",
+    "lobby": "LOBBY",
+    "room": "POKÓJ",
+    "players": "GRACZE",
+    "map": "MAPA HOSTA",
+    "selectMap": "WYBIERZ MAPĘ",
+    "ready": "GOTOWY",
+    "notReady": "ANULUJ GOTOWOŚĆ",
+    "readyHint": "Zmiana mapy resetuje gotowość wszystkich graczy.",
+    "readyState": "GOTOWY",
+    "waitingState": "CZEKA",
+    "mapsError": "Nie udało się pobrać listy map."
   },
   "help": {
     "title": "JAK GRAĆ",

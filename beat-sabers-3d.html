@@ -460,6 +460,31 @@
           <strong id="multiplayerStatus" role="status" data-i18n="multiplayer.connecting">ŁĄCZENIE…</strong>
         </div>
       </div>
+      <section class="mp-lobby-card" id="multiplayerLobby" hidden>
+        <header class="mp-lobby-head">
+          <div>
+            <span class="mp-label" data-i18n="multiplayer.lobby">LOBBY</span>
+            <strong><span data-i18n="multiplayer.room">POKÓJ</span> <span id="multiplayerLobbyCode">—</span></strong>
+          </div>
+          <span class="mp-player-count" id="multiplayerPlayerCount">0 / 8</span>
+        </header>
+        <div class="mp-lobby-grid">
+          <div>
+            <span class="mp-label" data-i18n="multiplayer.players">GRACZE</span>
+            <div class="mp-player-list" id="multiplayerPlayers"></div>
+          </div>
+          <div class="mp-lobby-controls">
+            <label class="mp-field">
+              <span data-i18n="multiplayer.map">MAPA HOSTA</span>
+              <select id="multiplayerMap" disabled>
+                <option value="" data-i18n="multiplayer.selectMap">WYBIERZ MAPĘ</option>
+              </select>
+            </label>
+            <button class="mp-primary" id="multiplayerReady" type="button" disabled data-i18n="multiplayer.ready">GOTOWY</button>
+            <p data-i18n="multiplayer.readyHint">Zmiana mapy resetuje gotowość wszystkich graczy.</p>
+          </div>
+        </div>
+      </section>
     </div>
 
     <div class="mp-message" id="multiplayerMessage" role="alert" hidden></div>

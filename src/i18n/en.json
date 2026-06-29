@@ -74,7 +74,18 @@
     "disconnected": "DISCONNECTED",
     "connectionError": "Could not connect to the room.",
     "invalidCode": "The room code must contain six valid characters.",
-    "invalidResponse": "The server returned an invalid response."
+    "invalidResponse": "The server returned an invalid response.",
+    "lobby": "LOBBY",
+    "room": "ROOM",
+    "players": "PLAYERS",
+    "map": "HOST MAP",
+    "selectMap": "SELECT MAP",
+    "ready": "READY",
+    "notReady": "CANCEL READY",
+    "readyHint": "Changing the map resets every player's ready state.",
+    "readyState": "READY",
+    "waitingState": "WAITING",
+    "mapsError": "Could not load the map list."
   },
   "help": {
     "title": "HOW TO PLAY",
