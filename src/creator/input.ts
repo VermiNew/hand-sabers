@@ -10,6 +10,26 @@ import { CUT_DIRECTIONS } from '../core/gameplay-rules.ts';
 import { matchAction, loadKeybinds } from './keybinds.ts';
 
 const MAX_UNDO = 60;
+const DEFAULT_BEAT_X = 0.82;
+const DEFAULT_BEAT_Y = 1.1;
+
+function centeredRandom(): number {
+  return Math.random() + Math.random() - 1;
+}
+
+function roundPosition(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function createBeatPosition(side: BeatSide): { x?: number; y: number } {
+  const y = roundPosition(DEFAULT_BEAT_Y + centeredRandom() * 0.22);
+  if (side === 'random') return { y };
+  const laneX = side === 'left' ? -DEFAULT_BEAT_X : DEFAULT_BEAT_X;
+  return {
+    x: roundPosition(laneX + centeredRandom() * 0.18),
+    y,
+  };
+}
 
 function getSnapDivision(): number | null {
   return SNAP_DIVISIONS[state.snapIdx] ?? null;
@@ -97,7 +117,7 @@ export function tapBeat(side: BeatSide): void {
   if (!state.isPlaying) return;
   const t = snapTime(getPlayPos());
   pushUndo();
-  state.map.beats.push({ t, side, type: 'block', cut: state.activeCut });
+  state.map.beats.push({ t, side, type: 'block', cut: state.activeCut, ...createBeatPosition(side) });
   sortBeatsByTime(state.map.beats);
   checkOverlaps();
   flashTap(side);
@@ -108,7 +128,7 @@ export function tapRandom(): void {
   if (!state.isPlaying) return;
   const t: number = snapTime(getPlayPos());
   pushUndo();
-  state.map.beats.push({ t, side: 'random', type: 'block', cut: state.activeCut });
+  state.map.beats.push({ t, side: 'random', type: 'block', cut: state.activeCut, ...createBeatPosition('random') });
   sortBeatsByTime(state.map.beats);
   checkOverlaps();
   flashTap('rand');
@@ -133,7 +153,7 @@ export function startHeld(side: 'left' | 'right'): void {
   if (side === 'right' && state.heldRight) return;
   const t = snapTime(getPlayPos());
   pushUndo();
-  const beat = { t, side, type: 'held', cut: state.activeCut, duration: 0 };
+  const beat = { t, side, type: 'held', cut: state.activeCut, duration: 0, ...createBeatPosition(side) };
   state.map.beats.push(beat);
   sortBeatsByTime(state.map.beats);
   if (side === 'left')  state.heldLeft  = beat;

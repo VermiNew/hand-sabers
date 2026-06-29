@@ -5,6 +5,8 @@ export interface CreatorBeat {
   side: string;
   type: string;
   cut: CutDirection;
+  x?: number;
+  y?: number;
   duration?: number; // held block — length in seconds
   _overlap?: boolean;
 }

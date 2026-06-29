@@ -90,7 +90,7 @@
 
 ## 15. Lepsza rozgrywka
 - [ ] Balans trudności — krzywa nauki
-- [ ] Więcej wzorców sekwencji beatów
+- [x] Więcej wzorców sekwencji beatów (subtelne losowe pozycje nowych beatów w kreatorze)
 - [x] Efekty trafienia bardziej satysfakcjonujące (shake, flash, dźwięk)
 
 ## 16. Edytor map
