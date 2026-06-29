@@ -5,6 +5,26 @@ const ROOM_CODE_LENGTH = 6;
 const ROOM_TTL_MS = 30 * 60 * 1000;
 const MAX_PLAYERS = 8;
 
+export type RoomErrorCode =
+  | 'ROOM_NOT_FOUND'
+  | 'INVALID_ROOM_TOKEN'
+  | 'ROOM_FULL'
+  | 'HOST_ALREADY_CONNECTED'
+  | 'PLAYER_NOT_FOUND'
+  | 'MAP_REQUIRED'
+  | 'HOST_ONLY'
+  | 'INVALID_MAP';
+
+export class RoomError extends Error {
+  readonly code: RoomErrorCode;
+
+  constructor(code: RoomErrorCode) {
+    super(code);
+    this.name = 'RoomError';
+    this.code = code;
+  }
+}
+
 export interface RoomPlayer {
   id: string;
   streamId: number;
@@ -105,14 +125,14 @@ export class RoomRegistry {
   join(code: string, token: string, requestedName: string): { player: RoomPlayer; snapshot: RoomSnapshot } {
     this.deleteExpired();
     const room = this.rooms.get(normalizeRoomCode(code));
-    if (!room) throw new Error('Pokój nie istnieje lub wygasł.');
+    if (!room) throw new RoomError('ROOM_NOT_FOUND');
     const role = tokensMatch(token, room.hostToken)
       ? 'host'
       : tokensMatch(token, room.joinToken) ? 'guest' : null;
-    if (!role) throw new Error('Nieprawidłowy token pokoju.');
-    if (room.players.length >= MAX_PLAYERS) throw new Error('Pokój jest pełny.');
+    if (!role) throw new RoomError('INVALID_ROOM_TOKEN');
+    if (room.players.length >= MAX_PLAYERS) throw new RoomError('ROOM_FULL');
     if (role === 'host' && room.players.some(player => player.role === 'host')) {
-      throw new Error('Host jest już połączony.');
+      throw new RoomError('HOST_ALREADY_CONNECTED');
     }
 
     const defaultName = role === 'host' ? 'Host' : `Gracz ${room.players.length + 1}`;
@@ -146,8 +166,8 @@ export class RoomRegistry {
   setReady(code: string, playerId: string, ready: boolean): RoomSnapshot {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
-    if (!player) throw new Error('Gracz nie należy do pokoju.');
-    if (ready && !room.mapId) throw new Error('Najpierw wybierz mapę.');
+    if (!player) throw new RoomError('PLAYER_NOT_FOUND');
+    if (ready && !room.mapId) throw new RoomError('MAP_REQUIRED');
     player.ready = ready;
     room.revision++;
     return this.snapshot(room);
@@ -156,9 +176,9 @@ export class RoomRegistry {
   setMap(code: string, playerId: string, mapId: string): RoomSnapshot {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
-    if (!player || player.role !== 'host') throw new Error('Tylko host może wybrać mapę.');
+    if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
     const normalizedMapId = mapId.trim();
-    if (!/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(normalizedMapId)) throw new Error('Nieprawidłowa mapa.');
+    if (!/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(normalizedMapId)) throw new RoomError('INVALID_MAP');
     room.mapId = normalizedMapId;
     for (const roomPlayer of room.players) roomPlayer.ready = false;
     room.revision++;
@@ -189,7 +209,7 @@ export class RoomRegistry {
   private requireRoom(code: string): RoomRecord {
     this.deleteExpired();
     const room = this.rooms.get(normalizeRoomCode(code));
-    if (!room) throw new Error('Pokój nie istnieje lub wygasł.');
+    if (!room) throw new RoomError('ROOM_NOT_FOUND');
     return room;
   }
 

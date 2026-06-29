@@ -2,7 +2,8 @@ import type { IncomingMessage, Server } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { RawData } from 'ws';
-import type { RoomRegistry, RoomSnapshot } from './rooms.js';
+import { RoomError } from './room-registry.js';
+import type { RoomRegistry, RoomSnapshot } from './room-registry.js';
 
 const PROTOCOL_VERSION = 1;
 const MAX_CONTROL_MESSAGES_PER_MINUTE = 1_200;
@@ -61,10 +62,10 @@ function send(socket: WebSocket, payload: object): void {
 function parseMessage(data: RawData): ClientMessage {
   const parsed = JSON.parse(data.toString()) as unknown;
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('Nieprawidłowa wiadomość.');
+    throw new Error('INVALID_MESSAGE');
   }
   const message = parsed as ClientMessage;
-  if (message.v !== PROTOCOL_VERSION) throw new Error('Nieobsługiwana wersja protokołu.');
+  if (message.v !== PROTOCOL_VERSION) throw new Error('UNSUPPORTED_PROTOCOL');
   return message;
 }
 
@@ -141,7 +142,7 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
     }
     client.realtimeViolations = Math.max(0, client.realtimeViolations - 1);
     const streamId = rooms.getPlayerStreamId(client.roomCode, client.playerId);
-    if (streamId === null) throw new Error('Gracz nie należy do pokoju.');
+    if (streamId === null) throw new RoomError('PLAYER_NOT_FOUND');
 
     const outgoing = Buffer.allocUnsafe(4 + packet.length);
     outgoing.writeUInt32LE(streamId, 0);
@@ -189,7 +190,7 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
         const message = parseMessage(data);
         const type = String(message.type || '');
         if (type === 'join') {
-          if (client.roomCode) throw new Error('Połączenie już dołączyło do pokoju.');
+          if (client.roomCode) throw new Error('ALREADY_JOINED');
           const joined = rooms.join(
             String(message.code || ''),
             String(message.token || ''),
@@ -212,7 +213,7 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
           send(socket, { type: 'pong', sentAt: message.sentAt, serverTime: Date.now() });
           return;
         }
-        if (!client.roomCode || !client.playerId) throw new Error('Najpierw dołącz do pokoju.');
+        if (!client.roomCode || !client.playerId) throw new Error('JOIN_REQUIRED');
 
         if (type === 'ready') {
           broadcast(client.roomCode, rooms.setReady(client.roomCode, client.playerId, message.ready === true));
@@ -222,13 +223,18 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
           broadcast(client.roomCode, rooms.setMap(client.roomCode, client.playerId, String(message.mapId || '')));
           return;
         }
-        throw new Error('Nieznany typ wiadomości.');
+        throw new Error('UNKNOWN_MESSAGE');
       } catch (error) {
         if (isBinary) {
           socket.close(1003, 'Invalid realtime packet');
           return;
         }
-        send(socket, { type: 'error', message: error instanceof Error ? error.message : 'Błędna wiadomość.' });
+        const code = error instanceof RoomError
+          ? error.code
+          : error instanceof Error && /^[A-Z_]+$/.test(error.message)
+            ? error.message
+            : 'INVALID_MESSAGE';
+        send(socket, { type: 'error', code });
       }
     });
 

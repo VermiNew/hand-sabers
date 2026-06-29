@@ -85,7 +85,26 @@
     "readyHint": "Zmiana mapy resetuje gotowość wszystkich graczy.",
     "readyState": "GOTOWY",
     "waitingState": "CZEKA",
-    "mapsError": "Nie udało się pobrać listy map."
+    "mapsError": "Nie udało się pobrać listy map.",
+    "errors": {
+      "ROOM_NOT_FOUND": "Nie znaleziono pokoju. Zweryfikuj, czy kod jest poprawny i pokój jeszcze nie wygasł.",
+      "INVALID_ROOM_TOKEN": "Link lub token pokoju jest nieprawidłowy.",
+      "ROOM_FULL": "Pokój jest pełny.",
+      "HOST_ALREADY_CONNECTED": "Host jest już połączony z pokojem.",
+      "PLAYER_NOT_FOUND": "Gracz nie należy do tego pokoju.",
+      "MAP_REQUIRED": "Najpierw wybierz mapę.",
+      "HOST_ONLY": "Tylko host może wybrać mapę.",
+      "INVALID_MAP": "Wybrana mapa jest nieprawidłowa.",
+      "RATE_LIMITED": "Za dużo prób. Spróbuj ponownie za chwilę.",
+      "ROOM_CREATE_FAILED": "Nie udało się utworzyć pokoju.",
+      "INVALID_MESSAGE": "Serwer otrzymał nieprawidłową wiadomość.",
+      "UNSUPPORTED_PROTOCOL": "Wersja gry nie jest zgodna z serwerem.",
+      "ALREADY_JOINED": "To połączenie już dołączyło do pokoju.",
+      "JOIN_REQUIRED": "Najpierw dołącz do pokoju.",
+      "UNKNOWN_MESSAGE": "Serwer nie rozpoznał wiadomości.",
+      "SERVER_UNAVAILABLE": "Serwer pokoi jest chwilowo niedostępny. Spróbuj ponownie za chwilę.",
+      "REQUEST_FAILED": "Nie udało się wykonać operacji na pokoju."
+    }
   },
   "help": {
     "title": "JAK GRAĆ",

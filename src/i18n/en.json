@@ -85,7 +85,26 @@
     "readyHint": "Changing the map resets every player's ready state.",
     "readyState": "READY",
     "waitingState": "WAITING",
-    "mapsError": "Could not load the map list."
+    "mapsError": "Could not load the map list.",
+    "errors": {
+      "ROOM_NOT_FOUND": "Room not found. Check the code and make sure the room has not expired.",
+      "INVALID_ROOM_TOKEN": "The room link or token is invalid.",
+      "ROOM_FULL": "The room is full.",
+      "HOST_ALREADY_CONNECTED": "The host is already connected to the room.",
+      "PLAYER_NOT_FOUND": "The player does not belong to this room.",
+      "MAP_REQUIRED": "Select a map first.",
+      "HOST_ONLY": "Only the host can select a map.",
+      "INVALID_MAP": "The selected map is invalid.",
+      "RATE_LIMITED": "Too many attempts. Try again shortly.",
+      "ROOM_CREATE_FAILED": "Could not create the room.",
+      "INVALID_MESSAGE": "The server received an invalid message.",
+      "UNSUPPORTED_PROTOCOL": "This game version is incompatible with the server.",
+      "ALREADY_JOINED": "This connection has already joined a room.",
+      "JOIN_REQUIRED": "Join a room first.",
+      "UNKNOWN_MESSAGE": "The server did not recognize the message.",
+      "SERVER_UNAVAILABLE": "The room server is temporarily unavailable. Try again shortly.",
+      "REQUEST_FAILED": "Could not complete the room operation."
+    }
   },
   "help": {
     "title": "HOW TO PLAY",

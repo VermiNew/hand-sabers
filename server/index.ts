@@ -15,9 +15,9 @@ import { createAudioStorage } from './storage/audio.js';
 import { registerScoreRoutes } from './routes/scores.js';
 import { registerMapReadRoutes } from './routes/maps-read.js';
 import { registerMapWriteRoutes } from './routes/maps-write.js';
-import { registerRoomRoutes } from './routes/rooms.js';
+import { registerRoomRoutes } from './routes/room-routes.js';
 import { RateLimiter } from './utils.js';
-import { RoomRegistry } from './realtime/rooms.js';
+import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
 
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));

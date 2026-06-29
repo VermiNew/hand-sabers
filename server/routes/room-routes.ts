@@ -1,7 +1,7 @@
 import type { Express } from 'express';
 import QRCode from 'qrcode';
-import type { RoomRegistry } from '../realtime/rooms.js';
-import { errorMessage, getIp } from '../utils.js';
+import type { RoomRegistry } from '../realtime/room-registry.js';
+import { getIp } from '../utils.js';
 
 type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
 
@@ -22,7 +22,7 @@ export function registerRoomRoutes({ app, rooms, rateLimit }: RoomRoutesOptions)
     try {
       const ip = getIp(req);
       if (rateLimit(ip, 'rooms-create', 10)) {
-        return res.status(429).json({ error: 'Za dużo utworzonych pokojów. Spróbuj ponownie za chwilę.' });
+        return res.status(429).json({ error: 'RATE_LIMITED' });
       }
 
       const room = rooms.create();
@@ -48,28 +48,29 @@ export function registerRoomRoutes({ app, rooms, rateLimit }: RoomRoutesOptions)
         qrDataUrl,
       });
     } catch (error) {
-      res.status(500).json({ error: errorMessage(error) });
+      console.error('Failed to create room:', error);
+      res.status(500).json({ error: 'ROOM_CREATE_FAILED' });
     }
   });
 
   app.get('/api/rooms/:code', (req, res) => {
     const ip = getIp(req);
     if (rateLimit(ip, 'rooms-read', 120)) {
-      return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
+      return res.status(429).json({ error: 'RATE_LIMITED' });
     }
     const room = rooms.get(String(req.params['code'] || ''));
-    if (!room) return res.status(404).json({ error: 'Pokój nie istnieje lub wygasł.' });
+    if (!room) return res.status(404).json({ error: 'ROOM_NOT_FOUND' });
     res.json(room);
   });
 
   app.post('/api/rooms/:code/join', (req, res) => {
     const ip = getIp(req);
     if (rateLimit(ip, 'rooms-code-join', 30)) {
-      return res.status(429).json({ error: 'Za dużo prób dołączenia. Spróbuj ponownie za chwilę.' });
+      return res.status(429).json({ error: 'RATE_LIMITED' });
     }
     const code = String(req.params['code'] || '').trim().toUpperCase();
     const joinToken = rooms.getGuestToken(code);
-    if (!joinToken) return res.status(404).json({ error: 'Pokój nie istnieje lub wygasł.' });
+    if (!joinToken) return res.status(404).json({ error: 'ROOM_NOT_FOUND' });
     res.json({ code, joinToken });
   });
 }

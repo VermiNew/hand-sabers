@@ -17,7 +17,7 @@ interface JoinCodeResponse {
 interface ServerMessage {
   v?: unknown;
   type?: unknown;
-  message?: unknown;
+  code?: unknown;
   playerId?: unknown;
   role?: unknown;
   room?: unknown;
@@ -56,8 +56,30 @@ function element<T extends HTMLElement>(id: string): T {
 
 async function responseJson<T>(response: Response): Promise<T> {
   const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
-  if (!response.ok) throw new Error(String(payload['error'] || `${response.status} ${response.statusText}`));
+  if (!response.ok) {
+    const serverCode = typeof payload['error'] === 'string' && /^[A-Z_]+$/.test(payload['error'])
+      ? payload['error']
+      : '';
+    const code = serverCode
+      || (response.status === 404
+        ? 'ROOM_NOT_FOUND'
+        : response.status === 429
+          ? 'RATE_LIMITED'
+          : response.status >= 500 ? 'SERVER_UNAVAILABLE' : 'REQUEST_FAILED');
+    throw new Error(translateServerError(code));
+  }
   return payload as T;
+}
+
+function translateServerError(code: string): string {
+  const key = `multiplayer.errors.${code}`;
+  const translated = t(key);
+  return translated === key ? t('multiplayer.errors.REQUEST_FAILED') : translated;
+}
+
+function requestErrorMessage(error: unknown): string {
+  if (error instanceof TypeError) return translateServerError('SERVER_UNAVAILABLE');
+  return error instanceof Error ? error.message : translateServerError('REQUEST_FAILED');
 }
 
 function websocketUrl(): string {
@@ -255,7 +277,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
           const snapshot = parseRoomSnapshot(incoming.room);
           if (snapshot) renderRoom(snapshot);
         } else if (incoming.type === 'error') {
-          showMessage(String(incoming.message || t('multiplayer.connectionError')));
+          showMessage(translateServerError(String(incoming.code || 'REQUEST_FAILED')));
         }
       } catch {
         showMessage(t('multiplayer.connectionError'));
@@ -297,7 +319,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       connect(created.room.code, created.hostToken, nameInput.value);
     } catch (error) {
       setBusy(false);
-      showMessage(error instanceof Error ? error.message : t('multiplayer.connectionError'));
+      showMessage(requestErrorMessage(error));
     }
   });
 
@@ -316,7 +338,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       connect(credential.code, credential.joinToken, nameInput.value);
     } catch (error) {
       setBusy(false);
-      showMessage(error instanceof Error ? error.message : t('multiplayer.connectionError'));
+      showMessage(requestErrorMessage(error));
     }
   });
 
