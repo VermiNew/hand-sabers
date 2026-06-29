@@ -309,6 +309,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       if (socket !== nextSocket) return;
       status.textContent = t('multiplayer.disconnected');
       remoteTracking.clear();
+      window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: null }));
       setBusy(false);
     });
     nextSocket.addEventListener('error', () => {
