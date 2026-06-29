@@ -24,6 +24,12 @@ export default defineConfig({
         maps: resolve(__dirname, 'maps.html'),
         creator: resolve(__dirname, 'map-creator.html'),
         cameraDiagnostics: resolve(__dirname, 'camera-diagnostics.html'),
+        serviceWorker: resolve(__dirname, 'service-worker.js'),
+      },
+      output: {
+        entryFileNames: chunk => chunk.name === 'serviceWorker'
+          ? 'service-worker.js'
+          : 'assets/[name]-[hash].js',
       },
     },
   },

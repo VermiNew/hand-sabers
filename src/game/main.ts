@@ -21,6 +21,7 @@ import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/lo
 import { t, setLang, getCurrentLang } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
+import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
@@ -1554,6 +1555,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 initHelpOverlay();
+registerMlAssetCache();
 initMainMenu();
 
 (async () => {

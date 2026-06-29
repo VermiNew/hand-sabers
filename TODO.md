@@ -37,7 +37,7 @@
 - [x] Całkowity remake systemu cieni i odbić w scenie 3D (subtelne, nieprzesadzone)
 - [x] Poprawić system wydajności (profile, adaptive quality)
 - [ ] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC
-- [ ] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
+- [x] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
 - [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach
 - [x] Nowa strona/overlay "Pomoc" w menu — instrukcja gry + mini-tutorial (PL i EN)
 
