@@ -373,6 +373,7 @@
     "initializingResolverDetail": "Konfigurowanie środowiska wizji komputerowej",
     "loadingLandmarker": "Ładowanie modelu HandLandmarker…",
     "loadingLandmarkerDetail": "Pobieranie modelu wykrywania rąk (GPU)",
+    "initializingLandmarkerDetail": "Uruchamianie modelu na GPU",
     "modelReady": "Model gotowy",
     "modelReadyDetail": "Śledzenie rąk załadowane",
     "startingCamera": "Uruchamianie kamery…",

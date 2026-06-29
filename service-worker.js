@@ -32,17 +32,22 @@ self.addEventListener('fetch', event => {
   event.respondWith((async () => {
     const cache = await caches.open(MEDIAPIPE_CACHE);
     const cached = await cache.match(event.request);
-    const network = fetch(event.request).then(async response => {
-      if (response.ok || response.type === 'opaque') {
-        await cache.put(event.request, response.clone());
-      }
-      return response;
-    });
 
     if (cached) {
-      event.waitUntil(network.catch(() => undefined));
+      event.waitUntil(
+        fetch(event.request)
+          .then(response => response.ok || response.type === 'opaque'
+            ? cache.put(event.request, response)
+            : undefined)
+          .catch(() => undefined),
+      );
       return cached;
     }
-    return network;
+
+    const response = await fetch(event.request);
+    if (response.ok || response.type === 'opaque') {
+      event.waitUntil(cache.put(event.request, response.clone()));
+    }
+    return response;
   })());
 });

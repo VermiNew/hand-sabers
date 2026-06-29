@@ -202,16 +202,17 @@ export function renderCalibStep(): void {
   scheduleCalibAuto();
 }
 
-async function loadMediaPipe(onProgress: (msg: string, detail: string, ratio: number) => void): Promise<void> {
+async function loadMediaPipe(onProgress: (msg: string, detail: string, ratio: number | null) => void): Promise<void> {
   onProgress(t('overlay.loadingRuntime'), t('overlay.loadingRuntimeDetail'), 0.1);
   const { HandLandmarker, FilesetResolver } = await import(
     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js' as string
   );
   onProgress(t('overlay.initializingResolver'), t('overlay.initializingResolverDetail'), 0.35);
   const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_CDN);
-  onProgress(t('overlay.loadingLandmarker'), t('overlay.loadingLandmarkerDetail'), 0.65);
+  const modelAssetBuffer = await downloadModel(onProgress);
+  onProgress(t('overlay.loadingLandmarker'), t('overlay.initializingLandmarkerDetail'), 1);
   handLandmarker = await HandLandmarker.createFromOptions(vision, {
-    baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
+    baseOptions: { modelAssetBuffer, delegate: 'GPU' },
     runningMode:                 'VIDEO',
     numHands:                    2,
     minHandDetectionConfidence:  0.42,
@@ -219,6 +220,54 @@ async function loadMediaPipe(onProgress: (msg: string, detail: string, ratio: nu
     minTrackingConfidence:       0.42,
   });
   onProgress(t('overlay.modelReady'), t('overlay.modelReadyDetail'), 1.0);
+}
+
+function formatMegabytes(bytes: number): string {
+  return `${(Math.max(0, bytes) / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function downloadModel(
+  onProgress: (msg: string, detail: string, ratio: number | null) => void,
+): Promise<Uint8Array> {
+  const response = await fetch(MODEL_URL);
+  if (!response.ok) throw new Error(`Model download failed: ${response.status}`);
+
+  const totalBytes = Number(response.headers.get('content-length')) || 0;
+  const reader = response.body?.getReader();
+  if (!reader) {
+    const buffer = new Uint8Array(await response.arrayBuffer());
+    onProgress(
+      t('overlay.loadingLandmarker'),
+      `${t('overlay.loadingLandmarkerDetail')} · ${formatMegabytes(buffer.byteLength)}`,
+      1,
+    );
+    return buffer;
+  }
+
+  const chunks: Uint8Array[] = [];
+  let loadedBytes = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    loadedBytes += value.byteLength;
+    const size = totalBytes > 0
+      ? `${formatMegabytes(loadedBytes)} / ${formatMegabytes(totalBytes)}`
+      : formatMegabytes(loadedBytes);
+    onProgress(
+      t('overlay.loadingLandmarker'),
+      `${t('overlay.loadingLandmarkerDetail')} · ${size}`,
+      totalBytes > 0 ? loadedBytes / totalBytes : null,
+    );
+  }
+
+  const model = new Uint8Array(loadedBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    model.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return model;
 }
 
 function setupCalibFeed(): void {

@@ -373,6 +373,7 @@
     "initializingResolverDetail": "Configuring computer vision environment",
     "loadingLandmarker": "Loading HandLandmarker model…",
     "loadingLandmarkerDetail": "Downloading hand detection model (GPU)",
+    "initializingLandmarkerDetail": "Starting model on GPU",
     "modelReady": "Model ready",
     "modelReadyDetail": "Hand tracking loaded",
     "startingCamera": "Starting camera…",
