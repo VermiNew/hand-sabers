@@ -169,6 +169,11 @@ export class RoomRegistry {
     return room?.players.find(player => player.id === playerId)?.streamId ?? null;
   }
 
+  getGuestToken(code: string): string | null {
+    this.deleteExpired();
+    return this.rooms.get(normalizeRoomCode(code))?.joinToken ?? null;
+  }
+
   destroy(): void {
     clearInterval(this.cleanupTimer);
     this.rooms.clear();

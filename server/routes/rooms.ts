@@ -61,4 +61,15 @@ export function registerRoomRoutes({ app, rooms, rateLimit }: RoomRoutesOptions)
     if (!room) return res.status(404).json({ error: 'Pokój nie istnieje lub wygasł.' });
     res.json(room);
   });
+
+  app.post('/api/rooms/:code/join', (req, res) => {
+    const ip = getIp(req);
+    if (rateLimit(ip, 'rooms-code-join', 30)) {
+      return res.status(429).json({ error: 'Za dużo prób dołączenia. Spróbuj ponownie za chwilę.' });
+    }
+    const code = String(req.params['code'] || '').trim().toUpperCase();
+    const joinToken = rooms.getGuestToken(code);
+    if (!joinToken) return res.status(404).json({ error: 'Pokój nie istnieje lub wygasł.' });
+    res.json({ code, joinToken });
+  });
 }
