@@ -23,6 +23,8 @@ interface ServerMessage {
   playerId?: unknown;
   role?: unknown;
   room?: unknown;
+  sentAt?: unknown;
+  serverTime?: unknown;
 }
 
 interface RoomPlayer {
@@ -37,6 +39,7 @@ interface RoomSnapshot {
   code: string;
   revision: number;
   mapId: string | null;
+  round: { id: number; mapId: string; startAt: number } | null;
   players: RoomPlayer[];
 }
 
@@ -49,6 +52,8 @@ let activeJoinUrl = '';
 let currentPlayerId = '';
 let currentRole: 'host' | 'guest' | null = null;
 let currentRoom: RoomSnapshot | null = null;
+let serverClockOffsetMs = 0;
+const clockSamples: Array<{ offset: number; rtt: number }> = [];
 
 export function canSendRealtime(): boolean {
   return Boolean(currentPlayerId) && socket?.readyState === WebSocket.OPEN;
@@ -63,6 +68,11 @@ export function sendRealtimePacket(packet: ArrayBuffer): boolean {
   ) return false;
   activeSocket.send(packet);
   return true;
+}
+
+export function serverTimeToPerformance(serverTime: number): number {
+  const estimatedServerNow = Date.now() + serverClockOffsetMs;
+  return performance.now() + (serverTime - estimatedServerNow);
 }
 
 function element<T extends HTMLElement>(id: string): T {
@@ -117,6 +127,26 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     || (candidate['mapId'] !== null && typeof candidate['mapId'] !== 'string')
     || (typeof candidate['mapId'] === 'string' && !/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(candidate['mapId']))
   ) return null;
+  const roundValue = candidate['round'];
+  let round: RoomSnapshot['round'] = null;
+  if (roundValue !== null) {
+    if (!roundValue || typeof roundValue !== 'object' || Array.isArray(roundValue)) return null;
+    const candidateRound = roundValue as Record<string, unknown>;
+    if (
+      !Number.isSafeInteger(candidateRound['id'])
+      || Number(candidateRound['id']) < 1
+      || typeof candidateRound['mapId'] !== 'string'
+      || !/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(candidateRound['mapId'])
+      || typeof candidateRound['startAt'] !== 'number'
+      || !Number.isFinite(candidateRound['startAt'])
+      || candidateRound['startAt'] < 0
+    ) return null;
+    round = {
+      id: candidateRound['id'] as number,
+      mapId: candidateRound['mapId'],
+      startAt: candidateRound['startAt'],
+    };
+  }
 
   const players: RoomPlayer[] = [];
   for (const valuePlayer of candidate['players']) {
@@ -145,6 +175,7 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     code: candidate['code'],
     revision: candidate['revision'] as number,
     mapId: candidate['mapId'] as string | null,
+    round,
     players,
   };
 }
@@ -255,6 +286,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
 
   function connect(code: string, token: string, name: string): void {
     socket?.close(1000, 'Replaced');
+    clockSamples.length = 0;
+    serverClockOffsetMs = 0;
     currentPlayerId = '';
     currentRole = null;
     currentRoom = null;
@@ -263,6 +296,13 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     const nextSocket = new WebSocket(websocketUrl());
     nextSocket.binaryType = 'arraybuffer';
     socket = nextSocket;
+    let clockTimer: ReturnType<typeof setInterval> | null = null;
+
+    const pingClock = () => {
+      if (nextSocket.readyState === WebSocket.OPEN) {
+        nextSocket.send(JSON.stringify({ v: PROTOCOL_VERSION, type: 'ping', sentAt: Date.now() }));
+      }
+    };
 
     nextSocket.addEventListener('open', () => {
       nextSocket.send(JSON.stringify({
@@ -272,6 +312,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         token,
         name,
       }));
+      pingClock();
+      clockTimer = setInterval(pingClock, 5_000);
     });
     nextSocket.addEventListener('message', event => {
       if (socket !== nextSocket) return;
@@ -298,6 +340,20 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         } else if (incoming.type === 'room') {
           const snapshot = parseRoomSnapshot(incoming.room);
           if (snapshot) renderRoom(snapshot);
+        } else if (incoming.type === 'pong') {
+          const sentAt = Number(incoming.sentAt);
+          const serverTime = Number(incoming.serverTime);
+          const receivedAt = Date.now();
+          if (Number.isFinite(sentAt) && Number.isFinite(serverTime) && sentAt <= receivedAt) {
+            const rtt = receivedAt - sentAt;
+            if (rtt <= 10_000) {
+              clockSamples.push({ rtt, offset: serverTime - (sentAt + receivedAt) / 2 });
+              clockSamples.sort((left, right) => left.rtt - right.rtt);
+              if (clockSamples.length > 8) clockSamples.length = 8;
+              const bestOffsets = clockSamples.slice(0, 3).map(sample => sample.offset).sort((a, b) => a - b);
+              serverClockOffsetMs = bestOffsets[Math.floor(bestOffsets.length / 2)] ?? 0;
+            }
+          }
         } else if (incoming.type === 'error') {
           showMessage(translateServerError(String(incoming.code || 'REQUEST_FAILED')));
         }
@@ -306,6 +362,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       }
     });
     nextSocket.addEventListener('close', () => {
+      if (clockTimer) clearInterval(clockTimer);
       if (socket !== nextSocket) return;
       status.textContent = t('multiplayer.disconnected');
       remoteTracking.clear();

@@ -12,6 +12,8 @@ export type RoomErrorCode =
   | 'HOST_ALREADY_CONNECTED'
   | 'PLAYER_NOT_FOUND'
   | 'MAP_REQUIRED'
+  | 'PLAYERS_NOT_READY'
+  | 'ROUND_ALREADY_STARTED'
   | 'HOST_ONLY'
   | 'INVALID_MAP';
 
@@ -39,12 +41,20 @@ export interface RoomSnapshot {
   expiresAt: string;
   revision: number;
   mapId: string | null;
+  round: RoomRound | null;
   players: RoomPlayer[];
+}
+
+export interface RoomRound {
+  id: number;
+  mapId: string;
+  startAt: number;
 }
 
 interface RoomRecord extends RoomSnapshot {
   hostToken: string;
   joinToken: string;
+  nextRoundId: number;
 }
 
 export interface CreatedRoom extends RoomSnapshot {
@@ -102,6 +112,8 @@ export class RoomRegistry {
       expiresAt: new Date(createdAt.getTime() + ROOM_TTL_MS).toISOString(),
       revision: 0,
       mapId: null,
+      round: null,
+      nextRoundId: 1,
       players: [],
     };
     this.rooms.set(code, room);
@@ -118,6 +130,7 @@ export class RoomRegistry {
       expiresAt: room.expiresAt,
       revision: room.revision,
       mapId: room.mapId,
+      round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),
     };
   }
@@ -180,6 +193,7 @@ export class RoomRegistry {
     const normalizedMapId = mapId.trim();
     if (!/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(normalizedMapId)) throw new RoomError('INVALID_MAP');
     room.mapId = normalizedMapId;
+    room.round = null;
     for (const roomPlayer of room.players) roomPlayer.ready = false;
     room.revision++;
     return this.snapshot(room);
@@ -188,6 +202,26 @@ export class RoomRegistry {
   getPlayerStreamId(code: string, playerId: string): number | null {
     const room = this.rooms.get(normalizeRoomCode(code));
     return room?.players.find(player => player.id === playerId)?.streamId ?? null;
+  }
+
+  startRound(code: string, playerId: string, now = Date.now()): RoomSnapshot {
+    const room = this.requireRoom(code);
+    const player = room.players.find(candidate => candidate.id === playerId);
+    if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
+    if (!room.mapId) throw new RoomError('MAP_REQUIRED');
+    if (!room.players.length || room.players.some(candidate => !candidate.ready)) {
+      throw new RoomError('PLAYERS_NOT_READY');
+    }
+    if (room.round && room.round.startAt + 5_000 > now) {
+      throw new RoomError('ROUND_ALREADY_STARTED');
+    }
+    room.round = {
+      id: room.nextRoundId++,
+      mapId: room.mapId,
+      startAt: now + 3_000,
+    };
+    room.revision++;
+    return this.snapshot(room);
   }
 
   getGuestToken(code: string): string | null {
@@ -220,6 +254,7 @@ export class RoomRegistry {
       expiresAt: room.expiresAt,
       revision: room.revision,
       mapId: room.mapId,
+      round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),
     };
   }

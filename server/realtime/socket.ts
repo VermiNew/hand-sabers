@@ -223,6 +223,10 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
           broadcast(client.roomCode, rooms.setMap(client.roomCode, client.playerId, String(message.mapId || '')));
           return;
         }
+        if (type === 'start-game') {
+          broadcast(client.roomCode, rooms.startRound(client.roomCode, client.playerId));
+          return;
+        }
         throw new Error('UNKNOWN_MESSAGE');
       } catch (error) {
         if (isBinary) {
