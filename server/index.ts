@@ -16,9 +16,11 @@ import { registerScoreRoutes } from './routes/scores.js';
 import { registerMapReadRoutes } from './routes/maps-read.js';
 import { registerMapWriteRoutes } from './routes/maps-write.js';
 import { registerRoomRoutes } from './routes/room-routes.js';
+import { registerTrackingSessionRoutes } from './routes/tracking-session-routes.js';
 import { RateLimiter } from './utils.js';
 import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
+import { TrackingSessionRegistry } from './realtime/tracking-session-registry.js';
 
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE_PROJECT_ROOT = path.resolve(SERVER_DIR, '..');
@@ -64,6 +66,7 @@ const app = express();
 
 const limiter = new RateLimiter();
 const rooms = new RoomRegistry();
+const trackingSessions = new TrackingSessionRegistry();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
   limiter.check(ip, key, maxPerMinute);
 
@@ -117,6 +120,7 @@ const SCORES_FILE = path.join(MAPS_DIR, '_scores.json');
 const scoreStorage = createScoreStorage(SCORES_FILE);
 registerScoreRoutes({ app, storage: scoreStorage, rateLimit });
 registerRoomRoutes({ app, rooms, rateLimit });
+registerTrackingSessionRoutes({ app, sessions: trackingSessions, rateLimit });
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err?.code === 'LIMIT_FILE_SIZE') {
@@ -139,6 +143,7 @@ function shutdown(signal: NodeJS.Signals): void {
   console.log(`\n${signal} — zamykam serwer…`);
   realtimeServer.close();
   rooms.destroy();
+  trackingSessions.destroy();
   server.close(err => {
     if (err) {
       console.error('Błąd przy zamykaniu serwera:', err);
