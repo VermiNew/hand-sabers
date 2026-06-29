@@ -281,6 +281,7 @@ export class RoomRegistry {
   ): { player: RoomPlayer; completedSnapshot: RoomSnapshot | null } {
     const room = this.requireRoom(code);
     if (!room.round || room.round.finishedAt !== null) throw new RoomError('ROUND_REQUIRED');
+    if (now + 250 < room.round.startAt) throw new RoomError('ROUND_REQUIRED');
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player) throw new RoomError('PLAYER_NOT_FOUND');
     if (!player.playing) throw new RoomError('ROUND_REQUIRED');
@@ -306,7 +307,7 @@ export class RoomRegistry {
     let completedSnapshot: RoomSnapshot | null = null;
     if (room.players.some(candidate => candidate.playing)
       && room.players.every(candidate => !candidate.playing || candidate.finished)) {
-      room.round.finishedAt = now;
+      room.round.finishedAt = Math.max(now, room.round.startAt);
       room.revision++;
       completedSnapshot = this.snapshot(room);
     }

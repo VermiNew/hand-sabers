@@ -480,11 +480,19 @@
                 <option value="" data-i18n="multiplayer.selectMap">WYBIERZ MAPĘ</option>
               </select>
             </label>
+            <label class="mp-field">
+              <span data-i18n="multiplayer.mode">TRYB</span>
+              <select id="multiplayerMode" disabled>
+                <option value="score-attack" data-i18n="multiplayer.scoreAttack">SCORE ATTACK</option>
+                <option value="coop" data-i18n="multiplayer.coop">CO-OP</option>
+              </select>
+            </label>
             <button class="mp-primary" id="multiplayerReady" type="button" disabled data-i18n="multiplayer.ready">GOTOWY</button>
             <button class="mp-primary" id="multiplayerStart" type="button" hidden data-i18n="multiplayer.start">START</button>
             <p data-i18n="multiplayer.readyHint">Zmiana mapy resetuje gotowość wszystkich graczy.</p>
           </div>
         </div>
+        <div class="mp-scoreboard" id="multiplayerLobbyScores" hidden></div>
       </section>
     </div>
 
@@ -517,6 +525,7 @@
     <div id="score">000000</div>
     <div id="combo">COMBO ×1</div>
     <div id="mapTitle"></div>
+    <div class="mp-scoreboard mp-scoreboard--hud" id="multiplayerHudScores" hidden></div>
   </div>
 
   <div id="hudBottom">

@@ -22,7 +22,7 @@ import { t, setLang, getCurrentLang } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
-import { initMultiplayerOverlay } from '../multiplayer/client.ts';
+import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
@@ -101,8 +101,8 @@ function preserveDevQueryOnMenuLinks(): void {
 }
 
 // ── Score submit ──────────────────────────────────────────────────────────────
-async function submitScore(progress?: number): Promise<void> {
-  if (settings.trainingMode) return;
+async function submitScore(progress?: number, allowTrainingMode = false): Promise<void> {
+  if (settings.trainingMode && !allowTrainingMode) return;
 
   const payload = {
     mapId:  state.map?.id ?? 'random',
@@ -196,6 +196,7 @@ let mapTimelineZeroAtMs  = 0;
 let mapAudioStarted      = false;
 let pausedMapTimelineSec: number | null = null;
 let multiplayerRoundActive = false;
+let lastMultiplayerScoreAt = 0;
 
 function resetMapTimeline(): void {
   mapTimelineZeroAtMs  = 0;
@@ -349,6 +350,7 @@ async function prepareMultiplayerMap(mapId: string): Promise<void> {
 
 async function beginMultiplayerRound(detail: {
   mapId: string;
+  mode: 'coop' | 'score-attack';
   startAtPerformance: number;
 }): Promise<void> {
   if (
@@ -379,6 +381,9 @@ async function beginMultiplayerRound(detail: {
   state.pauseReason = PAUSE_REASONS.NONE;
   state.appState = S.PLAYING;
   multiplayerRoundActive = true;
+  lastMultiplayerScoreAt = 0;
+  document.body.classList.remove('training-mode');
+  document.body.dataset['multiplayerMode'] = detail.mode;
   resetMapSpawn();
   startMapTimelineAt(detail.startAtPerformance);
   startGameplay();
@@ -417,11 +422,23 @@ function endGame(): void {
   const dur = getCurrentMapDuration();
   const pos = getMapTimelineSec();
   const progress = dur > 0 ? Math.max(0, Math.min(1, pos / dur)) : undefined;
+  const wasMultiplayerRound = multiplayerRoundActive;
+  if (wasMultiplayerRound) {
+    sendMultiplayerScore({
+      score: Math.max(0, Math.round(state.score)),
+      combo: Math.max(0, Math.round(state.combo)),
+      lives: Math.max(0, Math.round(state.lives)),
+      progress: progress ?? 0,
+      finished: true,
+    });
+  }
   multiplayerRoundActive = false;
+  document.body.classList.toggle('training-mode', settings.trainingMode);
+  delete document.body.dataset['multiplayerMode'];
   stopMapAudio();
   resetMapTimeline();
   clearGameplayEntities();
-  void submitScore(progress);
+  void submitScore(progress, wasMultiplayerRound);
   fadeTransition(() => { showGameOver(state); });
 }
 
@@ -524,6 +541,18 @@ function updateHandsPauseState(now: number): void {
       updateHandsResumeProgress(0);
       if (ui.pauseSub) ui.pauseSub.textContent = missingHandsText();
     }
+  }
+}
+
+function publishMultiplayerScore(now: number, progress: number): void {
+  if (!multiplayerRoundActive || now - lastMultiplayerScoreAt < 100) return;
+  if (sendMultiplayerScore({
+    score: Math.max(0, Math.round(state.score)),
+    combo: Math.max(0, Math.round(state.combo)),
+    lives: Math.max(0, Math.round(state.lives)),
+    progress: Math.max(0, Math.min(1, progress)),
+  })) {
+    lastMultiplayerScoreAt = now;
   }
 }
 
@@ -689,7 +718,9 @@ function loop(timestamp: number): void {
 
     if (state.map) {
       const progressTime = Math.max(0, mapTimeSec);
+      const duration = getCurrentMapDuration();
       updateMapProgress(progressTime, getCurrentMapDuration());
+      if (mapTimeSec >= 0) publishMultiplayerScore(now, duration > 0 ? progressTime / duration : 0);
       if (now - _nearestBeatAt > 250) {
         _nearestBeat   = nearestBeatDeltaMs(state.map?.beats, mapTimeSec);
         _nearestBeatAt = now;
@@ -1668,9 +1699,17 @@ window.addEventListener('hand-sabers:multiplayer-prepare', event => {
   if (typeof mapId === 'string') void prepareMultiplayerMap(mapId);
 });
 window.addEventListener('hand-sabers:multiplayer-start', event => {
-  const detail = (event as CustomEvent<{ mapId?: unknown; startAtPerformance?: unknown }>).detail;
-  if (typeof detail?.mapId === 'string' && typeof detail.startAtPerformance === 'number') {
-    void beginMultiplayerRound({ mapId: detail.mapId, startAtPerformance: detail.startAtPerformance });
+  const detail = (event as CustomEvent<{ mapId?: unknown; mode?: unknown; startAtPerformance?: unknown }>).detail;
+  if (
+    typeof detail?.mapId === 'string'
+    && (detail.mode === 'coop' || detail.mode === 'score-attack')
+    && typeof detail.startAtPerformance === 'number'
+  ) {
+    void beginMultiplayerRound({
+      mapId: detail.mapId,
+      mode: detail.mode,
+      startAtPerformance: detail.startAtPerformance,
+    });
   }
 });
 initRemoteTrackingPreviews();

@@ -23,6 +23,7 @@ interface ServerMessage {
   playerId?: unknown;
   role?: unknown;
   room?: unknown;
+  player?: unknown;
   sentAt?: unknown;
   serverTime?: unknown;
 }
@@ -33,13 +34,20 @@ interface RoomPlayer {
   name: string;
   role: 'host' | 'guest';
   ready: boolean;
+  score: number;
+  combo: number;
+  lives: number;
+  progress: number;
+  finished: boolean;
+  playing: boolean;
 }
 
 interface RoomSnapshot {
   code: string;
   revision: number;
   mapId: string | null;
-  round: { id: number; mapId: string; startAt: number } | null;
+  mode: 'coop' | 'score-attack';
+  round: { id: number; mapId: string; startAt: number; finishedAt: number | null } | null;
   players: RoomPlayer[];
 }
 
@@ -69,6 +77,19 @@ export function sendRealtimePacket(packet: ArrayBuffer): boolean {
     || (packet.byteLength !== 96 && packet.byteLength !== 528)
   ) return false;
   activeSocket.send(packet);
+  return true;
+}
+
+export function sendMultiplayerScore(payload: {
+  score: number;
+  combo: number;
+  lives: number;
+  progress: number;
+  finished?: boolean;
+}): boolean {
+  const activeSocket = socket;
+  if (!currentPlayerId || activeSocket?.readyState !== WebSocket.OPEN) return false;
+  activeSocket.send(JSON.stringify({ v: PROTOCOL_VERSION, type: 'score', ...payload }));
   return true;
 }
 
@@ -116,6 +137,50 @@ function websocketUrl(): string {
   return `${protocol}//${location.host}/ws`;
 }
 
+function parseRoomPlayer(value: unknown): RoomPlayer | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const player = value as Record<string, unknown>;
+  if (
+    typeof player['id'] !== 'string'
+    || player['id'].length > 64
+    || !Number.isSafeInteger(player['streamId'])
+    || Number(player['streamId']) < 1
+    || Number(player['streamId']) > 0xffff_ffff
+    || typeof player['name'] !== 'string'
+    || player['name'].length > 32
+    || (player['role'] !== 'host' && player['role'] !== 'guest')
+    || typeof player['ready'] !== 'boolean'
+    || !Number.isSafeInteger(player['score'])
+    || Number(player['score']) < 0
+    || Number(player['score']) > 1_000_000_000
+    || !Number.isSafeInteger(player['combo'])
+    || Number(player['combo']) < 0
+    || Number(player['combo']) > 1_000_000
+    || !Number.isSafeInteger(player['lives'])
+    || Number(player['lives']) < 0
+    || Number(player['lives']) > 100
+    || typeof player['progress'] !== 'number'
+    || !Number.isFinite(player['progress'])
+    || player['progress'] < 0
+    || player['progress'] > 1
+    || typeof player['finished'] !== 'boolean'
+    || typeof player['playing'] !== 'boolean'
+  ) return null;
+  return {
+    id: player['id'],
+    streamId: player['streamId'] as number,
+    name: player['name'],
+    role: player['role'],
+    ready: player['ready'],
+    score: player['score'] as number,
+    combo: player['combo'] as number,
+    lives: player['lives'] as number,
+    progress: player['progress'],
+    finished: player['finished'],
+    playing: player['playing'],
+  };
+}
+
 function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const candidate = value as Record<string, unknown>;
@@ -126,6 +191,7 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     || Number(candidate['revision']) < 0
     || !Array.isArray(candidate['players'])
     || candidate['players'].length > 8
+    || (candidate['mode'] !== 'coop' && candidate['mode'] !== 'score-attack')
     || (candidate['mapId'] !== null && typeof candidate['mapId'] !== 'string')
     || (typeof candidate['mapId'] === 'string' && !/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(candidate['mapId']))
   ) return null;
@@ -142,41 +208,30 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
       || typeof candidateRound['startAt'] !== 'number'
       || !Number.isFinite(candidateRound['startAt'])
       || candidateRound['startAt'] < 0
+      || (candidateRound['finishedAt'] !== null
+        && (typeof candidateRound['finishedAt'] !== 'number'
+          || !Number.isFinite(candidateRound['finishedAt'])
+          || candidateRound['finishedAt'] < candidateRound['startAt']))
     ) return null;
     round = {
       id: candidateRound['id'] as number,
       mapId: candidateRound['mapId'],
       startAt: candidateRound['startAt'],
+      finishedAt: candidateRound['finishedAt'] as number | null,
     };
   }
 
   const players: RoomPlayer[] = [];
   for (const valuePlayer of candidate['players']) {
-    if (!valuePlayer || typeof valuePlayer !== 'object' || Array.isArray(valuePlayer)) return null;
-    const player = valuePlayer as Record<string, unknown>;
-    if (
-      typeof player['id'] !== 'string'
-      || player['id'].length > 64
-      || !Number.isSafeInteger(player['streamId'])
-      || Number(player['streamId']) < 1
-      || Number(player['streamId']) > 0xffff_ffff
-      || typeof player['name'] !== 'string'
-      || player['name'].length > 32
-      || (player['role'] !== 'host' && player['role'] !== 'guest')
-      || typeof player['ready'] !== 'boolean'
-    ) return null;
-    players.push({
-      id: player['id'],
-      streamId: player['streamId'] as number,
-      name: player['name'],
-      role: player['role'],
-      ready: player['ready'],
-    });
+    const player = parseRoomPlayer(valuePlayer);
+    if (!player) return null;
+    players.push(player);
   }
   return {
     code: candidate['code'],
     revision: candidate['revision'] as number,
     mapId: candidate['mapId'] as string | null,
+    mode: candidate['mode'],
     round,
     players,
   };
@@ -201,8 +256,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const playerCount = element<HTMLElement>('multiplayerPlayerCount');
   const playerList = element<HTMLElement>('multiplayerPlayers');
   const mapSelect = element<HTMLSelectElement>('multiplayerMap');
+  const modeSelect = element<HTMLSelectElement>('multiplayerMode');
   const readyButton = element<HTMLButtonElement>('multiplayerReady');
   const startButton = element<HTMLButtonElement>('multiplayerStart');
+  const lobbyScores = element<HTMLElement>('multiplayerLobbyScores');
+  const hudScores = element<HTMLElement>('multiplayerHudScores');
 
   nameInput.value = defaultPlayerName || 'Gracz';
 
@@ -229,6 +287,39 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     }
   };
 
+  const renderScoresInto = (container: HTMLElement, snapshot: RoomSnapshot) => {
+    const players = snapshot.players.filter(player => player.playing);
+    container.replaceChildren();
+    container.hidden = !snapshot.round || players.length === 0;
+    if (container.hidden) return;
+    const sorted = [...players].sort((left, right) => right.score - left.score || right.combo - left.combo);
+    if (snapshot.mode === 'coop') {
+      const team = document.createElement('div');
+      team.className = 'mp-score-row is-team';
+      const label = document.createElement('span');
+      label.textContent = t('multiplayer.teamScore');
+      const value = document.createElement('strong');
+      value.textContent = sorted.reduce((total, player) => total + player.score, 0).toLocaleString();
+      team.append(label, value);
+      container.append(team);
+    }
+    for (const player of sorted) {
+      const row = document.createElement('div');
+      row.className = 'mp-score-row';
+      const name = document.createElement('span');
+      name.textContent = player.name;
+      const value = document.createElement('strong');
+      value.textContent = player.score.toLocaleString();
+      row.append(name, value);
+      container.append(row);
+    }
+  };
+
+  const renderScores = (snapshot: RoomSnapshot) => {
+    renderScoresInto(lobbyScores, snapshot);
+    renderScoresInto(hudScores, snapshot);
+  };
+
   const renderRoom = (snapshot: RoomSnapshot) => {
     if (currentRoom && snapshot.revision < currentRoom.revision) return;
     currentRoom = snapshot;
@@ -252,7 +343,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       }
       const state = document.createElement('span');
       state.className = 'mp-player-state';
-      state.textContent = player.ready ? t('multiplayer.readyState') : t('multiplayer.waitingState');
+      state.textContent = snapshot.round && !player.playing
+        ? t('multiplayer.spectatorState')
+        : player.ready ? t('multiplayer.readyState') : t('multiplayer.waitingState');
       row.append(identity, state);
       playerList.append(row);
     }
@@ -262,6 +355,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     }
     mapSelect.value = snapshot.mapId ?? '';
     mapSelect.disabled = currentRole !== 'host';
+    modeSelect.value = snapshot.mode;
+    modeSelect.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     const self = snapshot.players.find(player => player.id === currentPlayerId);
     readyButton.disabled = !snapshot.mapId || !self || Boolean(pendingPreparationMapId);
     readyButton.classList.toggle('is-ready', Boolean(self?.ready));
@@ -272,12 +367,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     startButton.disabled = !snapshot.mapId
       || snapshot.players.length === 0
       || snapshot.players.some(player => !player.ready)
-      || Boolean(snapshot.round);
-    if (snapshot.round && snapshot.round.id > announcedRoundId) {
+      || Boolean(snapshot.round && snapshot.round.finishedAt === null);
+    renderScores(snapshot);
+    if (snapshot.round && snapshot.round.finishedAt === null && self?.playing && snapshot.round.id > announcedRoundId) {
       announcedRoundId = snapshot.round.id;
       window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-start', {
         detail: {
           ...snapshot.round,
+          mode: snapshot.mode,
           startAtPerformance: serverTimeToPerformance(snapshot.round.startAt),
         },
       }));
@@ -361,6 +458,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         } else if (incoming.type === 'room') {
           const snapshot = parseRoomSnapshot(incoming.room);
           if (snapshot) renderRoom(snapshot);
+        } else if (incoming.type === 'score') {
+          const player = parseRoomPlayer(incoming.player);
+          const playerIndex = currentRoom?.players.findIndex(candidate => candidate.id === player?.id) ?? -1;
+          if (player && currentRoom && playerIndex >= 0) {
+            currentRoom.players[playerIndex] = player;
+            renderScores(currentRoom);
+            window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-score', { detail: player }));
+          }
         } else if (incoming.type === 'pong') {
           const sentAt = Number(incoming.sentAt);
           const serverTime = Number(incoming.serverTime);
@@ -387,6 +492,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       if (socket !== nextSocket) return;
       status.textContent = t('multiplayer.disconnected');
       remoteTracking.clear();
+      lobbyScores.hidden = true;
+      hudScores.hidden = true;
       window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: null }));
       setBusy(false);
     });
@@ -474,6 +581,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     if (currentRole !== 'host' || !mapSelect.value) return;
     pendingPreparationMapId = '';
     sendControl({ type: 'set-map', mapId: mapSelect.value });
+  });
+  modeSelect.addEventListener('change', () => {
+    if (currentRole !== 'host' || !['coop', 'score-attack'].includes(modeSelect.value)) return;
+    pendingPreparationMapId = '';
+    sendControl({ type: 'set-mode', mode: modeSelect.value });
   });
   window.addEventListener('hand-sabers:multiplayer-prepared', event => {
     const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;

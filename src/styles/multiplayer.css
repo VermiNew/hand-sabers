@@ -98,6 +98,13 @@
 }
 .mp-lobby-controls .mp-primary { margin-top:14px; }
 .mp-lobby-controls > p { margin-top:9px; color:var(--dim); font-size:9px; line-height:1.45; }
+.mp-scoreboard { margin-top:14px; padding:10px; border:1px solid rgba(142,200,255,.12); border-radius:8px; background:rgba(3,8,18,.72); }
+.mp-scoreboard[hidden] { display:none; }
+.mp-score-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:5px 2px; color:var(--dim); font:600 10px 'JetBrains Mono',monospace; }
+.mp-score-row + .mp-score-row { border-top:1px solid rgba(142,200,255,.08); }
+.mp-score-row strong { color:var(--text); font:800 12px 'Oxanium',sans-serif; }
+.mp-score-row.is-team { color:var(--text); }
+.mp-scoreboard--hud { position:fixed; top:18px; left:18px; z-index:260; width:min(260px,calc(100vw - 36px)); margin:0; pointer-events:none; }
 
 @media (max-width:700px) {
   .mp-overlay { padding:10px; }
