@@ -12,6 +12,10 @@ validated gameplay events and periodic score snapshots; the server broadcasts
 the canonical room state. This avoids streaming camera or hand-tracking data
 and keeps bandwidth low.
 
+Spectator pose updates and opt-in developer landmark previews use the bounded
+[binary realtime protocol](realtime-protocol.md). Raw camera frames are never
+relayed.
+
 ## Clock and song synchronization
 
 Each client estimates its offset to the server monotonic clock using repeated

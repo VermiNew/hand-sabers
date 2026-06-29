@@ -18,6 +18,7 @@ import { registerMapWriteRoutes } from './routes/maps-write.js';
 import { registerRoomRoutes } from './routes/rooms.js';
 import { RateLimiter } from './utils.js';
 import { RoomRegistry } from './realtime/rooms.js';
+import { registerRealtimeServer } from './realtime/socket.js';
 
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE_PROJECT_ROOT = path.resolve(SERVER_DIR, '..');
@@ -127,6 +128,7 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 app.use(errorHandler);
 
 const server = createServer(app);
+const realtimeServer = registerRealtimeServer(server, rooms);
 const PORT = Number(process.env.PORT || 3000);
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Hand Sabers → http://localhost:${PORT}`);
@@ -135,6 +137,7 @@ server.listen(PORT, '0.0.0.0', () => {
 
 function shutdown(signal: NodeJS.Signals): void {
   console.log(`\n${signal} — zamykam serwer…`);
+  realtimeServer.close();
   rooms.destroy();
   server.close(err => {
     if (err) {

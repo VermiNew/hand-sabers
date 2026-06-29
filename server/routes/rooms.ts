@@ -53,6 +53,10 @@ export function registerRoomRoutes({ app, rooms, rateLimit }: RoomRoutesOptions)
   });
 
   app.get('/api/rooms/:code', (req, res) => {
+    const ip = getIp(req);
+    if (rateLimit(ip, 'rooms-read', 120)) {
+      return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
+    }
     const room = rooms.get(String(req.params['code'] || ''));
     if (!room) return res.status(404).json({ error: 'Pokój nie istnieje lub wygasł.' });
     res.json(room);
