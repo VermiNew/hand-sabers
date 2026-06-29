@@ -223,7 +223,7 @@ async function loadMediaPipe(onProgress: (msg: string, detail: string, ratio: nu
 }
 
 function formatMegabytes(bytes: number): string {
-  return `${(Math.max(0, bytes) / (1024 * 1024)).toFixed(1)} MB`;
+  return (Math.max(0, bytes) / (1024 * 1024)).toFixed(1);
 }
 
 async function downloadModel(
@@ -238,7 +238,7 @@ async function downloadModel(
     const buffer = new Uint8Array(await response.arrayBuffer());
     onProgress(
       t('overlay.loadingLandmarker'),
-      `${t('overlay.loadingLandmarkerDetail')} · ${formatMegabytes(buffer.byteLength)}`,
+      `${t('overlay.loadingLandmarkerDetail')}\n${formatMegabytes(buffer.byteLength)}\u00a0MB`,
       1,
     );
     return buffer;
@@ -252,11 +252,11 @@ async function downloadModel(
     chunks.push(value);
     loadedBytes += value.byteLength;
     const size = totalBytes > 0
-      ? `${formatMegabytes(loadedBytes)} / ${formatMegabytes(totalBytes)}`
-      : formatMegabytes(loadedBytes);
+      ? `${formatMegabytes(loadedBytes)}\u00a0/\u00a0${formatMegabytes(totalBytes)}\u00a0MB`
+      : `${formatMegabytes(loadedBytes)}\u00a0MB`;
     onProgress(
       t('overlay.loadingLandmarker'),
-      `${t('overlay.loadingLandmarkerDetail')} · ${size}`,
+      `${t('overlay.loadingLandmarkerDetail')}\n${size}`,
       totalBytes > 0 ? loadedBytes / totalBytes : null,
     );
   }
