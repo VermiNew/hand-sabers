@@ -3,6 +3,7 @@ import { ui, setLoadingProgress, showCameraError, setCalibFeedback } from '../ui
 import { getSettings } from '../core/settings.ts';
 import { getDetectIntervalMs, getPerformanceProfile } from '../core/performance.ts';
 import { t } from '../i18n/index.ts';
+import { canSendRealtime, PROTOCOL_VERSION, sendRealtimePacket } from '../multiplayer/client.ts';
 import type { Settings, SaberQuat } from '../types/index.js';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
@@ -101,6 +102,43 @@ let autoFlipSamples:         boolean[] = [];
 let autoFlipAppliedThisCalib = false;
 let trackingProfile          = getPerformanceProfile(getSettings());
 let dynamicDetectIntervalMs  = getDetectIntervalMs(trackingProfile);
+let realtimeSequence         = 0;
+let lastRealtimePoseMs       = -Infinity;
+
+function writePose(
+  view: DataView,
+  offset: number,
+  active: boolean,
+  confidence: number,
+  position: { x: number; y: number; z: number } | undefined,
+  orientation: SaberQuat | undefined,
+): void {
+  const values = active && position && orientation
+    ? [
+        confidence,
+        position.x, position.y, position.z,
+        orientation.bladeDir.x, orientation.bladeDir.y, orientation.bladeDir.z,
+        orientation.rollDir.x, orientation.rollDir.y, orientation.rollDir.z,
+      ]
+    : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  values.forEach((value, index) => view.setFloat32(offset + index * 4, value, true));
+}
+
+function sendRealtimePose(result: WorkerResult, now: number): void {
+  if (!canSendRealtime() || now - lastRealtimePoseMs < 1000 / 60) return;
+  const leftReady = result.leftActive && Boolean(result.leftPos && result.leftQuat);
+  const rightReady = result.rightActive && Boolean(result.rightPos && result.rightQuat);
+  const packet = new ArrayBuffer(96);
+  const view = new DataView(packet);
+  view.setUint8(0, PROTOCOL_VERSION);
+  view.setUint8(1, 1);
+  view.setUint8(2, (leftReady ? 1 : 0) | (rightReady ? 2 : 0));
+  view.setUint32(4, realtimeSequence++, true);
+  view.setFloat64(8, now, true);
+  writePose(view, 16, leftReady, result.leftConf, result.leftPos, result.leftQuat);
+  writePose(view, 56, rightReady, result.rightConf, result.rightPos, result.rightQuat);
+  if (sendRealtimePacket(packet)) lastRealtimePoseMs = now;
+}
 
 export function setCalibAutoAdvanceHandler(fn: () => void): void { autoAdvance = fn; }
 export function setAutoFlipSuggestionHandler(fn: ((info: { flipCamera: boolean; confidence: number }) => void) | null): void {
@@ -557,6 +595,7 @@ function applyWorkerResult(r: WorkerResult | null): void {
   if (ui.dHandL) ui.dHandL.textContent = r.leftActive  ? `(${r.leftConf.toFixed(2)})` : 'offline';
   if (ui.dHandR) ui.dHandR.textContent = r.rightActive ? `(${r.rightConf.toFixed(2)})` : 'offline';
   if (ui.dHandsBackend) ui.dHandsBackend.textContent = `${r.filteredCount}/${r.rawCount}`;
+  sendRealtimePose(r, performance.now());
 }
 
 function updateHandDots(l: boolean, r: boolean): void {

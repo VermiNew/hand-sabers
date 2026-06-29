@@ -1,6 +1,6 @@
 import { t } from '../i18n/index.ts';
 
-const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 1;
 
 interface CreateRoomResponse {
   room: { code: string };
@@ -47,6 +47,21 @@ let activeJoinUrl = '';
 let currentPlayerId = '';
 let currentRole: 'host' | 'guest' | null = null;
 let currentRoom: RoomSnapshot | null = null;
+
+export function canSendRealtime(): boolean {
+  return Boolean(currentPlayerId) && socket?.readyState === WebSocket.OPEN;
+}
+
+export function sendRealtimePacket(packet: ArrayBuffer): boolean {
+  const activeSocket = socket;
+  if (
+    !currentPlayerId
+    || activeSocket?.readyState !== WebSocket.OPEN
+    || (packet.byteLength !== 96 && packet.byteLength !== 528)
+  ) return false;
+  activeSocket.send(packet);
+  return true;
+}
 
 function element<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
