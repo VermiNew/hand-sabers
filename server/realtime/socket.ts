@@ -127,6 +127,12 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
     }
   }
 
+  function broadcastRoundStarted(roomCode: string, snapshot: RoomSnapshot): void {
+    for (const [socket, client] of clients) {
+      if (client.roomCode === roomCode) send(socket, { type: 'round-started', room: snapshot });
+    }
+  }
+
   function broadcastScore(roomCode: string, player: RoomSnapshot['players'][number]): void {
     for (const [socket, client] of clients) {
       if (client.roomCode === roomCode) send(socket, { type: 'score', player });
@@ -240,7 +246,9 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
           return;
         }
         if (type === 'start-game') {
-          broadcast(client.roomCode, rooms.startRound(client.roomCode, client.playerId));
+          const snapshot = rooms.startRound(client.roomCode, client.playerId);
+          broadcast(client.roomCode, snapshot);
+          broadcastRoundStarted(client.roomCode, snapshot);
           return;
         }
         if (type === 'score') {

@@ -320,6 +320,21 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     renderScoresInto(hudScores, snapshot);
   };
 
+  const announceRoundStarted = (snapshot: RoomSnapshot) => {
+    const self = snapshot.players.find(player => player.id === currentPlayerId);
+    if (!snapshot.round || snapshot.round.finishedAt !== null || !self?.playing || snapshot.round.id <= announcedRoundId) {
+      return;
+    }
+    announcedRoundId = snapshot.round.id;
+    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-start', {
+      detail: {
+        ...snapshot.round,
+        mode: snapshot.mode,
+        startAtPerformance: serverTimeToPerformance(snapshot.round.startAt),
+      },
+    }));
+  };
+
   const renderRoom = (snapshot: RoomSnapshot) => {
     if (currentRoom && snapshot.revision < currentRoom.revision) return;
     currentRoom = snapshot;
@@ -369,16 +384,6 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       || snapshot.players.some(player => !player.ready)
       || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     renderScores(snapshot);
-    if (snapshot.round && snapshot.round.finishedAt === null && self?.playing && snapshot.round.id > announcedRoundId) {
-      announcedRoundId = snapshot.round.id;
-      window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-start', {
-        detail: {
-          ...snapshot.round,
-          mode: snapshot.mode,
-          startAtPerformance: serverTimeToPerformance(snapshot.round.startAt),
-        },
-      }));
-    }
   };
 
   async function loadMaps(): Promise<void> {
@@ -458,6 +463,12 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         } else if (incoming.type === 'room') {
           const snapshot = parseRoomSnapshot(incoming.room);
           if (snapshot) renderRoom(snapshot);
+        } else if (incoming.type === 'round-started') {
+          const snapshot = parseRoomSnapshot(incoming.room);
+          if (snapshot) {
+            renderRoom(snapshot);
+            announceRoundStarted(snapshot);
+          }
         } else if (incoming.type === 'score') {
           const player = parseRoomPlayer(incoming.player);
           const playerIndex = currentRoom?.players.findIndex(candidate => candidate.id === player?.id) ?? -1;
