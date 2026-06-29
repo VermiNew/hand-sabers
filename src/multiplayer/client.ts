@@ -259,6 +259,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const modeSelect = element<HTMLSelectElement>('multiplayerMode');
   const readyButton = element<HTMLButtonElement>('multiplayerReady');
   const startButton = element<HTMLButtonElement>('multiplayerStart');
+  const disconnectButton = element<HTMLButtonElement>('multiplayerDisconnect');
   const lobbyScores = element<HTMLElement>('multiplayerLobbyScores');
   const hudScores = element<HTMLElement>('multiplayerHudScores');
 
@@ -280,6 +281,42 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     setup.hidden = true;
     room.hidden = false;
     status.textContent = t('multiplayer.connecting');
+  };
+  const resetRoomView = () => {
+    currentPlayerId = '';
+    currentRole = null;
+    currentRoom = null;
+    pendingPreparationMapId = '';
+    announcedRoundId = 0;
+    activeJoinUrl = '';
+    setup.hidden = false;
+    room.hidden = true;
+    share.hidden = true;
+    lobby.hidden = true;
+    lobbyScores.hidden = true;
+    hudScores.hidden = true;
+    roomCode.textContent = '—';
+    lobbyCode.textContent = '—';
+    playerCount.textContent = '0 / 8';
+    playerList.replaceChildren();
+    mapSelect.value = '';
+    mapSelect.disabled = true;
+    modeSelect.disabled = true;
+    readyButton.disabled = true;
+    readyButton.classList.remove('is-ready');
+    readyButton.textContent = t('multiplayer.ready');
+    startButton.hidden = true;
+    copyButton.textContent = t('multiplayer.copyLink');
+  };
+  const disconnectRoom = () => {
+    if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) {
+      socket.close(1000, 'Left room');
+      return;
+    }
+    socket = null;
+    remoteTracking.clear();
+    resetRoomView();
+    window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: null }));
   };
   const sendControl = (payload: object) => {
     if (socket?.readyState === WebSocket.OPEN) {
@@ -358,9 +395,15 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       }
       const state = document.createElement('span');
       state.className = 'mp-player-state';
-      state.textContent = snapshot.round && !player.playing
-        ? t('multiplayer.spectatorState')
-        : player.ready ? t('multiplayer.readyState') : t('multiplayer.waitingState');
+      if (snapshot.round && !player.playing) {
+        state.textContent = t('multiplayer.spectatorState');
+      } else if (player.ready) {
+        state.textContent = t('multiplayer.calibratedState');
+      } else if (player.id === currentPlayerId && pendingPreparationMapId) {
+        state.textContent = t('multiplayer.calibratingState');
+      } else {
+        state.textContent = t('multiplayer.waitingCalibrationState');
+      }
       row.append(identity, state);
       playerList.append(row);
     }
@@ -503,8 +546,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       if (socket !== nextSocket) return;
       status.textContent = t('multiplayer.disconnected');
       remoteTracking.clear();
-      lobbyScores.hidden = true;
-      hudScores.hidden = true;
+      socket = null;
+      resetRoomView();
       window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: null }));
       setBusy(false);
     });
@@ -588,6 +631,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare', { detail: { mapId } }));
   });
   startButton.addEventListener('click', () => sendControl({ type: 'start-game' }));
+  disconnectButton.addEventListener('click', disconnectRoom);
   mapSelect.addEventListener('change', () => {
     if (currentRole !== 'host' || !mapSelect.value) return;
     pendingPreparationMapId = '';

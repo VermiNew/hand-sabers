@@ -56,6 +56,7 @@
 .mp-primary,.mp-secondary { width:100%; margin-top:auto; padding:0 16px; }
 .mp-primary { border:1px solid var(--accent); background:var(--accent); color:#04110c; }
 .mp-secondary { margin-top:16px; border:1px solid rgba(47,124,255,.6); background:rgba(47,124,255,.13); color:var(--main-light); }
+.mp-secondary.mp-danger { border-color:rgba(255,90,110,.42); background:rgba(255,70,90,.08); color:#ff9aa5; }
 .mp-primary:disabled,.mp-secondary:disabled { opacity:.4; cursor:wait; }
 .mp-room { display:grid; grid-template-columns:1.2fr .8fr; gap:16px; padding:22px 28px 28px; }
 .mp-share-card { display:flex; align-items:center; gap:20px; padding:16px; }
