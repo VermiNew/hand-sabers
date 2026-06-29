@@ -14,8 +14,11 @@ export type RoomErrorCode =
   | 'MAP_REQUIRED'
   | 'PLAYERS_NOT_READY'
   | 'ROUND_ALREADY_STARTED'
+  | 'ROUND_REQUIRED'
   | 'HOST_ONLY'
-  | 'INVALID_MAP';
+  | 'INVALID_MAP'
+  | 'INVALID_MODE'
+  | 'INVALID_SCORE';
 
 export class RoomError extends Error {
   readonly code: RoomErrorCode;
@@ -33,7 +36,15 @@ export interface RoomPlayer {
   name: string;
   role: 'host' | 'guest';
   ready: boolean;
+  score: number;
+  combo: number;
+  lives: number;
+  progress: number;
+  finished: boolean;
+  playing: boolean;
 }
+
+export type RoomMode = 'coop' | 'score-attack';
 
 export interface RoomSnapshot {
   code: string;
@@ -41,6 +52,7 @@ export interface RoomSnapshot {
   expiresAt: string;
   revision: number;
   mapId: string | null;
+  mode: RoomMode;
   round: RoomRound | null;
   players: RoomPlayer[];
 }
@@ -49,6 +61,7 @@ export interface RoomRound {
   id: number;
   mapId: string;
   startAt: number;
+  finishedAt: number | null;
 }
 
 interface RoomRecord extends RoomSnapshot {
@@ -112,6 +125,7 @@ export class RoomRegistry {
       expiresAt: new Date(createdAt.getTime() + ROOM_TTL_MS).toISOString(),
       revision: 0,
       mapId: null,
+      mode: 'score-attack',
       round: null,
       nextRoundId: 1,
       players: [],
@@ -130,6 +144,7 @@ export class RoomRegistry {
       expiresAt: room.expiresAt,
       revision: room.revision,
       mapId: room.mapId,
+      mode: room.mode,
       round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),
     };
@@ -160,6 +175,12 @@ export class RoomRegistry {
       name,
       role,
       ready: false,
+      score: 0,
+      combo: 0,
+      lives: 10,
+      progress: 0,
+      finished: false,
+      playing: false,
     };
     room.players.push(player);
     room.revision++;
@@ -172,6 +193,13 @@ export class RoomRegistry {
     const index = room.players.findIndex(player => player.id === playerId);
     if (index < 0) return this.snapshot(room);
     room.players.splice(index, 1);
+    if (
+      room.round?.finishedAt === null
+      && room.players.some(player => player.playing)
+      && room.players.every(player => !player.playing || player.finished)
+    ) {
+      room.round.finishedAt = Date.now();
+    }
     room.revision++;
     return this.snapshot(room);
   }
@@ -199,6 +227,18 @@ export class RoomRegistry {
     return this.snapshot(room);
   }
 
+  setMode(code: string, playerId: string, mode: string): RoomSnapshot {
+    const room = this.requireRoom(code);
+    const player = room.players.find(candidate => candidate.id === playerId);
+    if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
+    if (mode !== 'coop' && mode !== 'score-attack') throw new RoomError('INVALID_MODE');
+    room.mode = mode;
+    room.round = null;
+    for (const roomPlayer of room.players) roomPlayer.ready = false;
+    room.revision++;
+    return this.snapshot(room);
+  }
+
   getPlayerStreamId(code: string, playerId: string): number | null {
     const room = this.rooms.get(normalizeRoomCode(code));
     return room?.players.find(player => player.id === playerId)?.streamId ?? null;
@@ -212,16 +252,65 @@ export class RoomRegistry {
     if (!room.players.length || room.players.some(candidate => !candidate.ready)) {
       throw new RoomError('PLAYERS_NOT_READY');
     }
-    if (room.round && room.round.startAt + 5_000 > now) {
+    if (room.round && room.round.finishedAt === null) {
       throw new RoomError('ROUND_ALREADY_STARTED');
     }
     room.round = {
       id: room.nextRoundId++,
       mapId: room.mapId,
       startAt: now + 3_000,
+      finishedAt: null,
     };
+    for (const roomPlayer of room.players) {
+      roomPlayer.score = 0;
+      roomPlayer.combo = 0;
+      roomPlayer.lives = 10;
+      roomPlayer.progress = 0;
+      roomPlayer.finished = false;
+      roomPlayer.playing = true;
+    }
     room.revision++;
     return this.snapshot(room);
+  }
+
+  updateScore(
+    code: string,
+    playerId: string,
+    payload: { score: number; combo: number; lives: number; progress: number; finished: boolean },
+    now = Date.now(),
+  ): { player: RoomPlayer; completedSnapshot: RoomSnapshot | null } {
+    const room = this.requireRoom(code);
+    if (!room.round || room.round.finishedAt !== null) throw new RoomError('ROUND_REQUIRED');
+    const player = room.players.find(candidate => candidate.id === playerId);
+    if (!player) throw new RoomError('PLAYER_NOT_FOUND');
+    if (!player.playing) throw new RoomError('ROUND_REQUIRED');
+    const valid = Number.isSafeInteger(payload.score)
+      && payload.score >= player.score
+      && payload.score <= 1_000_000_000
+      && Number.isSafeInteger(payload.combo)
+      && payload.combo >= 0
+      && payload.combo <= 1_000_000
+      && Number.isSafeInteger(payload.lives)
+      && payload.lives >= 0
+      && payload.lives <= 100
+      && Number.isFinite(payload.progress)
+      && payload.progress >= player.progress
+      && payload.progress <= 1;
+    if (!valid) throw new RoomError('INVALID_SCORE');
+    player.score = payload.score;
+    player.combo = payload.combo;
+    player.lives = payload.lives;
+    player.progress = payload.progress;
+    player.finished ||= payload.finished;
+
+    let completedSnapshot: RoomSnapshot | null = null;
+    if (room.players.some(candidate => candidate.playing)
+      && room.players.every(candidate => !candidate.playing || candidate.finished)) {
+      room.round.finishedAt = now;
+      room.revision++;
+      completedSnapshot = this.snapshot(room);
+    }
+    return { player: { ...player }, completedSnapshot };
   }
 
   getGuestToken(code: string): string | null {
@@ -254,6 +343,7 @@ export class RoomRegistry {
       expiresAt: room.expiresAt,
       revision: room.revision,
       mapId: room.mapId,
+      mode: room.mode,
       round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),
     };

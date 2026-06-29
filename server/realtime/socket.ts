@@ -34,6 +34,12 @@ interface ClientMessage {
   name?: unknown;
   ready?: unknown;
   mapId?: unknown;
+  mode?: unknown;
+  score?: unknown;
+  combo?: unknown;
+  lives?: unknown;
+  progress?: unknown;
+  finished?: unknown;
   sentAt?: unknown;
 }
 
@@ -118,6 +124,12 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
     if (!snapshot) return;
     for (const [socket, client] of clients) {
       if (client.roomCode === roomCode) send(socket, { type: 'room', room: snapshot });
+    }
+  }
+
+  function broadcastScore(roomCode: string, player: RoomSnapshot['players'][number]): void {
+    for (const [socket, client] of clients) {
+      if (client.roomCode === roomCode) send(socket, { type: 'score', player });
     }
   }
 
@@ -223,8 +235,24 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
           broadcast(client.roomCode, rooms.setMap(client.roomCode, client.playerId, String(message.mapId || '')));
           return;
         }
+        if (type === 'set-mode') {
+          broadcast(client.roomCode, rooms.setMode(client.roomCode, client.playerId, String(message.mode || '')));
+          return;
+        }
         if (type === 'start-game') {
           broadcast(client.roomCode, rooms.startRound(client.roomCode, client.playerId));
+          return;
+        }
+        if (type === 'score') {
+          const updated = rooms.updateScore(client.roomCode, client.playerId, {
+            score: typeof message.score === 'number' ? message.score : Number.NaN,
+            combo: typeof message.combo === 'number' ? message.combo : Number.NaN,
+            lives: typeof message.lives === 'number' ? message.lives : Number.NaN,
+            progress: typeof message.progress === 'number' ? message.progress : Number.NaN,
+            finished: message.finished === true,
+          });
+          broadcastScore(client.roomCode, updated.player);
+          if (updated.completedSnapshot) broadcast(client.roomCode, updated.completedSnapshot);
           return;
         }
         throw new Error('UNKNOWN_MESSAGE');
