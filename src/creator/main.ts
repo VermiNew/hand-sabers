@@ -216,13 +216,13 @@ function buildGameTestUrl(mapId: string): string {
 
 // ── BPM input + tap tempo ─────────────────────────────────────────
 function getBpm(): number {
-  return Number((state.map.meta as Record<string, unknown>)['bpm'] ?? 0);
+  return Number(state.map.meta.bpm ?? 120);
 }
 
 function setBpm(bpm: number): void {
-  (state.map.meta as Record<string, unknown>)['bpm'] = bpm > 0 ? bpm : undefined;
+  state.map.meta.bpm = bpm > 0 ? bpm : 120;
   const input = document.getElementById('bpmInput') as HTMLInputElement | null;
-  if (input) input.value = bpm > 0 ? String(bpm) : '';
+  if (input) input.value = String(state.map.meta.bpm);
   renderAll();
 }
 
@@ -234,7 +234,10 @@ function bindBpm(): void {
     bpmInput.value = getBpm() > 0 ? String(getBpm()) : '';
     bpmInput.addEventListener('input', () => {
       const v = parseFloat(bpmInput.value);
-      setBpm(isFinite(v) && v >= 20 && v <= 400 ? v : 0);
+      if (isFinite(v) && v >= 20 && v <= 400) {
+        state.map.meta.bpm = v;
+        renderAll();
+      }
     });
     bpmInput.addEventListener('keydown', (e: KeyboardEvent) => e.stopPropagation());
   }

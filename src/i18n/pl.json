@@ -240,6 +240,7 @@
     "redo": "PONÓW",
     "snapOn": "SNAP: WŁ",
     "snapOff": "SNAP: WYŁ",
+    "off": "wył",
     "loopOn": "LOOP: WŁ",
     "loopOff": "LOOP: WYŁ",
     "zoom": "ZOOM",

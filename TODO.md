@@ -96,7 +96,7 @@
 ## 16. Edytor map
 - [x] Rozbić `map-creator.html` na moduły: audio, ZIP, storage, waveform, UI, input
 - [x] Czytelny preview "hit now" na osi czasu
-- [ ] Lepsze narzędzia do układania beatów (snap do BPM, kopiuj/wklej)
+- [x] Lepsze narzędzia do układania beatów (snap do BPM, kopiuj/wklej)
 - [ ] Podgląd mapy w trybie 3D podczas edycji
 
 ## Mapy i import/export (zrobione)

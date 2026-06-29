@@ -1,4 +1,4 @@
-import { state, SNAP_VALUES } from './state.ts';
+import { state, SNAP_DIVISIONS } from './state.ts';
 import { markOverlaps, removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
 import { cutButtonText, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
 import { getPlayPos, playAudio, pauseAudio, stopAudio } from './audio.ts';
@@ -11,7 +11,21 @@ import { matchAction, loadKeybinds } from './keybinds.ts';
 
 const MAX_UNDO = 60;
 
-export function getSnap(): number | null { return SNAP_VALUES[state.snapIdx] ?? null; }
+function getSnapDivision(): number | null {
+  return SNAP_DIVISIONS[state.snapIdx] ?? null;
+}
+
+function getSnapLabel(): string | null {
+  const division = getSnapDivision();
+  return division ? `1/${division * 4}` : null;
+}
+
+export function getSnap(): number | null {
+  const division = getSnapDivision();
+  if (!division) return null;
+  const bpm = Math.max(20, Math.min(400, Number(state.map.meta.bpm) || 120));
+  return (60 / bpm) / division;
+}
 
 export function snapTime(t: number): number {
   const s = getSnap();
@@ -149,12 +163,15 @@ export function flashTap(side: string): void {
 }
 
 export function cycleSnap(): void {
-  state.snapIdx = (state.snapIdx + 1) % SNAP_VALUES.length;
-  const s = getSnap();
+  state.snapIdx = (state.snapIdx + 1) % SNAP_DIVISIONS.length;
+  const label = getSnapLabel();
   const btnSnap = document.getElementById('btnSnap');
   const stSnap  = document.getElementById('stSnap');
-  if (btnSnap) { btnSnap.textContent = s ? `SNAP: ${s}s` : t('creator.snapOff'); btnSnap.classList.toggle('active', !!s); }
-  if (stSnap)  stSnap.textContent = s ? `${s}s` : 'wył';
+  if (btnSnap) {
+    btnSnap.textContent = label ? `SNAP: ${label}` : t('creator.snapOff');
+    btnSnap.classList.toggle('active', Boolean(label));
+  }
+  if (stSnap) stSnap.textContent = label ?? t('creator.off');
 }
 
 export function toggleLoop(): void {

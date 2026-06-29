@@ -240,6 +240,7 @@
     "redo": "REDO",
     "snapOn": "SNAP: ON",
     "snapOff": "SNAP: OFF",
+    "off": "off",
     "loopOn": "LOOP: ON",
     "loopOff": "LOOP: OFF",
     "zoom": "ZOOM",

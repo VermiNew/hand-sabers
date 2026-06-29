@@ -12,19 +12,19 @@ export interface CreatorBeat {
 export interface CreatorMap {
   formatVersion: number;
   id: string;
-  meta: { title: string; duration: number; audioFile?: string; audioUrl?: string };
+  meta: { title: string; duration: number; bpm?: number; audioFile?: string; audioUrl?: string };
   beats: CreatorBeat[];
 }
 
 export const MAP_ID = (): string => `map-${Date.now()}`;
 
-export const SNAP_VALUES: (number | null)[] = [null, 0.25, 0.5, 1.0];
+export const SNAP_DIVISIONS: (number | null)[] = [null, 1, 2, 4];
 
 export const state = {
   map: {
     formatVersion: 1,
     id:    MAP_ID(),
-    meta:  { title: '', duration: 0 },
+    meta:  { title: '', duration: 0, bpm: 120 },
     beats: [],
   } as CreatorMap,
 
