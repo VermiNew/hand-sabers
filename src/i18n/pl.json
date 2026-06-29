@@ -14,7 +14,8 @@
     "resume": "WRÓĆ DO GRY",
     "restart": "ZAGRAJ PONOWNIE",
     "maps": "MAPY",
-    "mainMenu": "MENU GŁÓWNE"
+    "mainMenu": "MENU GŁÓWNE",
+    "leaveRoomMenu": "OPUŚĆ POKÓJ I WRÓĆ DO MENU"
   },
   "hands": {
     "bothMissing": "BRAK OBU RĄK — STAŃ PRZED KAMERĄ",

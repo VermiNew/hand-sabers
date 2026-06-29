@@ -14,7 +14,8 @@
     "resume": "RESUME",
     "restart": "PLAY AGAIN",
     "maps": "MAPS",
-    "mainMenu": "MAIN MENU"
+    "mainMenu": "MAIN MENU",
+    "leaveRoomMenu": "LEAVE ROOM AND RETURN TO MENU"
   },
   "hands": {
     "bothMissing": "BOTH HANDS MISSING — STAND IN FRONT OF CAMERA",

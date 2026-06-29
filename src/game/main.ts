@@ -495,6 +495,7 @@ function pauseGame(reason: PauseReason, now = performance.now()): void {
     showHandsPaused(missingHandsText());
   } else {
     hideHandsPaused();
+    syncPauseMenuActions();
     showPauseMenu();
   }
   if (ui.dStatus) ui.dStatus.textContent = reason === PAUSE_REASONS.HANDS ? t('game.pauseHands') : t('game.pause');
@@ -802,7 +803,6 @@ function handleCalibButton(): void {
 // ── Menu pauzy (Escape) ───────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
-    if (multiplayerRoundActive) return;
     if (state.appState === S.PLAYING) {
       pauseGame(PAUSE_REASONS.MANUAL, performance.now());
     } else if (state.appState === S.PAUSED && state.pauseReason === PAUSE_REASONS.MANUAL) {
@@ -867,6 +867,15 @@ const applyPauseTranslations = (): void => {
 };
 applyPauseTranslations();
 
+function syncPauseMenuActions(): void {
+  const restart = document.getElementById('pauseRestart') as HTMLButtonElement | null;
+  const maps = document.getElementById('pauseMaps') as HTMLButtonElement | null;
+  const quit = document.getElementById('pauseQuit') as HTMLButtonElement | null;
+  if (restart) restart.hidden = multiplayerRoundActive;
+  if (maps) maps.hidden = multiplayerRoundActive;
+  if (quit) quit.textContent = t(multiplayerRoundActive ? 'pause.leaveRoomMenu' : 'pause.mainMenu');
+}
+
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
 ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
 ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); void advanceCalib(); });
@@ -887,6 +896,10 @@ document.getElementById('pauseMaps')?.addEventListener('click', () => {
 
 function returnToMainMenu(): void {
   fadeTransition(() => {
+    if (multiplayerRoundActive) {
+      window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));
+    }
+    multiplayerRoundActive = false;
     stopMapAudio();
     resetMapTimeline();
     clearGameplayEntities();

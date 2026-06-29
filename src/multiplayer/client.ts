@@ -655,6 +655,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     readyButton.textContent = t('multiplayer.ready');
     showMessage(t('multiplayer.prepareFailed'));
   });
+  window.addEventListener('hand-sabers:multiplayer-leave', disconnectRoom);
 
   const fragment = new URLSearchParams(location.hash.slice(1));
   const linkedCode = fragment.get('room');
