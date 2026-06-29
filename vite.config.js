@@ -23,6 +23,7 @@ export default defineConfig({
         game: resolve(__dirname, 'beat-sabers-3d.html'),
         maps: resolve(__dirname, 'maps.html'),
         creator: resolve(__dirname, 'map-creator.html'),
+        cameraDiagnostics: resolve(__dirname, 'camera-diagnostics.html'),
       },
     },
   },

@@ -51,7 +51,7 @@
 - [x] Dodać lepsze feedbacki trafienia: kierunek cięcia, accuracy ms
 - [x] Rozważyć własne sample audio (import `.wav/.ogg`) dla trafienia/bomby/pudła — [decyzja](docs/audio-samples.md)
 - [x] Przejrzeć hitboxy po kalibracji; dodać opcję czułości niezależną od tracking sensitivity
-- [ ] Dodać osobny ekran diagnostyczny kamery bez `?dev`
+- [x] Dodać osobny ekran diagnostyczny kamery bez `?dev`
 
 ## 8. i18n — Polski i Angielski
 - [x] Wybrać bibliotekę lub prosty system kluczy (np. `t('key')`)
