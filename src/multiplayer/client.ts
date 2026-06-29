@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import { decodeRealtimePacket } from './realtime.ts';
 
 export const PROTOCOL_VERSION = 1;
 
@@ -273,7 +274,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     nextSocket.addEventListener('message', event => {
       if (socket !== nextSocket) return;
       if (typeof event.data !== 'string') {
-        window.dispatchEvent(new CustomEvent('hand-sabers:realtime-packet', { detail: event.data }));
+        const packet = event.data instanceof ArrayBuffer ? decodeRealtimePacket(event.data) : null;
+        if (packet) {
+          window.dispatchEvent(new CustomEvent('hand-sabers:realtime-packet', { detail: packet }));
+        }
         return;
       }
       try {
