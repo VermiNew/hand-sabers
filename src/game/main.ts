@@ -126,26 +126,33 @@ async function submitScore(progress?: number): Promise<void> {
 }
 
 // ── ?map= URL param ───────────────────────────────────────────────────────────
-async function tryLoadMapFromUrl(): Promise<void> {
-  const params = new URLSearchParams(location.search);
-  const mapId  = params.get('map');
-  if (!mapId) return;
-
+async function loadMapById(mapId: string): Promise<boolean> {
+  if (!/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(mapId)) return false;
+  if (state.map?.id === mapId) return true;
   try {
     const res = await fetch(`/api/maps/${encodeURIComponent(mapId)}`);
     if (res.ok) {
       const map = await res.json() as Record<string, unknown>;
       if (validateMap(map)) {
+        clearMapAudio();
         state.map = { ...map, _serverAudioPending: true } as unknown as typeof state.map;
-        return;
+        return true;
       }
     }
   } catch { /* fallback to local */ }
 
   const localMap = getLocalMapById(mapId);
   if (validateMap(localMap)) {
+    clearMapAudio();
     state.map = { ...localMap, _localAudioPending: true, localOnly: true } as unknown as typeof state.map;
+    return true;
   }
+  return false;
+}
+
+async function tryLoadMapFromUrl(): Promise<void> {
+  const mapId = new URLSearchParams(location.search).get('map');
+  if (mapId) await loadMapById(mapId);
 }
 
 async function ensureCurrentMapAudio(): Promise<void> {
@@ -188,6 +195,7 @@ const TRAINING_RATE  = 0.75;
 let mapTimelineZeroAtMs  = 0;
 let mapAudioStarted      = false;
 let pausedMapTimelineSec: number | null = null;
+let multiplayerRoundActive = false;
 
 function resetMapTimeline(): void {
   mapTimelineZeroAtMs  = 0;
@@ -201,8 +209,14 @@ function startMapTimeline(now = performance.now()): void {
   pausedMapTimelineSec = null;
 }
 
+function startMapTimelineAt(zeroAtMs: number): void {
+  mapTimelineZeroAtMs = zeroAtMs;
+  mapAudioStarted = false;
+  pausedMapTimelineSec = null;
+}
+
 function getPlaybackRate(): number {
-  return settings.trainingMode ? TRAINING_RATE : 1;
+  return !multiplayerRoundActive && settings.trainingMode ? TRAINING_RATE : 1;
 }
 
 function getMapTimelineSec(now = performance.now()): number {
@@ -231,7 +245,12 @@ function hideOverlay(): void {
 function updateMapAudioSchedule(now = performance.now()): void {
   if (!state.map || !hasMapAudio() || mapAudioStarted || !mapTimelineZeroAtMs) return;
   if (now >= mapTimelineZeroAtMs) {
-    startMapAudio(0, 0, getPlaybackRate());
+    const elapsedSec = Math.max(0, (now - mapTimelineZeroAtMs) / 1000) * getPlaybackRate();
+    if (getMapDuration() > 0 && elapsedSec >= getMapDuration()) {
+      mapAudioStarted = true;
+      return;
+    }
+    startMapAudio(elapsedSec, 0, getPlaybackRate());
     mapAudioStarted = true;
   }
 }
@@ -259,6 +278,7 @@ function resumeMapTimeline(now = performance.now()): void {
 }
 
 let calibrationReady = false;
+let multiplayerPreparationMapId = '';
 
 function showCalibPanel(): void {
   if (ui.calibPanel) ui.calibPanel.classList.add('show');
@@ -285,7 +305,85 @@ async function advanceCalib(): Promise<void> {
     return;
   }
   calibrationReady = true;
+  if (multiplayerPreparationMapId) {
+    completeMultiplayerPreparation();
+    return;
+  }
   await beginPlaying();
+}
+
+function completeMultiplayerPreparation(): void {
+  const mapId = multiplayerPreparationMapId;
+  multiplayerPreparationMapId = '';
+  hideCalibPanel();
+  hideOverlay();
+  state.appState = S.MENU;
+  const mainMenu = document.getElementById('mainMenu');
+  if (mainMenu) mainMenu.style.display = 'flex';
+  document.body.classList.add('menu-open');
+  resetMenuDemo();
+  const multiplayerOverlay = document.getElementById('multiplayerOverlay');
+  if (multiplayerOverlay) multiplayerOverlay.hidden = false;
+  window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepared', { detail: { mapId } }));
+}
+
+async function prepareMultiplayerMap(mapId: string): Promise<void> {
+  multiplayerPreparationMapId = mapId;
+  try {
+    initAudio();
+    if (!await loadMapById(mapId)) throw new Error('MAP_NOT_FOUND');
+    await ensureCurrentMapAudio();
+    if (calibrationReady) {
+      completeMultiplayerPreparation();
+      return;
+    }
+    const multiplayerOverlay = document.getElementById('multiplayerOverlay');
+    if (multiplayerOverlay) multiplayerOverlay.hidden = true;
+    await startFromMainMenu({ calibrate: true });
+  } catch (error) {
+    console.error('Multiplayer preparation failed:', error);
+    multiplayerPreparationMapId = '';
+    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error'));
+  }
+}
+
+async function beginMultiplayerRound(detail: {
+  mapId: string;
+  startAtPerformance: number;
+}): Promise<void> {
+  if (
+    !Number.isFinite(detail.startAtPerformance)
+    || !await loadMapById(detail.mapId)
+  ) {
+    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error'));
+    return;
+  }
+  initAudio();
+  await ensureCurrentMapAudio();
+  clearGameplayEntities();
+  stopMapAudio();
+  resetMapTimeline();
+  hideCalibPanel();
+  hideOverlay();
+  hideHandsPaused();
+  hidePauseMenu();
+  const multiplayerOverlay = document.getElementById('multiplayerOverlay');
+  if (multiplayerOverlay) multiplayerOverlay.hidden = true;
+  const mainMenu = document.getElementById('mainMenu');
+  if (mainMenu) mainMenu.style.display = 'none';
+  document.body.classList.remove('menu-open');
+  if (ui.hud) ui.hud.style.display = 'flex';
+  if (ui.mapProgress) ui.mapProgress.style.display = 'flex';
+  handsLostSince = 0;
+  handsReturnedSince = 0;
+  state.pauseReason = PAUSE_REASONS.NONE;
+  state.appState = S.PLAYING;
+  multiplayerRoundActive = true;
+  resetMapSpawn();
+  startMapTimelineAt(detail.startAtPerformance);
+  startGameplay();
+  showMapTitle(state.map?.meta?.title ?? t('game.unknownTrack'));
+  if (ui.dStatus) ui.dStatus.textContent = 'MULTIPLAYER';
 }
 
 async function beginPlaying(): Promise<void> {
@@ -319,6 +417,7 @@ function endGame(): void {
   const dur = getCurrentMapDuration();
   const pos = getMapTimelineSec();
   const progress = dur > 0 ? Math.max(0, Math.min(1, pos / dur)) : undefined;
+  multiplayerRoundActive = false;
   stopMapAudio();
   resetMapTimeline();
   clearGameplayEntities();
@@ -394,6 +493,11 @@ function resumeGame(now = performance.now()): void {
 }
 
 function updateHandsPauseState(now: number): void {
+  if (multiplayerRoundActive) {
+    handsLostSince = 0;
+    handsReturnedSince = 0;
+    return;
+  }
   const ready = hasRequiredHands();
 
   if (state.appState === S.PLAYING) {
@@ -666,6 +770,7 @@ function handleCalibButton(): void {
 // ── Menu pauzy (Escape) ───────────────────────────────────────────────────────
 function handleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
+    if (multiplayerRoundActive) return;
     if (state.appState === S.PLAYING) {
       pauseGame(PAUSE_REASONS.MANUAL, performance.now());
     } else if (state.appState === S.PAUSED && state.pauseReason === PAUSE_REASONS.MANUAL) {
@@ -1558,6 +1663,16 @@ window.addEventListener('beforeunload', () => {
 
 initHelpOverlay();
 registerMlAssetCache();
+window.addEventListener('hand-sabers:multiplayer-prepare', event => {
+  const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
+  if (typeof mapId === 'string') void prepareMultiplayerMap(mapId);
+});
+window.addEventListener('hand-sabers:multiplayer-start', event => {
+  const detail = (event as CustomEvent<{ mapId?: unknown; startAtPerformance?: unknown }>).detail;
+  if (typeof detail?.mapId === 'string' && typeof detail.startAtPerformance === 'number') {
+    void beginMultiplayerRound({ mapId: detail.mapId, startAtPerformance: detail.startAtPerformance });
+  }
+});
 initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 initMainMenu();

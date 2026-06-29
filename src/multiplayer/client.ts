@@ -54,6 +54,8 @@ let currentRole: 'host' | 'guest' | null = null;
 let currentRoom: RoomSnapshot | null = null;
 let serverClockOffsetMs = 0;
 const clockSamples: Array<{ offset: number; rtt: number }> = [];
+let pendingPreparationMapId = '';
+let announcedRoundId = 0;
 
 export function canSendRealtime(): boolean {
   return Boolean(currentPlayerId) && socket?.readyState === WebSocket.OPEN;
@@ -200,6 +202,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const playerList = element<HTMLElement>('multiplayerPlayers');
   const mapSelect = element<HTMLSelectElement>('multiplayerMap');
   const readyButton = element<HTMLButtonElement>('multiplayerReady');
+  const startButton = element<HTMLButtonElement>('multiplayerStart');
 
   nameInput.value = defaultPlayerName || 'Gracz';
 
@@ -260,9 +263,25 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     mapSelect.value = snapshot.mapId ?? '';
     mapSelect.disabled = currentRole !== 'host';
     const self = snapshot.players.find(player => player.id === currentPlayerId);
-    readyButton.disabled = !snapshot.mapId || !self;
+    readyButton.disabled = !snapshot.mapId || !self || Boolean(pendingPreparationMapId);
     readyButton.classList.toggle('is-ready', Boolean(self?.ready));
-    readyButton.textContent = self?.ready ? t('multiplayer.notReady') : t('multiplayer.ready');
+    readyButton.textContent = pendingPreparationMapId
+      ? t('multiplayer.preparing')
+      : self?.ready ? t('multiplayer.notReady') : t('multiplayer.ready');
+    startButton.hidden = currentRole !== 'host';
+    startButton.disabled = !snapshot.mapId
+      || snapshot.players.length === 0
+      || snapshot.players.some(player => !player.ready)
+      || Boolean(snapshot.round);
+    if (snapshot.round && snapshot.round.id > announcedRoundId) {
+      announcedRoundId = snapshot.round.id;
+      window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-start', {
+        detail: {
+          ...snapshot.round,
+          startAtPerformance: serverTimeToPerformance(snapshot.round.startAt),
+        },
+      }));
+    }
   };
 
   async function loadMaps(): Promise<void> {
@@ -291,6 +310,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     currentPlayerId = '';
     currentRole = null;
     currentRoom = null;
+    pendingPreparationMapId = '';
+    announcedRoundId = 0;
     lobby.hidden = true;
     showRoom();
     const nextSocket = new WebSocket(websocketUrl());
@@ -437,11 +458,35 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   });
   readyButton.addEventListener('click', () => {
     const self = currentRoom?.players.find(player => player.id === currentPlayerId);
-    sendControl({ type: 'ready', ready: !self?.ready });
+    if (self?.ready) {
+      sendControl({ type: 'ready', ready: false });
+      return;
+    }
+    const mapId = currentRoom?.mapId;
+    if (!mapId || pendingPreparationMapId) return;
+    pendingPreparationMapId = mapId;
+    readyButton.disabled = true;
+    readyButton.textContent = t('multiplayer.preparing');
+    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare', { detail: { mapId } }));
   });
+  startButton.addEventListener('click', () => sendControl({ type: 'start-game' }));
   mapSelect.addEventListener('change', () => {
     if (currentRole !== 'host' || !mapSelect.value) return;
+    pendingPreparationMapId = '';
     sendControl({ type: 'set-map', mapId: mapSelect.value });
+  });
+  window.addEventListener('hand-sabers:multiplayer-prepared', event => {
+    const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
+    if (typeof mapId !== 'string' || mapId !== pendingPreparationMapId || currentRoom?.mapId !== mapId) return;
+    pendingPreparationMapId = '';
+    sendControl({ type: 'ready', ready: true });
+  });
+  window.addEventListener('hand-sabers:multiplayer-prepare-error', () => {
+    if (!pendingPreparationMapId) return;
+    pendingPreparationMapId = '';
+    readyButton.disabled = false;
+    readyButton.textContent = t('multiplayer.ready');
+    showMessage(t('multiplayer.prepareFailed'));
   });
 
   const fragment = new URLSearchParams(location.hash.slice(1));

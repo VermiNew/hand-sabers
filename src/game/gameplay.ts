@@ -1042,12 +1042,13 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
   lastMapSpawnTimeSec = currentTimeSec;
 
   while (nextMapSpawnIndex < mapSpawnQueue.length) {
-    const { beat: b, hitTime } = mapSpawnQueue[nextMapSpawnIndex]!;
+    const { beat: b, index, hitTime } = mapSpawnQueue[nextMapSpawnIndex]!;
     if (!shouldSpawnBeat(b, currentTimeSec, approachSec, LOOKAHEAD)) break;
     nextMapSpawnIndex++;
     if (isBeatTooLate(b, currentTimeSec, DROP_LATE_BY)) continue;
 
-    const side = state.oneHandMode || (b.side === 'random' ? (Math.random() < 0.5 ? 'left' : 'right') : b.side);
+    const deterministicSide = ((index * 0x9e37_79b1) >>> 0) % 2 === 0 ? 'left' : 'right';
+    const side = state.oneHandMode || (b.side === 'random' ? deterministicSide : b.side);
     const lane = laneForBeat(side, b);
     spawnBlock(side, b.type === 'bomb', {
       mapBeat: true,
