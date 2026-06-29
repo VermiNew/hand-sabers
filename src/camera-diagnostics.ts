@@ -1,4 +1,5 @@
 const video = document.getElementById('cameraVideo') as HTMLVideoElement;
+const previewFrame = video.closest('.preview-frame') as HTMLElement;
 const sampleCanvas = document.getElementById('sampleCanvas') as HTMLCanvasElement;
 const sampleContext = sampleCanvas.getContext('2d', { willReadFrequently: true });
 const cameraSelect = document.getElementById('cameraSelect') as HTMLSelectElement;
@@ -136,6 +137,7 @@ function stopCamera(): void {
   stream?.getTracks().forEach(track => track.stop());
   stream = null;
   video.srcObject = null;
+  previewFrame.classList.remove('is-active');
   previewEmpty.hidden = false;
   startButton.disabled = false;
   stopButton.disabled = true;
@@ -184,6 +186,7 @@ async function startCamera(): Promise<void> {
     setMetricState(resolutionMetric, resolutionGood ? 'good' : 'bad');
 
     await populateCameraList(settings.deviceId);
+    previewFrame.classList.add('is-active');
     previewEmpty.hidden = true;
     stopButton.disabled = false;
     cameraSelect.disabled = false;
