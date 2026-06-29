@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Telefon jako kamera śledzenia dla Hand Sabers.">
+<title>Hand Sabers — Telefon jako kamera</title>
+<link rel="icon" href="./favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./src/styles/remote-camera.css">
+</head>
+<body>
+  <main class="remote-shell">
+    <header>
+      <p class="remote-eyebrow">HAND SABERS / REMOTE TRACKING</p>
+      <h1 data-i18n="remoteTracking.phoneTitle">TELEFON JAKO KAMERA</h1>
+      <p data-i18n="remoteTracking.phoneIntro">Połącz telefon z grą. Obraz kamery pozostaje na tym urządzeniu.</p>
+    </header>
+
+    <section class="remote-card">
+      <div class="remote-status" id="remoteStatus" data-state="idle" role="status">
+        <span class="remote-status-dot" aria-hidden="true"></span>
+        <strong id="remoteStatusText" data-i18n="remoteTracking.waitingCredential">ZESKANUJ QR LUB WPISZ KOD</strong>
+      </div>
+
+      <div id="remoteCodeForm">
+        <label for="remotePairCode" data-i18n="remoteTracking.pairingCode">KOD PAROWANIA</label>
+        <input id="remotePairCode" maxlength="6" autocomplete="one-time-code" inputmode="text" spellcheck="false">
+        <button id="remoteClaim" type="button" data-i18n="remoteTracking.connect">POŁĄCZ</button>
+      </div>
+
+      <div class="remote-ready" id="remoteCredentialReady" hidden>
+        <strong data-i18n="remoteTracking.credentialReady">DANE SESJI GOTOWE</strong>
+        <p data-i18n="remoteTracking.cameraNext">W następnym kroku uruchomisz kamerę i lokalne śledzenie dłoni.</p>
+      </div>
+
+      <p class="remote-error" id="remoteError" role="alert" hidden></p>
+      <p class="remote-privacy" data-i18n="remoteTracking.privacy">Do komputera będą wysyłane wyłącznie współrzędne dłoni — nigdy obraz kamery.</p>
+    </section>
+  </main>
+  <script type="module" src="./src/remote/phone.ts"></script>
+</body>
+</html>

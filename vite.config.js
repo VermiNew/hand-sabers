@@ -28,6 +28,7 @@ export default defineConfig({
         maps: resolve(__dirname, 'maps.html'),
         creator: resolve(__dirname, 'map-creator.html'),
         cameraDiagnostics: resolve(__dirname, 'camera-diagnostics.html'),
+        remoteCamera: resolve(__dirname, 'remote-camera.html'),
         serviceWorker: resolve(__dirname, 'service-worker.js'),
       },
       output: {

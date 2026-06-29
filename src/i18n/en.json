@@ -421,6 +421,19 @@
     "raw": "CAMERA RAW",
     "mlTracking": "ML TRACKING"
   },
+  "remoteTracking": {
+    "phoneTitle": "PHONE AS CAMERA",
+    "phoneIntro": "Connect your phone to the game. Camera images remain on this device.",
+    "waitingCredential": "SCAN THE QR OR ENTER THE CODE",
+    "pairingCode": "PAIRING CODE",
+    "connect": "CONNECT",
+    "credentialReady": "SESSION CREDENTIAL READY",
+    "cameraNext": "In the next step you will start the camera and local hand tracking.",
+    "privacy": "Only hand coordinates will be sent to the computer — never camera images.",
+    "invalidCode": "The code must contain six valid characters.",
+    "rateLimited": "Too many attempts. Wait a moment.",
+    "sessionNotFound": "No active session was found. Create a new one on the computer."
+  },
   "hud": {
     "progress": "PROGRESS",
     "training": "TRAINING · SCORE NOT SAVED"

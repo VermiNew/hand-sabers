@@ -421,6 +421,19 @@
     "raw": "KAMERA RAW",
     "mlTracking": "ŚLEDZENIE ML"
   },
+  "remoteTracking": {
+    "phoneTitle": "TELEFON JAKO KAMERA",
+    "phoneIntro": "Połącz telefon z grą. Obraz kamery pozostaje na tym urządzeniu.",
+    "waitingCredential": "ZESKANUJ QR LUB WPISZ KOD",
+    "pairingCode": "KOD PAROWANIA",
+    "connect": "POŁĄCZ",
+    "credentialReady": "DANE SESJI GOTOWE",
+    "cameraNext": "W następnym kroku uruchomisz kamerę i lokalne śledzenie dłoni.",
+    "privacy": "Do komputera będą wysyłane wyłącznie współrzędne dłoni — nigdy obraz kamery.",
+    "invalidCode": "Kod musi zawierać sześć poprawnych znaków.",
+    "rateLimited": "Za dużo prób. Odczekaj chwilę.",
+    "sessionNotFound": "Nie znaleziono aktywnej sesji. Utwórz nową na komputerze."
+  },
   "hud": {
     "progress": "POSTĘP",
     "training": "TRENING · WYNIK NIEZAPISYWANY"
