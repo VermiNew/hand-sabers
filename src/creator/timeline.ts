@@ -363,6 +363,8 @@ export function renderPlayhead(): void {
   const pos = getPlayPos();
   const x   = LABEL_W + (pos - state.viewStart) * state.pxPerSec;
   playheadEl.style.transform = `translateX(${x}px)`;
+  const timelineWidth = playheadEl.parentElement?.clientWidth ?? 0;
+  playheadEl.classList.toggle('near-right', timelineWidth > 0 && x > timelineWidth - 130);
 }
 
 export function updateTimecode(): void {

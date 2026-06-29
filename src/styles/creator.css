@@ -326,6 +326,26 @@ body {
   filter:drop-shadow(0 2px 5px rgba(255,34,85,0.7));
 }
 
+.playhead-hit-label {
+  position:absolute;
+  top:7px;
+  left:9px;
+  padding:3px 7px;
+  border:1px solid rgba(255,34,85,.42);
+  border-radius:4px;
+  background:rgba(9,4,14,.86);
+  color:#ff6688;
+  font:800 8px 'JetBrains Mono',monospace;
+  letter-spacing:1.2px;
+  white-space:nowrap;
+  text-shadow:0 0 10px rgba(255,34,85,.5);
+}
+
+#playhead.near-right .playhead-hit-label {
+  left:auto;
+  right:9px;
+}
+
 /* ── CONTEXT MENU ── */
 .ctx-menu {
   position:fixed; z-index:3000; min-width:200px;
