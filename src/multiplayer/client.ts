@@ -1,5 +1,6 @@
 import { t } from '../i18n/index.ts';
 import { decodeRealtimePacket } from './realtime.ts';
+import { remoteTracking } from './remote-state.ts';
 
 export const PROTOCOL_VERSION = 1;
 
@@ -197,6 +198,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const renderRoom = (snapshot: RoomSnapshot) => {
     if (currentRoom && snapshot.revision < currentRoom.revision) return;
     currentRoom = snapshot;
+    remoteTracking.retainStreams(new Set(snapshot.players.map(player => player.streamId)));
     window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: snapshot }));
     lobby.hidden = false;
     lobbyCode.textContent = snapshot.code;
@@ -276,6 +278,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       if (typeof event.data !== 'string') {
         const packet = event.data instanceof ArrayBuffer ? decodeRealtimePacket(event.data) : null;
         if (packet) {
+          remoteTracking.ingest(packet);
           window.dispatchEvent(new CustomEvent('hand-sabers:realtime-packet', { detail: packet }));
         }
         return;
@@ -305,6 +308,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     nextSocket.addEventListener('close', () => {
       if (socket !== nextSocket) return;
       status.textContent = t('multiplayer.disconnected');
+      remoteTracking.clear();
       setBusy(false);
     });
     nextSocket.addEventListener('error', () => {
