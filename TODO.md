@@ -69,7 +69,7 @@
 - [x] Sekcje: sterowanie, scoring, ustawienia kamery, FAQ
 
 ## 11. Multiplayer
-- [ ] Architektura: WebSocket server, synchronizacja stanu gry
+- [x] Architektura: WebSocket server, synchronizacja stanu gry — [projekt](docs/multiplayer.md)
 - [ ] Tryb współpracy (co-op) i rywalizacji (score attack)
 - [ ] Synchronizacja beatów i wyników w czasie rzeczywistym
 
