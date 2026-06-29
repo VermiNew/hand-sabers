@@ -15,7 +15,9 @@ import { createAudioStorage } from './storage/audio.js';
 import { registerScoreRoutes } from './routes/scores.js';
 import { registerMapReadRoutes } from './routes/maps-read.js';
 import { registerMapWriteRoutes } from './routes/maps-write.js';
+import { registerRoomRoutes } from './routes/rooms.js';
 import { RateLimiter } from './utils.js';
+import { RoomRegistry } from './realtime/rooms.js';
 
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE_PROJECT_ROOT = path.resolve(SERVER_DIR, '..');
@@ -60,6 +62,7 @@ const upload = multer({
 const app = express();
 
 const limiter = new RateLimiter();
+const rooms = new RoomRegistry();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
   limiter.check(ip, key, maxPerMinute);
 
@@ -112,6 +115,7 @@ registerMapWriteRoutes({
 const SCORES_FILE = path.join(MAPS_DIR, '_scores.json');
 const scoreStorage = createScoreStorage(SCORES_FILE);
 registerScoreRoutes({ app, storage: scoreStorage, rateLimit });
+registerRoomRoutes({ app, rooms, rateLimit });
 
 const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err?.code === 'LIMIT_FILE_SIZE') {
@@ -131,6 +135,7 @@ server.listen(PORT, '0.0.0.0', () => {
 
 function shutdown(signal: NodeJS.Signals): void {
   console.log(`\n${signal} — zamykam serwer…`);
+  rooms.destroy();
   server.close(err => {
     if (err) {
       console.error('Błąd przy zamykaniu serwera:', err);
