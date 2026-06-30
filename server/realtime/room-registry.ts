@@ -19,6 +19,7 @@ export type RoomErrorCode =
   | 'HOST_ONLY'
   | 'INVALID_MAP'
   | 'INVALID_MODE'
+  | 'INVALID_SABER_ASSIGNMENT'
   | 'INVALID_SCORE';
 
 export class RoomError extends Error {
@@ -36,6 +37,7 @@ export interface RoomPlayer {
   streamId: number;
   name: string;
   role: 'host' | 'guest';
+  saberAssignment: SaberAssignment;
   ready: boolean;
   score: number;
   combo: number;
@@ -46,6 +48,7 @@ export interface RoomPlayer {
 }
 
 export type RoomMode = 'coop' | 'score-attack';
+export type SaberAssignment = 'left' | 'right' | 'both';
 
 export interface RoomSnapshot {
   code: string;
@@ -106,6 +109,21 @@ function sanitizePlayerName(name: string): string {
 
 function getMaxPlayers(mode: RoomMode): number {
   return mode === 'coop' ? COOP_MAX_PLAYERS : SCORE_ATTACK_MAX_PLAYERS;
+}
+
+function nextCoopSaberAssignment(room: RoomRecord): SaberAssignment {
+  const taken = new Set(room.players.map(player => player.saberAssignment));
+  return taken.has('left') ? 'right' : 'left';
+}
+
+function resetSaberAssignments(room: RoomRecord): void {
+  if (room.mode === 'coop') {
+    room.players.forEach((player, index) => {
+      player.saberAssignment = index === 0 ? 'left' : 'right';
+    });
+    return;
+  }
+  for (const player of room.players) player.saberAssignment = 'both';
 }
 
 export class RoomRegistry {
@@ -182,6 +200,7 @@ export class RoomRegistry {
       streamId,
       name,
       role,
+      saberAssignment: room.mode === 'coop' ? nextCoopSaberAssignment(room) : 'both',
       ready: false,
       score: 0,
       combo: 0,
@@ -245,7 +264,24 @@ export class RoomRegistry {
     room.mode = mode;
     room.maxPlayers = maxPlayers;
     room.round = null;
+    resetSaberAssignments(room);
     for (const roomPlayer of room.players) roomPlayer.ready = false;
+    room.revision++;
+    return this.snapshot(room);
+  }
+
+  setSaberAssignment(code: string, playerId: string, assignment: string): RoomSnapshot {
+    const room = this.requireRoom(code);
+    const player = room.players.find(candidate => candidate.id === playerId);
+    if (!player) throw new RoomError('PLAYER_NOT_FOUND');
+    if (room.mode !== 'coop' || (assignment !== 'left' && assignment !== 'right')) {
+      throw new RoomError('INVALID_SABER_ASSIGNMENT');
+    }
+    if (room.players.some(candidate => candidate.id !== playerId && candidate.saberAssignment === assignment)) {
+      throw new RoomError('INVALID_SABER_ASSIGNMENT');
+    }
+    player.saberAssignment = assignment;
+    player.ready = false;
     room.revision++;
     return this.snapshot(room);
   }

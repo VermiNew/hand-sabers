@@ -35,6 +35,7 @@ interface ClientMessage {
   ready?: unknown;
   mapId?: unknown;
   mode?: unknown;
+  saberAssignment?: unknown;
   score?: unknown;
   combo?: unknown;
   lives?: unknown;
@@ -243,6 +244,10 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
         }
         if (type === 'set-mode') {
           broadcast(client.roomCode, rooms.setMode(client.roomCode, client.playerId, String(message.mode || '')));
+          return;
+        }
+        if (type === 'set-saber-assignment') {
+          broadcast(client.roomCode, rooms.setSaberAssignment(client.roomCode, client.playerId, String(message.saberAssignment || '')));
           return;
         }
         if (type === 'start-game') {

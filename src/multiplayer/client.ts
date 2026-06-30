@@ -34,6 +34,7 @@ interface RoomPlayer {
   streamId: number;
   name: string;
   role: 'host' | 'guest';
+  saberAssignment: 'left' | 'right' | 'both';
   ready: boolean;
   score: number;
   combo: number;
@@ -138,6 +139,12 @@ function normalizePlayerName(value: string): string {
   return value.trim().replace(/\s+/g, ' ').slice(0, 32) || 'Gracz';
 }
 
+function saberAssignmentLabel(assignment: RoomPlayer['saberAssignment']): string {
+  if (assignment === 'left') return t('multiplayer.leftSaber');
+  if (assignment === 'right') return t('multiplayer.rightSaber');
+  return t('settings.gameplay.both');
+}
+
 function websocketUrl(): string {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${protocol}//${location.host}/ws`;
@@ -155,6 +162,7 @@ function parseRoomPlayer(value: unknown): RoomPlayer | null {
     || typeof player['name'] !== 'string'
     || player['name'].length > 32
     || (player['role'] !== 'host' && player['role'] !== 'guest')
+    || (player['saberAssignment'] !== 'left' && player['saberAssignment'] !== 'right' && player['saberAssignment'] !== 'both')
     || typeof player['ready'] !== 'boolean'
     || !Number.isSafeInteger(player['score'])
     || Number(player['score']) < 0
@@ -177,6 +185,7 @@ function parseRoomPlayer(value: unknown): RoomPlayer | null {
     streamId: player['streamId'] as number,
     name: player['name'],
     role: player['role'],
+    saberAssignment: player['saberAssignment'],
     ready: player['ready'],
     score: player['score'] as number,
     combo: player['combo'] as number,
@@ -267,6 +276,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const playerList = element<HTMLElement>('multiplayerPlayers');
   const mapSelect = element<HTMLSelectElement>('multiplayerMap');
   const modeSelect = element<HTMLSelectElement>('multiplayerMode');
+  const saberField = element<HTMLElement>('multiplayerSaberField');
+  const saberSelect = element<HTMLSelectElement>('multiplayerSaberAssignment');
   const readyButton = element<HTMLButtonElement>('multiplayerReady');
   const startButton = element<HTMLButtonElement>('multiplayerStart');
   const disconnectButton = element<HTMLButtonElement>('multiplayerDisconnect');
@@ -319,6 +330,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     mapSelect.value = '';
     mapSelect.disabled = true;
     modeSelect.disabled = true;
+    saberField.hidden = true;
+    saberSelect.disabled = true;
+    saberSelect.value = 'left';
     readyButton.disabled = true;
     readyButton.classList.remove('is-ready');
     readyButton.textContent = t('multiplayer.ready');
@@ -384,6 +398,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       detail: {
         ...snapshot.round,
         mode: snapshot.mode,
+        saberAssignment: snapshot.mode === 'coop' ? self.saberAssignment : 'both',
         startAtPerformance: serverTimeToPerformance(snapshot.round.startAt),
       },
     }));
@@ -410,6 +425,12 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         role.textContent = 'HOST';
         identity.append(role);
       }
+      if (snapshot.mode === 'coop') {
+        const saber = document.createElement('span');
+        saber.className = 'mp-player-role mp-player-saber';
+        saber.textContent = saberAssignmentLabel(player.saberAssignment);
+        identity.append(saber);
+      }
       const state = document.createElement('span');
       state.className = 'mp-player-state';
       if (snapshot.round && !player.playing) {
@@ -433,6 +454,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     modeSelect.value = snapshot.mode;
     modeSelect.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     const self = snapshot.players.find(player => player.id === currentPlayerId);
+    saberField.hidden = snapshot.mode !== 'coop' || !self;
+    saberSelect.disabled = snapshot.mode !== 'coop' || !self || Boolean(snapshot.round && snapshot.round.finishedAt === null);
+    if (self?.saberAssignment === 'left' || self?.saberAssignment === 'right') saberSelect.value = self.saberAssignment;
     readyButton.disabled = !snapshot.mapId || !self || Boolean(pendingPreparationMapId);
     readyButton.classList.toggle('is-ready', Boolean(self?.ready));
     readyButton.textContent = pendingPreparationMapId
@@ -647,7 +671,12 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     pendingPreparationMapId = mapId;
     readyButton.disabled = true;
     readyButton.textContent = t('multiplayer.preparing');
-    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare', { detail: { mapId } }));
+    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare', {
+      detail: {
+        mapId,
+        saberAssignment: currentRoom?.mode === 'coop' ? self?.saberAssignment : 'both',
+      },
+    }));
   });
   startButton.addEventListener('click', () => sendControl({ type: 'start-game' }));
   disconnectButton.addEventListener('click', disconnectRoom);
@@ -660,6 +689,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     if (currentRole !== 'host' || !['coop', 'score-attack'].includes(modeSelect.value)) return;
     pendingPreparationMapId = '';
     sendControl({ type: 'set-mode', mode: modeSelect.value });
+  });
+  saberSelect.addEventListener('change', () => {
+    if (currentRoom?.mode !== 'coop' || !['left', 'right'].includes(saberSelect.value)) return;
+    pendingPreparationMapId = '';
+    sendControl({ type: 'set-saber-assignment', saberAssignment: saberSelect.value });
   });
   window.addEventListener('hand-sabers:multiplayer-prepared', event => {
     const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;

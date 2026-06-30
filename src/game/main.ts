@@ -198,6 +198,25 @@ let mapAudioStarted      = false;
 let pausedMapTimelineSec: number | null = null;
 let multiplayerRoundActive = false;
 let lastMultiplayerScoreAt = 0;
+type MultiplayerSaberAssignment = 'left' | 'right' | 'both';
+
+function applyRuntimeOneHandMode(mode: Settings['oneHandMode']): void {
+  state.oneHandMode = mode;
+  window.__oneHandMode = mode ?? 'both';
+  applyTrackingSettings({ oneHandMode: mode });
+}
+
+function normalizeMultiplayerSaberAssignment(value: unknown): MultiplayerSaberAssignment {
+  return value === 'left' || value === 'right' ? value : 'both';
+}
+
+function applyMultiplayerSaberAssignment(assignment: MultiplayerSaberAssignment): void {
+  applyRuntimeOneHandMode(assignment === 'both' ? null : assignment);
+}
+
+function restoreSettingsOneHandMode(): void {
+  applyRuntimeOneHandMode(settings.oneHandMode);
+}
 
 function resetMapTimeline(): void {
   mapTimelineZeroAtMs  = 0;
@@ -329,9 +348,10 @@ function completeMultiplayerPreparation(): void {
   window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepared', { detail: { mapId } }));
 }
 
-async function prepareMultiplayerMap(mapId: string): Promise<void> {
+async function prepareMultiplayerMap(mapId: string, saberAssignment: MultiplayerSaberAssignment): Promise<void> {
   multiplayerPreparationMapId = mapId;
   try {
+    applyMultiplayerSaberAssignment(saberAssignment);
     initAudio();
     if (!await loadMapById(mapId)) throw new Error('MAP_NOT_FOUND');
     await ensureCurrentMapAudio();
@@ -345,6 +365,7 @@ async function prepareMultiplayerMap(mapId: string): Promise<void> {
   } catch (error) {
     console.error('Multiplayer preparation failed:', error);
     multiplayerPreparationMapId = '';
+    restoreSettingsOneHandMode();
     window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error'));
   }
 }
@@ -352,6 +373,7 @@ async function prepareMultiplayerMap(mapId: string): Promise<void> {
 async function beginMultiplayerRound(detail: {
   mapId: string;
   mode: 'coop' | 'score-attack';
+  saberAssignment: MultiplayerSaberAssignment;
   startAtPerformance: number;
 }): Promise<void> {
   if (
@@ -383,6 +405,7 @@ async function beginMultiplayerRound(detail: {
   state.appState = S.PLAYING;
   multiplayerRoundActive = true;
   lastMultiplayerScoreAt = 0;
+  applyMultiplayerSaberAssignment(detail.mode === 'coop' ? detail.saberAssignment : 'both');
   document.body.classList.remove('training-mode');
   document.body.dataset['multiplayerMode'] = detail.mode;
   resetMapSpawn();
@@ -434,6 +457,7 @@ function endGame(): void {
     });
   }
   multiplayerRoundActive = false;
+  restoreSettingsOneHandMode();
   document.body.classList.toggle('training-mode', settings.trainingMode);
   delete document.body.dataset['multiplayerMode'];
   stopMapAudio();
@@ -900,6 +924,7 @@ function returnToMainMenu(): void {
       window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));
     }
     multiplayerRoundActive = false;
+    restoreSettingsOneHandMode();
     stopMapAudio();
     resetMapTimeline();
     clearGameplayEntities();
@@ -1710,11 +1735,18 @@ initHelpOverlay();
 registerMlAssetCache();
 initRemoteTrackingPairing();
 window.addEventListener('hand-sabers:multiplayer-prepare', event => {
-  const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
-  if (typeof mapId === 'string') void prepareMultiplayerMap(mapId);
+  const detail = (event as CustomEvent<{ mapId?: unknown; saberAssignment?: unknown }>).detail;
+  if (typeof detail?.mapId === 'string') {
+    void prepareMultiplayerMap(detail.mapId, normalizeMultiplayerSaberAssignment(detail.saberAssignment));
+  }
 });
 window.addEventListener('hand-sabers:multiplayer-start', event => {
-  const detail = (event as CustomEvent<{ mapId?: unknown; mode?: unknown; startAtPerformance?: unknown }>).detail;
+  const detail = (event as CustomEvent<{
+    mapId?: unknown;
+    mode?: unknown;
+    saberAssignment?: unknown;
+    startAtPerformance?: unknown;
+  }>).detail;
   if (
     typeof detail?.mapId === 'string'
     && (detail.mode === 'coop' || detail.mode === 'score-attack')
@@ -1723,6 +1755,7 @@ window.addEventListener('hand-sabers:multiplayer-start', event => {
     void beginMultiplayerRound({
       mapId: detail.mapId,
       mode: detail.mode,
+      saberAssignment: normalizeMultiplayerSaberAssignment(detail.saberAssignment),
       startAtPerformance: detail.startAtPerformance,
     });
   }
