@@ -100,6 +100,41 @@
 - [x] Lepsze narzędzia do układania beatów (snap do BPM, kopiuj/wklej)
 - [ ] Podgląd mapy w trybie 3D podczas edycji
 
+## 17. Multiplayer — poprawki i co-op
+- [ ] Przycisk "Opuść pokój" / "Rozłącz" w trybie Multiplayer
+- [ ] Wskaźnik stanu kalibracji każdego gracza (kto skalibrowany, kto jeszcze nie)
+- [ ] Tryb lobby z limitem graczy (np. 2 osoby) → tryb co-op
+- [ ] Co-op: podział mieczy między graczy (jeden gracz lewy miecz, drugi prawy; lub jeden gracz oba)
+- [ ] Globalne ustawienia rozgrywki kontrolowane przez hosta (tryb treningowy, no fail itd.) — zablokować lokalne zmiany ustawień w Multiplayer
+- [ ] Wybór mapy przez hosta przez `map.html` (otwiera picker, wybór utworu wraca do lobby bez wyrzucania/rozłączania) zamiast wyboru po identyfikatorze `map-*`
+- [ ] Ustawienie nazwy użytkownika (w ustawieniach lub na ekranie dołączania do Multiplayer)
+
+## 18. Menu w trakcie gry (pauza)
+- [ ] Naprawić przycisk `ESC` — panel pauzy nie wyświetla się w trakcie gry (Singleplayer i Multiplayer)
+- [ ] Singleplayer: Wznów, Restart, Wróć do menu głównego, Koniec
+- [ ] Multiplayer: Wróć do gry, Opuść pokój i wróć do menu głównego
+
+## 19. Czat i komunikacja (backlog)
+- [ ] Czat tekstowy w Multiplayer
+- [ ] (przyszłość) Czat głosowy z avatarami podświetlającymi się przy mówieniu + animacje
+
+## 20. Narrator (Lora)
+- [ ] Dodać ekspresje twarzy avatara narratora z `.agents/LORA`
+- [ ] Wykorzystać narratora (`?narrator&text=""`) do czegoś pożytecznego związanego z grą — [do ustalenia: czekam na sugestie]
+
+## 21. Wizualizacje reagujące na muzykę i nowe tryby gry
+- [ ] Elementy wizualne reagujące na muzykę, częstotliwości i beaty (zgodne z tym, co użytkownik mapuje w kreatorze)
+- [ ] Nowe gamemode urozmaicające i udoskonalające rozgrywkę
+
+## 22. Bugi UI / build
+- [ ] Naprawić edytor map na porcie `:3000` (na `:5173` działa) — błąd `Uncaught TypeError: Cannot read properties of null (reading 'width')` w buildzie gry (`game-*.js`); przez serwer produkcyjny na `:3000` edytor map się nie ładuje
+- [ ] Poprawić łamanie tekstu i rozmieszczenie elementów w panelu ustawień
+- [ ] Usunąć "Phone camera" z menu głównego (menu zbyt wysokie — nie dodawać nowych entry) i przenieść konfigurację do ustawień jako nowe entry
+
+## 23. Kamera/ML na telefonie — kalibracja (zob. też sekcja 14)
+- [ ] Kalibracja w trybie remote nie powinna pytać o kamerę komputera, tylko o telefon
+- [ ] Przesyłanie obrazu z kamery i danych ML z telefonu do PC — [do rozwiązania]
+
 ## Mapy i import/export (zrobione)
 - [x] Rozszerzyć format mapy o `meta.bpm`, `meta.artist`, `meta.mapper`, `meta.difficulty`, `meta.previewStartSec`
 - [x] Dodać `upgradeMapFormat(map)` do automatycznej migracji starych map
