@@ -117,6 +117,7 @@
       "INVALID_MAP": "Wybrana mapa jest nieprawidłowa.",
       "INVALID_MODE": "Wybrany tryb gry jest nieprawidłowy.",
       "INVALID_SABER_ASSIGNMENT": "Ten miecz jest już zajęty albo niedostępny w tym trybie.",
+      "INVALID_GAMEPLAY_SETTINGS": "Ustawienia rozgrywki pokoju są nieprawidłowe.",
       "INVALID_SCORE": "Serwer odrzucił nieprawidłowy wynik.",
       "ROUND_REQUIRED": "Nie uczestniczysz w aktywnej rundzie.",
       "PLAYERS_NOT_READY": "Wszyscy gracze muszą być gotowi.",

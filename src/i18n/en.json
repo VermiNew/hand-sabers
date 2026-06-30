@@ -117,6 +117,7 @@
       "INVALID_MAP": "The selected map is invalid.",
       "INVALID_MODE": "The selected game mode is invalid.",
       "INVALID_SABER_ASSIGNMENT": "That saber is already taken or unavailable in this mode.",
+      "INVALID_GAMEPLAY_SETTINGS": "The room gameplay settings are invalid.",
       "INVALID_SCORE": "The server rejected an invalid score.",
       "ROUND_REQUIRED": "You are not participating in an active round.",
       "PLAYERS_NOT_READY": "Every player must be ready.",

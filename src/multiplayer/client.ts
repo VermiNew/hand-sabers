@@ -2,6 +2,10 @@ import { t } from '../i18n/index.ts';
 import { setSetting } from '../core/settings.ts';
 import { decodeRealtimePacket } from './realtime.ts';
 import { remoteTracking } from './remote-state.ts';
+import {
+  parseMultiplayerGameplaySettings,
+  type MultiplayerGameplaySettings,
+} from './gameplay-settings.ts';
 
 export const PROTOCOL_VERSION = 1;
 
@@ -50,6 +54,7 @@ interface RoomSnapshot {
   mapId: string | null;
   mode: 'coop' | 'score-attack';
   maxPlayers: number;
+  gameplaySettings: MultiplayerGameplaySettings;
   round: { id: number; mapId: string; startAt: number; finishedAt: number | null } | null;
   players: RoomPlayer[];
 }
@@ -242,6 +247,8 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     || (candidate['mapId'] !== null && typeof candidate['mapId'] !== 'string')
     || (typeof candidate['mapId'] === 'string' && !/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(candidate['mapId']))
   ) return null;
+  const gameplaySettings = parseMultiplayerGameplaySettings(candidate['gameplaySettings']);
+  if (!gameplaySettings) return null;
   const roundValue = candidate['round'];
   let round: RoomSnapshot['round'] = null;
   if (roundValue !== null) {
@@ -280,6 +287,7 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     mapId: candidate['mapId'] as string | null,
     mode: candidate['mode'],
     maxPlayers: candidate['maxPlayers'] as number,
+    gameplaySettings,
     round,
     players,
   };
@@ -466,6 +474,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       detail: {
         ...snapshot.round,
         mode: snapshot.mode,
+        gameplaySettings: snapshot.gameplaySettings,
         saberAssignment: snapshot.mode === 'coop' ? self.saberAssignment : 'both',
         startAtPerformance: serverTimeToPerformance(snapshot.round.startAt),
       },
@@ -476,7 +485,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     if (currentRoom && snapshot.revision < currentRoom.revision) return;
     currentRoom = snapshot;
     remoteTracking.retainStreams(new Set(snapshot.players.map(player => player.streamId)));
-    window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: snapshot }));
+    window.dispatchEvent(new CustomEvent('hand-sabers:room-state', {
+      detail: { room: snapshot, role: currentRole },
+    }));
     lobby.hidden = false;
     lobbyCode.textContent = snapshot.code;
     playerCount.textContent = `${snapshot.players.length} / ${snapshot.maxPlayers}`;
@@ -800,6 +811,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     readyButton.disabled = false;
     readyButton.textContent = t('multiplayer.ready');
     showMessage(t('multiplayer.prepareFailed'));
+  });
+  window.addEventListener('hand-sabers:multiplayer-settings-change', event => {
+    if (currentRole !== 'host' || currentRoom?.round?.finishedAt === null) return;
+    const settings = parseMultiplayerGameplaySettings((event as CustomEvent<unknown>).detail);
+    if (settings) sendControl({ type: 'set-gameplay-settings', settings });
   });
   window.addEventListener('hand-sabers:multiplayer-leave', disconnectRoom);
 
