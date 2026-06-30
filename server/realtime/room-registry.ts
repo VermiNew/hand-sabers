@@ -20,6 +20,7 @@ export type RoomErrorCode =
   | 'INVALID_MAP'
   | 'INVALID_MODE'
   | 'INVALID_SABER_ASSIGNMENT'
+  | 'INVALID_GAMEPLAY_SETTINGS'
   | 'INVALID_SCORE';
 
 export class RoomError extends Error {
@@ -49,6 +50,12 @@ export interface RoomPlayer {
 
 export type RoomMode = 'coop' | 'score-attack';
 export type SaberAssignment = 'left' | 'right' | 'both';
+export interface RoomGameplaySettings {
+  noFail: boolean;
+  trainingMode: boolean;
+  noteSpeed: 0.75 | 1 | 1.35 | 1.75;
+  hitboxSensitivity: 0.82 | 1 | 1.2;
+}
 
 export interface RoomSnapshot {
   code: string;
@@ -58,6 +65,7 @@ export interface RoomSnapshot {
   mapId: string | null;
   mode: RoomMode;
   maxPlayers: number;
+  gameplaySettings: RoomGameplaySettings;
   round: RoomRound | null;
   players: RoomPlayer[];
 }
@@ -126,6 +134,34 @@ function resetSaberAssignments(room: RoomRecord): void {
   for (const player of room.players) player.saberAssignment = 'both';
 }
 
+function defaultGameplaySettings(): RoomGameplaySettings {
+  return {
+    noFail: false,
+    trainingMode: false,
+    noteSpeed: 1,
+    hitboxSensitivity: 1,
+  };
+}
+
+function parseGameplaySettings(value: unknown): RoomGameplaySettings | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const settings = value as Record<string, unknown>;
+  const noteSpeed = settings['noteSpeed'];
+  const hitboxSensitivity = settings['hitboxSensitivity'];
+  if (
+    typeof settings['noFail'] !== 'boolean'
+    || typeof settings['trainingMode'] !== 'boolean'
+    || (noteSpeed !== 0.75 && noteSpeed !== 1 && noteSpeed !== 1.35 && noteSpeed !== 1.75)
+    || (hitboxSensitivity !== 0.82 && hitboxSensitivity !== 1 && hitboxSensitivity !== 1.2)
+  ) return null;
+  return {
+    noFail: settings['noFail'],
+    trainingMode: settings['trainingMode'],
+    noteSpeed,
+    hitboxSensitivity,
+  };
+}
+
 export class RoomRegistry {
   private readonly rooms = new Map<string, RoomRecord>();
   private readonly cleanupTimer: ReturnType<typeof setInterval>;
@@ -151,6 +187,7 @@ export class RoomRegistry {
       mapId: null,
       mode: 'score-attack',
       maxPlayers: SCORE_ATTACK_MAX_PLAYERS,
+      gameplaySettings: defaultGameplaySettings(),
       round: null,
       nextRoundId: 1,
       players: [],
@@ -171,6 +208,7 @@ export class RoomRegistry {
       mapId: room.mapId,
       mode: room.mode,
       maxPlayers: room.maxPlayers,
+      gameplaySettings: { ...room.gameplaySettings },
       round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),
     };
@@ -286,6 +324,19 @@ export class RoomRegistry {
     return this.snapshot(room);
   }
 
+  setGameplaySettings(code: string, playerId: string, value: unknown): RoomSnapshot {
+    const room = this.requireRoom(code);
+    const player = room.players.find(candidate => candidate.id === playerId);
+    if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
+    if (room.round?.finishedAt === null) throw new RoomError('ROUND_ALREADY_STARTED');
+    const gameplaySettings = parseGameplaySettings(value);
+    if (!gameplaySettings) throw new RoomError('INVALID_GAMEPLAY_SETTINGS');
+    room.gameplaySettings = gameplaySettings;
+    for (const roomPlayer of room.players) roomPlayer.ready = false;
+    room.revision++;
+    return this.snapshot(room);
+  }
+
   getPlayerStreamId(code: string, playerId: string): number | null {
     const room = this.rooms.get(normalizeRoomCode(code));
     return room?.players.find(player => player.id === playerId)?.streamId ?? null;
@@ -393,6 +444,7 @@ export class RoomRegistry {
       mapId: room.mapId,
       mode: room.mode,
       maxPlayers: room.maxPlayers,
+      gameplaySettings: { ...room.gameplaySettings },
       round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),
     };
