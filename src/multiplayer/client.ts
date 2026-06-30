@@ -48,6 +48,7 @@ interface RoomSnapshot {
   revision: number;
   mapId: string | null;
   mode: 'coop' | 'score-attack';
+  maxPlayers: number;
   round: { id: number; mapId: string; startAt: number; finishedAt: number | null } | null;
   players: RoomPlayer[];
 }
@@ -194,6 +195,9 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     || !/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/.test(candidate['code'])
     || !Number.isSafeInteger(candidate['revision'])
     || Number(candidate['revision']) < 0
+    || !Number.isSafeInteger(candidate['maxPlayers'])
+    || Number(candidate['maxPlayers']) < 1
+    || Number(candidate['maxPlayers']) > 8
     || !Array.isArray(candidate['players'])
     || candidate['players'].length > 8
     || (candidate['mode'] !== 'coop' && candidate['mode'] !== 'score-attack')
@@ -237,6 +241,7 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     revision: candidate['revision'] as number,
     mapId: candidate['mapId'] as string | null,
     mode: candidate['mode'],
+    maxPlayers: candidate['maxPlayers'] as number,
     round,
     players,
   };
@@ -391,7 +396,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: snapshot }));
     lobby.hidden = false;
     lobbyCode.textContent = snapshot.code;
-    playerCount.textContent = `${snapshot.players.length} / 8`;
+    playerCount.textContent = `${snapshot.players.length} / ${snapshot.maxPlayers}`;
     playerList.replaceChildren();
     for (const player of snapshot.players) {
       const row = document.createElement('div');
