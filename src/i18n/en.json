@@ -89,6 +89,7 @@
     "teamScore": "TEAM SCORE",
     "spectatorState": "SPECTATOR",
     "selectMap": "SELECT MAP",
+    "pickMap": "OPEN MAPS",
     "ready": "READY",
     "start": "START",
     "disconnect": "LEAVE ROOM",

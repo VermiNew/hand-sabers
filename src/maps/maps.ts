@@ -42,6 +42,25 @@ function withDevQuery(url: string): string {
   return `${target.pathname.split('/').pop()}${target.search}${target.hash}`;
 }
 
+const MULTIPLAYER_PICK_CONTEXT_KEY = 'hs_multiplayer_pick_context';
+
+function isMultiplayerPickMode(): boolean {
+  return new URLSearchParams(location.search).get('pick') === 'multiplayer';
+}
+
+function pickMapForMultiplayer(map: MapEntry): void {
+  let context: { room?: unknown; token?: unknown } = {};
+  try {
+    const rawContext = sessionStorage.getItem(MULTIPLAYER_PICK_CONTEXT_KEY);
+    context = rawContext ? JSON.parse(rawContext) as typeof context : {};
+  } catch {}
+  if (typeof context.room !== 'string' || typeof context.token !== 'string') return;
+  stopMapPreview();
+  sessionStorage.setItem('hs_multiplayer_picked_map', JSON.stringify({ id: map.id, title: map.meta?.title || map.id }));
+  const fragment = new URLSearchParams({ room: context.room, token: context.token, map: map.id });
+  location.href = `./beat-sabers-3d.html#${fragment.toString()}`;
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface MapEntry {
@@ -450,9 +469,13 @@ function renderDetail(map: MapEntry | null): void {
     </div>
 
     <div class="detail-actions">
-      <a class="btn-play" href="${withDevQuery(`./beat-sabers-3d.html?map=${encodeURIComponent(map.id)}`)}">
-        <span class="material-symbols-rounded">play_arrow</span>ZAGRAJ
-      </a>
+      ${isMultiplayerPickMode()
+        ? `<button class="btn-play" id="btnPickMultiplayerMap" type="button" data-id="${attr(map.id)}">
+            <span class="material-symbols-rounded">done</span>WYBIERZ DO LOBBY
+          </button>`
+        : `<a class="btn-play" href="${withDevQuery(`./beat-sabers-3d.html?map=${encodeURIComponent(map.id)}`)}">
+            <span class="material-symbols-rounded">play_arrow</span>ZAGRAJ
+          </a>`}
       <div class="detail-secondary-actions">
         <a class="btn-secondary" href="${withDevQuery(`./map-creator.html?id=${encodeURIComponent(map.id)}`)}">
           <span class="material-symbols-rounded">edit</span>EDYTUJ
@@ -479,6 +502,7 @@ function renderDetail(map: MapEntry | null): void {
   });
 
   document.querySelector<HTMLAnchorElement>('.btn-play')?.addEventListener('click', () => stopMapPreview());
+  document.getElementById('btnPickMultiplayerMap')?.addEventListener('click', () => pickMapForMultiplayer(map));
   document.querySelector<HTMLAnchorElement>('.detail-secondary-actions a')?.addEventListener('click', () => stopMapPreview());
   document.getElementById('previewToggle')?.addEventListener('click', toggleMapPreview);
   bindPreviewVolumeControl();

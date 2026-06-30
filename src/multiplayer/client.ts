@@ -60,6 +60,7 @@ interface MapListItem {
 
 let socket: WebSocket | null = null;
 let activeJoinUrl = '';
+let activeRoomToken = '';
 let currentPlayerId = '';
 let currentRole: 'host' | 'guest' | null = null;
 let currentRoom: RoomSnapshot | null = null;
@@ -67,6 +68,7 @@ let serverClockOffsetMs = 0;
 const clockSamples: Array<{ offset: number; rtt: number }> = [];
 let pendingPreparationMapId = '';
 let announcedRoundId = 0;
+const MULTIPLAYER_PICK_CONTEXT_KEY = 'hs_multiplayer_pick_context';
 
 export function canSendRealtime(): boolean {
   return Boolean(currentPlayerId) && socket?.readyState === WebSocket.OPEN;
@@ -143,6 +145,15 @@ function saberAssignmentLabel(assignment: RoomPlayer['saberAssignment']): string
   if (assignment === 'left') return t('multiplayer.leftSaber');
   if (assignment === 'right') return t('multiplayer.rightSaber');
   return t('settings.gameplay.both');
+}
+
+function pickedMapLabel(mapId: string | null): string {
+  if (!mapId) return t('multiplayer.selectMap');
+  try {
+    const picked = JSON.parse(sessionStorage.getItem('hs_multiplayer_picked_map') ?? 'null') as { id?: unknown; title?: unknown } | null;
+    if (picked?.id === mapId && typeof picked.title === 'string') return picked.title;
+  } catch {}
+  return mapId;
 }
 
 function websocketUrl(): string {
@@ -275,6 +286,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const playerCount = element<HTMLElement>('multiplayerPlayerCount');
   const playerList = element<HTMLElement>('multiplayerPlayers');
   const mapSelect = element<HTMLSelectElement>('multiplayerMap');
+  const mapSummary = element<HTMLElement>('multiplayerMapSummary');
+  const pickMapButton = element<HTMLButtonElement>('multiplayerPickMap');
   const modeSelect = element<HTMLSelectElement>('multiplayerMode');
   const saberField = element<HTMLElement>('multiplayerSaberField');
   const saberSelect = element<HTMLSelectElement>('multiplayerSaberAssignment');
@@ -285,6 +298,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const hudScores = element<HTMLElement>('multiplayerHudScores');
 
   nameInput.value = normalizePlayerName(defaultPlayerName);
+  let pendingLinkedMapId = '';
 
   const getPlayerName = (): string => {
     const playerName = normalizePlayerName(nameInput.value);
@@ -314,6 +328,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     currentPlayerId = '';
     currentRole = null;
     currentRoom = null;
+    activeRoomToken = '';
     pendingPreparationMapId = '';
     announcedRoundId = 0;
     activeJoinUrl = '';
@@ -329,6 +344,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     playerList.replaceChildren();
     mapSelect.value = '';
     mapSelect.disabled = true;
+    mapSummary.textContent = '—';
+    pickMapButton.disabled = true;
     modeSelect.disabled = true;
     saberField.hidden = true;
     saberSelect.disabled = true;
@@ -450,7 +467,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       mapSelect.add(new Option(snapshot.mapId, snapshot.mapId));
     }
     mapSelect.value = snapshot.mapId ?? '';
+    mapSummary.textContent = pickedMapLabel(snapshot.mapId);
     mapSelect.disabled = currentRole !== 'host';
+    pickMapButton.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     modeSelect.value = snapshot.mode;
     modeSelect.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     const self = snapshot.players.find(player => player.id === currentPlayerId);
@@ -491,6 +510,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
 
   function connect(code: string, token: string, name: string): void {
     socket?.close(1000, 'Replaced');
+    activeRoomToken = token;
     clockSamples.length = 0;
     serverClockOffsetMs = 0;
     currentPlayerId = '';
@@ -543,6 +563,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
           const snapshot = parseRoomSnapshot(incoming.room);
           if (snapshot) renderRoom(snapshot);
           else showMessage(t('multiplayer.invalidResponse'));
+          if (
+            currentRole === 'host'
+            && pendingLinkedMapId
+            && /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(pendingLinkedMapId)
+          ) {
+            sendControl({ type: 'set-map', mapId: pendingLinkedMapId });
+            pendingLinkedMapId = '';
+          }
           void loadMaps();
         } else if (incoming.type === 'room') {
           const snapshot = parseRoomSnapshot(incoming.room);
@@ -680,6 +708,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   });
   startButton.addEventListener('click', () => sendControl({ type: 'start-game' }));
   disconnectButton.addEventListener('click', disconnectRoom);
+  pickMapButton.addEventListener('click', () => {
+    if (currentRole !== 'host' || !currentRoom?.code || !activeRoomToken) return;
+    sessionStorage.setItem(MULTIPLAYER_PICK_CONTEXT_KEY, JSON.stringify({
+      room: currentRoom.code,
+      token: activeRoomToken,
+    }));
+    location.href = './maps.html?pick=multiplayer';
+  });
   mapSelect.addEventListener('change', () => {
     if (currentRole !== 'host' || !mapSelect.value) return;
     pendingPreparationMapId = '';
@@ -713,7 +749,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const fragment = new URLSearchParams(location.hash.slice(1));
   const linkedCode = fragment.get('room');
   const linkedToken = fragment.get('token');
+  const linkedMap = fragment.get('map');
   if (linkedCode && linkedToken) {
+    pendingLinkedMapId = typeof linkedMap === 'string' ? linkedMap : '';
     history.replaceState(null, '', `${location.pathname}${location.search}`);
     open();
     share.hidden = true;

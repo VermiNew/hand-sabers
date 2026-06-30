@@ -528,9 +528,11 @@
           <div class="mp-lobby-controls">
             <label class="mp-field">
               <span data-i18n="multiplayer.map">MAPA HOSTA</span>
-              <select id="multiplayerMap" disabled>
+              <div class="mp-map-summary" id="multiplayerMapSummary">—</div>
+              <select id="multiplayerMap" disabled hidden>
                 <option value="" data-i18n="multiplayer.selectMap">WYBIERZ MAPĘ</option>
               </select>
+              <button class="mp-secondary" id="multiplayerPickMap" type="button" disabled data-i18n="multiplayer.pickMap">OTWÓRZ MAPY</button>
             </label>
             <label class="mp-field">
               <span data-i18n="multiplayer.mode">TRYB</span>
