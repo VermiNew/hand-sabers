@@ -89,7 +89,7 @@
 
 ## 14. Kamera/ML na telefon (remote tracking)
 - [x] Architektura: telefon jako klient kamery + WebRTC lub WebSocket — [projekt](docs/remote-tracking.md)
-- [ ] Parowanie przez QR code lub kod z ekranu
+- [x] Parowanie przez QR code lub kod z ekranu
 - [ ] Przekazywanie danych śledzenia rąk z telefonu do przeglądarki PC
 
 ## 15. Lepsza rozgrywka
