@@ -1,5 +1,6 @@
 import { getJSZip } from '../jszip-loader.ts';
-import { normalizeMap, validateZipEntryNames, findPreferredAudioEntry } from '../core/map-format.ts';
+import { assertFileSize, normalizeMap, validateZipEntryNames, findPreferredAudioEntry } from '../core/map-format.ts';
+import { sortBeatsByTime } from '../core/creator-rules.ts';
 import { saveLocalMap, saveLocalMapAudio } from '../core/localstore.ts';
 import { showAlert, showConfirm, showToast } from './dialogs.ts';
 import { restoreAudioForCurrentMap, decodeAndAttachAudio } from './audio.ts';
@@ -116,7 +117,6 @@ export async function loadZipFile(
   callbacks: { onDecoded: () => void },
 ): Promise<void> {
   const JSZip = await getJSZip();
-  const { assertFileSize } = await import('../core/map-format.ts');
   assertFileSize(file);
   const zip       = await JSZip.loadAsync(await file.arrayBuffer());
   validateZipEntryNames(Object.values(zip.files));
@@ -128,7 +128,6 @@ export async function loadZipFile(
     { fallbackId: MAP_ID(), requireBeats: false },
   ) as unknown as CreatorMap;
 
-  const { sortBeatsByTime } = await import('../core/creator-rules.ts');
   sortBeatsByTime(state.map.beats);
   state.selectedBeats.clear();
 
@@ -179,7 +178,6 @@ export async function loadInitialMap(callbacks: {
           { formatVersion: 1, id: (loaded['id'] as string | undefined) || mapId || MAP_ID(), ...loaded },
           { fallbackId: mapId || MAP_ID(), requireBeats: false },
         ) as unknown as CreatorMap;
-        const { sortBeatsByTime } = await import('../core/creator-rules.ts');
         sortBeatsByTime(state.map.beats);
         state.selectedBeats.clear();
         const dropZone   = document.getElementById('dropZone');
@@ -212,7 +210,6 @@ export async function loadInitialMap(callbacks: {
             { formatVersion: 1, id: (parsed['id'] as string | undefined) || MAP_ID(), ...parsed },
             { fallbackId: MAP_ID(), requireBeats: false },
           ) as unknown as CreatorMap;
-          const { sortBeatsByTime } = await import('../core/creator-rules.ts');
           sortBeatsByTime(state.map.beats);
           state.selectedBeats.clear();
           const dropZone   = document.getElementById('dropZone');

@@ -1,4 +1,4 @@
-import { state } from './state.ts';
+import { MAP_ID, state } from './state.ts';
 import { validateAudioFile, validateDecodedAudio } from '../core/audio-validation.ts';
 import { saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.ts';
 import { t } from '../i18n/index.ts';
@@ -109,7 +109,6 @@ export async function decodeAndAttachAudio(
     throw new Error(`Nie udało się zdekodować audio: ${(err as Error).message}`);
   }
 
-  const { MAP_ID } = await import('./state.ts');
   if (!keepMapId) state.map.id = MAP_ID();
   state.map.formatVersion = state.map.formatVersion || 1;
   if (updateTitle && !state.map.meta?.title) state.map.meta.title = fileName.replace(/\.[^.]+$/, '');

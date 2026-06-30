@@ -52,6 +52,7 @@
 - [x] Rozważyć własne sample audio (import `.wav/.ogg`) dla trafienia/bomby/pudła — [decyzja](docs/audio-samples.md)
 - [x] Przejrzeć hitboxy po kalibracji; dodać opcję czułości niezależną od tracking sensitivity
 - [x] Dodać osobny ekran diagnostyczny kamery bez `?dev`
+- [x] Naprawić build kreatora map tak, aby nie ładował entry gry i nie uruchamiał canvas/Three poza ekranem gry
 
 ## 8. i18n — Polski i Angielski
 - [x] Wybrać bibliotekę lub prosty system kluczy (np. `t('key')`)
