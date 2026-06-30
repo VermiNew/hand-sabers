@@ -23,6 +23,12 @@ import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
+import {
+  getActiveMultiplayerGameplaySettings,
+  parseMultiplayerGameplaySettings,
+  setActiveMultiplayerGameplaySettings,
+  type MultiplayerGameplaySettings,
+} from '../multiplayer/gameplay-settings.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing } from '../remote/host-pairing.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
@@ -102,8 +108,8 @@ function preserveDevQueryOnMenuLinks(): void {
 }
 
 // ── Score submit ──────────────────────────────────────────────────────────────
-async function submitScore(progress?: number, allowTrainingMode = false): Promise<void> {
-  if (settings.trainingMode && !allowTrainingMode) return;
+async function submitScore(progress?: number, allowTrainingMode = false, skip = false): Promise<void> {
+  if (skip || (settings.trainingMode && !allowTrainingMode)) return;
 
   const payload = {
     mapId:  state.map?.id ?? 'random',
@@ -198,6 +204,8 @@ let mapAudioStarted      = false;
 let pausedMapTimelineSec: number | null = null;
 let multiplayerRoundActive = false;
 let multiplayerRoomConnected = false;
+let multiplayerRoomRole: 'host' | 'guest' | null = null;
+let multiplayerRoomRoundActive = false;
 let lastMultiplayerScoreAt = 0;
 type MultiplayerSaberAssignment = 'left' | 'right' | 'both';
 
@@ -221,7 +229,28 @@ function restoreSettingsGameplayRuntime(): void {
 }
 
 function isMultiplayerGameplaySettingsLocked(): boolean {
+  return multiplayerRoomConnected
+    && (multiplayerRoomRole !== 'host' || multiplayerRoomRoundActive || Boolean(multiplayerPreparationMapId));
+}
+
+function isMultiplayerLocalGameplaySettingsLocked(): boolean {
   return multiplayerRoomConnected || multiplayerRoundActive || Boolean(multiplayerPreparationMapId);
+}
+
+function displayedGameplaySettings(): Pick<Settings, 'noFail' | 'trainingMode' | 'noteSpeed' | 'hitboxSensitivity'> {
+  return getActiveMultiplayerGameplaySettings() ?? settings;
+}
+
+function requestMultiplayerGameplaySetting<K extends keyof MultiplayerGameplaySettings>(
+  key: K,
+  value: MultiplayerGameplaySettings[K],
+): boolean {
+  const current = getActiveMultiplayerGameplaySettings();
+  if (!multiplayerRoomConnected || multiplayerRoomRole !== 'host' || !current) return false;
+  window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-settings-change', {
+    detail: { ...current, [key]: value },
+  }));
+  return true;
 }
 
 function resetMapTimeline(): void {
@@ -243,7 +272,10 @@ function startMapTimelineAt(zeroAtMs: number): void {
 }
 
 function getPlaybackRate(): number {
-  return !multiplayerRoundActive && settings.trainingMode ? TRAINING_RATE : 1;
+  if (multiplayerRoundActive) {
+    return getActiveMultiplayerGameplaySettings()?.trainingMode ? TRAINING_RATE : 1;
+  }
+  return settings.trainingMode ? TRAINING_RATE : 1;
 }
 
 function getMapTimelineSec(now = performance.now()): number {
@@ -379,11 +411,14 @@ async function prepareMultiplayerMap(mapId: string, saberAssignment: Multiplayer
 async function beginMultiplayerRound(detail: {
   mapId: string;
   mode: 'coop' | 'score-attack';
+  gameplaySettings: MultiplayerGameplaySettings;
   saberAssignment: MultiplayerSaberAssignment;
   startAtPerformance: number;
 }): Promise<void> {
+  const gameplaySettings = parseMultiplayerGameplaySettings(detail.gameplaySettings);
   if (
     !Number.isFinite(detail.startAtPerformance)
+    || !gameplaySettings
     || !await loadMapById(detail.mapId)
   ) {
     window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error'));
@@ -409,11 +444,12 @@ async function beginMultiplayerRound(detail: {
   handsReturnedSince = 0;
   state.pauseReason = PAUSE_REASONS.NONE;
   state.appState = S.PLAYING;
-  state.noFail = false;
+  setActiveMultiplayerGameplaySettings(gameplaySettings);
+  state.noFail = gameplaySettings.noFail;
   multiplayerRoundActive = true;
   lastMultiplayerScoreAt = 0;
   applyMultiplayerSaberAssignment(detail.mode === 'coop' ? detail.saberAssignment : 'both');
-  document.body.classList.remove('training-mode');
+  document.body.classList.toggle('training-mode', gameplaySettings.trainingMode);
   document.body.dataset['multiplayerMode'] = detail.mode;
   resetMapSpawn();
   startMapTimelineAt(detail.startAtPerformance);
@@ -454,6 +490,8 @@ function endGame(): void {
   const pos = getMapTimelineSec();
   const progress = dur > 0 ? Math.max(0, Math.min(1, pos / dur)) : undefined;
   const wasMultiplayerRound = multiplayerRoundActive;
+  const wasMultiplayerTraining = wasMultiplayerRound
+    && Boolean(getActiveMultiplayerGameplaySettings()?.trainingMode);
   if (wasMultiplayerRound) {
     sendMultiplayerScore({
       score: Math.max(0, Math.round(state.score)),
@@ -470,7 +508,7 @@ function endGame(): void {
   stopMapAudio();
   resetMapTimeline();
   clearGameplayEntities();
-  void submitScore(progress, wasMultiplayerRound);
+  void submitScore(progress, wasMultiplayerRound, wasMultiplayerTraining);
   fadeTransition(() => { showGameOver(state); });
 }
 
@@ -1030,6 +1068,7 @@ function initMainMenu(): void {
   const soundInputs      = [...document.querySelectorAll<HTMLInputElement>('[data-audio-setting]')];
   const noFailInput      = document.getElementById('menuNoFail')    as HTMLInputElement | null;
   const trainingModeInput = document.getElementById('menuTrainingMode') as HTMLInputElement | null;
+  const multiplayerGameplaySettingsHint = document.getElementById('multiplayerGameplaySettingsHint');
   const beatLimitInput   = document.getElementById('menuBeatLimit') as HTMLInputElement | null;
   const flipCameraInput  = document.getElementById('menuFlipCamera')as HTMLInputElement | null;
   const performanceInput = document.getElementById('menuPerformanceMode') as HTMLSelectElement | null;
@@ -1092,7 +1131,7 @@ function initMainMenu(): void {
   }
 
   function syncNoteSpeedButtons(): void {
-    const activeSpeed = Number(settings.noteSpeed) || 1;
+    const activeSpeed = Number(displayedGameplaySettings().noteSpeed) || 1;
     noteSpeedButtons.forEach(button => {
       const selected = Math.abs(Number(button.dataset['noteSpeed']) - activeSpeed) < 0.001;
       button.classList.toggle('is-active', selected);
@@ -1101,7 +1140,7 @@ function initMainMenu(): void {
   }
 
   function syncHitboxSensitivityButtons(): void {
-    const activeSensitivity = Number(settings.hitboxSensitivity) || 1;
+    const activeSensitivity = Number(displayedGameplaySettings().hitboxSensitivity) || 1;
     hitboxSensitivityButtons.forEach(button => {
       const selected = Math.abs(Number(button.dataset['hitboxSensitivity']) - activeSensitivity) < 0.001;
       button.classList.toggle('is-active', selected);
@@ -1110,13 +1149,22 @@ function initMainMenu(): void {
   }
 
   function syncMultiplayerGameplaySettingsLock(): void {
-    const locked = isMultiplayerGameplaySettingsLocked();
-    noFailInput?.toggleAttribute('disabled', locked);
-    trainingModeInput?.toggleAttribute('disabled', locked);
-    beatLimitInput?.toggleAttribute('disabled', locked);
-    for (const button of oneHandButtons) button.toggleAttribute('disabled', locked);
-    for (const button of noteSpeedButtons) button.toggleAttribute('disabled', locked);
-    for (const button of hitboxSensitivityButtons) button.toggleAttribute('disabled', locked);
+    const sharedLocked = isMultiplayerGameplaySettingsLocked();
+    const localLocked = isMultiplayerLocalGameplaySettingsLocked();
+    noFailInput?.toggleAttribute('disabled', sharedLocked);
+    trainingModeInput?.toggleAttribute('disabled', sharedLocked);
+    beatLimitInput?.toggleAttribute('disabled', localLocked);
+    for (const button of oneHandButtons) button.toggleAttribute('disabled', localLocked);
+    for (const button of noteSpeedButtons) button.toggleAttribute('disabled', sharedLocked);
+    for (const button of hitboxSensitivityButtons) button.toggleAttribute('disabled', sharedLocked);
+  }
+
+  function syncSharedGameplaySettingsControls(): void {
+    const gameplaySettings = displayedGameplaySettings();
+    if (noFailInput) noFailInput.checked = gameplaySettings.noFail;
+    if (trainingModeInput) trainingModeInput.checked = gameplaySettings.trainingMode;
+    syncNoteSpeedButtons();
+    syncHitboxSensitivityButtons();
   }
 
   function updateRangeProgress(input: HTMLInputElement): void {
@@ -1284,6 +1332,13 @@ function initMainMenu(): void {
   if (noFailInput) {
     noFailInput.checked = Boolean(settings.noFail);
     noFailInput.addEventListener('change', () => {
+      if (multiplayerRoomConnected) {
+        if (!isMultiplayerGameplaySettingsLocked()) {
+          requestMultiplayerGameplaySetting('noFail', noFailInput.checked);
+        }
+        syncSharedGameplaySettingsControls();
+        return;
+      }
       if (isMultiplayerGameplaySettingsLocked()) {
         noFailInput.checked = Boolean(settings.noFail);
         return;
@@ -1297,6 +1352,13 @@ function initMainMenu(): void {
   if (trainingModeInput) {
     trainingModeInput.checked = Boolean(settings.trainingMode);
     trainingModeInput.addEventListener('change', () => {
+      if (multiplayerRoomConnected) {
+        if (!isMultiplayerGameplaySettingsLocked()) {
+          requestMultiplayerGameplaySetting('trainingMode', trainingModeInput.checked);
+        }
+        syncSharedGameplaySettingsControls();
+        return;
+      }
       if (isMultiplayerGameplaySettingsLocked()) {
         trainingModeInput.checked = Boolean(settings.trainingMode);
         return;
@@ -1310,7 +1372,7 @@ function initMainMenu(): void {
   if (beatLimitInput) {
     beatLimitInput.checked = settings.beatLimitEnabled !== false;
     beatLimitInput.addEventListener('change', () => {
-      if (isMultiplayerGameplaySettingsLocked()) {
+      if (isMultiplayerLocalGameplaySettingsLocked()) {
         beatLimitInput.checked = settings.beatLimitEnabled !== false;
         return;
       }
@@ -1379,7 +1441,7 @@ function initMainMenu(): void {
 
   for (const btn of oneHandButtons) {
     btn.addEventListener('click', () => {
-      if (isMultiplayerGameplaySettingsLocked()) return;
+      if (isMultiplayerLocalGameplaySettingsLocked()) return;
       const value           = (btn.dataset['oneHand'] ?? null) as OneHandMode;
       settings.oneHandMode  = value;
       state.oneHandMode     = value;
@@ -1396,6 +1458,12 @@ function initMainMenu(): void {
       if (isMultiplayerGameplaySettingsLocked()) return;
       const speed = Number(button.dataset['noteSpeed']);
       if (!Number.isFinite(speed)) return;
+      if (multiplayerRoomConnected) {
+        if (speed === 0.75 || speed === 1 || speed === 1.35 || speed === 1.75) {
+          requestMultiplayerGameplaySetting('noteSpeed', speed);
+        }
+        return;
+      }
       settings.noteSpeed = speed;
       setSetting('noteSpeed', speed);
       syncNoteSpeedButtons();
@@ -1408,6 +1476,12 @@ function initMainMenu(): void {
       if (isMultiplayerGameplaySettingsLocked()) return;
       const sensitivity = Number(button.dataset['hitboxSensitivity']);
       if (!Number.isFinite(sensitivity)) return;
+      if (multiplayerRoomConnected) {
+        if (sensitivity === 0.82 || sensitivity === 1 || sensitivity === 1.2) {
+          requestMultiplayerGameplaySetting('hitboxSensitivity', sensitivity);
+        }
+        return;
+      }
       settings.hitboxSensitivity = sensitivity;
       setSetting('hitboxSensitivity', sensitivity);
       syncHitboxSensitivityButtons();
@@ -1416,7 +1490,28 @@ function initMainMenu(): void {
   syncHitboxSensitivityButtons();
   syncMultiplayerGameplaySettingsLock();
   window.addEventListener('hand-sabers:room-state', event => {
-    multiplayerRoomConnected = Boolean((event as CustomEvent<unknown>).detail);
+    const detail = (event as CustomEvent<{
+      room?: {
+        gameplaySettings?: unknown;
+        round?: { finishedAt?: unknown } | null;
+      };
+      role?: unknown;
+    } | null>).detail;
+    const gameplaySettings = parseMultiplayerGameplaySettings(detail?.room?.gameplaySettings);
+    multiplayerRoomConnected = Boolean(detail?.room && gameplaySettings);
+    multiplayerRoomRole = detail?.role === 'host' || detail?.role === 'guest' ? detail.role : null;
+    multiplayerRoomRoundActive = Boolean(
+      detail?.room?.round && detail.room.round.finishedAt === null,
+    );
+    setActiveMultiplayerGameplaySettings(gameplaySettings);
+    if (multiplayerGameplaySettingsHint) {
+      multiplayerGameplaySettingsHint.hidden = !multiplayerRoomConnected;
+    }
+    if (!multiplayerRoomConnected) {
+      restoreSettingsGameplayRuntime();
+      document.body.classList.toggle('training-mode', settings.trainingMode);
+    }
+    syncSharedGameplaySettingsControls();
     syncMultiplayerGameplaySettingsLock();
   });
 
@@ -1782,17 +1877,21 @@ window.addEventListener('hand-sabers:multiplayer-start', event => {
   const detail = (event as CustomEvent<{
     mapId?: unknown;
     mode?: unknown;
+    gameplaySettings?: unknown;
     saberAssignment?: unknown;
     startAtPerformance?: unknown;
   }>).detail;
+  const gameplaySettings = parseMultiplayerGameplaySettings(detail?.gameplaySettings);
   if (
     typeof detail?.mapId === 'string'
     && (detail.mode === 'coop' || detail.mode === 'score-attack')
+    && gameplaySettings
     && typeof detail.startAtPerformance === 'number'
   ) {
     void beginMultiplayerRound({
       mapId: detail.mapId,
       mode: detail.mode,
+      gameplaySettings,
       saberAssignment: normalizeMultiplayerSaberAssignment(detail.saberAssignment),
       startAtPerformance: detail.startAtPerformance,
     });

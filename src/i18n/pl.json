@@ -93,6 +93,7 @@
     "pickMapTitle": "WYBÓR MAPY",
     "noMaps": "Brak dostępnych map.",
     "beats": "beatów",
+    "gameplaySettingsHint": "W Multiplayer ustawienia rozgrywki są wspólne i kontroluje je host.",
     "ready": "GOTOWY",
     "start": "START",
     "disconnect": "OPUŚĆ POKÓJ",

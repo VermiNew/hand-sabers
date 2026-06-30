@@ -93,6 +93,7 @@
     "pickMapTitle": "MAP PICKER",
     "noMaps": "No maps available.",
     "beats": "beats",
+    "gameplaySettingsHint": "Multiplayer gameplay settings are shared and controlled by the host.",
     "ready": "READY",
     "start": "START",
     "disconnect": "LEAVE ROOM",

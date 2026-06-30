@@ -8,6 +8,7 @@ import { getBeatHitTimeSec, isBeatTooLate, noteZAtSongTime, shouldSpawnBeat } fr
 import { classifyHitQuality, cutDirectionLabel, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
 import { t } from '../i18n/index.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
+import { getActiveMultiplayerGameplaySettings } from '../multiplayer/gameplay-settings.ts';
 import type { CutDirection, Beat, SaberSide } from '../types/index.js';
 
 type PoolMesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material> & { __poolKind: 'block' | 'bomb'; __inFreeList: boolean };
@@ -84,12 +85,12 @@ function isMultiplayerGameplay(): boolean {
 }
 
 function getNoteSpeed(): number {
-  if (isMultiplayerGameplay()) return 1;
+  if (isMultiplayerGameplay()) return getActiveMultiplayerGameplaySettings()?.noteSpeed ?? 1;
   return THREE.MathUtils.clamp(Number(getSettings().noteSpeed) || 1, 0.75, 1.75);
 }
 
 function getTrainingRate(): number {
-  if (isMultiplayerGameplay()) return 1;
+  if (isMultiplayerGameplay()) return getActiveMultiplayerGameplaySettings()?.trainingMode ? 0.75 : 1;
   return getSettings().trainingMode ? 0.75 : 1;
 }
 
@@ -674,7 +675,7 @@ function captureBladeHitbox(saber: THREE.Object3D, cache: BladeCache): void {
   cache.currentEnd.copy(BLADE_LOCAL_END).applyMatrix4(saber.matrixWorld);
 
   const hitboxSensitivity = isMultiplayerGameplay()
-    ? 1
+    ? getActiveMultiplayerGameplaySettings()?.hitboxSensitivity ?? 1
     : THREE.MathUtils.clamp(Number(getSettings().hitboxSensitivity) || 1, 0.82, 1.2);
   const baseRadius = HIT_RADIUS * hitboxSensitivity;
   if (!cache.hasPrevious) { cache.radius = baseRadius; cache.hasCurrent = true; return; }
