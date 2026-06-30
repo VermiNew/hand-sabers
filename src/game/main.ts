@@ -31,7 +31,7 @@ import {
 } from '../multiplayer/gameplay-settings.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing } from '../remote/host-pairing.ts';
-import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
+import { narratorShow, NARRATOR_SPEEDS, type NarratorExpression } from './narrator.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
 declare global {
@@ -1911,11 +1911,15 @@ initMainMenu();
     const text       = params.get('text') ?? 'Hej! Jestem Lyra.';
     const speedKey   = params.get('speed') ?? 'default';
     const charMs     = NARRATOR_SPEEDS[speedKey] ?? NARRATOR_SPEEDS['default']!;
+    const requestedExpression = params.get('expression') ?? 'neutral';
+    const expression = (['neutral', 'serious', 'smirk', 'smile', 'laugh', 'sad'].includes(requestedExpression)
+      ? requestedExpression
+      : 'neutral') as NarratorExpression;
     const timeoutStart = params.has('narrator_timeout_start') ? Number(params.get('narrator_timeout_start')) : 0;
     const timeoutEnd   = params.has('narrator_timeout_end')   ? Number(params.get('narrator_timeout_end'))   : 0;
 
     if (timeoutStart > 0) await new Promise<void>(r => setTimeout(r, timeoutStart));
-    await narratorShow({ text, charMs });
+    await narratorShow({ text, charMs, expression });
     if (timeoutEnd > 0) await new Promise<void>(r => setTimeout(r, timeoutEnd));
   }
 })();

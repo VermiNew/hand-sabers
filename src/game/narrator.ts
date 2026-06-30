@@ -1,7 +1,25 @@
 // Narrator — Lyra dialog system
 // narratorShow() returns a Promise resolving to the index of the button clicked.
 
+import neutralAvatarUrl from '../assets/narrator/neutral.png';
+import seriousAvatarUrl from '../assets/narrator/serious.png';
+import smirkAvatarUrl from '../assets/narrator/smirk.png';
+import smileAvatarUrl from '../assets/narrator/smile.png';
+import laughAvatarUrl from '../assets/narrator/laugh.png';
+import sadAvatarUrl from '../assets/narrator/sad.png';
+
 const CHAR_MS_BASE = 28;
+
+export type NarratorExpression = 'neutral' | 'serious' | 'smirk' | 'smile' | 'laugh' | 'sad';
+
+const AVATAR_URLS: Record<NarratorExpression, string> = {
+  neutral: neutralAvatarUrl,
+  serious: seriousAvatarUrl,
+  smirk: smirkAvatarUrl,
+  smile: smileAvatarUrl,
+  laugh: laughAvatarUrl,
+  sad: sadAvatarUrl,
+};
 
 export const NARRATOR_SPEEDS: Record<string, number> = {
   reallyslow: 90,
@@ -34,6 +52,7 @@ interface NarratorOptions {
   text: string;
   buttons?: string[];   // 1–3 labels; defaults to ['OK']
   charMs?: number;      // ms per character; use NARRATOR_SPEEDS for presets
+  expression?: NarratorExpression;
 }
 
 let activeResolve: ((index: number) => void) | null = null;
@@ -48,7 +67,15 @@ function getEls() {
     cursor:  document.getElementById('narratorCursor'),
     btnsRow: document.getElementById('narratorButtons'),
     hint:    document.getElementById('narratorHint'),
+    avatar:  document.getElementById('narratorAvatar'),
   };
+}
+
+export function setNarratorExpression(expression: NarratorExpression): void {
+  const { avatar } = getEls();
+  if (!avatar) return;
+  avatar.style.backgroundImage = `url("${AVATAR_URLS[expression]}")`;
+  avatar.dataset['expression'] = expression;
 }
 
 function clearTyping(): void {
@@ -105,6 +132,7 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
     const speech = els.speech;
     const cursor = els.cursor;
     const hint   = els.hint;
+    setNarratorExpression(opts.expression ?? 'neutral');
 
     const labels = opts.buttons && opts.buttons.length ? opts.buttons.slice(0, 3) : ['OK'];
     const btns = buildButtons(labels);
