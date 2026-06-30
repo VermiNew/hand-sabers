@@ -101,8 +101,8 @@
 - [ ] Podgląd mapy w trybie 3D podczas edycji
 
 ## 17. Multiplayer — poprawki i co-op
-- [ ] Przycisk "Opuść pokój" / "Rozłącz" w trybie Multiplayer
-- [ ] Wskaźnik stanu kalibracji każdego gracza (kto skalibrowany, kto jeszcze nie)
+- [x] Przycisk "Opuść pokój" / "Rozłącz" w trybie Multiplayer
+- [x] Wskaźnik stanu kalibracji każdego gracza (kto skalibrowany, kto jeszcze nie)
 - [ ] Tryb lobby z limitem graczy (np. 2 osoby) → tryb co-op
 - [ ] Co-op: podział mieczy między graczy (jeden gracz lewy miecz, drugi prawy; lub jeden gracz oba)
 - [ ] Globalne ustawienia rozgrywki kontrolowane przez hosta (tryb treningowy, no fail itd.) — zablokować lokalne zmiany ustawień w Multiplayer
@@ -110,9 +110,9 @@
 - [x] Ustawienie nazwy użytkownika (w ustawieniach lub na ekranie dołączania do Multiplayer)
 
 ## 18. Menu w trakcie gry (pauza)
-- [ ] Naprawić przycisk `ESC` — panel pauzy nie wyświetla się w trakcie gry (Singleplayer i Multiplayer)
-- [ ] Singleplayer: Wznów, Restart, Wróć do menu głównego, Koniec
-- [ ] Multiplayer: Wróć do gry, Opuść pokój i wróć do menu głównego
+- [x] Naprawić przycisk `ESC` — panel pauzy nie wyświetla się w trakcie gry (Singleplayer i Multiplayer)
+- [x] Singleplayer: Wznów, Restart, Wróć do menu głównego, Koniec
+- [x] Multiplayer: Wróć do gry, Opuść pokój i wróć do menu głównego
 
 ## 19. Czat i komunikacja (backlog)
 - [ ] Czat tekstowy w Multiplayer
@@ -127,9 +127,9 @@
 - [ ] Nowe gamemode urozmaicające i udoskonalające rozgrywkę
 
 ## 22. Bugi UI / build
-- [ ] Naprawić edytor map na porcie `:3000` (na `:5173` działa) — błąd `Uncaught TypeError: Cannot read properties of null (reading 'width')` w buildzie gry (`game-*.js`); przez serwer produkcyjny na `:3000` edytor map się nie ładuje
+- [x] Naprawić edytor map na porcie `:3000` (na `:5173` działa) — błąd `Uncaught TypeError: Cannot read properties of null (reading 'width')` w buildzie gry (`game-*.js`); przez serwer produkcyjny na `:3000` edytor map się nie ładuje
 - [x] Poprawić łamanie tekstu i rozmieszczenie elementów w panelu ustawień
-- [ ] Usunąć "Phone camera" z menu głównego (menu zbyt wysokie — nie dodawać nowych entry) i przenieść konfigurację do ustawień jako nowe entry
+- [x] Usunąć "Phone camera" z menu głównego (menu zbyt wysokie — nie dodawać nowych entry) i przenieść konfigurację do ustawień jako nowe entry
 
 ## 23. Kamera/ML na telefonie — kalibracja (zob. też sekcja 14)
 - [ ] Kalibracja w trybie remote nie powinna pytać o kamerę komputera, tylko o telefon
