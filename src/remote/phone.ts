@@ -58,6 +58,27 @@ function credentialFromHash(): PhoneCredential | null {
   return { id, phoneToken, expiresAt: Date.now() + 5 * 60_000 };
 }
 
+async function claimHashCredential(candidate: PhoneCredential): Promise<void> {
+  try {
+    const response = await fetch(`/api/tracking-sessions/${encodeURIComponent(candidate.id)}/claim`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${candidate.phoneToken}` },
+    });
+    const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
+    if (
+      !response.ok
+      || payload['id'] !== candidate.id
+      || typeof payload['expiresAt'] !== 'number'
+      || !Number.isFinite(payload['expiresAt'])
+    ) throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'NOT_FOUND');
+    acceptCredential({ ...candidate, expiresAt: payload['expiresAt'] });
+  } catch (error) {
+    showError(t(error instanceof Error && error.message === 'RATE_LIMITED'
+      ? 'remoteTracking.rateLimited'
+      : 'remoteTracking.sessionNotFound'));
+  }
+}
+
 async function claimCode(): Promise<void> {
   const code = codeInput.value.trim().toUpperCase();
   if (!CODE_RE.test(code)) {
@@ -102,4 +123,4 @@ codeInput.addEventListener('keydown', event => {
 });
 
 const hashCredential = credentialFromHash();
-if (hashCredential) acceptCredential(hashCredential);
+if (hashCredential) void claimHashCredential(hashCredential);

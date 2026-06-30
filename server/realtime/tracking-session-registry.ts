@@ -105,6 +105,13 @@ export class TrackingSessionRegistry {
     return { id: session.id, phoneToken: session.phoneToken, expiresAt: session.expiresAt };
   }
 
+  claimPhoneCredentialByToken(id: string, phoneToken: string): { id: string; expiresAt: number } | null {
+    const session = this.requireAuthorized(id, phoneToken, 'phone');
+    if (!session || session.phoneCredentialIssued || session.phoneConnected) return null;
+    session.phoneCredentialIssued = true;
+    return { id: session.id, expiresAt: session.expiresAt };
+  }
+
   getStatus(id: string, hostToken: string): TrackingSessionStatus | null {
     this.deleteExpired();
     const session = this.sessions.get(id);

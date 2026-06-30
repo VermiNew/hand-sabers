@@ -69,6 +69,19 @@ export function registerTrackingSessionRoutes({
     res.json(credential);
   });
 
+  app.post('/api/tracking-sessions/:id/claim', (req, res) => {
+    const ip = getIp(req);
+    if (rateLimit(ip, 'tracking-session-token-claim', 12)) {
+      return res.status(429).json({ error: 'RATE_LIMITED' });
+    }
+    const credential = sessions.claimPhoneCredentialByToken(
+      String(req.params['id'] || ''),
+      bearerToken(req.get('authorization')),
+    );
+    if (!credential) return res.status(404).json({ error: 'TRACKING_SESSION_NOT_FOUND' });
+    res.json(credential);
+  });
+
   app.get('/api/tracking-sessions/:id', (req, res) => {
     const ip = getIp(req);
     if (rateLimit(ip, 'tracking-session-read', 120)) {
