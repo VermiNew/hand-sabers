@@ -2,7 +2,7 @@ import { state } from '../core/state.ts';
 import { setSetting, getSettings } from '../core/settings.ts';
 import { applyTrackingSettings } from '../tracking/tracking.ts';
 import { setVolume, setMusicVolume, setSfxVolume, setSoundVolume } from '../game/audio.ts';
-import { getPerformanceMode, getPerformanceModes } from '../core/performance.ts';
+import { getDetectIntervalMs, getPerformanceMode, getPerformanceModes } from '../core/performance.ts';
 import { scene, reflectTarget, getScenePerformanceProfile, setScenePerformanceProfile, setWireframeVisible } from '../game/scene.ts';
 import * as THREE from 'three';
 import type { PerformanceMode, Settings } from '../types/index.js';
@@ -22,6 +22,7 @@ interface GameStats {
 
 interface DevData {
   fps: number; frameMs: number; deltaMs: number; deltaScale: number; renderMs: number; detectMs: number; latMs: number; conf: number;
+  frameP95: number; renderP95: number; detectP95: number; frameBudgetMs: number; profileWindowSec: number; bottleneck: string;
   drawCalls: number; triangles: number; geoMem: number; texMem: number; vramMem: number;
   graphicsMode: string; graphicsProfile: string; renderScale: number; canvasSize: string; drawingBuffer: string; gpuRenderer: string; toneMapping: string; antialias: string; shadows: boolean; reflections: boolean;
   activeBlocks: number; activeSparks: number; pooledBlocks: number; pooledBombs: number; pooledShards: number; combo: number; score: number; lives: number;
@@ -50,6 +51,7 @@ declare global {
     __prewarmedBombPool?: number;
     __prewarmedShardPool?: number;
     __lastDetectMs?: number;
+    __lastDetectAtMs?: number;
     Tweakpane?: { Pane: new (opts: { title: string; expanded: boolean }) => TweakpaneInstance };
     Stats?: new () => StatsInstance;
   }
@@ -85,6 +87,7 @@ let lastRenderer: THREE.WebGLRenderer | null = null;
 
 const devData: DevData = {
   fps: 0, frameMs: 0, deltaMs: 0, deltaScale: 1, renderMs: 0, detectMs: 0, latMs: 0, conf: 0,
+  frameP95: 0, renderP95: 0, detectP95: 0, frameBudgetMs: 16.67, profileWindowSec: 0, bottleneck: 'WAITING',
   drawCalls: 0, triangles: 0, geoMem: 0, texMem: 0, vramMem: 0,
   graphicsMode: '—', graphicsProfile: '—', renderScale: 1, canvasSize: '—', drawingBuffer: '—', gpuRenderer: '—', toneMapping: '—', antialias: '—', shadows: false, reflections: false,
   activeBlocks: 0, activeSparks: 0, pooledBlocks: 0, pooledBombs: 0, pooledShards: 0, combo: 0, score: 0, lives: 0,
@@ -388,6 +391,13 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     perf.addMonitor(devData, 'renderMs',   { label: 'Render ms', interval: 500 });
     perf.addMonitor(devData, 'detectMs',   { label: 'Detect ms', interval: 500 });
     addSeparator(perf);
+    perf.addMonitor(devData, 'bottleneck',      { label: 'Bottleneck', interval: 1000 });
+    perf.addMonitor(devData, 'frameP95',        { label: 'Frame p95', interval: 1000 });
+    perf.addMonitor(devData, 'renderP95',       { label: 'Render p95', interval: 1000 });
+    perf.addMonitor(devData, 'detectP95',       { label: 'Detect p95', interval: 1000 });
+    perf.addMonitor(devData, 'frameBudgetMs',   { label: 'Budget ms', interval: 1000 });
+    perf.addMonitor(devData, 'profileWindowSec', { label: 'Window s', interval: 1000 });
+    addSeparator(perf);
     perf.addMonitor(devData, 'graphicsMode',    { label: 'Graphics', interval: 500 });
     perf.addMonitor(devData, 'graphicsProfile', { label: 'Profile',  interval: 500 });
     perf.addMonitor(devData, 'renderScale',     { label: 'DPR',      interval: 500 });
@@ -522,6 +532,111 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
 
 let lastPaneRefreshMs = 0;
 
+class RollingSamples {
+  private readonly values: Float32Array;
+  private size = 0;
+  private cursor = 0;
+
+  constructor(capacity: number) {
+    this.values = new Float32Array(capacity);
+  }
+
+  get count(): number {
+    return this.size;
+  }
+
+  push(value: number): void {
+    if (!Number.isFinite(value) || value < 0) return;
+    this.values[this.cursor] = value;
+    this.cursor = (this.cursor + 1) % this.values.length;
+    this.size = Math.min(this.size + 1, this.values.length);
+  }
+
+  clear(): void {
+    this.size = 0;
+    this.cursor = 0;
+  }
+
+  sum(): number {
+    let total = 0;
+    for (let index = 0; index < this.size; index++) total += this.values[index] ?? 0;
+    return total;
+  }
+
+  percentile(fraction: number): number {
+    if (!this.size) return 0;
+    const sorted = Array.from(this.values.subarray(0, this.size)).sort((left, right) => left - right);
+    const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(sorted.length * fraction) - 1));
+    return sorted[index] ?? 0;
+  }
+}
+
+const frameSamples = new RollingSamples(600);
+const renderSamples = new RollingSamples(600);
+const detectSamples = new RollingSamples(160);
+let lastProfileUpdateAt = 0;
+let lastDetectSampleAt = -1;
+let wasProfilingGameplay = false;
+let lastProfileKey = '';
+
+function resetPerformanceProfile(): void {
+  frameSamples.clear();
+  renderSamples.clear();
+  detectSamples.clear();
+  lastProfileUpdateAt = 0;
+  lastDetectSampleAt = -1;
+  devData.frameP95 = 0;
+  devData.renderP95 = 0;
+  devData.detectP95 = 0;
+  devData.profileWindowSec = 0;
+  devData.bottleneck = 'COLLECTING';
+}
+
+function updatePerformanceProfile(now: number, renderMs: number, detectMs: number): void {
+  const profilingGameplay = state.appState === 'playing';
+  if (!profilingGameplay) {
+    if (wasProfilingGameplay) resetPerformanceProfile();
+    wasProfilingGameplay = false;
+    lastProfileKey = '';
+    devData.bottleneck = 'WAITING FOR GAME';
+    return;
+  }
+  const profile = getScenePerformanceProfile();
+  const profileKey = `${profile.qualityMode}:${profile.targetFps}:${profile.detectFps}`;
+  if (!wasProfilingGameplay || profileKey !== lastProfileKey) resetPerformanceProfile();
+  wasProfilingGameplay = true;
+  lastProfileKey = profileKey;
+
+  frameSamples.push(state.deltaMs);
+  renderSamples.push(renderMs);
+  const detectSampleAt = window.__lastDetectAtMs ?? -1;
+  if (detectSampleAt > lastDetectSampleAt) {
+    detectSamples.push(detectMs);
+    lastDetectSampleAt = detectSampleAt;
+  }
+  if (now - lastProfileUpdateAt < 1000) return;
+  lastProfileUpdateAt = now;
+
+  const frameBudgetMs = 1000 / Math.max(1, profile.targetFps || 60);
+  const frameP95 = frameSamples.percentile(0.95);
+  const renderP95 = renderSamples.percentile(0.95);
+  const detectP95 = detectSamples.percentile(0.95);
+  const renderLoad = renderP95 / frameBudgetMs;
+  const detectLoad = detectP95 / getDetectIntervalMs(profile);
+  const dominant = detectLoad > renderLoad * 1.15
+    ? 'ML / MAIN THREAD'
+    : renderLoad > detectLoad * 1.15 ? 'RENDER PATH' : 'MIXED';
+
+  devData.frameBudgetMs = +frameBudgetMs.toFixed(2);
+  devData.frameP95 = +frameP95.toFixed(2);
+  devData.renderP95 = +renderP95.toFixed(2);
+  devData.detectP95 = +detectP95.toFixed(2);
+  devData.profileWindowSec = +(frameSamples.sum() / 1000).toFixed(1);
+  devData.bottleneck = frameSamples.count < 60
+    ? 'COLLECTING'
+    : frameP95 <= frameBudgetMs * 1.15 ? `STABLE · ${dominant}` : dominant;
+}
+
 export function tickDevPanel(renderer: THREE.WebGLRenderer, now: number, renderMs: number, detectMs: number, gameStats: GameStats): void {
   if (!isDev) return;
   if (statsJS) statsJS.update();
@@ -534,6 +649,7 @@ export function tickDevPanel(renderer: THREE.WebGLRenderer, now: number, renderM
   devData.detectMs   = detectMs;
   devData.latMs      = detectMs;
   devData.conf       = gameStats.conf;
+  updatePerformanceProfile(now, renderMs, detectMs);
   updateRenderingDiagnostics(renderer);
   devData.drawCalls  = renderer.info.render.calls;
   devData.triangles  = renderer.info.render.triangles;

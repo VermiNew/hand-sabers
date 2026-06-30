@@ -38,6 +38,7 @@ export const CALIB_STEPS: readonly CalibStep[] = [
 declare global {
   interface Window {
     __lastDetectMs?:     number;
+    __lastDetectAtMs?:   number;
     __lastHandConf?:     number;
     __filteredHandCount?: number;
     __rawHandCount?:     number;
@@ -598,6 +599,7 @@ function runDetect(): void {
   const result: DetectResult = handLandmarker.detectForVideo(videoEl, now);
   const detectMs = performance.now() - t0;
   window.__lastDetectMs = detectMs;
+  window.__lastDetectAtMs = performance.now();
 
   {
     const targetInterval = detectMs / 0.75;
