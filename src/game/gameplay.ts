@@ -79,11 +79,17 @@ const HIT_Z               = 1.5;
 const BLOCK_SPEED_PER_MS  = (HIT_Z - SPAWN_Z) / APPROACH_TIME_MS;
 const MENU_DEMO_HIT_Z     = HIT_Z - 0.15;
 
+function isMultiplayerGameplay(): boolean {
+  return Boolean(document.body.dataset['multiplayerMode']);
+}
+
 function getNoteSpeed(): number {
+  if (isMultiplayerGameplay()) return 1;
   return THREE.MathUtils.clamp(Number(getSettings().noteSpeed) || 1, 0.75, 1.75);
 }
 
 function getTrainingRate(): number {
+  if (isMultiplayerGameplay()) return 1;
   return getSettings().trainingMode ? 0.75 : 1;
 }
 
@@ -667,7 +673,9 @@ function captureBladeHitbox(saber: THREE.Object3D, cache: BladeCache): void {
   cache.currentStart.copy(BLADE_LOCAL_START).applyMatrix4(saber.matrixWorld);
   cache.currentEnd.copy(BLADE_LOCAL_END).applyMatrix4(saber.matrixWorld);
 
-  const hitboxSensitivity = THREE.MathUtils.clamp(Number(getSettings().hitboxSensitivity) || 1, 0.82, 1.2);
+  const hitboxSensitivity = isMultiplayerGameplay()
+    ? 1
+    : THREE.MathUtils.clamp(Number(getSettings().hitboxSensitivity) || 1, 0.82, 1.2);
   const baseRadius = HIT_RADIUS * hitboxSensitivity;
   if (!cache.hasPrevious) { cache.radius = baseRadius; cache.hasCurrent = true; return; }
   const swing = Math.max(

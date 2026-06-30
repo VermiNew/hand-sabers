@@ -203,6 +203,9 @@
   outline:2px solid rgba(0,212,255,0.7);
   outline-offset:3px;
 }
+.sp-switch input:disabled + .sp-knob {
+  opacity:.45; cursor:not-allowed;
+}
 
 /* Segmented */
 .sp-segmented { display:flex; gap:4px; flex-shrink:0; }
@@ -214,6 +217,12 @@
   border-radius:6px; cursor:pointer; transition:all 0.15s;
 }
 .sp-seg:hover     { color:#fff; border-color:rgba(255,255,255,0.2); }
+.sp-seg:disabled {
+  opacity:.45; cursor:not-allowed;
+}
+.sp-seg:disabled:hover {
+  color:rgba(148,163,184,0.6); border-color:rgba(255,255,255,0.1);
+}
 .sp-seg:focus-visible {
   outline:2px solid rgba(0,212,255,0.65);
   outline-offset:2px;

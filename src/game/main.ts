@@ -197,6 +197,7 @@ let mapTimelineZeroAtMs  = 0;
 let mapAudioStarted      = false;
 let pausedMapTimelineSec: number | null = null;
 let multiplayerRoundActive = false;
+let multiplayerRoomConnected = false;
 let lastMultiplayerScoreAt = 0;
 type MultiplayerSaberAssignment = 'left' | 'right' | 'both';
 
@@ -214,8 +215,13 @@ function applyMultiplayerSaberAssignment(assignment: MultiplayerSaberAssignment)
   applyRuntimeOneHandMode(assignment === 'both' ? null : assignment);
 }
 
-function restoreSettingsOneHandMode(): void {
+function restoreSettingsGameplayRuntime(): void {
+  state.noFail = settings.noFail;
   applyRuntimeOneHandMode(settings.oneHandMode);
+}
+
+function isMultiplayerGameplaySettingsLocked(): boolean {
+  return multiplayerRoomConnected || multiplayerRoundActive || Boolean(multiplayerPreparationMapId);
 }
 
 function resetMapTimeline(): void {
@@ -365,7 +371,7 @@ async function prepareMultiplayerMap(mapId: string, saberAssignment: Multiplayer
   } catch (error) {
     console.error('Multiplayer preparation failed:', error);
     multiplayerPreparationMapId = '';
-    restoreSettingsOneHandMode();
+    restoreSettingsGameplayRuntime();
     window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error'));
   }
 }
@@ -403,6 +409,7 @@ async function beginMultiplayerRound(detail: {
   handsReturnedSince = 0;
   state.pauseReason = PAUSE_REASONS.NONE;
   state.appState = S.PLAYING;
+  state.noFail = false;
   multiplayerRoundActive = true;
   lastMultiplayerScoreAt = 0;
   applyMultiplayerSaberAssignment(detail.mode === 'coop' ? detail.saberAssignment : 'both');
@@ -457,7 +464,7 @@ function endGame(): void {
     });
   }
   multiplayerRoundActive = false;
-  restoreSettingsOneHandMode();
+  restoreSettingsGameplayRuntime();
   document.body.classList.toggle('training-mode', settings.trainingMode);
   delete document.body.dataset['multiplayerMode'];
   stopMapAudio();
@@ -924,7 +931,7 @@ function returnToMainMenu(): void {
       window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));
     }
     multiplayerRoundActive = false;
-    restoreSettingsOneHandMode();
+    restoreSettingsGameplayRuntime();
     stopMapAudio();
     resetMapTimeline();
     clearGameplayEntities();
@@ -1102,6 +1109,16 @@ function initMainMenu(): void {
     });
   }
 
+  function syncMultiplayerGameplaySettingsLock(): void {
+    const locked = isMultiplayerGameplaySettingsLocked();
+    noFailInput?.toggleAttribute('disabled', locked);
+    trainingModeInput?.toggleAttribute('disabled', locked);
+    beatLimitInput?.toggleAttribute('disabled', locked);
+    for (const button of oneHandButtons) button.toggleAttribute('disabled', locked);
+    for (const button of noteSpeedButtons) button.toggleAttribute('disabled', locked);
+    for (const button of hitboxSensitivityButtons) button.toggleAttribute('disabled', locked);
+  }
+
   function updateRangeProgress(input: HTMLInputElement): void {
     const min   = Number(input.min   || 0);
     const max   = Number(input.max   || 100);
@@ -1190,6 +1207,7 @@ function initMainMenu(): void {
   });
   settingsButton?.addEventListener('click', () => {
     selectItem(settingsButton);
+    syncMultiplayerGameplaySettingsLock();
     setSettingsPanelVisible(!isSettingsPanelVisible());
   });
   settingsClose?.addEventListener('click', () => setSettingsPanelVisible(false));
@@ -1266,6 +1284,10 @@ function initMainMenu(): void {
   if (noFailInput) {
     noFailInput.checked = Boolean(settings.noFail);
     noFailInput.addEventListener('change', () => {
+      if (isMultiplayerGameplaySettingsLocked()) {
+        noFailInput.checked = Boolean(settings.noFail);
+        return;
+      }
       settings.noFail = noFailInput.checked;
       state.noFail    = noFailInput.checked;
       setSetting('noFail', noFailInput.checked);
@@ -1275,6 +1297,10 @@ function initMainMenu(): void {
   if (trainingModeInput) {
     trainingModeInput.checked = Boolean(settings.trainingMode);
     trainingModeInput.addEventListener('change', () => {
+      if (isMultiplayerGameplaySettingsLocked()) {
+        trainingModeInput.checked = Boolean(settings.trainingMode);
+        return;
+      }
       settings.trainingMode = trainingModeInput.checked;
       document.body.classList.toggle('training-mode', trainingModeInput.checked);
       setSetting('trainingMode', trainingModeInput.checked);
@@ -1284,6 +1310,10 @@ function initMainMenu(): void {
   if (beatLimitInput) {
     beatLimitInput.checked = settings.beatLimitEnabled !== false;
     beatLimitInput.addEventListener('change', () => {
+      if (isMultiplayerGameplaySettingsLocked()) {
+        beatLimitInput.checked = settings.beatLimitEnabled !== false;
+        return;
+      }
       settings.beatLimitEnabled = beatLimitInput.checked;
       setSetting('beatLimitEnabled', beatLimitInput.checked);
     });
@@ -1349,6 +1379,7 @@ function initMainMenu(): void {
 
   for (const btn of oneHandButtons) {
     btn.addEventListener('click', () => {
+      if (isMultiplayerGameplaySettingsLocked()) return;
       const value           = (btn.dataset['oneHand'] ?? null) as OneHandMode;
       settings.oneHandMode  = value;
       state.oneHandMode     = value;
@@ -1362,6 +1393,7 @@ function initMainMenu(): void {
 
   for (const button of noteSpeedButtons) {
     button.addEventListener('click', () => {
+      if (isMultiplayerGameplaySettingsLocked()) return;
       const speed = Number(button.dataset['noteSpeed']);
       if (!Number.isFinite(speed)) return;
       settings.noteSpeed = speed;
@@ -1373,6 +1405,7 @@ function initMainMenu(): void {
 
   for (const button of hitboxSensitivityButtons) {
     button.addEventListener('click', () => {
+      if (isMultiplayerGameplaySettingsLocked()) return;
       const sensitivity = Number(button.dataset['hitboxSensitivity']);
       if (!Number.isFinite(sensitivity)) return;
       settings.hitboxSensitivity = sensitivity;
@@ -1381,6 +1414,11 @@ function initMainMenu(): void {
     });
   }
   syncHitboxSensitivityButtons();
+  syncMultiplayerGameplaySettingsLock();
+  window.addEventListener('hand-sabers:room-state', event => {
+    multiplayerRoomConnected = Boolean((event as CustomEvent<unknown>).detail);
+    syncMultiplayerGameplaySettingsLock();
+  });
 
   // ── Kolory mieczy ─────────────────────────────────────────────────────────
   function updateColorPreview(previewBar: HTMLElement | null, previewName: HTMLElement | null, colorDef: { hex: string; label: string }): void {
