@@ -81,6 +81,9 @@
 
 ## 13. Optymalizacja dla słabych PC
 - [ ] Profilowanie — znaleźć główne wąskie gardła na niskich ustawieniach
+  - [x] Dodać profiler p95 z korelacją klatek zawierających detekcję ML
+  - [x] Pomiar referencyjny na obecnym PC: frame p95 20,0 ms, render p95 1,7 ms, detect p95 2,3 ms
+  - [ ] Powtórzyć pomiar (`Frame+ML p95` / `Frame base p95`) na słabym PC
 - [x] Dalsze obniżanie jakości grafiki (wyłączenie mgły, siatek, efektów)
 - [x] Adaptive quality — automatyczne obniżanie gdy FPS spada poniżej progu
 
