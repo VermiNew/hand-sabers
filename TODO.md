@@ -128,7 +128,7 @@
 
 ## 22. Bugi UI / build
 - [ ] Naprawić edytor map na porcie `:3000` (na `:5173` działa) — błąd `Uncaught TypeError: Cannot read properties of null (reading 'width')` w buildzie gry (`game-*.js`); przez serwer produkcyjny na `:3000` edytor map się nie ładuje
-- [ ] Poprawić łamanie tekstu i rozmieszczenie elementów w panelu ustawień
+- [x] Poprawić łamanie tekstu i rozmieszczenie elementów w panelu ustawień
 - [ ] Usunąć "Phone camera" z menu głównego (menu zbyt wysokie — nie dodawać nowych entry) i przenieść konfigurację do ustawień jako nowe entry
 
 ## 23. Kamera/ML na telefonie — kalibracja (zob. też sekcja 14)

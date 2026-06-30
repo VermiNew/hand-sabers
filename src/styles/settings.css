@@ -159,6 +159,9 @@
 }
 .sp-toggle-row:last-child { border-bottom:none; }
 .sp-toggle-info { flex:1; display:flex; flex-direction:column; gap:3px; min-width:0; }
+.sp-choice-row { align-items:flex-start; flex-wrap:wrap; }
+.sp-choice-row .sp-toggle-info { flex:1 1 180px; min-width:180px; }
+.sp-choice-row .sp-segmented { flex:1 1 260px; justify-content:flex-end; }
 .sp-toggle-name {
   font-family:'Oxanium',sans-serif; font-size:13px; font-weight:700;
   color:rgba(226,232,240,0.9); letter-spacing:0.5px;
@@ -220,6 +223,16 @@
 .sp-seg.lang-active {
   background:rgba(0,212,255,0.12); border-color:rgba(0,212,255,0.45);
   color:#00d4ff;
+}
+
+@media (max-width: 560px) {
+  .sp-choice-row { gap:10px; }
+  .sp-choice-row .sp-toggle-info {
+    flex-basis:100%; min-width:0;
+  }
+  .sp-choice-row .sp-segmented {
+    flex-basis:100%; justify-content:flex-start; flex-wrap:wrap;
+  }
 }
 
 /* Select */
