@@ -526,14 +526,23 @@
             <div class="mp-player-list" id="multiplayerPlayers"></div>
           </div>
           <div class="mp-lobby-controls">
-            <label class="mp-field">
+            <div class="mp-field">
               <span data-i18n="multiplayer.map">MAPA HOSTA</span>
               <div class="mp-map-summary" id="multiplayerMapSummary">—</div>
               <select id="multiplayerMap" disabled hidden>
                 <option value="" data-i18n="multiplayer.selectMap">WYBIERZ MAPĘ</option>
               </select>
-              <button class="mp-secondary" id="multiplayerPickMap" type="button" disabled data-i18n="multiplayer.pickMap">OTWÓRZ MAPY</button>
-            </label>
+              <button class="mp-secondary" id="multiplayerPickMap" type="button" disabled data-i18n="multiplayer.pickMap">WYBIERZ MAPĘ</button>
+              <div class="mp-map-picker" id="multiplayerMapPicker" hidden>
+                <div class="mp-map-picker-head">
+                  <strong data-i18n="multiplayer.pickMapTitle">WYBÓR MAPY</strong>
+                  <button class="mp-map-picker-close" id="multiplayerMapPickerClose" type="button" aria-label="Zamknij">
+                    <span class="material-symbols-rounded">close</span>
+                  </button>
+                </div>
+                <div class="mp-map-picker-list" id="multiplayerMapPickerList"></div>
+              </div>
+            </div>
             <label class="mp-field">
               <span data-i18n="multiplayer.mode">TRYB</span>
               <select id="multiplayerMode" disabled>
