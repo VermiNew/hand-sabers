@@ -107,7 +107,7 @@
 - [ ] Co-op: podział mieczy między graczy (jeden gracz lewy miecz, drugi prawy; lub jeden gracz oba)
 - [ ] Globalne ustawienia rozgrywki kontrolowane przez hosta (tryb treningowy, no fail itd.) — zablokować lokalne zmiany ustawień w Multiplayer
 - [ ] Wybór mapy przez hosta przez `map.html` (otwiera picker, wybór utworu wraca do lobby bez wyrzucania/rozłączania) zamiast wyboru po identyfikatorze `map-*`
-- [ ] Ustawienie nazwy użytkownika (w ustawieniach lub na ekranie dołączania do Multiplayer)
+- [x] Ustawienie nazwy użytkownika (w ustawieniach lub na ekranie dołączania do Multiplayer)
 
 ## 18. Menu w trakcie gry (pauza)
 - [ ] Naprawić przycisk `ESC` — panel pauzy nie wyświetla się w trakcie gry (Singleplayer i Multiplayer)

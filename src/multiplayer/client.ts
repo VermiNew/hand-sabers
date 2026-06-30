@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import { setSetting } from '../core/settings.ts';
 import { decodeRealtimePacket } from './realtime.ts';
 import { remoteTracking } from './remote-state.ts';
 
@@ -132,6 +133,10 @@ function requestErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : translateServerError('REQUEST_FAILED');
 }
 
+function normalizePlayerName(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').slice(0, 32) || 'Gracz';
+}
+
 function websocketUrl(): string {
   const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
   return `${protocol}//${location.host}/ws`;
@@ -263,7 +268,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const lobbyScores = element<HTMLElement>('multiplayerLobbyScores');
   const hudScores = element<HTMLElement>('multiplayerHudScores');
 
-  nameInput.value = defaultPlayerName || 'Gracz';
+  nameInput.value = normalizePlayerName(defaultPlayerName);
+
+  const getPlayerName = (): string => {
+    const playerName = normalizePlayerName(nameInput.value);
+    nameInput.value = playerName;
+    setSetting('playerName', playerName);
+    return playerName;
+  };
 
   const showMessage = (text = '') => {
     message.textContent = text;
@@ -579,7 +591,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       roomCode.textContent = created.room.code;
       if (created.qrDataUrl.startsWith('data:image/png;base64,')) qr.src = created.qrDataUrl;
       share.hidden = false;
-      connect(created.room.code, created.hostToken, nameInput.value);
+      connect(created.room.code, created.hostToken, getPlayerName());
     } catch (error) {
       setBusy(false);
       showMessage(requestErrorMessage(error));
@@ -598,7 +610,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       const response = await fetch(`/api/rooms/${encodeURIComponent(code)}/join`, { method: 'POST' });
       const credential = await responseJson<JoinCodeResponse>(response);
       share.hidden = true;
-      connect(credential.code, credential.joinToken, nameInput.value);
+      connect(credential.code, credential.joinToken, getPlayerName());
     } catch (error) {
       setBusy(false);
       showMessage(requestErrorMessage(error));
@@ -608,6 +620,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   codeInput.addEventListener('input', () => {
     codeInput.value = codeInput.value.toUpperCase().replace(/[^23456789ABCDEFGHJKLMNPQRSTUVWXYZ]/g, '').slice(0, 6);
   });
+  nameInput.addEventListener('change', getPlayerName);
+  nameInput.addEventListener('blur', getPlayerName);
   copyButton.addEventListener('click', async () => {
     if (!activeJoinUrl) return;
     try {
@@ -664,6 +678,6 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     history.replaceState(null, '', `${location.pathname}${location.search}`);
     open();
     share.hidden = true;
-    connect(linkedCode, linkedToken, nameInput.value);
+    connect(linkedCode, linkedToken, getPlayerName());
   }
 }
