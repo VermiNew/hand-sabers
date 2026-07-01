@@ -87,6 +87,10 @@
   </div>
 
   <div class="transport-spacer"></div>
+  <button class="transport-btn" id="btn3dPreview" type="button">
+    <span class="material-symbols-rounded inline-icon">view_in_ar</span>
+    <span data-i18n="creator.preview3d">PODGLĄD 3D</span>
+  </button>
   <button class="transport-btn" id="btnShortcuts" title="Skróty klawiszowe (?)">?</button>
 
   <!-- Tap flash indicator -->
@@ -190,6 +194,14 @@
 
 <!-- MAIN AREA -->
 <div id="mainArea">
+  <section id="creator3dPanel" hidden>
+    <header>
+      <strong data-i18n="creator.preview3d">PODGLĄD 3D</strong>
+      <button id="creator3dClose" type="button" aria-label="Zamknij">×</button>
+    </header>
+    <canvas id="creator3dCanvas"></canvas>
+  </section>
+
   <!-- Waveform -->
   <canvas id="waveCanvas"></canvas>
 

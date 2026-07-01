@@ -46,6 +46,7 @@ import {
 } from './input.ts';
 
 import { initKeybindsUI } from './keybinds-ui.ts';
+import { init3dPreview, render3dPreview } from './preview3d.ts';
 
 // ── i18n ──────────────────────────────────────────────────────────
 function applyCreatorTranslations(): void {
@@ -102,6 +103,7 @@ function startRafLoop(): void {
     }
     if (state.isPlaying || state.timelineDirty) {
       renderAll();
+      render3dPreview();
       if (state.isPlaying && state.audioBuffer) {
         const wc = document.getElementById('waveCanvas') as HTMLCanvasElement | null;
         if (wc) drawWaveformOverlay(wc.getContext('2d')!, wc.width, wc.height);
@@ -330,6 +332,7 @@ bindBpm();
 bindShortcutsPanel();
 bindWaveformScroll();
 initKeybindsUI();
+init3dPreview();
 initAudioCtx();
 resizeCanvases();
 drawWaveform();

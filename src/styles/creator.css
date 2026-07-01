@@ -297,6 +297,26 @@ body {
 /* ── MAIN AREA ── */
 #mainArea { flex:1; display:flex; flex-direction:column; overflow:hidden; position:relative; }
 
+#creator3dPanel {
+  position:absolute; top:12px; right:12px; z-index:18;
+  width:min(390px,calc(100% - 24px)); height:250px;
+  border:1px solid rgba(126,184,255,.2); border-radius:10px;
+  background:rgba(3,7,15,.96); box-shadow:0 18px 50px rgba(0,0,0,.48);
+  overflow:hidden;
+}
+#creator3dPanel[hidden] { display:none; }
+#creator3dPanel header {
+  height:34px; display:flex; align-items:center; justify-content:space-between;
+  padding:0 10px 0 12px; border-bottom:1px solid rgba(126,184,255,.12);
+}
+#creator3dPanel header strong { color:#7eb8ff; font:800 9px 'Oxanium',sans-serif; letter-spacing:1.5px; }
+#creator3dClose {
+  width:25px; height:25px; border:0; background:transparent; color:#91a3b8;
+  font:700 18px/1 'JetBrains Mono',monospace; cursor:pointer;
+}
+#creator3dCanvas { display:block; width:100%; height:216px; }
+#btn3dPreview.is-active { color:#36f2a1; border-color:rgba(54,242,161,.42); }
+
 #waveCanvas {
   width:100%; height:88px; display:block;
   border-bottom:1px solid rgba(255,255,255,0.07);
