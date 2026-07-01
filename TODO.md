@@ -93,7 +93,7 @@
 - [ ] Przekazywanie danych śledzenia rąk z telefonu do przeglądarki PC
 
 ## 15. Lepsza rozgrywka
-- [ ] Balans trudności — krzywa nauki
+- [x] Balans trudności — krzywa nauki w trybie losowym
 - [x] Więcej wzorców sekwencji beatów (subtelne losowe pozycje nowych beatów w kreatorze)
 - [x] Efekty trafienia bardziej satysfakcjonujące (shake, flash, dźwięk)
 
