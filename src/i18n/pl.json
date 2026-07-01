@@ -8,6 +8,15 @@
     "calibration": "KALIBRACJA",
     "mainMenu": "MENU GŁÓWNE"
   },
+  "narrator": {
+    "continue": "ROZUMIEM",
+    "coach": {
+      "recovery": "Nie przejmuj się porażką. Zwolnij ruchy, trzymaj dłonie w kadrze i skup się najpierw na utrzymaniu rytmu.",
+      "excellent": "Świetna seria! Masz już rytm — teraz spróbuj prowadzić cięcia bliżej środka bloków.",
+      "good": "Dobra runda. Utrzymujesz serię coraz dłużej; spokojniejsze ruchy pomogą zamienić ją w naprawdę wysokie combo.",
+      "practice": "Na początek skup się na jednej nucie naraz. Celne, spokojne cięcie jest ważniejsze niż gwałtowny ruch."
+    }
+  },
   "pause": {
     "title": "PAUZA",
     "handsLost": "UTRACONO RĘCE — STAŃ PRZED KAMERĄ",

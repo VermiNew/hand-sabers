@@ -8,6 +8,15 @@
     "calibration": "CALIBRATION",
     "mainMenu": "MAIN MENU"
   },
+  "narrator": {
+    "continue": "GOT IT",
+    "coach": {
+      "recovery": "Do not worry about the loss. Slow your movements, keep your hands in frame, and focus on holding the rhythm first.",
+      "excellent": "Excellent streak! You have the rhythm — now try guiding each cut closer to the center of the blocks.",
+      "good": "Good round. Your streaks are getting longer; calmer movements will help turn them into a truly high combo.",
+      "practice": "Focus on one note at a time. A calm, accurate cut matters more than a sudden movement."
+    }
+  },
   "pause": {
     "title": "PAUSE",
     "handsLost": "HANDS LOST — STAND IN FRONT OF CAMERA",

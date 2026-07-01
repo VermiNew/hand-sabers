@@ -31,7 +31,7 @@ import {
 } from '../multiplayer/gameplay-settings.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing } from '../remote/host-pairing.ts';
-import { narratorShow, NARRATOR_SPEEDS, type NarratorExpression } from './narrator.ts';
+import { narratorHide, narratorShow, NARRATOR_SPEEDS, type NarratorExpression } from './narrator.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
 
 declare global {
@@ -207,6 +207,7 @@ let multiplayerRoomConnected = false;
 let multiplayerRoomRole: 'host' | 'guest' | null = null;
 let multiplayerRoomRoundActive = false;
 let lastMultiplayerScoreAt = 0;
+let narratorCoachTimer: ReturnType<typeof setTimeout> | null = null;
 type MultiplayerSaberAssignment = 'left' | 'right' | 'both';
 
 function applyRuntimeOneHandMode(mode: Settings['oneHandMode']): void {
@@ -251,6 +252,35 @@ function requestMultiplayerGameplaySetting<K extends keyof MultiplayerGameplaySe
     detail: { ...current, [key]: value },
   }));
   return true;
+}
+
+function clearNarratorCoach(): void {
+  if (narratorCoachTimer !== null) {
+    clearTimeout(narratorCoachTimer);
+    narratorCoachTimer = null;
+  }
+  narratorHide();
+}
+
+function scheduleNarratorCoach(): void {
+  clearNarratorCoach();
+  const coach = state.lives <= 0
+    ? { text: t('narrator.coach.recovery'), expression: 'serious' as const }
+    : state.maxCombo >= 50
+      ? { text: t('narrator.coach.excellent'), expression: 'laugh' as const }
+      : state.maxCombo >= 20
+        ? { text: t('narrator.coach.good'), expression: 'smile' as const }
+        : { text: t('narrator.coach.practice'), expression: 'smirk' as const };
+  narratorCoachTimer = setTimeout(() => {
+    narratorCoachTimer = null;
+    if (state.appState !== S.GAMEOVER) return;
+    void narratorShow({
+      text: coach.text,
+      expression: coach.expression,
+      buttons: [t('narrator.continue')],
+      charMs: NARRATOR_SPEEDS['fast'] ?? 14,
+    });
+  }, 450);
 }
 
 function resetMapTimeline(): void {
@@ -509,10 +539,14 @@ function endGame(): void {
   resetMapTimeline();
   clearGameplayEntities();
   void submitScore(progress, wasMultiplayerRound, wasMultiplayerTraining);
-  fadeTransition(() => { showGameOver(state); });
+  fadeTransition(() => {
+    showGameOver(state);
+    if (!wasMultiplayerRound) scheduleNarratorCoach();
+  });
 }
 
 function restartGame(): void {
+  clearNarratorCoach();
   clearGameplayEntities();
   stopMapAudio();
   resetMapTimeline();
@@ -524,6 +558,7 @@ function restartGame(): void {
 }
 
 function restartWithoutCalib(): void {
+  clearNarratorCoach();
   clearGameplayEntities();
   stopMapAudio();
   resetMapTimeline();
@@ -964,6 +999,7 @@ document.getElementById('pauseMaps')?.addEventListener('click', () => {
 });
 
 function returnToMainMenu(): void {
+  clearNarratorCoach();
   fadeTransition(() => {
     if (multiplayerRoundActive) {
       window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));
