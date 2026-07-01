@@ -123,7 +123,7 @@
 
 ## 20. Narrator (Lora)
 - [x] Dodać ekspresje twarzy avatara narratora z `.agents/LORA`
-- [ ] Wykorzystać narratora (`?narrator&text=""`) do czegoś pożytecznego związanego z grą — [do ustalenia: czekam na sugestie]
+- [x] Wykorzystać narratora (`?narrator&text=""`) do czegoś pożytecznego związanego z grą — coaching po rundzie singleplayer
 
 ## 21. Wizualizacje reagujące na muzykę i nowe tryby gry
 - [ ] Elementy wizualne reagujące na muzykę, częstotliwości i beaty (zgodne z tym, co użytkownik mapuje w kreatorze)
