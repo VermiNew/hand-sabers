@@ -54,8 +54,9 @@ declare global {
 }
 
 // ── Stałe ──────────────────────────────────────────────────────────────────
-const BPM          = 120;
-const BEAT_MS      = 60000 / BPM;
+const RANDOM_CURVE_DURATION_MS = 120_000;
+const RANDOM_START_BEAT_MS = 750;
+const RANDOM_END_BEAT_MS = 430;
 const BLOCK_CAP_MS = 1000 / 60;
 const HIT_RADIUS   = 0.50;
 const MAX_SWING_BONUS     = 0.18;
@@ -487,6 +488,7 @@ export function updateSparks(deltaScale = 1) {
 // ── Stan gry ────────────────────────────────────────────────────────────────
 const activeBlocks: ActiveBlock[] = [];
 let nextBeatMs      = 0;
+let randomModeStartedAt = 0;
 let lastBlockMs     = 0;
 let nextSideLeft    = true;
 let nextDemoBeatMs   = 0;
@@ -546,7 +548,8 @@ export function startGameplay() {
   hitStreakForRegen = 0;
   lastHitMs = 0;
   const now = performance.now();
-  nextBeatMs   = now + BEAT_MS / getTrainingRate();
+  randomModeStartedAt = now;
+  nextBeatMs   = now + RANDOM_START_BEAT_MS / getTrainingRate();
   lastBlockMs  = now;
   nextSideLeft = true;
   resetBladeHitboxes();
@@ -614,6 +617,7 @@ interface SpawnOptions {
   hitTimeSec?: number;
   approachSec?: number;
   heldDuration?: number;
+  randomDifficulty?: number;
 }
 
 // ── Spawn ────────────────────────────────────────────────────────────────────
@@ -622,8 +626,12 @@ function spawnBlock(side: SaberSide | null = null, isBomb = false, options: Spaw
   if (!side) { side = nextSideLeft ? 'left' : 'right'; nextSideLeft = !nextSideLeft; }
   const cut  = isBomb ? 'any' : normalizeCutDirection(options.cut || 'any');
   const mesh = isBomb ? acquireBomb() : acquireBlock(side);
-  const x    = Number.isFinite(options.x) ? options.x! : (isBomb ? (Math.random() * 2 - 1) * 1.2 : (side === 'left' ? -1 : 1) * (0.4 + Math.random() * 0.8));
-  const y    = Number.isFinite(options.y) ? options.y! : 0.7 + Math.random() * 1.0;
+  const randomDifficulty = THREE.MathUtils.clamp(options.randomDifficulty ?? 1, 0, 1);
+  const laneWidth = 0.25 + randomDifficulty * 0.55;
+  const x    = Number.isFinite(options.x) ? options.x! : (isBomb
+    ? (Math.random() * 2 - 1) * (0.7 + randomDifficulty * 0.5)
+    : (side === 'left' ? -1 : 1) * (0.55 + Math.random() * laneWidth));
+  const y    = Number.isFinite(options.y) ? options.y! : 0.85 + Math.random() * (0.55 + randomDifficulty * 0.45);
   const z    = Number.isFinite(options.z) ? options.z! : SPAWN_Z;
   const heldDuration = (!isBomb && Number.isFinite(options.heldDuration) && options.heldDuration! > 0)
     ? options.heldDuration! : 0;
@@ -1079,6 +1087,16 @@ export function resetMapSpawn() {
   lastMapSpawnTimeSec = 0;
 }
 
+function randomDifficultyAt(now: number): number {
+  return THREE.MathUtils.clamp((now - randomModeStartedAt) / RANDOM_CURVE_DURATION_MS, 0, 1);
+}
+
+function randomCutAt(difficulty: number): CutDirection {
+  if (difficulty < 0.25 || Math.random() > difficulty * 0.55) return 'any';
+  const directions: readonly CutDirection[] = ['down', 'left', 'right', 'up'];
+  return directions[Math.floor(Math.random() * directions.length)] ?? 'any';
+}
+
 // ── Update loop ───────────────────────────────────────────────────────────────
 export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTimeSec = 0): void {
   const elapsed = now - lastBlockMs;
@@ -1089,13 +1107,18 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
   if (mapBeats) {
     spawnMapBeats(mapBeats, mapTimeSec);
   } else {
-    // Tryb losowy
+    // Random mode starts forgiving and reaches its full pace after about two minutes.
     if (now >= nextBeatMs) {
-      nextBeatMs = now + BEAT_MS / getTrainingRate();
+      const difficulty = randomDifficultyAt(now);
+      const beatIntervalMs = THREE.MathUtils.lerp(RANDOM_START_BEAT_MS, RANDOM_END_BEAT_MS, difficulty);
+      nextBeatMs = now + beatIntervalMs / getTrainingRate();
       playBeat();
-      const bombChance = 0.12;
-      if (Math.random() < bombChance) spawnBlock(null, true);
-      else spawnBlock();
+      const bombChance = difficulty < 0.15 ? 0 : THREE.MathUtils.lerp(0.03, 0.12, difficulty);
+      if (Math.random() < bombChance) spawnBlock(null, true, { randomDifficulty: difficulty });
+      else spawnBlock(null, false, {
+        cut: randomCutAt(difficulty),
+        randomDifficulty: difficulty,
+      });
     }
   }
 
