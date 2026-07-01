@@ -122,7 +122,7 @@
 - [ ] (przyszłość) Czat głosowy z avatarami podświetlającymi się przy mówieniu + animacje
 
 ## 20. Narrator (Lora)
-- [ ] Dodać ekspresje twarzy avatara narratora z `.agents/LORA`
+- [x] Dodać ekspresje twarzy avatara narratora z `.agents/LORA`
 - [ ] Wykorzystać narratora (`?narrator&text=""`) do czegoś pożytecznego związanego z grą — [do ustalenia: czekam na sugestie]
 
 ## 21. Wizualizacje reagujące na muzykę i nowe tryby gry
