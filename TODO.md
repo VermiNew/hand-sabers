@@ -45,7 +45,7 @@
 - [x] Poprawić system wydajności (profile, adaptive quality)
 - [x] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC — [projekt](docs/remote-tracking.md)
 - [x] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
-- [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach
+- [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach – **zablokowane** (obecnie dostępny tylko model `float16`; brak alternatywnych modeli w MediaPipe)
 - [x] Nowa strona/overlay "Pomoc" w menu — instrukcja gry + mini‑tutorial (PL i EN)
 
 ## 8. TODO techniczne (backlog)
