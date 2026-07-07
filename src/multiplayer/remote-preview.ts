@@ -46,10 +46,14 @@ function drawHand(
   }
 }
 
+function getOrCreateContainer(): HTMLElement | null {
+  return document.getElementById('multiplayerCameras');
+}
+
 function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanvasElement } | null {
-  const feeds = document.querySelector<HTMLElement>('#camPanel .cam-feeds');
+  const container = getOrCreateContainer();
   const name = playerNames.get(streamId);
-  if (!feeds || !name) return null;
+  if (!container || !name) return null;
   let element = previews.get(streamId);
   if (!element) {
     element = document.createElement('div');
@@ -57,12 +61,12 @@ function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanva
     element.dataset['streamId'] = String(streamId);
     const label = document.createElement('span');
     label.className = 'cam-tag ml';
-    label.textContent = `ML · ${name}`;
+    label.textContent = name;
     const canvas = document.createElement('canvas');
     canvas.width = 400;
     canvas.height = 260;
     element.append(label, canvas);
-    feeds.append(element);
+    container.append(element);
     previews.set(streamId, element);
   }
   const canvas = element.querySelector<HTMLCanvasElement>('canvas');
@@ -70,7 +74,6 @@ function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanva
 }
 
 function renderLandmarks(packet: RemoteLandmarkPacket): void {
-  if (!document.body.classList.contains('dev-tools')) return;
   const preview = previewFor(packet.streamId);
   const context = preview?.canvas.getContext('2d');
   if (!preview || !context) return;
@@ -97,8 +100,11 @@ function updatePlayers(detail: RoomStateDetail | null): void {
       continue;
     }
     const label = preview.querySelector<HTMLElement>('.cam-tag');
-    if (label) label.textContent = `ML · ${name}`;
+    if (label) label.textContent = name;
   }
+  // Show/hide the container depending on whether other players are present
+  const container = getOrCreateContainer();
+  if (container) container.hidden = previews.size === 0;
 }
 
 export function initRemoteTrackingPreviews(): void {

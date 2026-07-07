@@ -114,3 +114,43 @@
   .mp-setup,.mp-room,.mp-lobby-grid { grid-template-columns:1fr; }
   .mp-action-card > p { min-height:0; margin-bottom:18px; }
 }
+
+/* ── Multiplayer — player hand previews (always visible during gameplay) ──── */
+#multiplayerCameras {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 210; /* above HUD (200) but below overlays */
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  pointer-events: none;
+}
+
+#multiplayerCameras[hidden] { display: none; }
+
+#multiplayerCameras .cam-box {
+  width: 120px;
+  height: 76px;
+  opacity: 0.72;
+  border-color: rgba(47, 124, 255, 0.20);
+  transition: opacity 0.2s;
+}
+
+#multiplayerCameras .cam-box:hover {
+  opacity: 1;
+}
+
+@media (max-width: 700px) {
+  #multiplayerCameras {
+    flex-direction: row;
+    top: auto;
+    bottom: 80px;
+    left: 8px;
+  }
+
+  #multiplayerCameras .cam-box {
+    width: 88px;
+    height: 56px;
+  }
+}
