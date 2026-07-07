@@ -25,7 +25,7 @@ npm start
 
 Otwórz w przeglądarce:
 
-```
+```plaintext
 http://localhost:3000
 ```
 
