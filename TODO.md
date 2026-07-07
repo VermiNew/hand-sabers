@@ -46,7 +46,7 @@
 - [x] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC — [projekt](docs/remote-tracking.md)
 - [x] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
 - [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach
-- [x] Nowa strona/overlay "Pomoc" w menu — instrukcja gry + mini-tutorial (PL i EN)
+- [x] Nowa strona/overlay "Pomoc" w menu — instrukcja gry + mini‑tutorial (PL i EN)
 
 ## 8. TODO techniczne (backlog)
 
@@ -62,114 +62,114 @@
 - [x] Dodać osobny ekran diagnostyczny kamery bez `?dev`
 - [x] Naprawić build kreatora map tak, aby nie ładował entry gry i nie uruchamiał canvas/Three poza ekranem gry
 
-## 8. i18n — Polski i Angielski
+## 9. i18n — Polski i Angielski
 
 - [x] Wybrać bibliotekę lub prosty system kluczy (np. `t('key')`)
 - [x] Wyekstrahować wszystkie ciągi UI do plików tłumaczeń `pl.json` / `en.json`
 - [x] Dodać przełącznik języka w ustawieniach
 - [x] Przetłumaczyć UI na angielski
 
-## 9. Tutorial
+## 10. Tutorial
 
 - [x] Zaprojektować flow tutoriala (krok po kroku: kalibracja → ruch → trafienie)
 - [x] Overlay z instrukcjami wyświetlany przy pierwszym uruchomieniu
 - [x] Możliwość pominięcia i powrotu do tutoriala z menu
 
-## 10. Menu pomocy
+## 11. Menu pomocy
 
 - [x] Strona/overlay "Jak grać" dostępna z głównego menu
 - [x] Sekcje: sterowanie, scoring, ustawienia kamery, FAQ
 
-## 11. Multiplayer
+## 12. Multiplayer
 
 - [x] Architektura: WebSocket server, synchronizacja stanu gry — [projekt](docs/multiplayer.md)
-- [x] Tryb współpracy (co-op) i rywalizacji (score attack)
+- [x] Tryb współpracy (co‑op) i rywalizacji (score attack)
 - [x] Synchronizacja beatów i wyników w czasie rzeczywistym
 
-## 12. Lobby do Multiplayer
+## 13. Lobby do Multiplayer
 
 - [x] Tworzenie i dołączanie do pokoju (kod/link)
 - [x] Lista graczy w lobby z gotowością
 - [x] Wybór mapy przez hosta
 
-## 13. Optymalizacja dla słabych PC
+## 14. Optymalizacja dla słabych PC
 
 - [ ] Profilowanie — znaleźć główne wąskie gardła na niskich ustawieniach
 - [x] Dalsze obniżanie jakości grafiki (wyłączenie mgły, siatek, efektów)
 - [x] Adaptive quality — automatyczne obniżanie gdy FPS spada poniżej progu
 
-## 14. Kamera/ML na telefon (remote tracking)
+## 15. Kamera/ML na telefon (remote tracking)
 
 - [x] Architektura: telefon jako klient kamery + WebRTC lub WebSocket — [projekt](docs/remote-tracking.md)
-- [ ] Parowanie przez QR code lub kod z ekranu
+- [x] Parowanie QR code lub kod z ekranu – zrealizowane (QR oraz pole ręcznego wpisania kodu w `remote-camera.html`)
 - [ ] Przekazywanie danych śledzenia rąk z telefonu do przeglądarki PC
 
-## 15. Lepsza rozgrywka
+## 16. Lepsza rozgrywka
 
 - [ ] Balans trudności — krzywa nauki
 - [x] Więcej wzorców sekwencji beatów (subtelne losowe pozycje nowych beatów w kreatorze)
 - [x] Efekty trafienia bardziej satysfakcjonujące (shake, flash, dźwięk)
 
-## 16. Edytor map
+## 17. Edytor map
 
 - [x] Rozbić `map-creator.html` na moduły: audio, ZIP, storage, waveform, UI, input
 - [x] Czytelny preview "hit now" na osi czasu
 - [x] Lepsze narzędzia do układania beatów (snap do BPM, kopiuj/wklej)
 - [ ] Podgląd mapy w trybie 3D podczas edycji
 
-## 17. Multiplayer — poprawki i co-op
+## 18. Multiplayer — poprawki i co‑op
 
 - [x] Przycisk "Opuść pokój" / "Rozłącz" w trybie Multiplayer
 - [x] Wskaźnik stanu kalibracji każdego gracza (kto skalibrowany, kto jeszcze nie)
-- [ ] Tryb lobby z limitem graczy (np. 2 osoby) → tryb co-op
-- [ ] Co-op: podział mieczy między graczy (jeden gracz lewy miecz, drugi prawy; lub jeden gracz oba)
+- [ ] Tryb lobby z limitem graczy (np. 2 osoby) → tryb co‑op
+- [ ] Co‑op: podział mieczy między graczy (jeden gracz lewy miecz, drugi prawy; lub jeden gracz oba)
 - [ ] Globalne ustawienia rozgrywki kontrolowane przez hosta (tryb treningowy, no fail itd.) — zablokować lokalne zmiany ustawień w Multiplayer
 - [ ] Wybór mapy przez hosta przez `map.html` (otwiera picker, wybór utworu wraca do lobby bez wyrzucania/rozłączania) zamiast wyboru po identyfikatorze `map-*`
 - [x] Ustawienie nazwy użytkownika (w ustawieniach lub na ekranie dołączania do Multiplayer)
 - [ ] Widok rąk/pozycji przeciwników i partnerów z drużyny widoczny na ekranie (poza trybem dev, w dyskretnym miejscu, aby nie zasłaniać obszaru gry)
 
-## 18. Menu w trakcie gry (pauza)
+## 19. Menu w trakcie gry (pauza)
 
 - [x] Naprawić przycisk `ESC` — panel pauzy nie wyświetla się w trakcie gry (Singleplayer i Multiplayer)
 - [x] Singleplayer: Wznów, Restart, Wróć do menu głównego, Koniec
 - [x] Multiplayer: Wróć do gry, Opuść pokój i wróć do menu głównego
 
-## 19. Czat i komunikacja (backlog)
+## 20. Czat i komunikacja (backlog)
 
 - [ ] Czat tekstowy w Multiplayer
 - [ ] (przyszłość) Czat głosowy z avatarami podświetlającymi się przy mówieniu + animacje
 
-## 20. Narrator (Lora)
+## 21. Narrator (Lora)
 
 - [ ] Dodać ekspresje twarzy avatara narratora z `.agents/LORA`
-- [ ] Wykorzystać narratora (`?narrator&text=""`) do czegoś pożytecznego związanego z grą — [do ustalenia: czekam na sugestie]
+- [ ] Wykorzystać narratora (`?narrator&text=""`) do czegoś pożytecznego w grze — [do ustalenia]
 
-## 21. Wizualizacje reagujące na muzykę i nowe tryby gry
+## 22. Wizualizacje reagujące na muzykę i nowe tryby gry
 
 - [ ] Elementy wizualne reagujące na muzykę, częstotliwości i beaty (zgodne z tym, co użytkownik mapuje w kreatorze)
-- [ ] Nowe gamemode urozmaicające i udoskonalające rozgrywkę
+- [ ] Nowe gamemode’y urozmaicające i udoskonalające rozgrywkę
 
-## 22. Bugi UI / build
+## 23. Bugi UI / build
 
-- [x] Naprawić edytor map na porcie `:3000` (na `:5173` działa) — błąd `Uncaught TypeError: Cannot read properties of null (reading 'width')` w buildzie gry (`game-*.js`); przez serwer produkcyjny na `:3000` edytor map się nie ładuje
+- [x] Naprawić edytor map na porcie `:3000` (działa na `:5173`), usunięto błąd `Uncaught TypeError: Cannot read properties of null (reading 'width')` w buildzie gry
 - [x] Poprawić łamanie tekstu i rozmieszczenie elementów w panelu ustawień
-- [x] Usunąć "Phone camera" z menu głównego (menu zbyt wysokie — nie dodawać nowych entry) i przenieść konfigurację do ustawień jako nowe entry
+- [x] Usunąć "Phone camera" z menu głównego (menu zbyt wysokie) i przenieść konfigurację do ustawień jako nowe entry
 
-## 23. Kamera/ML na telefonie — kalibracja (zob. też sekcja 14)
+## 24. Kamera/ML na telefonie — kalibracja (zob. też sekcja 15)
 
 - [ ] Kalibracja w trybie remote nie powinna pytać o kamerę komputera, tylko o telefon
 - [ ] Przesyłanie obrazu z kamery i danych ML z telefonu do PC — [do rozwiązania]
 
-## Mapy i import/export (zrobione)
+## 25. Mapy i import/export (zrobione)
 
 - [x] Rozszerzyć format mapy o `meta.bpm`, `meta.artist`, `meta.mapper`, `meta.difficulty`, `meta.previewStartSec`
-- [x] Dodać `upgradeMapFormat(map)` do automatycznej migracji starych map
+- [x] Dodać `upgradeMapFormat(map)` do automatycznej migracji starszych map
 - [x] Zapisywać beatdata po stronie serwera w `maps/beatdata/<id>.json`
 - [x] Zapisywać audio z kreatora/importu ZIP w `maps/audio/<id>.<ext>`
-- [x] Odczytywać legacy mapy z `maps/<id>.json` i legacy audio z `maps/_audio/`
+- [x] Odczytywać legacy‑mapy z `maps/<id>.json` i legacy‑audio z `maps/_audio/`
 - [x] Eksportować ZIP z `map.json` i audio
-- [x] Testy dla złych ZIP-ów i walidacja audio
-- [x] Limit długości mapy / liczby beatów
+- [x] Testy dla niepoprawnych ZIP‑ów i walidacja audio
+- [x] Limit długości mapy / liczby beatów
 - [x] Osobny moduł `server/storage/*`
 - [x] Przenieść serwer do `server/index.js`, `server/routes`, `server/storage`
 - [x] Testy jednostkowe dla `normalizeMap`, `isSafeZipPath`, `noteZAtSongTime`, `getSongTimeSec`
