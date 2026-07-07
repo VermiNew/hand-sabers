@@ -21,6 +21,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'index.html'),
@@ -35,6 +36,7 @@ export default defineConfig({
         entryFileNames: chunk => chunk.name === 'serviceWorker'
           ? 'service-worker.js'
           : 'assets/[name]-[hash].js',
+        manualChunks: id => id.includes('node_modules/three') ? 'three' : undefined,
       },
     },
   },
