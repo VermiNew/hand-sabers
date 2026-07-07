@@ -10,12 +10,12 @@ interface RoomStateDetail {
 }
 
 const HAND_CONNECTIONS: readonly [number, number][] = [
-  [0,1],[1,2],[2,3],[3,4],
-  [0,5],[5,6],[6,7],[7,8],
-  [0,9],[9,10],[10,11],[11,12],
-  [0,13],[13,14],[14,15],[15,16],
-  [0,17],[17,18],[18,19],[19,20],
-  [5,9],[9,13],[13,17],
+  [0, 1], [1, 2], [2, 3], [3, 4],
+  [0, 5], [5, 6], [6, 7], [7, 8],
+  [0, 9], [9, 10], [10, 11], [11, 12],
+  [0, 13], [13, 14], [14, 15], [15, 16],
+  [0, 17], [17, 18], [18, 19], [19, 20],
+  [5, 9], [9, 13], [13, 17],
 ];
 
 const playerNames = new Map<number, string>();
@@ -46,12 +46,16 @@ function drawHand(
   }
 }
 
-function getOrCreateContainer(): HTMLElement | null {
+/** In dev mode attach to the existing cam panel; otherwise use the gameplay overlay. */
+function getContainer(): HTMLElement | null {
+  if (document.body.classList.contains('dev-tools')) {
+    return document.querySelector<HTMLElement>('#camPanel .cam-feeds');
+  }
   return document.getElementById('multiplayerCameras');
 }
 
 function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanvasElement } | null {
-  const container = getOrCreateContainer();
+  const container = getContainer();
   const name = playerNames.get(streamId);
   if (!container || !name) return null;
   let element = previews.get(streamId);
@@ -61,7 +65,7 @@ function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanva
     element.dataset['streamId'] = String(streamId);
     const label = document.createElement('span');
     label.className = 'cam-tag ml';
-    label.textContent = name;
+    label.textContent = document.body.classList.contains('dev-tools') ? `ML · ${name}` : name;
     const canvas = document.createElement('canvas');
     canvas.width = 400;
     canvas.height = 260;
@@ -100,11 +104,13 @@ function updatePlayers(detail: RoomStateDetail | null): void {
       continue;
     }
     const label = preview.querySelector<HTMLElement>('.cam-tag');
-    if (label) label.textContent = name;
+    if (label) {
+      label.textContent = document.body.classList.contains('dev-tools') ? `ML · ${name}` : name;
+    }
   }
-  // Show/hide the container depending on whether other players are present
-  const container = getOrCreateContainer();
-  if (container) container.hidden = previews.size === 0;
+  // Show the gameplay overlay only when there are remote players and not in dev mode
+  const overlay = document.getElementById('multiplayerCameras');
+  if (overlay) overlay.hidden = previews.size === 0;
 }
 
 export function initRemoteTrackingPreviews(): void {
