@@ -83,6 +83,8 @@
     "mode": "MODE",
     "scoreAttack": "SCORE ATTACK",
     "coop": "CO-OP",
+    "leftSaber": "LEFT SABER",
+    "rightSaber": "RIGHT SABER",
     "teamScore": "TEAM SCORE",
     "spectatorState": "SPECTATOR",
     "selectMap": "SELECT MAP",

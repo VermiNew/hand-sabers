@@ -36,6 +36,7 @@ export interface RoomPlayer {
   streamId: number;
   name: string;
   role: 'host' | 'guest';
+  saber: 'left' | 'right' | 'both';
   ready: boolean;
   score: number;
   combo: number;
@@ -74,6 +75,11 @@ interface RoomRecord extends RoomSnapshot {
 
 function maxPlayersForMode(mode: RoomMode): number {
   return mode === 'coop' ? COOP_PLAYERS : SCORE_ATTACK_MAX_PLAYERS;
+}
+
+function saberForPlayer(mode: RoomMode, role: RoomPlayer['role']): RoomPlayer['saber'] {
+  if (mode !== 'coop') return 'both';
+  return role === 'host' ? 'left' : 'right';
 }
 
 export interface CreatedRoom extends RoomSnapshot {
@@ -182,6 +188,7 @@ export class RoomRegistry {
       streamId,
       name,
       role,
+      saber: saberForPlayer(room.mode, role),
       ready: false,
       score: 0,
       combo: 0,
@@ -245,7 +252,10 @@ export class RoomRegistry {
     room.mode = mode;
     room.maxPlayers = maxPlayers;
     room.round = null;
-    for (const roomPlayer of room.players) roomPlayer.ready = false;
+    for (const roomPlayer of room.players) {
+      roomPlayer.saber = saberForPlayer(mode, roomPlayer.role);
+      roomPlayer.ready = false;
+    }
     room.revision++;
     return this.snapshot(room);
   }

@@ -34,6 +34,7 @@ interface RoomPlayer {
   streamId: number;
   name: string;
   role: 'host' | 'guest';
+  saber: 'left' | 'right' | 'both';
   ready: boolean;
   score: number;
   combo: number;
@@ -155,6 +156,7 @@ function parseRoomPlayer(value: unknown): RoomPlayer | null {
     || typeof player['name'] !== 'string'
     || player['name'].length > 32
     || (player['role'] !== 'host' && player['role'] !== 'guest')
+    || (player['saber'] !== 'left' && player['saber'] !== 'right' && player['saber'] !== 'both')
     || typeof player['ready'] !== 'boolean'
     || !Number.isSafeInteger(player['score'])
     || Number(player['score']) < 0
@@ -177,6 +179,7 @@ function parseRoomPlayer(value: unknown): RoomPlayer | null {
     streamId: player['streamId'] as number,
     name: player['name'],
     role: player['role'],
+    saber: player['saber'],
     ready: player['ready'],
     score: player['score'] as number,
     combo: player['combo'] as number,
@@ -234,6 +237,10 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
   for (const valuePlayer of candidate['players']) {
     const player = parseRoomPlayer(valuePlayer);
     if (!player) return null;
+    if (
+      (candidate['mode'] === 'score-attack' && player.saber !== 'both')
+      || (candidate['mode'] === 'coop' && player.saber !== (player.role === 'host' ? 'left' : 'right'))
+    ) return null;
     players.push(player);
   }
   return {
@@ -409,6 +416,12 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         role.className = 'mp-player-role';
         role.textContent = 'HOST';
         identity.append(role);
+      }
+      if (snapshot.mode === 'coop') {
+        const saber = document.createElement('span');
+        saber.className = 'mp-player-role';
+        saber.textContent = t(`multiplayer.${player.saber}Saber`);
+        identity.append(saber);
       }
       const state = document.createElement('span');
       state.className = 'mp-player-state';
