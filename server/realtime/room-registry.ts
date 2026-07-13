@@ -3,7 +3,8 @@ import { randomBytes, randomInt, timingSafeEqual } from 'node:crypto';
 const ROOM_ALPHABET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const ROOM_CODE_LENGTH = 6;
 const ROOM_TTL_MS = 30 * 60 * 1000;
-const MAX_PLAYERS = 8;
+const SCORE_ATTACK_MAX_PLAYERS = 8;
+const COOP_PLAYERS = 2;
 
 export type RoomErrorCode =
   | 'ROOM_NOT_FOUND'
@@ -53,6 +54,7 @@ export interface RoomSnapshot {
   revision: number;
   mapId: string | null;
   mode: RoomMode;
+  maxPlayers: number;
   round: RoomRound | null;
   players: RoomPlayer[];
 }
@@ -68,6 +70,10 @@ interface RoomRecord extends RoomSnapshot {
   hostToken: string;
   joinToken: string;
   nextRoundId: number;
+}
+
+function maxPlayersForMode(mode: RoomMode): number {
+  return mode === 'coop' ? COOP_PLAYERS : SCORE_ATTACK_MAX_PLAYERS;
 }
 
 export interface CreatedRoom extends RoomSnapshot {
@@ -126,6 +132,7 @@ export class RoomRegistry {
       revision: 0,
       mapId: null,
       mode: 'score-attack',
+      maxPlayers: SCORE_ATTACK_MAX_PLAYERS,
       round: null,
       nextRoundId: 1,
       players: [],
@@ -145,6 +152,7 @@ export class RoomRegistry {
       revision: room.revision,
       mapId: room.mapId,
       mode: room.mode,
+      maxPlayers: room.maxPlayers,
       round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),
     };
@@ -158,7 +166,7 @@ export class RoomRegistry {
       ? 'host'
       : tokensMatch(token, room.joinToken) ? 'guest' : null;
     if (!role) throw new RoomError('INVALID_ROOM_TOKEN');
-    if (room.players.length >= MAX_PLAYERS) throw new RoomError('ROOM_FULL');
+    if (room.players.length >= room.maxPlayers) throw new RoomError('ROOM_FULL');
     if (role === 'host' && room.players.some(player => player.role === 'host')) {
       throw new RoomError('HOST_ALREADY_CONNECTED');
     }
@@ -232,7 +240,10 @@ export class RoomRegistry {
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
     if (mode !== 'coop' && mode !== 'score-attack') throw new RoomError('INVALID_MODE');
+    const maxPlayers = maxPlayersForMode(mode);
+    if (room.players.length > maxPlayers) throw new RoomError('ROOM_FULL');
     room.mode = mode;
+    room.maxPlayers = maxPlayers;
     room.round = null;
     for (const roomPlayer of room.players) roomPlayer.ready = false;
     room.revision++;
@@ -249,7 +260,11 @@ export class RoomRegistry {
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
     if (!room.mapId) throw new RoomError('MAP_REQUIRED');
-    if (!room.players.length || room.players.some(candidate => !candidate.ready)) {
+    if (
+      !room.players.length
+      || (room.mode === 'coop' && room.players.length !== COOP_PLAYERS)
+      || room.players.some(candidate => !candidate.ready)
+    ) {
       throw new RoomError('PLAYERS_NOT_READY');
     }
     if (room.round && room.round.finishedAt === null) {
@@ -345,6 +360,7 @@ export class RoomRegistry {
       revision: room.revision,
       mapId: room.mapId,
       mode: room.mode,
+      maxPlayers: room.maxPlayers,
       round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),
     };

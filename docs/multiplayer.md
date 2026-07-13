@@ -61,3 +61,6 @@ Co-op and score attack share room/clock infrastructure but use different score
 reducers. Co-op combines progress and failures; score attack ranks independent
 local results. Mode rules belong in pure server-side reducers so they can be
 verified without a browser.
+
+Score attack rooms accept up to eight players. Co-op requires exactly two
+players before the host can start the round.

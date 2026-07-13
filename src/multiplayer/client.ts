@@ -48,6 +48,7 @@ interface RoomSnapshot {
   revision: number;
   mapId: string | null;
   mode: 'coop' | 'score-attack';
+  maxPlayers: number;
   round: { id: number; mapId: string; startAt: number; finishedAt: number | null } | null;
   players: RoomPlayer[];
 }
@@ -195,8 +196,11 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     || !Number.isSafeInteger(candidate['revision'])
     || Number(candidate['revision']) < 0
     || !Array.isArray(candidate['players'])
-    || candidate['players'].length > 8
     || (candidate['mode'] !== 'coop' && candidate['mode'] !== 'score-attack')
+    || !Number.isSafeInteger(candidate['maxPlayers'])
+    || (candidate['mode'] === 'coop' && candidate['maxPlayers'] !== 2)
+    || (candidate['mode'] === 'score-attack' && candidate['maxPlayers'] !== 8)
+    || candidate['players'].length > Number(candidate['maxPlayers'])
     || (candidate['mapId'] !== null && typeof candidate['mapId'] !== 'string')
     || (typeof candidate['mapId'] === 'string' && !/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(candidate['mapId']))
   ) return null;
@@ -237,6 +241,7 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     revision: candidate['revision'] as number,
     mapId: candidate['mapId'] as string | null,
     mode: candidate['mode'],
+    maxPlayers: candidate['maxPlayers'] as number,
     round,
     players,
   };
@@ -391,7 +396,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: snapshot }));
     lobby.hidden = false;
     lobbyCode.textContent = snapshot.code;
-    playerCount.textContent = `${snapshot.players.length} / 8`;
+    playerCount.textContent = `${snapshot.players.length} / ${snapshot.maxPlayers}`;
     playerList.replaceChildren();
     for (const player of snapshot.players) {
       const row = document.createElement('div');
@@ -436,6 +441,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     startButton.hidden = currentRole !== 'host';
     startButton.disabled = !snapshot.mapId
       || snapshot.players.length === 0
+      || (snapshot.mode === 'coop' && snapshot.players.length !== snapshot.maxPlayers)
       || snapshot.players.some(player => !player.ready)
       || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     renderScores(snapshot);
@@ -653,6 +659,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   });
   modeSelect.addEventListener('change', () => {
     if (currentRole !== 'host' || !['coop', 'score-attack'].includes(modeSelect.value)) return;
+    if (modeSelect.value === 'coop' && (currentRoom?.players.length ?? 0) > 2) {
+      modeSelect.value = currentRoom?.mode ?? 'score-attack';
+      showMessage(translateServerError('ROOM_FULL'));
+      return;
+    }
     pendingPreparationMapId = '';
     sendControl({ type: 'set-mode', mode: modeSelect.value });
   });
