@@ -113,6 +113,15 @@ const MATS = {
 // Current block colors, kept in sync with saber color (used for shards)
 let currentColorLeft:  number = THEME.left;
 let currentColorRight: number = THEME.right;
+let activeSabers: SaberSide | 'both' = 'both';
+
+function isSaberActive(side: SaberSide): boolean {
+  return activeSabers === 'both' || activeSabers === side;
+}
+
+function effectiveOneHandMode(): SaberSide | null {
+  return activeSabers === 'both' ? state.oneHandMode : null;
+}
 
 const CUT_ARROW_ROT_Z = {
   down: 0,
@@ -530,7 +539,8 @@ function publishGameplayStats() {
   window.__prewarmedShardPool = shardPool.length;
 }
 
-export function startGameplay() {
+export function startGameplay(sabers: SaberSide | 'both' = 'both') {
+  activeSabers = sabers;
   state.score  = 0;
   state.combo  = 0;
   state.maxCombo = 0;
@@ -611,7 +621,8 @@ interface SpawnOptions {
 
 // ── Spawn ────────────────────────────────────────────────────────────────────
 function spawnBlock(side: SaberSide | null = null, isBomb = false, options: SpawnOptions = {}): void {
-  if (!isBomb && state.oneHandMode) side = state.oneHandMode;
+  const oneHandMode = effectiveOneHandMode();
+  if (!isBomb && oneHandMode) side = oneHandMode;
   if (!side) { side = nextSideLeft ? 'left' : 'right'; nextSideLeft = !nextSideLeft; }
   const cut  = isBomb ? 'any' : normalizeCutDirection(options.cut || 'any');
   const mesh = isBomb ? acquireBomb() : acquireBlock(side);
@@ -888,7 +899,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
       disposeHeldMesh(entry);
       releaseBlock(entry.mesh);
       swapRemoveActiveBlock(i);
-      if (!entry.isBomb) {
+      if (!entry.isBomb && isSaberActive(entry.side)) {
         ({ combo: state.combo, maxCombo: state.maxCombo } = resetCombo(state));
         state.lives = Math.max(0, state.lives - 1);
         hitStreakForRegen = 0;
@@ -900,8 +911,9 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
       continue;
     }
 
-    const useLeft  = state.oneHandMode !== 'right';
-    const useRight = state.oneHandMode !== 'left';
+    const oneHandMode = effectiveOneHandMode();
+    const useLeft  = isSaberActive('left') && oneHandMode !== 'right';
+    const useRight = isSaberActive('right') && oneHandMode !== 'left';
 
     if (entry.isBomb) {
       if (useLeft && bladeHits(entry.mesh, bladeHitboxes.left)  && lSpeed > MIN_SWING_SPEED) { hitBomb(entry); swapRemoveActiveBlock(i); }
@@ -910,8 +922,8 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
     }
 
     if (entry.isHeld) {
-      const touchingLeft  = (state.oneHandMode === 'left'  || entry.side === 'left')  && useLeft  && bladeInsideHeld(entry, bladeHitboxes.left);
-      const touchingRight = (state.oneHandMode === 'right' || entry.side === 'right') && useRight && bladeInsideHeld(entry, bladeHitboxes.right);
+      const touchingLeft  = (oneHandMode === 'left'  || entry.side === 'left')  && useLeft  && bladeInsideHeld(entry, bladeHitboxes.left);
+      const touchingRight = (oneHandMode === 'right' || entry.side === 'right') && useRight && bladeInsideHeld(entry, bladeHitboxes.right);
       const touching = touchingLeft || touchingRight;
 
       // Accumulate progress once the head reaches the player
@@ -939,7 +951,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
           light.userData.hitTimer = setTimeout(() => { light.intensity = 4; light.userData.hitTimer = null; }, 120);
           continue;
         }
-      } else if (!touching && entry.mesh.position.z >= HIT_Z) {
+      } else if (!touching && isSaberActive(entry.side) && entry.mesh.position.z >= HIT_Z) {
         entry.heldDrainAccum += deltaSec;
         if (entry.heldDrainAccum >= 1.0) {
           entry.heldDrainAccum -= 1.0;
@@ -954,9 +966,9 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
       continue;
     }
 
-    if ((state.oneHandMode === 'left' || entry.side === 'left') && useLeft && bladeHits(entry.mesh, bladeHitboxes.left) && lSpeed > MIN_SWING_SPEED) {
+    if ((oneHandMode === 'left' || entry.side === 'left') && useLeft && bladeHits(entry.mesh, bladeHitboxes.left) && lSpeed > MIN_SWING_SPEED) {
       hitBlock(entry, getCurrentBlockColor('left'),  lLight, bladeHitboxes.left);  swapRemoveActiveBlock(i);
-    } else if ((state.oneHandMode === 'right' || entry.side === 'right') && useRight && bladeHits(entry.mesh, bladeHitboxes.right) && rSpeed > MIN_SWING_SPEED) {
+    } else if ((oneHandMode === 'right' || entry.side === 'right') && useRight && bladeHits(entry.mesh, bladeHitboxes.right) && rSpeed > MIN_SWING_SPEED) {
       hitBlock(entry, getCurrentBlockColor('right'), rLight, bladeHitboxes.right); swapRemoveActiveBlock(i);
     }
   }
@@ -1048,7 +1060,7 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
     if (isBeatTooLate(b, currentTimeSec, DROP_LATE_BY)) continue;
 
     const deterministicSide = ((index * 0x9e37_79b1) >>> 0) % 2 === 0 ? 'left' : 'right';
-    const side = state.oneHandMode || (b.side === 'random' ? deterministicSide : b.side);
+    const side = effectiveOneHandMode() || (b.side === 'random' ? deterministicSide : b.side);
     const lane = laneForBeat(side, b);
     spawnBlock(side, b.type === 'bomb', {
       mapBeat: true,

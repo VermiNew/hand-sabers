@@ -63,4 +63,6 @@ local results. Mode rules belong in pure server-side reducers so they can be
 verified without a browser.
 
 Score attack rooms accept up to eight players. Co-op requires exactly two
-players before the host can start the round.
+players before the host can start the round. The host plays left-side notes and
+the guest plays right-side notes; notes assigned to the partner do not affect
+the local player's score, combo or lives.

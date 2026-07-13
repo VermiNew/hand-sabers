@@ -352,6 +352,7 @@ async function prepareMultiplayerMap(mapId: string): Promise<void> {
 async function beginMultiplayerRound(detail: {
   mapId: string;
   mode: 'coop' | 'score-attack';
+  saber: 'left' | 'right' | 'both';
   startAtPerformance: number;
 }): Promise<void> {
   if (
@@ -387,7 +388,7 @@ async function beginMultiplayerRound(detail: {
   document.body.dataset['multiplayerMode'] = detail.mode;
   resetMapSpawn();
   startMapTimelineAt(detail.startAtPerformance);
-  startGameplay();
+  startGameplay(detail.saber);
   showMapTitle(state.map?.meta?.title ?? t('game.unknownTrack'));
   if (ui.dStatus) ui.dStatus.textContent = 'MULTIPLAYER';
 }
@@ -1714,15 +1715,24 @@ window.addEventListener('hand-sabers:multiplayer-prepare', event => {
   if (typeof mapId === 'string') void prepareMultiplayerMap(mapId);
 });
 window.addEventListener('hand-sabers:multiplayer-start', event => {
-  const detail = (event as CustomEvent<{ mapId?: unknown; mode?: unknown; startAtPerformance?: unknown }>).detail;
+  const detail = (event as CustomEvent<{
+    mapId?: unknown;
+    mode?: unknown;
+    saber?: unknown;
+    startAtPerformance?: unknown;
+  }>).detail;
   if (
     typeof detail?.mapId === 'string'
     && (detail.mode === 'coop' || detail.mode === 'score-attack')
+    && (detail.saber === 'left' || detail.saber === 'right' || detail.saber === 'both')
+    && ((detail.mode === 'coop' && detail.saber !== 'both')
+      || (detail.mode === 'score-attack' && detail.saber === 'both'))
     && typeof detail.startAtPerformance === 'number'
   ) {
     void beginMultiplayerRound({
       mapId: detail.mapId,
       mode: detail.mode,
+      saber: detail.saber,
       startAtPerformance: detail.startAtPerformance,
     });
   }

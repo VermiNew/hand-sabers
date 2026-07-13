@@ -391,6 +391,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       detail: {
         ...snapshot.round,
         mode: snapshot.mode,
+        saber: self.saber,
         startAtPerformance: serverTimeToPerformance(snapshot.round.startAt),
       },
     }));
