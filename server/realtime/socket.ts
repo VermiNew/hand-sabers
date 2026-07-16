@@ -8,6 +8,9 @@ import type { RoomRegistry, RoomSnapshot } from './room-registry.js';
 
 const PROTOCOL_VERSION = 1;
 const MAX_CONTROL_MESSAGES_PER_MINUTE = 1_200;
+const MAX_CHAT_MESSAGES_PER_WINDOW = 8;
+const CHAT_RATE_WINDOW_MS = 10_000;
+const MAX_CHAT_LENGTH = 240;
 const REALTIME_PACKETS_PER_SECOND = 120;
 const REALTIME_BURST_PACKETS = 180;
 const MAX_CONNECTIONS = 512;
@@ -21,6 +24,7 @@ interface ClientState {
   roomCode: string | null;
   playerId: string | null;
   messageTimes: number[];
+  chatTimes: number[];
   realtimeTokens: number;
   realtimeUpdatedAt: number;
   realtimeViolations: number;
@@ -44,6 +48,7 @@ interface ClientMessage {
   progress?: unknown;
   finished?: unknown;
   sentAt?: unknown;
+  text?: unknown;
 }
 
 function isAllowedOrigin(request: IncomingMessage): boolean {
@@ -76,6 +81,16 @@ function parseMessage(data: RawData): ClientMessage {
   const message = parsed as ClientMessage;
   if (message.v !== PROTOCOL_VERSION) throw new Error('UNSUPPORTED_PROTOCOL');
   return message;
+}
+
+function sanitizeChatText(value: unknown): string {
+  if (typeof value !== 'string') throw new Error('INVALID_CHAT');
+  const text = value
+    .replace(/[\u0000-\u001f\u007f]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text || text.length > MAX_CHAT_LENGTH) throw new Error('INVALID_CHAT');
+  return text;
 }
 
 function validateRealtimePacket(packet: Buffer): 1 | 2 {
@@ -142,6 +157,15 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
     }
   }
 
+  function broadcastChat(
+    roomCode: string,
+    message: { playerId: string; playerName: string; text: string; sentAt: number },
+  ): void {
+    for (const [socket, client] of clients) {
+      if (client.roomCode === roomCode) send(socket, { type: 'chat', message });
+    }
+  }
+
   function leave(socket: WebSocket): void {
     const client = clients.get(socket);
     clients.delete(socket);
@@ -182,6 +206,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
       roomCode: null,
       playerId: null,
       messageTimes: [],
+      chatTimes: [],
       realtimeTokens: REALTIME_BURST_PACKETS,
       realtimeUpdatedAt: Date.now(),
       realtimeViolations: 0,
@@ -235,6 +260,22 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
           return;
         }
         if (!client.roomCode || !client.playerId) throw new Error('JOIN_REQUIRED');
+
+        if (type === 'chat') {
+          const text = sanitizeChatText(message.text);
+          client.chatTimes = client.chatTimes.filter(timestamp => now - timestamp < CHAT_RATE_WINDOW_MS);
+          if (client.chatTimes.length >= MAX_CHAT_MESSAGES_PER_WINDOW) throw new Error('CHAT_RATE_LIMIT');
+          client.chatTimes.push(now);
+          const player = rooms.get(client.roomCode)?.players.find(candidate => candidate.id === client.playerId);
+          if (!player) throw new RoomError('PLAYER_NOT_FOUND');
+          broadcastChat(client.roomCode, {
+            playerId: player.id,
+            playerName: player.name,
+            text,
+            sentAt: now,
+          });
+          return;
+        }
 
         if (type === 'ready') {
           broadcast(client.roomCode, rooms.setReady(client.roomCode, client.playerId, message.ready === true));
