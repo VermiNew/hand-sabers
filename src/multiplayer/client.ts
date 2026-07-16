@@ -2,6 +2,7 @@ import { t } from '../i18n/index.ts';
 import { setSetting } from '../core/settings.ts';
 import { decodeRealtimePacket } from './realtime.ts';
 import { remoteTracking } from './remote-state.ts';
+import { initMultiplayerMapPicker } from './map-picker.ts';
 
 export const PROTOCOL_VERSION = 1;
 
@@ -53,10 +54,6 @@ interface RoomSnapshot {
   maxPlayers: number;
   round: { id: number; mapId: string; startAt: number; finishedAt: number | null } | null;
   players: RoomPlayer[];
-}
-
-interface MapListItem {
-  id: string;
 }
 
 let socket: WebSocket | null = null;
@@ -285,7 +282,6 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const lobbyCode = element<HTMLElement>('multiplayerLobbyCode');
   const playerCount = element<HTMLElement>('multiplayerPlayerCount');
   const playerList = element<HTMLElement>('multiplayerPlayers');
-  const mapSelect = element<HTMLSelectElement>('multiplayerMap');
   const modeSelect = element<HTMLSelectElement>('multiplayerMode');
   const rulesPanel = element<HTMLFieldSetElement>('multiplayerRules');
   const trainingModeInput = element<HTMLInputElement>('multiplayerTrainingMode');
@@ -339,8 +335,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     lobbyCode.textContent = '—';
     playerCount.textContent = '0 / 8';
     playerList.replaceChildren();
-    mapSelect.value = '';
-    mapSelect.disabled = true;
+    mapPicker.setSelected(null);
+    mapPicker.setEnabled(false);
     modeSelect.disabled = true;
     rulesPanel.disabled = true;
     trainingModeInput.checked = false;
@@ -366,6 +362,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       socket.send(JSON.stringify({ v: PROTOCOL_VERSION, ...payload }));
     }
   };
+  const mapPicker = initMultiplayerMapPicker(mapId => {
+    if (currentRole !== 'host') return;
+    pendingPreparationMapId = '';
+    sendControl({ type: 'set-map', mapId });
+  });
 
   const renderScoresInto = (container: HTMLElement, snapshot: RoomSnapshot) => {
     const players = snapshot.players.filter(player => player.playing);
@@ -459,11 +460,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       playerList.append(row);
     }
 
-    if (snapshot.mapId && ![...mapSelect.options].some(option => option.value === snapshot.mapId)) {
-      mapSelect.add(new Option(snapshot.mapId, snapshot.mapId));
-    }
-    mapSelect.value = snapshot.mapId ?? '';
-    mapSelect.disabled = currentRole !== 'host';
+    mapPicker.setSelected(snapshot.mapId);
+    mapPicker.setEnabled(currentRole === 'host' && !Boolean(snapshot.round && snapshot.round.finishedAt === null));
     modeSelect.value = snapshot.mode;
     modeSelect.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     trainingModeInput.checked = snapshot.rules.trainingMode;
@@ -486,18 +484,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
 
   async function loadMaps(): Promise<void> {
     try {
-      const response = await fetch('/api/maps');
-      const maps = await responseJson<unknown>(response);
-      if (!Array.isArray(maps)) throw new Error(t('multiplayer.invalidResponse'));
-      const selected = currentRoom?.mapId ?? '';
-      mapSelect.replaceChildren(new Option(t('multiplayer.selectMap'), ''));
-      for (const value of maps) {
-        const map = value as Partial<MapListItem> | null;
-        if (typeof map?.id === 'string' && /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(map.id)) {
-          mapSelect.add(new Option(map.id, map.id));
-        }
-      }
-      mapSelect.value = selected;
+      await mapPicker.load();
     } catch (error) {
       showMessage(error instanceof Error ? error.message : t('multiplayer.mapsError'));
     }
@@ -689,11 +676,6 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   });
   startButton.addEventListener('click', () => sendControl({ type: 'start-game' }));
   disconnectButton.addEventListener('click', disconnectRoom);
-  mapSelect.addEventListener('change', () => {
-    if (currentRole !== 'host' || !mapSelect.value) return;
-    pendingPreparationMapId = '';
-    sendControl({ type: 'set-map', mapId: mapSelect.value });
-  });
   modeSelect.addEventListener('change', () => {
     if (currentRole !== 'host' || !['coop', 'score-attack'].includes(modeSelect.value)) return;
     if (modeSelect.value === 'coop' && (currentRoom?.players.length ?? 0) > 2) {

@@ -526,12 +526,14 @@
             <div class="mp-player-list" id="multiplayerPlayers"></div>
           </div>
           <div class="mp-lobby-controls">
-            <label class="mp-field">
+            <div class="mp-field">
               <span data-i18n="multiplayer.map">MAPA HOSTA</span>
-              <select id="multiplayerMap" disabled>
-                <option value="" data-i18n="multiplayer.selectMap">WYBIERZ MAPĘ</option>
-              </select>
-            </label>
+              <button class="mp-map-picker-open" id="multiplayerMapPickerOpen" type="button" disabled>
+                <span class="material-symbols-rounded" aria-hidden="true">library_music</span>
+                <strong id="multiplayerMapValue" data-i18n="multiplayer.selectMap">WYBIERZ MAPĘ</strong>
+                <span class="material-symbols-rounded" aria-hidden="true">expand_more</span>
+              </button>
+            </div>
             <label class="mp-field">
               <span data-i18n="multiplayer.mode">TRYB</span>
               <select id="multiplayerMode" disabled>
@@ -562,6 +564,25 @@
     </div>
 
     <div class="mp-message" id="multiplayerMessage" role="alert" hidden></div>
+  </section>
+</div>
+
+<div class="mp-map-picker" id="multiplayerMapPicker" hidden>
+  <section class="mp-map-picker-panel" role="dialog" aria-modal="true" aria-labelledby="multiplayerMapPickerTitle">
+    <header class="mp-map-picker-head">
+      <div>
+        <span class="mp-label" data-i18n="multiplayer.mapLibrary">BIBLIOTEKA MAP</span>
+        <h2 id="multiplayerMapPickerTitle" data-i18n="multiplayer.chooseMap">WYBIERZ MAPĘ DLA POKOJU</h2>
+      </div>
+      <button class="mp-close" id="multiplayerMapPickerClose" type="button" aria-label="Zamknij">
+        <span class="material-symbols-rounded" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <label class="mp-map-search">
+      <span class="material-symbols-rounded" aria-hidden="true">search</span>
+      <input id="multiplayerMapSearch" type="search" autocomplete="off" placeholder="Szukaj map…">
+    </label>
+    <div class="mp-map-list" id="multiplayerMapList"></div>
   </section>
 </div>
 
