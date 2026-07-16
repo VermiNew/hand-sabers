@@ -149,13 +149,26 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
       trackingStatus.textContent = t('remoteTracking.trackingActive');
       const detect = (now: number): void => {
         if (!started) return;
-        if (peerConnected && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && now - lastDetectionAt >= 33) {
-          lastDetectionAt = now;
-          const result = landmarker.detectForVideo(video, now);
-          drawHands(context, result);
-          sendPacket(encodeLandmarks(result, sequence++, now));
+        try {
+          if (peerConnected && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && now - lastDetectionAt >= 33) {
+            lastDetectionAt = now;
+            const result = landmarker.detectForVideo(video, now);
+            drawHands(context, result);
+            sendPacket(encodeLandmarks(result, sequence++, now));
+          }
+          requestAnimationFrame(detect);
+        } catch (error) {
+          console.error('Phone hand tracking failed:', error);
+          started = false;
+          stream?.getTracks().forEach(track => track.stop());
+          video.srcObject = null;
+          preview.hidden = true;
+          startButton.disabled = !peerConnected;
+          trackingStatus.textContent = t('remoteTracking.cameraFailed');
+          window.dispatchEvent(new CustomEvent('hand-sabers:phone-tracking-error', {
+            detail: t('remoteTracking.cameraFailed'),
+          }));
         }
-        requestAnimationFrame(detect);
       };
       requestAnimationFrame(detect);
     } catch {

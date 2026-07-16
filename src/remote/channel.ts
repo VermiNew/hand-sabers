@@ -19,27 +19,47 @@ export function openRemoteTrackingChannel(options: {
   onClose(event: CloseEvent): void;
 }): WebSocket {
   const socket = new WebSocket(websocketUrl());
+  const reportError = (context: string, error: unknown): void => {
+    console.error(`[remote-channel:${context}]`, error);
+    window.dispatchEvent(new CustomEvent('hand-sabers:remote-channel-error', { detail: { context } }));
+  };
   socket.binaryType = 'arraybuffer';
   socket.addEventListener('open', () => {
-    socket.send(JSON.stringify({
-      v: 1,
-      type: 'join',
-      sessionId: options.sessionId,
-      token: options.token,
-      role: options.role,
-    }));
+    try {
+      socket.send(JSON.stringify({
+        v: 1,
+        type: 'join',
+        sessionId: options.sessionId,
+        token: options.token,
+        role: options.role,
+      }));
+    } catch (error) {
+      reportError('join', error);
+      socket.close(1011, 'Join failed');
+    }
   });
   socket.addEventListener('message', event => {
-    if (event.data instanceof ArrayBuffer) {
-      options.onBinary?.(event.data);
-      return;
-    }
-    if (typeof event.data !== 'string') return;
     try {
+      if (event.data instanceof ArrayBuffer) {
+        options.onBinary?.(event.data);
+        return;
+      }
+      if (typeof event.data !== 'string') return;
       const payload = JSON.parse(event.data) as RemoteChannelEvent;
       if (payload && typeof payload.type === 'string') options.onEvent(payload);
-    } catch {}
+    } catch (error) {
+      reportError('message', error);
+    }
   });
-  socket.addEventListener('close', options.onClose);
+  socket.addEventListener('close', event => {
+    try {
+      options.onClose(event);
+    } catch (error) {
+      reportError('close', error);
+    }
+  });
+  socket.addEventListener('error', () => {
+    window.dispatchEvent(new CustomEvent('hand-sabers:remote-channel-error', { detail: { context: 'socket' } }));
+  });
   return socket;
 }
