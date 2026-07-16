@@ -131,6 +131,11 @@ export function initRemoteTrackingPairing(): void {
           startPolling(session);
         }
       },
+      onBinary: packet => {
+        if (activeSession === session) {
+          window.dispatchEvent(new CustomEvent('hand-sabers:remote-tracking-packet', { detail: packet }));
+        }
+      },
       onClose: () => {
         if (activeSession === session) showError(t('remoteTracking.statusFailed'));
       },

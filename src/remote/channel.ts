@@ -14,9 +14,11 @@ export function openRemoteTrackingChannel(options: {
   token: string;
   role: 'host' | 'phone';
   onEvent(event: RemoteChannelEvent): void;
+  onBinary?(packet: ArrayBuffer): void;
   onClose(): void;
 }): WebSocket {
   const socket = new WebSocket(websocketUrl());
+  socket.binaryType = 'arraybuffer';
   socket.addEventListener('open', () => {
     socket.send(JSON.stringify({
       v: 1,
@@ -27,6 +29,10 @@ export function openRemoteTrackingChannel(options: {
     }));
   });
   socket.addEventListener('message', event => {
+    if (event.data instanceof ArrayBuffer) {
+      options.onBinary?.(event.data);
+      return;
+    }
     if (typeof event.data !== 'string') return;
     try {
       const payload = JSON.parse(event.data) as RemoteChannelEvent;

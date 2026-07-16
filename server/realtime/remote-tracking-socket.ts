@@ -6,10 +6,43 @@ import type { TrackingSessionRegistry } from './tracking-session-registry.js';
 const PROTOCOL_VERSION = 1;
 const JOIN_TIMEOUT_MS = 10_000;
 const MAX_CONNECTIONS = 64;
+const MAX_PACKETS_PER_SECOND = 60;
+const MAX_OUTGOING_BUFFER_BYTES = 64 * 1024;
 
 interface Peer {
   sessionId: string;
   role: 'host' | 'phone';
+  tokens: number;
+  tokensUpdatedAt: number;
+}
+
+function validateTrackingPacket(packet: Buffer): void {
+  if ((packet.length !== 96 && packet.length !== 528) || packet[0] !== PROTOCOL_VERSION) {
+    throw new Error('INVALID_PACKET');
+  }
+  const kind = packet[1];
+  if (kind !== 1 && kind !== 2) throw new Error('INVALID_PACKET');
+  if ((kind === 1 && packet.length !== 96) || (kind === 2 && packet.length !== 528)) {
+    throw new Error('INVALID_PACKET');
+  }
+  if ((packet[2] ?? 0) > 3 || packet[3] !== 0) throw new Error('INVALID_PACKET');
+  const timestamp = packet.readDoubleLE(8);
+  if (!Number.isFinite(timestamp) || timestamp < 0) throw new Error('INVALID_PACKET');
+  for (let offset = 16; offset < packet.length; offset += 4) {
+    const value = packet.readFloatLE(offset);
+    if (!Number.isFinite(value) || Math.abs(value) > (kind === 1 ? 10 : 4)) throw new Error('INVALID_PACKET');
+  }
+  if (kind === 2 && (packet.readFloatLE(16) < 0 || packet.readFloatLE(16) > 1
+    || packet.readFloatLE(20) < 0 || packet.readFloatLE(20) > 1)) throw new Error('INVALID_PACKET');
+}
+
+function consumeToken(peer: Peer, now = Date.now()): boolean {
+  const elapsed = Math.max(0, now - peer.tokensUpdatedAt) / 1000;
+  peer.tokens = Math.min(MAX_PACKETS_PER_SECOND, peer.tokens + elapsed * MAX_PACKETS_PER_SECOND);
+  peer.tokensUpdatedAt = now;
+  if (peer.tokens < 1) return false;
+  peer.tokens--;
+  return true;
 }
 
 function isAllowedOrigin(request: IncomingMessage): boolean {
@@ -55,7 +88,27 @@ export function registerRemoteTrackingServer(
     joinTimer.unref();
 
     socket.on('message', (data, isBinary) => {
-      if (isBinary || peers.has(socket)) {
+      if (isBinary) {
+        const peer = peers.get(socket);
+        if (!peer || peer.role !== 'phone') {
+          socket.close(1008, 'Phone authentication required');
+          return;
+        }
+        const packet = Buffer.isBuffer(data)
+          ? data
+          : Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data);
+        try {
+          validateTrackingPacket(packet);
+        } catch {
+          socket.close(1003, 'Invalid tracking packet');
+          return;
+        }
+        if (!consumeToken(peer)) return;
+        const host = peerFor(peer.sessionId, 'host');
+        if (host && host.bufferedAmount <= MAX_OUTGOING_BUFFER_BYTES) host.send(packet, { binary: true });
+        return;
+      }
+      if (peers.has(socket)) {
         socket.close(1008, 'Unexpected message');
         return;
       }
@@ -72,7 +125,12 @@ export function registerRemoteTrackingServer(
           : sessions.authenticatePhone(sessionId, token);
         if (!status) throw new Error('UNAUTHORIZED');
         clearTimeout(joinTimer);
-        peers.set(socket, { sessionId, role });
+        peers.set(socket, {
+          sessionId,
+          role,
+          tokens: MAX_PACKETS_PER_SECOND,
+          tokensUpdatedAt: Date.now(),
+        });
         send(socket, { type: 'joined', role, expiresAt: status.expiresAt });
         notifyPair(sessionId);
       } catch {
