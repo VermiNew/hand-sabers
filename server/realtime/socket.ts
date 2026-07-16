@@ -69,7 +69,12 @@ function isAllowedOrigin(request: IncomingMessage): boolean {
 
 function send(socket: WebSocket, payload: object): void {
   if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ v: PROTOCOL_VERSION, ...payload }));
+    try {
+      socket.send(JSON.stringify({ v: PROTOCOL_VERSION, ...payload }));
+    } catch (error) {
+      console.error('Multiplayer WebSocket send failed:', error);
+      socket.terminate();
+    }
   }
 }
 
@@ -340,34 +345,44 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
   });
 
   const handleUpgrade = (request: IncomingMessage, socket: Duplex, head: Buffer): void => {
-    const url = new URL(request.url || '/', 'http://localhost');
-    if (url.pathname !== '/ws') return;
-    const ip = request.socket.remoteAddress || 'unknown';
-    const now = Date.now();
-    const recentUpgrades = (upgradesByIp.get(ip) ?? []).filter(timestamp => now - timestamp < 60_000);
-    recentUpgrades.push(now);
-    upgradesByIp.set(ip, recentUpgrades);
-    if (
-      !isAllowedOrigin(request)
-      || clients.size >= MAX_CONNECTIONS
-      || recentUpgrades.length > MAX_UPGRADES_PER_IP_PER_MINUTE
-    ) {
+    try {
+      const url = new URL(request.url || '/', 'http://localhost');
+      if (url.pathname !== '/ws') return;
+      const ip = request.socket.remoteAddress || 'unknown';
+      const now = Date.now();
+      const recentUpgrades = (upgradesByIp.get(ip) ?? []).filter(timestamp => now - timestamp < 60_000);
+      recentUpgrades.push(now);
+      upgradesByIp.set(ip, recentUpgrades);
+      if (
+        !isAllowedOrigin(request)
+        || clients.size >= MAX_CONNECTIONS
+        || recentUpgrades.length > MAX_UPGRADES_PER_IP_PER_MINUTE
+      ) {
+        socket.destroy();
+        return;
+      }
+      webSocketServer.handleUpgrade(request, socket, head, upgraded => {
+        webSocketServer.emit('connection', upgraded, request);
+      });
+    } catch (error) {
+      console.error('Multiplayer WebSocket upgrade failed:', error);
       socket.destroy();
-      return;
     }
-    webSocketServer.handleUpgrade(request, socket, head, upgraded => {
-      webSocketServer.emit('connection', upgraded, request);
-    });
   };
   server.on('upgrade', handleUpgrade);
   const heartbeat = setInterval(() => {
     for (const [socket, client] of clients) {
-      if (!client.alive) {
+      try {
+        if (!client.alive) {
+          socket.terminate();
+          continue;
+        }
+        client.alive = false;
+        socket.ping();
+      } catch (error) {
+        console.error('Multiplayer WebSocket heartbeat failed:', error);
         socket.terminate();
-        continue;
       }
-      client.alive = false;
-      socket.ping();
     }
   }, 30_000);
   heartbeat.unref();
@@ -376,9 +391,20 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
     close(): void {
       clearInterval(heartbeat);
       server.off('upgrade', handleUpgrade);
-      for (const socket of clients.keys()) socket.close(1001, 'Server shutdown');
+      for (const socket of clients.keys()) {
+        try {
+          socket.close(1001, 'Server shutdown');
+        } catch (error) {
+          console.error('Multiplayer WebSocket close failed:', error);
+          socket.terminate();
+        }
+      }
       clients.clear();
-      webSocketServer.close();
+      try {
+        webSocketServer.close();
+      } catch (error) {
+        console.error('Multiplayer WebSocket server close failed:', error);
+      }
     },
   };
 }

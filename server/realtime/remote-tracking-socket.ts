@@ -58,7 +58,12 @@ function isAllowedOrigin(request: IncomingMessage): boolean {
 
 function send(socket: WebSocket, payload: object): void {
   if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ v: PROTOCOL_VERSION, ...payload }));
+    try {
+      socket.send(JSON.stringify({ v: PROTOCOL_VERSION, ...payload }));
+    } catch (error) {
+      console.error('Remote tracking WebSocket send failed:', error);
+      socket.terminate();
+    }
   }
 }
 
@@ -106,7 +111,14 @@ export function registerRemoteTrackingServer(
         }
         if (!consumeToken(peer)) return;
         const host = peerFor(peer.sessionId, 'host');
-        if (host && host.bufferedAmount <= MAX_OUTGOING_BUFFER_BYTES) host.send(packet, { binary: true });
+        if (host && host.bufferedAmount <= MAX_OUTGOING_BUFFER_BYTES) {
+          try {
+            host.send(packet, { binary: true });
+          } catch (error) {
+            console.error('Remote tracking packet relay failed:', error);
+            host.terminate();
+          }
+        }
         return;
       }
       if (peers.has(socket)) {
@@ -153,24 +165,40 @@ export function registerRemoteTrackingServer(
   });
 
   const handleUpgrade = (request: IncomingMessage, socket: Duplex, head: Buffer) => {
-    const url = new URL(request.url || '/', 'http://localhost');
-    if (url.pathname !== '/tracking-ws') return;
-    if (!isAllowedOrigin(request) || webSocketServer.clients.size >= MAX_CONNECTIONS) {
+    try {
+      const url = new URL(request.url || '/', 'http://localhost');
+      if (url.pathname !== '/tracking-ws') return;
+      if (!isAllowedOrigin(request) || webSocketServer.clients.size >= MAX_CONNECTIONS) {
+        socket.destroy();
+        return;
+      }
+      webSocketServer.handleUpgrade(request, socket, head, upgraded => {
+        webSocketServer.emit('connection', upgraded, request);
+      });
+    } catch (error) {
+      console.error('Remote tracking WebSocket upgrade failed:', error);
       socket.destroy();
-      return;
     }
-    webSocketServer.handleUpgrade(request, socket, head, upgraded => {
-      webSocketServer.emit('connection', upgraded, request);
-    });
   };
   server.on('upgrade', handleUpgrade);
 
   return {
     close() {
       server.off('upgrade', handleUpgrade);
-      for (const socket of peers.keys()) socket.close(1001, 'Server shutdown');
+      for (const socket of peers.keys()) {
+        try {
+          socket.close(1001, 'Server shutdown');
+        } catch (error) {
+          console.error('Remote tracking WebSocket close failed:', error);
+          socket.terminate();
+        }
+      }
       peers.clear();
-      webSocketServer.close();
+      try {
+        webSocketServer.close();
+      } catch (error) {
+        console.error('Remote tracking WebSocket server close failed:', error);
+      }
     },
   };
 }
