@@ -20,8 +20,16 @@ interface GameStats {
   rawHands:      number;
 }
 
+export interface FrameProfile {
+  gameMs: number;
+  effectsMs: number;
+  reflectionMs: number;
+  cpuMs: number;
+}
+
 interface DevData {
   fps: number; frameMs: number; deltaMs: number; deltaScale: number; renderMs: number; detectMs: number; latMs: number; conf: number;
+  gameMs: number; effectsMs: number; reflectionMs: number; cpuMs: number; bottleneck: string;
   drawCalls: number; triangles: number; geoMem: number; texMem: number; vramMem: number;
   graphicsMode: string; graphicsProfile: string; renderScale: number; canvasSize: string; drawingBuffer: string; gpuRenderer: string; toneMapping: string; antialias: string; shadows: boolean; reflections: boolean;
   activeBlocks: number; activeSparks: number; pooledBlocks: number; pooledBombs: number; pooledShards: number; combo: number; score: number; lives: number;
@@ -85,6 +93,7 @@ let lastRenderer: THREE.WebGLRenderer | null = null;
 
 const devData: DevData = {
   fps: 0, frameMs: 0, deltaMs: 0, deltaScale: 1, renderMs: 0, detectMs: 0, latMs: 0, conf: 0,
+  gameMs: 0, effectsMs: 0, reflectionMs: 0, cpuMs: 0, bottleneck: '—',
   drawCalls: 0, triangles: 0, geoMem: 0, texMem: 0, vramMem: 0,
   graphicsMode: '—', graphicsProfile: '—', renderScale: 1, canvasSize: '—', drawingBuffer: '—', gpuRenderer: '—', toneMapping: '—', antialias: '—', shadows: false, reflections: false,
   activeBlocks: 0, activeSparks: 0, pooledBlocks: 0, pooledBombs: 0, pooledShards: 0, combo: 0, score: 0, lives: 0,
@@ -387,6 +396,11 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     perf.addMonitor(devData, 'deltaScale', { label: 'Delta x',   interval: 200 });
     perf.addMonitor(devData, 'renderMs',   { label: 'Render ms', interval: 500 });
     perf.addMonitor(devData, 'detectMs',   { label: 'Detect ms', interval: 500 });
+    perf.addMonitor(devData, 'gameMs',     { label: 'Game logic ms', interval: 500 });
+    perf.addMonitor(devData, 'effectsMs',  { label: 'Effects ms', interval: 500 });
+    perf.addMonitor(devData, 'reflectionMs', { label: 'Reflection ms', interval: 500 });
+    perf.addMonitor(devData, 'cpuMs',      { label: 'Profiled CPU ms', interval: 500 });
+    perf.addMonitor(devData, 'bottleneck', { label: 'Bottleneck', interval: 500 });
     addSeparator(perf);
     perf.addMonitor(devData, 'graphicsMode',    { label: 'Graphics', interval: 500 });
     perf.addMonitor(devData, 'graphicsProfile', { label: 'Profile',  interval: 500 });
@@ -522,7 +536,14 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
 
 let lastPaneRefreshMs = 0;
 
-export function tickDevPanel(renderer: THREE.WebGLRenderer, now: number, renderMs: number, detectMs: number, gameStats: GameStats): void {
+export function tickDevPanel(
+  renderer: THREE.WebGLRenderer,
+  now: number,
+  renderMs: number,
+  detectMs: number,
+  gameStats: GameStats,
+  frameProfile?: FrameProfile,
+): void {
   if (!isDev) return;
   if (statsJS) statsJS.update();
 
@@ -534,6 +555,21 @@ export function tickDevPanel(renderer: THREE.WebGLRenderer, now: number, renderM
   devData.detectMs   = detectMs;
   devData.latMs      = detectMs;
   devData.conf       = gameStats.conf;
+  if (frameProfile) {
+    devData.gameMs = frameProfile.gameMs;
+    devData.effectsMs = frameProfile.effectsMs;
+    devData.reflectionMs = frameProfile.reflectionMs;
+    devData.cpuMs = frameProfile.cpuMs;
+    const phases = [
+      ['ML detect', detectMs],
+      ['render', renderMs],
+      ['game logic', frameProfile.gameMs],
+      ['effects', frameProfile.effectsMs],
+      ['reflection', frameProfile.reflectionMs],
+    ] as const;
+    const slowest = phases.reduce((current, candidate) => candidate[1] > current[1] ? candidate : current);
+    devData.bottleneck = `${slowest[0]} (${slowest[1].toFixed(1)} ms)`;
+  }
   updateRenderingDiagnostics(renderer);
   devData.drawCalls  = renderer.info.render.calls;
   devData.triangles  = renderer.info.render.triangles;

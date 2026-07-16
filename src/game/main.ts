@@ -11,6 +11,7 @@ import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent } from '../ui/devpanel.ts';
+import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
 import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
@@ -702,6 +703,11 @@ const MAX_FRAME_DELTA_MS = 250;
 const MAX_SIM_DELTA_SCALE = 3;
 
 let loopLastNow: number | undefined;
+const frameProfile: FrameProfile = { gameMs: 0, effectsMs: 0, reflectionMs: 0, cpuMs: 0 };
+
+function smoothProfileValue(previous: number, sample: number): number {
+  return previous === 0 ? sample : previous * 0.88 + sample * 0.12;
+}
 
 function loop(timestamp: number): void {
   if (!mainLoopRunning) return;
@@ -717,11 +723,14 @@ function loop(timestamp: number): void {
   state.deltaSec      = frameDeltaMs / 1000;
   state.deltaScale    = Math.min(frameDeltaMs / BASE_FRAME_MS, MAX_SIM_DELTA_SCALE);
   state.tick++;
+  const profiling = isDeveloperPanelEnabled();
+  const profileStart = profiling ? performance.now() : 0;
 
   const perfProfile = getScenePerformanceProfile();
   if (bgMat.uniforms['uTime']) bgMat.uniforms['uTime'].value = t;
   updateHandsPauseState(now);
 
+  const gamePhaseStart = profiling ? performance.now() : 0;
   if (isMainMenuOpen()) {
     if (perfProfile.menuDemo) updateMenuAutoplay(now, t);
     else animateIdleSabers(t);
@@ -773,7 +782,9 @@ function loop(timestamp: number): void {
     (lSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = 0.7 + Math.sin(t * 4) * 0.15;
     (rSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = 0.7 + Math.sin(t * 4 + 1) * 0.15;
   }
+  if (profiling) frameProfile.gameMs = smoothProfileValue(frameProfile.gameMs, performance.now() - gamePhaseStart);
 
+  const effectsPhaseStart = profiling ? performance.now() : 0;
   lLight.position.set(lSaber.position.x, lSaber.position.y + 0.5, lSaber.position.z);
   rLight.position.set(rSaber.position.x, rSaber.position.y + 0.5, rSaber.position.z);
   updateLightReflections(t);
@@ -784,12 +795,22 @@ function loop(timestamp: number): void {
     cam3d.position.y = 1.55 + Math.sin(t * 0.2) * 0.015;
   }
 
+  let effectsSampleMs = profiling ? performance.now() - effectsPhaseStart : 0;
+
+  const reflectionPhaseStart = profiling ? performance.now() : 0;
   updateReflection();
+  if (profiling) frameProfile.reflectionMs = smoothProfileValue(frameProfile.reflectionMs, performance.now() - reflectionPhaseStart);
+  const shakePhaseStart = profiling ? performance.now() : 0;
   applyShake(state.deltaScale);
+  if (profiling) {
+    effectsSampleMs += performance.now() - shakePhaseStart;
+    frameProfile.effectsMs = smoothProfileValue(frameProfile.effectsMs, effectsSampleMs);
+  }
 
   const rStart = performance.now();
   renderer.render(scene, cam3d);
   renderMs = performance.now() - rStart;
+  if (profiling) frameProfile.cpuMs = smoothProfileValue(frameProfile.cpuMs, performance.now() - profileStart);
   detectMs = window.__lastDetectMs ?? detectMs;
   adaptRenderQuality(frameDeltaMs, state.fps);
 
@@ -804,7 +825,7 @@ function loop(timestamp: number): void {
     conf:          window.__lastHandConf      ?? 0,
     filteredHands: window.__filteredHandCount ?? 0,
     rawHands:      window.__rawHandCount      ?? 0,
-  });
+  }, profiling ? frameProfile : undefined);
 };
 
 // ── Przyciski overlay ─────────────────────────────────────────────────────────
