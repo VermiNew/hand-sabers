@@ -210,7 +210,8 @@ async function importMapFile(file: File): Promise<void> {
     } catch (localErr) {
       const msg = localErr instanceof Error ? localErr.message : String(localErr);
       showToast(`Błąd importu: ${msg}`, { type: 'error' });
-      void showAlert(`Błąd importu: ${msg}`, { title: 'Import nie powiódł się' });
+      void showAlert(`Błąd importu: ${msg}`, { title: 'Import nie powiódł się' })
+        .catch(error => reportMapsError('import-error-dialog', error));
       console.error('Server import failed:', serverErr);
     }
   }

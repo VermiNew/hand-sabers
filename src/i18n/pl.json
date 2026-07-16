@@ -365,6 +365,7 @@
     "autosaveAudioLocal": "audio przywrócone lokalnie",
     "autosaveAudioServer": "audio pobrane z serwera",
     "autosave": "autosave",
+    "autosaveAudioFailed": "Nie udało się automatycznie zapisać audio.",
     "exportNoAudioConfirm": "Brak audio w pamięci. Wyeksportować ZIP tylko z map.json?",
     "exportNoAudioTitle": "Eksport bez audio",
     "exportConfirm": "EKSPORT",

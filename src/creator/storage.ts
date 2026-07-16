@@ -21,6 +21,10 @@ export function autoSaveToLocalStorage(onAutosaved?: () => void): void {
       void saveLocalMapAudio(state.map.id, state.audioArrayBuffer!.slice(0) as ArrayBuffer, {
         fileName: state.audioFileName,
         mimeType: state.audioMimeType,
+      }).catch(error => {
+        console.warn('Autosave audio failed:', error);
+        const autosaveLabel = document.getElementById('autosaveLabel');
+        if (autosaveLabel) autosaveLabel.textContent = t('creator.autosaveAudioFailed');
       });
     }
     state.lastSavedAt = new Date();

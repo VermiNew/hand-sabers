@@ -374,7 +374,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
       statsJS!.showPanel(next);
       statsJS!.dom.dataset['panel'] = String(next);
     });
-  });
+  }).catch(error => console.warn('Stats.js initialization failed:', error));
 
   void loadTweakpane().then(Pane => {
     if (!Pane || !isDev) return;
@@ -531,7 +531,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     panelEl.style.cssText = 'position:fixed;top:16px;left:16px;z-index:9000;width:min(360px,calc(100vw - 32px));';
     makeDraggable(panelEl);
     attachMarqueeScroll(panelEl);
-  });
+  }).catch(error => console.warn('Tweakpane initialization failed:', error));
 }
 
 let lastPaneRefreshMs = 0;
