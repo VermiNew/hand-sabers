@@ -74,6 +74,17 @@ const clockSamples: Array<{ offset: number; rtt: number }> = [];
 let pendingPreparationMapId = '';
 let announcedRoundId = 0;
 
+function trySocketSend(target: WebSocket | null, payload: string | ArrayBuffer, context: string): boolean {
+  if (target?.readyState !== WebSocket.OPEN) return false;
+  try {
+    target.send(payload);
+    return true;
+  } catch (error) {
+    console.error(`[multiplayer:${context}]`, error);
+    return false;
+  }
+}
+
 export function canSendRealtime(): boolean {
   return Boolean(currentPlayerId) && socket?.readyState === WebSocket.OPEN;
 }
@@ -85,8 +96,7 @@ export function sendRealtimePacket(packet: ArrayBuffer): boolean {
     || activeSocket?.readyState !== WebSocket.OPEN
     || (packet.byteLength !== 96 && packet.byteLength !== 528)
   ) return false;
-  activeSocket.send(packet);
-  return true;
+  return trySocketSend(activeSocket, packet, 'realtime-send');
 }
 
 export function sendMultiplayerScore(payload: {
@@ -98,8 +108,11 @@ export function sendMultiplayerScore(payload: {
 }): boolean {
   const activeSocket = socket;
   if (!currentPlayerId || activeSocket?.readyState !== WebSocket.OPEN) return false;
-  activeSocket.send(JSON.stringify({ v: PROTOCOL_VERSION, type: 'score', ...payload }));
-  return true;
+  return trySocketSend(
+    activeSocket,
+    JSON.stringify({ v: PROTOCOL_VERSION, type: 'score', ...payload }),
+    'score-send',
+  );
 }
 
 export function serverTimeToPerformance(serverTime: number): number {
@@ -428,8 +441,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: null }));
   };
   const sendControl = (payload: object) => {
-    if (socket?.readyState === WebSocket.OPEN) {
-      socket.send(JSON.stringify({ v: PROTOCOL_VERSION, ...payload }));
+    if (!trySocketSend(socket, JSON.stringify({ v: PROTOCOL_VERSION, ...payload }), 'control-send')) {
+      showMessage(t('multiplayer.connectionError'));
     }
   };
   const mapPicker = initMultiplayerMapPicker(mapId => {
@@ -578,19 +591,26 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     let clockTimer: ReturnType<typeof setInterval> | null = null;
 
     const pingClock = () => {
-      if (nextSocket.readyState === WebSocket.OPEN) {
-        nextSocket.send(JSON.stringify({ v: PROTOCOL_VERSION, type: 'ping', sentAt: Date.now() }));
-      }
+      trySocketSend(
+        nextSocket,
+        JSON.stringify({ v: PROTOCOL_VERSION, type: 'ping', sentAt: Date.now() }),
+        'clock-sync',
+      );
     };
 
     nextSocket.addEventListener('open', () => {
-      nextSocket.send(JSON.stringify({
+      const joined = trySocketSend(nextSocket, JSON.stringify({
         v: PROTOCOL_VERSION,
         type: 'join',
         code,
         token,
         name,
-      }));
+      }), 'join');
+      if (!joined) {
+        showMessage(t('multiplayer.connectionError'));
+        nextSocket.close(1011, 'Join send failed');
+        return;
+      }
       pingClock();
       clockTimer = setInterval(pingClock, 5_000);
     });
