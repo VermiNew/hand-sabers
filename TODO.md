@@ -123,7 +123,7 @@
 - [x] Wskaźnik stanu kalibracji każdego gracza (kto skalibrowany, kto jeszcze nie)
 - [x] Tryb lobby z limitem graczy (2 osoby) → tryb co‑op
 - [x] Co‑op: podział mieczy między graczy (host: lewy miecz, gość: prawy miecz)
-- [ ] Globalne ustawienia rozgrywki kontrolowane przez hosta (tryb treningowy, no fail itd.) — zablokować lokalne zmiany ustawień w Multiplayer
+- [x] Globalne ustawienia rozgrywki kontrolowane przez hosta (tryb treningowy, no fail itd.) — zablokować lokalne zmiany ustawień w Multiplayer
 - [ ] Wybór mapy przez hosta przez `map.html` (otwiera picker, wybór utworu wraca do lobby bez wyrzucania/rozłączania) zamiast wyboru po identyfikatorze `map-*`
 - [x] Ustawienie nazwy użytkownika (w ustawieniach lub na ekranie dołączania do Multiplayer)
 - [x] Widok rąk/pozycji przeciwników i partnerów z drużyny widoczny na ekranie (poza trybem dev, w dyskretnym miejscu, aby nie zasłaniać obszaru gry)
