@@ -94,7 +94,7 @@
 
 ## 14. Optymalizacja dla słabych PC
 
-- [ ] Profilowanie — znaleźć główne wąskie gardła na niskich ustawieniach
+- [x] Profilowanie — znaleźć główne wąskie gardła na niskich ustawieniach — [wyniki](docs/performance-profiling.md)
 - [x] Dalsze obniżanie jakości grafiki (wyłączenie mgły, siatek, efektów)
 - [x] Adaptive quality — automatyczne obniżanie gdy FPS spada poniżej progu
 
