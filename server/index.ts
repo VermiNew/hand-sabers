@@ -21,6 +21,7 @@ import { RateLimiter } from './utils.js';
 import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
 import { TrackingSessionRegistry } from './realtime/tracking-session-registry.js';
+import { registerRemoteTrackingServer } from './realtime/remote-tracking-socket.js';
 
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE_PROJECT_ROOT = path.resolve(SERVER_DIR, '..');
@@ -133,6 +134,7 @@ app.use(errorHandler);
 
 const server = createServer(app);
 const realtimeServer = registerRealtimeServer(server, rooms);
+const remoteTrackingServer = registerRemoteTrackingServer(server, trackingSessions);
 const PORT = Number(process.env.PORT || 3000);
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`Hand Sabers → http://localhost:${PORT}`);
@@ -142,6 +144,7 @@ server.listen(PORT, '0.0.0.0', () => {
 function shutdown(signal: NodeJS.Signals): void {
   console.log(`\n${signal} — zamykam serwer…`);
   realtimeServer.close();
+  remoteTrackingServer.close();
   rooms.destroy();
   trackingSessions.destroy();
   server.close(err => {

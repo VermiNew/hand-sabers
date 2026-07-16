@@ -1,4 +1,5 @@
 import { getCurrentLang, t } from '../i18n/index.ts';
+import { openRemoteTrackingChannel } from './channel.ts';
 
 interface PhoneCredential {
   id: string;
@@ -11,6 +12,7 @@ const TOKEN_RE = /^[A-Za-z0-9_-]{32}$/;
 const CODE_RE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
 
 let credential: PhoneCredential | null = null;
+let trackingSocket: WebSocket | null = null;
 
 function element<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -47,6 +49,29 @@ function acceptCredential(next: PhoneCredential): void {
   statusText.textContent = t('remoteTracking.credentialReady');
   showError('');
   window.dispatchEvent(new CustomEvent('hand-sabers:phone-credential', { detail: credential }));
+  trackingSocket?.close();
+  status.dataset['state'] = 'ready';
+  statusText.textContent = t('remoteTracking.connectingStream');
+  const socket = openRemoteTrackingChannel({
+    sessionId: next.id,
+    token: next.phoneToken,
+    role: 'phone',
+    onEvent: event => {
+      if (trackingSocket !== socket) return;
+      if (event.type === 'joined') statusText.textContent = t('remoteTracking.waitingForComputer');
+      if (event.type === 'peer-connected') {
+        status.dataset['state'] = 'connected';
+        statusText.textContent = t('remoteTracking.streamConnected');
+      }
+      if (event.type === 'error') showError(t('remoteTracking.sessionNotFound'));
+    },
+    onClose: () => {
+      if (trackingSocket !== socket) return;
+      status.dataset['state'] = 'idle';
+      statusText.textContent = t('remoteTracking.streamDisconnected');
+    },
+  });
+  trackingSocket = socket;
 }
 
 function credentialFromHash(): PhoneCredential | null {

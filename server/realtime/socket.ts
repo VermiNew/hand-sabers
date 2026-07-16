@@ -299,14 +299,14 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
 
   const handleUpgrade = (request: IncomingMessage, socket: Duplex, head: Buffer): void => {
     const url = new URL(request.url || '/', 'http://localhost');
+    if (url.pathname !== '/ws') return;
     const ip = request.socket.remoteAddress || 'unknown';
     const now = Date.now();
     const recentUpgrades = (upgradesByIp.get(ip) ?? []).filter(timestamp => now - timestamp < 60_000);
     recentUpgrades.push(now);
     upgradesByIp.set(ip, recentUpgrades);
     if (
-      url.pathname !== '/ws'
-      || !isAllowedOrigin(request)
+      !isAllowedOrigin(request)
       || clients.size >= MAX_CONNECTIONS
       || recentUpgrades.length > MAX_UPGRADES_PER_IP_PER_MINUTE
     ) {

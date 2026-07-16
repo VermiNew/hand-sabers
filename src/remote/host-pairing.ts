@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import { openRemoteTrackingChannel } from './channel.ts';
 
 interface TrackingSessionResponse {
   session?: {
@@ -20,6 +21,7 @@ interface ActiveSession {
   id: string;
   hostToken: string;
   pollTimer: ReturnType<typeof setInterval> | null;
+  socket: WebSocket | null;
 }
 
 const SESSION_ID_RE = /^[A-Za-z0-9_-]{16}$/;
@@ -67,6 +69,7 @@ export function initRemoteTrackingPairing(): void {
 
   const resetSessionUi = () => {
     clearPoll();
+    activeSession?.socket?.close();
     activeSession = null;
     sessionPanel.hidden = true;
     qr.removeAttribute('src');
@@ -113,6 +116,28 @@ export function initRemoteTrackingPairing(): void {
     }, 2_000);
   };
 
+  const connectHostChannel = (session: ActiveSession) => {
+    const socket = openRemoteTrackingChannel({
+      sessionId: session.id,
+      token: session.hostToken,
+      role: 'host',
+      onEvent: event => {
+        if (activeSession !== session) return;
+        if (event.type === 'peer-connected') {
+          setStatus('connected', 'remoteTracking.phoneConnected');
+          clearPoll();
+        } else if (event.type === 'peer-disconnected') {
+          setStatus('ready', 'remoteTracking.phoneClaimed');
+          startPolling(session);
+        }
+      },
+      onClose: () => {
+        if (activeSession === session) showError(t('remoteTracking.statusFailed'));
+      },
+    });
+    session.socket = socket;
+  };
+
   const createSession = async () => {
     createButton.disabled = true;
     showError();
@@ -135,13 +160,14 @@ export function initRemoteTrackingPairing(): void {
       ) throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'CREATE_FAILED');
 
       await revokeActiveSession();
-      activeSession = { id: session.id, hostToken: payload.hostToken, pollTimer: null };
+      activeSession = { id: session.id, hostToken: payload.hostToken, pollTimer: null, socket: null };
       qr.src = payload.qrDataUrl;
       code.textContent = session.code;
       phoneLink.href = payload.phoneUrl;
       sessionPanel.hidden = false;
       createButton.disabled = false;
       setStatus('ready', 'remoteTracking.scanQr');
+      connectHostChannel(activeSession);
       startPolling(activeSession);
     } catch (error) {
       resetSessionUi();
