@@ -306,6 +306,24 @@ body {
 #timelineWrap { flex:1; position:relative; overflow:hidden; }
 #timelineCanvas { width:100%; height:100%; display:block; cursor:crosshair; }
 
+#creatorPreview3d {
+  position:absolute; top:104px; right:16px; z-index:7; width:min(320px,32vw); height:200px;
+  overflow:hidden; pointer-events:none; border:1px solid rgba(126,184,255,.28); border-radius:10px;
+  background:rgba(3,7,17,.92); box-shadow:0 16px 42px rgba(0,0,0,.42);
+}
+.creator-preview-title {
+  position:absolute; inset:0 0 auto; z-index:1; display:flex; justify-content:space-between; padding:8px 10px;
+  background:linear-gradient(180deg,rgba(3,7,17,.95),transparent); color:#eef7ff;
+  font:800 9px 'Oxanium',sans-serif; letter-spacing:1.2px;
+}
+.creator-preview-title span:last-child { color:#71849b; font:700 7px 'JetBrains Mono',monospace; }
+#creatorPreviewCanvas { width:100%; height:100%; display:block; }
+
+@media (max-width:800px) {
+  #creatorPreview3d { width:230px; height:150px; right:8px; }
+  .creator-preview-title span:last-child { display:none; }
+}
+
 #rulerCanvas {
   position:absolute; top:0; left:0; right:0; height:24px;
   pointer-events:none; z-index:2;

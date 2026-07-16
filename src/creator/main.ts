@@ -46,6 +46,7 @@ import {
 } from './input.ts';
 
 import { initKeybindsUI } from './keybinds-ui.ts';
+import { initCreatorPreview3d } from './preview-3d.ts';
 
 // ── i18n ──────────────────────────────────────────────────────────
 function applyCreatorTranslations(): void {
@@ -330,6 +331,7 @@ bindBpm();
 bindShortcutsPanel();
 bindWaveformScroll();
 initKeybindsUI();
+initCreatorPreview3d();
 initAudioCtx();
 resizeCanvases();
 drawWaveform();

@@ -332,6 +332,8 @@
     "loopOff": "LOOP: OFF",
     "zoom": "ZOOM",
     "hitNow": "HIT NOW",
+    "preview3d": "3D PREVIEW",
+    "previewWindow": "NEXT 4 SECONDS",
     "tapLeft": "F — LEFT",
     "tapRight": "J — RIGHT",
     "tapRandom": "R — RANDOM",
