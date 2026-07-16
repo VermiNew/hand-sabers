@@ -475,6 +475,8 @@
     "waitingForComputer": "OCZEKIWANIE NA KOMPUTER",
     "streamConnected": "POŁĄCZONO Z KOMPUTEREM",
     "streamDisconnected": "KANAŁ DANYCH ROZŁĄCZONY",
+    "reconnectingStream": "PONOWNE ŁĄCZENIE KANAŁU…",
+    "sessionExpired": "Sesja parowania wygasła. Utwórz nową sesję i połącz telefon ponownie.",
     "cameraNext": "Uruchom kamerę, aby rozpocząć lokalne śledzenie dłoni.",
     "startCamera": "URUCHOM KAMERĘ",
     "loadingTracker": "URUCHAMIANIE ŚLEDZENIA…",

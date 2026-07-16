@@ -20,7 +20,10 @@ interface TrackingSessionStatus {
 interface ActiveSession {
   id: string;
   hostToken: string;
+  expiresAt: number;
   pollTimer: ReturnType<typeof setInterval> | null;
+  reconnectTimer: ReturnType<typeof setTimeout> | null;
+  reconnectAttempt: number;
   socket: WebSocket | null;
 }
 
@@ -78,8 +81,14 @@ export function initRemoteTrackingPairing(): void {
     if (activeSession) activeSession.pollTimer = null;
   };
 
+  const clearReconnect = () => {
+    if (activeSession?.reconnectTimer) clearTimeout(activeSession.reconnectTimer);
+    if (activeSession) activeSession.reconnectTimer = null;
+  };
+
   const resetSessionUi = () => {
     clearPoll();
+    clearReconnect();
     activeSession?.socket?.close();
     activeSession = null;
     setRemoteTrackingConnected(false);
@@ -123,19 +132,31 @@ export function initRemoteTrackingPairing(): void {
     clearPoll();
     session.pollTimer = setInterval(() => {
       void readStatus(session).catch(() => {
-        if (activeSession?.id === session.id) showError(t('remoteTracking.statusFailed'));
+        if (activeSession?.id !== session.id) return;
+        if (Date.now() >= session.expiresAt) {
+          resetSessionUi();
+          showError(t('remoteTracking.sessionExpired'));
+        } else {
+          showError(t('remoteTracking.statusFailed'));
+        }
       });
     }, 2_000);
   };
 
   const connectHostChannel = (session: ActiveSession) => {
+    clearReconnect();
+    let authenticationRejected = false;
     const socket = openRemoteTrackingChannel({
       sessionId: session.id,
       token: session.hostToken,
       role: 'host',
       onEvent: event => {
         if (activeSession !== session) return;
-        if (event.type === 'peer-connected') {
+        if (event.type === 'joined') {
+          session.reconnectAttempt = 0;
+          if (typeof event.expiresAt === 'number' && Number.isFinite(event.expiresAt)) session.expiresAt = event.expiresAt;
+          showError();
+        } else if (event.type === 'peer-connected') {
           setRemoteTrackingConnected(true);
           setStatus('connected', 'remoteTracking.phoneConnected');
           clearPoll();
@@ -143,6 +164,8 @@ export function initRemoteTrackingPairing(): void {
           setRemoteTrackingConnected(false);
           setStatus('ready', 'remoteTracking.phoneClaimed');
           startPolling(session);
+        } else if (event.type === 'error') {
+          authenticationRejected = true;
         }
       },
       onBinary: packet => {
@@ -152,8 +175,23 @@ export function initRemoteTrackingPairing(): void {
       },
       onClose: () => {
         if (activeSession === session) {
+          session.socket = null;
           setRemoteTrackingConnected(false);
-          showError(t('remoteTracking.statusFailed'));
+          if (Date.now() >= session.expiresAt) {
+            resetSessionUi();
+            showError(t('remoteTracking.sessionExpired'));
+            return;
+          }
+          if (authenticationRejected && session.reconnectAttempt >= 2) {
+            resetSessionUi();
+            showError(t('remoteTracking.sessionExpired'));
+            return;
+          }
+          setStatus('loading', 'remoteTracking.reconnectingStream');
+          const delay = Math.min(10_000, 750 * 2 ** session.reconnectAttempt++);
+          session.reconnectTimer = setTimeout(() => {
+            if (activeSession === session) connectHostChannel(session);
+          }, delay);
         }
       },
     });
@@ -176,13 +214,23 @@ export function initRemoteTrackingPairing(): void {
         || !CODE_RE.test(session.code)
         || typeof payload.hostToken !== 'string'
         || !TOKEN_RE.test(payload.hostToken)
+        || typeof session.expiresAt !== 'number'
+        || !Number.isFinite(session.expiresAt)
         || typeof payload.phoneUrl !== 'string'
         || typeof payload.qrDataUrl !== 'string'
         || !payload.qrDataUrl.startsWith('data:image/png;base64,')
       ) throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'CREATE_FAILED');
 
       await revokeActiveSession();
-      activeSession = { id: session.id, hostToken: payload.hostToken, pollTimer: null, socket: null };
+      activeSession = {
+        id: session.id,
+        hostToken: payload.hostToken,
+        expiresAt: session.expiresAt,
+        pollTimer: null,
+        reconnectTimer: null,
+        reconnectAttempt: 0,
+        socket: null,
+      };
       qr.src = payload.qrDataUrl;
       code.textContent = session.code;
       phoneLink.href = payload.phoneUrl;

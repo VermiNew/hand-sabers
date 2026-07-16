@@ -475,6 +475,8 @@
     "waitingForComputer": "WAITING FOR COMPUTER",
     "streamConnected": "CONNECTED TO COMPUTER",
     "streamDisconnected": "DATA CHANNEL DISCONNECTED",
+    "reconnectingStream": "RECONNECTING DATA CHANNEL…",
+    "sessionExpired": "The pairing session has expired. Create a new session and reconnect the phone.",
     "cameraNext": "Start the camera to begin local hand tracking.",
     "startCamera": "START CAMERA",
     "loadingTracker": "STARTING TRACKING…",

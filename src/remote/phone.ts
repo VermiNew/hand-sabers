@@ -14,6 +14,8 @@ const CODE_RE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
 
 let credential: PhoneCredential | null = null;
 let trackingSocket: WebSocket | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let reconnectAttempt = 0;
 
 function element<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -47,24 +49,30 @@ function showError(message: string): void {
   errorMessage.hidden = !message;
 }
 
-function acceptCredential(next: PhoneCredential): void {
-  credential = next;
-  codeForm.hidden = true;
-  ready.hidden = false;
+function clearReconnectTimer(): void {
+  if (reconnectTimer) clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+}
+
+function connectTrackingChannel(next: PhoneCredential): void {
+  clearReconnectTimer();
+  let authenticationRejected = false;
   status.dataset['state'] = 'ready';
-  statusText.textContent = t('remoteTracking.credentialReady');
-  showError('');
-  window.dispatchEvent(new CustomEvent('hand-sabers:phone-credential', { detail: credential }));
-  trackingSocket?.close();
-  status.dataset['state'] = 'ready';
-  statusText.textContent = t('remoteTracking.connectingStream');
+  statusText.textContent = reconnectAttempt > 0
+    ? t('remoteTracking.reconnectingStream')
+    : t('remoteTracking.connectingStream');
   const socket = openRemoteTrackingChannel({
     sessionId: next.id,
     token: next.phoneToken,
     role: 'phone',
     onEvent: event => {
       if (trackingSocket !== socket) return;
-      if (event.type === 'joined') statusText.textContent = t('remoteTracking.waitingForComputer');
+      if (event.type === 'joined') {
+        reconnectAttempt = 0;
+        if (typeof event.expiresAt === 'number' && Number.isFinite(event.expiresAt)) next.expiresAt = event.expiresAt;
+        statusText.textContent = t('remoteTracking.waitingForComputer');
+        showError('');
+      }
       if (event.type === 'peer-connected') {
         status.dataset['state'] = 'connected';
         statusText.textContent = t('remoteTracking.streamConnected');
@@ -75,16 +83,52 @@ function acceptCredential(next: PhoneCredential): void {
         statusText.textContent = t('remoteTracking.waitingForComputer');
         phoneTracking.setPeerConnected(false);
       }
-      if (event.type === 'error') showError(t('remoteTracking.sessionNotFound'));
+      if (event.type === 'error') {
+        authenticationRejected = true;
+      }
     },
     onClose: () => {
       if (trackingSocket !== socket) return;
-      status.dataset['state'] = 'idle';
-      statusText.textContent = t('remoteTracking.streamDisconnected');
+      trackingSocket = null;
       phoneTracking.setPeerConnected(false);
+      if (credential !== next) return;
+      if (Date.now() >= next.expiresAt) {
+        credential = null;
+        status.dataset['state'] = 'idle';
+        statusText.textContent = t('remoteTracking.streamDisconnected');
+        showError(t('remoteTracking.sessionExpired'));
+        return;
+      }
+      if (authenticationRejected && reconnectAttempt >= 2) {
+        credential = null;
+        status.dataset['state'] = 'idle';
+        statusText.textContent = t('remoteTracking.streamDisconnected');
+        showError(t('remoteTracking.sessionExpired'));
+        return;
+      }
+      status.dataset['state'] = 'ready';
+      statusText.textContent = t('remoteTracking.reconnectingStream');
+      const delay = Math.min(10_000, 750 * 2 ** reconnectAttempt++);
+      reconnectTimer = setTimeout(() => connectTrackingChannel(next), delay);
     },
   });
   trackingSocket = socket;
+}
+
+function acceptCredential(next: PhoneCredential): void {
+  credential = next;
+  codeForm.hidden = true;
+  ready.hidden = false;
+  status.dataset['state'] = 'ready';
+  statusText.textContent = t('remoteTracking.credentialReady');
+  showError('');
+  window.dispatchEvent(new CustomEvent('hand-sabers:phone-credential', { detail: credential }));
+  clearReconnectTimer();
+  reconnectAttempt = 0;
+  const previousSocket = trackingSocket;
+  trackingSocket = null;
+  previousSocket?.close();
+  connectTrackingChannel(next);
 }
 
 function credentialFromHash(): PhoneCredential | null {

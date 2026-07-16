@@ -2,6 +2,7 @@ export interface RemoteChannelEvent {
   type: string;
   peer?: unknown;
   code?: unknown;
+  expiresAt?: unknown;
 }
 
 function websocketUrl(): string {
@@ -15,7 +16,7 @@ export function openRemoteTrackingChannel(options: {
   role: 'host' | 'phone';
   onEvent(event: RemoteChannelEvent): void;
   onBinary?(packet: ArrayBuffer): void;
-  onClose(): void;
+  onClose(event: CloseEvent): void;
 }): WebSocket {
   const socket = new WebSocket(websocketUrl());
   socket.binaryType = 'arraybuffer';
