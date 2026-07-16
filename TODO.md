@@ -102,7 +102,7 @@
 
 - [x] Architektura: telefon jako klient kamery + WebRTC lub WebSocket — [projekt](docs/remote-tracking.md)
 - [x] Parowanie QR code lub kod z ekranu – zrealizowane (QR oraz pole ręcznego wpisania kodu w `remote-camera.html`)
-- [ ] Przekazywanie danych śledzenia rąk z telefonu do przeglądarki PC
+- [x] Przekazywanie danych śledzenia rąk z telefonu do przeglądarki PC
 
 ## 16. Lepsza rozgrywka
 
@@ -115,7 +115,7 @@
 - [x] Rozbić `map-creator.html` na moduły: audio, ZIP, storage, waveform, UI, input
 - [x] Czytelny preview "hit now" na osi czasu
 - [x] Lepsze narzędzia do układania beatów (snap do BPM, kopiuj/wklej)
-- [ ] Podgląd mapy w trybie 3D podczas edycji
+- [x] Podgląd mapy w trybie 3D podczas edycji
 
 ## 18. Multiplayer — poprawki i co‑op
 
@@ -124,7 +124,7 @@
 - [x] Tryb lobby z limitem graczy (2 osoby) → tryb co‑op
 - [x] Co‑op: podział mieczy między graczy (host: lewy miecz, gość: prawy miecz)
 - [x] Globalne ustawienia rozgrywki kontrolowane przez hosta (tryb treningowy, no fail itd.) — zablokować lokalne zmiany ustawień w Multiplayer
-- [ ] Wybór mapy przez hosta przez `map.html` (otwiera picker, wybór utworu wraca do lobby bez wyrzucania/rozłączania) zamiast wyboru po identyfikatorze `map-*`
+- [x] Wybór mapy przez hosta przez picker wzorowany na `maps.html`, bez opuszczania i rozłączania lobby
 - [x] Ustawienie nazwy użytkownika (w ustawieniach lub na ekranie dołączania do Multiplayer)
 - [x] Widok rąk/pozycji przeciwników i partnerów z drużyny widoczny na ekranie (poza trybem dev, w dyskretnym miejscu, aby nie zasłaniać obszaru gry)
 
@@ -157,8 +157,8 @@
 
 ## 24. Kamera/ML na telefonie — kalibracja (zob. też sekcja 15)
 
-- [ ] Kalibracja w trybie remote nie powinna pytać o kamerę komputera, tylko o telefon
-- [ ] Przesyłanie obrazu z kamery i danych ML z telefonu do PC — [do rozwiązania]
+- [x] Kalibracja w trybie remote nie pyta o kamerę komputera, tylko korzysta z telefonu
+- [x] Przesyłanie danych ML z telefonu do PC bez obrazu kamery (obraz pozostaje lokalnie na telefonie)
 
 ## 25. Mapy i import/export (zrobione)
 
