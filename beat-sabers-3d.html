@@ -539,7 +539,7 @@
                 <option value="coop" data-i18n="multiplayer.coop">CO-OP</option>
               </select>
             </label>
-            <fieldset class="mp-rules" id="multiplayerRules" hidden>
+            <fieldset class="mp-rules" id="multiplayerRules" disabled>
               <legend data-i18n="multiplayer.gameplayRules">ZASADY ROZGRYWKI</legend>
               <label class="mp-rule">
                 <input id="multiplayerTrainingMode" type="checkbox">
@@ -549,6 +549,7 @@
                 <input id="multiplayerNoFail" type="checkbox">
                 <span data-i18n="multiplayer.noFail">NO FAIL</span>
               </label>
+              <p data-i18n="multiplayer.hostControlsRules">Te ustawienia kontroluje host.</p>
             </fieldset>
             <button class="mp-primary" id="multiplayerReady" type="button" disabled data-i18n="multiplayer.ready">GOTOWY</button>
             <button class="mp-primary" id="multiplayerStart" type="button" hidden data-i18n="multiplayer.start">START</button>

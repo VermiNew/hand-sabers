@@ -342,7 +342,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     mapSelect.value = '';
     mapSelect.disabled = true;
     modeSelect.disabled = true;
-    rulesPanel.hidden = true;
+    rulesPanel.disabled = true;
     trainingModeInput.checked = false;
     noFailInput.checked = false;
     readyButton.disabled = true;
@@ -465,10 +465,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     mapSelect.disabled = currentRole !== 'host';
     modeSelect.value = snapshot.mode;
     modeSelect.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
-    rulesPanel.hidden = currentRole !== 'host';
     trainingModeInput.checked = snapshot.rules.trainingMode;
     noFailInput.checked = snapshot.rules.noFail;
-    rulesPanel.disabled = Boolean(snapshot.round && snapshot.round.finishedAt === null);
+    rulesPanel.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     const self = snapshot.players.find(player => player.id === currentPlayerId);
     readyButton.disabled = !snapshot.mapId || !self || Boolean(pendingPreparationMapId);
     readyButton.classList.toggle('is-ready', Boolean(self?.ready));

@@ -1005,6 +1005,27 @@ function initMainMenu(): void {
   const performanceHint  = document.getElementById('menuPerformanceHint');
   const graphicsModeInfo = document.getElementById('menuGraphicsModeInfo');
   const developerModeInput = document.getElementById('menuDeveloperMode') as HTMLInputElement | null;
+  let multiplayerRules: { trainingMode: boolean; noFail: boolean } | null = null;
+
+  window.addEventListener('hand-sabers:room-state', event => {
+    const detail = (event as CustomEvent<{ rules?: unknown } | null>).detail;
+    const rules = detail?.rules;
+    multiplayerRules = rules
+      && typeof rules === 'object'
+      && !Array.isArray(rules)
+      && typeof (rules as Record<string, unknown>)['trainingMode'] === 'boolean'
+      && typeof (rules as Record<string, unknown>)['noFail'] === 'boolean'
+      ? rules as { trainingMode: boolean; noFail: boolean }
+      : null;
+    if (noFailInput) {
+      noFailInput.disabled = multiplayerRules !== null;
+      noFailInput.checked = multiplayerRules?.noFail ?? settings.noFail;
+    }
+    if (trainingModeInput) {
+      trainingModeInput.disabled = multiplayerRules !== null;
+      trainingModeInput.checked = multiplayerRules?.trainingMode ?? settings.trainingMode;
+    }
+  });
 
   setAutoFlipSuggestionHandler(({ flipCamera }) => {
     settings.flipCamera      = flipCamera;
@@ -1242,6 +1263,10 @@ function initMainMenu(): void {
   if (noFailInput) {
     noFailInput.checked = Boolean(settings.noFail);
     noFailInput.addEventListener('change', () => {
+      if (multiplayerRules) {
+        noFailInput.checked = multiplayerRules.noFail;
+        return;
+      }
       settings.noFail = noFailInput.checked;
       state.noFail    = noFailInput.checked;
       setSetting('noFail', noFailInput.checked);
@@ -1251,6 +1276,10 @@ function initMainMenu(): void {
   if (trainingModeInput) {
     trainingModeInput.checked = Boolean(settings.trainingMode);
     trainingModeInput.addEventListener('change', () => {
+      if (multiplayerRules) {
+        trainingModeInput.checked = multiplayerRules.trainingMode;
+        return;
+      }
       settings.trainingMode = trainingModeInput.checked;
       document.body.classList.toggle('training-mode', trainingModeInput.checked);
       setSetting('trainingMode', trainingModeInput.checked);
@@ -1587,7 +1616,13 @@ function initMainMenu(): void {
   settingsReset?.addEventListener('click', () => {
     if (!window.confirm(t('settings.resetConfirm'))) return;
 
+    const localNoFail = settings.noFail;
+    const localTrainingMode = settings.trainingMode;
     resetSettings();
+    if (multiplayerRules) {
+      setSetting('noFail', localNoFail);
+      setSetting('trainingMode', localTrainingMode);
+    }
     syncNoteSpeedButtons();
     syncHitboxSensitivityButtons();
 

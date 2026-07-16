@@ -86,6 +86,7 @@
     "gameplayRules": "GAMEPLAY RULES",
     "trainingMode": "TRAINING MODE",
     "noFail": "NO FAIL",
+    "hostControlsRules": "These settings are controlled by the host.",
     "leftSaber": "LEFT SABER",
     "rightSaber": "RIGHT SABER",
     "teamScore": "TEAM SCORE",
