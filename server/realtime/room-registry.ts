@@ -280,6 +280,7 @@ export class RoomRegistry {
     if (typeof rules.trainingMode !== 'boolean' || typeof rules.noFail !== 'boolean') {
       throw new RoomError('INVALID_RULES');
     }
+    if (room.round?.finishedAt === null) throw new RoomError('ROUND_ALREADY_STARTED');
     if (room.rules.trainingMode === rules.trainingMode && room.rules.noFail === rules.noFail) {
       return this.snapshot(room);
     }

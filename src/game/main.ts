@@ -43,6 +43,13 @@ declare global {
 
 // ── Ustawienia ────────────────────────────────────────────────────────────────
 const settings = loadSettings();
+interface MultiplayerRules {
+  trainingMode: boolean;
+  noFail: boolean;
+}
+let multiplayerRoomRules: MultiplayerRules | null = null;
+let multiplayerRoundRules: MultiplayerRules | null = null;
+
 if (settings.saberColorLeft) {
   setSaberColor('left', settings.saberColorLeft);
   setBlockColor('left', parseInt(settings.saberColorLeft.replace('#', ''), 16));
@@ -102,8 +109,8 @@ function preserveDevQueryOnMenuLinks(): void {
 }
 
 // ── Score submit ──────────────────────────────────────────────────────────────
-async function submitScore(progress?: number, allowTrainingMode = false): Promise<void> {
-  if (settings.trainingMode && !allowTrainingMode) return;
+async function submitScore(progress?: number, trainingMode = settings.trainingMode): Promise<void> {
+  if (trainingMode) return;
 
   const payload = {
     mapId:  state.map?.id ?? 'random',
@@ -218,7 +225,10 @@ function startMapTimelineAt(zeroAtMs: number): void {
 }
 
 function getPlaybackRate(): number {
-  return !multiplayerRoundActive && settings.trainingMode ? TRAINING_RATE : 1;
+  const trainingMode = multiplayerRoundActive
+    ? Boolean(multiplayerRoundRules?.trainingMode)
+    : settings.trainingMode;
+  return trainingMode ? TRAINING_RATE : 1;
 }
 
 function getMapTimelineSec(now = performance.now()): number {
@@ -352,6 +362,7 @@ async function prepareMultiplayerMap(mapId: string): Promise<void> {
 async function beginMultiplayerRound(detail: {
   mapId: string;
   mode: 'coop' | 'score-attack';
+  rules: MultiplayerRules;
   saber: 'left' | 'right' | 'both';
   startAtPerformance: number;
 }): Promise<void> {
@@ -382,9 +393,11 @@ async function beginMultiplayerRound(detail: {
   handsReturnedSince = 0;
   state.pauseReason = PAUSE_REASONS.NONE;
   state.appState = S.PLAYING;
+  multiplayerRoundRules = { ...detail.rules };
   multiplayerRoundActive = true;
   lastMultiplayerScoreAt = 0;
-  document.body.classList.remove('training-mode');
+  state.noFail = detail.rules.noFail;
+  document.body.classList.toggle('training-mode', detail.rules.trainingMode);
   document.body.dataset['multiplayerMode'] = detail.mode;
   resetMapSpawn();
   startMapTimelineAt(detail.startAtPerformance);
@@ -425,6 +438,9 @@ function endGame(): void {
   const pos = getMapTimelineSec();
   const progress = dur > 0 ? Math.max(0, Math.min(1, pos / dur)) : undefined;
   const wasMultiplayerRound = multiplayerRoundActive;
+  const wasTrainingMode = wasMultiplayerRound
+    ? Boolean(multiplayerRoundRules?.trainingMode)
+    : settings.trainingMode;
   if (wasMultiplayerRound) {
     sendMultiplayerScore({
       score: Math.max(0, Math.round(state.score)),
@@ -435,12 +451,14 @@ function endGame(): void {
     });
   }
   multiplayerRoundActive = false;
+  multiplayerRoundRules = null;
+  state.noFail = settings.noFail;
   document.body.classList.toggle('training-mode', settings.trainingMode);
   delete document.body.dataset['multiplayerMode'];
   stopMapAudio();
   resetMapTimeline();
   clearGameplayEntities();
-  void submitScore(progress, wasMultiplayerRound);
+  void submitScore(progress, wasTrainingMode);
   fadeTransition(() => { showGameOver(state); });
 }
 
@@ -901,6 +919,9 @@ function returnToMainMenu(): void {
       window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));
     }
     multiplayerRoundActive = false;
+    multiplayerRoundRules = null;
+    state.noFail = settings.noFail;
+    document.body.classList.toggle('training-mode', settings.trainingMode);
     stopMapAudio();
     resetMapTimeline();
     clearGameplayEntities();
@@ -1005,25 +1026,23 @@ function initMainMenu(): void {
   const performanceHint  = document.getElementById('menuPerformanceHint');
   const graphicsModeInfo = document.getElementById('menuGraphicsModeInfo');
   const developerModeInput = document.getElementById('menuDeveloperMode') as HTMLInputElement | null;
-  let multiplayerRules: { trainingMode: boolean; noFail: boolean } | null = null;
-
   window.addEventListener('hand-sabers:room-state', event => {
     const detail = (event as CustomEvent<{ rules?: unknown } | null>).detail;
     const rules = detail?.rules;
-    multiplayerRules = rules
+    multiplayerRoomRules = rules
       && typeof rules === 'object'
       && !Array.isArray(rules)
       && typeof (rules as Record<string, unknown>)['trainingMode'] === 'boolean'
       && typeof (rules as Record<string, unknown>)['noFail'] === 'boolean'
-      ? rules as { trainingMode: boolean; noFail: boolean }
+      ? rules as MultiplayerRules
       : null;
     if (noFailInput) {
-      noFailInput.disabled = multiplayerRules !== null;
-      noFailInput.checked = multiplayerRules?.noFail ?? settings.noFail;
+      noFailInput.disabled = multiplayerRoomRules !== null;
+      noFailInput.checked = multiplayerRoomRules?.noFail ?? settings.noFail;
     }
     if (trainingModeInput) {
-      trainingModeInput.disabled = multiplayerRules !== null;
-      trainingModeInput.checked = multiplayerRules?.trainingMode ?? settings.trainingMode;
+      trainingModeInput.disabled = multiplayerRoomRules !== null;
+      trainingModeInput.checked = multiplayerRoomRules?.trainingMode ?? settings.trainingMode;
     }
   });
 
@@ -1263,8 +1282,8 @@ function initMainMenu(): void {
   if (noFailInput) {
     noFailInput.checked = Boolean(settings.noFail);
     noFailInput.addEventListener('change', () => {
-      if (multiplayerRules) {
-        noFailInput.checked = multiplayerRules.noFail;
+      if (multiplayerRoomRules) {
+        noFailInput.checked = multiplayerRoomRules.noFail;
         return;
       }
       settings.noFail = noFailInput.checked;
@@ -1276,8 +1295,8 @@ function initMainMenu(): void {
   if (trainingModeInput) {
     trainingModeInput.checked = Boolean(settings.trainingMode);
     trainingModeInput.addEventListener('change', () => {
-      if (multiplayerRules) {
-        trainingModeInput.checked = multiplayerRules.trainingMode;
+      if (multiplayerRoomRules) {
+        trainingModeInput.checked = multiplayerRoomRules.trainingMode;
         return;
       }
       settings.trainingMode = trainingModeInput.checked;
@@ -1619,7 +1638,7 @@ function initMainMenu(): void {
     const localNoFail = settings.noFail;
     const localTrainingMode = settings.trainingMode;
     resetSettings();
-    if (multiplayerRules) {
+    if (multiplayerRoomRules) {
       setSetting('noFail', localNoFail);
       setSetting('trainingMode', localTrainingMode);
     }
@@ -1753,20 +1772,28 @@ window.addEventListener('hand-sabers:multiplayer-start', event => {
   const detail = (event as CustomEvent<{
     mapId?: unknown;
     mode?: unknown;
+    rules?: unknown;
     saber?: unknown;
     startAtPerformance?: unknown;
   }>).detail;
+  const rules = detail?.rules;
   if (
     typeof detail?.mapId === 'string'
     && (detail.mode === 'coop' || detail.mode === 'score-attack')
     && (detail.saber === 'left' || detail.saber === 'right' || detail.saber === 'both')
     && ((detail.mode === 'coop' && detail.saber !== 'both')
       || (detail.mode === 'score-attack' && detail.saber === 'both'))
+    && rules
+    && typeof rules === 'object'
+    && !Array.isArray(rules)
+    && typeof (rules as Record<string, unknown>)['trainingMode'] === 'boolean'
+    && typeof (rules as Record<string, unknown>)['noFail'] === 'boolean'
     && typeof detail.startAtPerformance === 'number'
   ) {
     void beginMultiplayerRound({
       mapId: detail.mapId,
       mode: detail.mode,
+      rules: rules as MultiplayerRules,
       saber: detail.saber,
       startAtPerformance: detail.startAtPerformance,
     });
