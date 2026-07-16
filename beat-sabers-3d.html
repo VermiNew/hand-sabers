@@ -317,6 +317,17 @@
         <div class="sp-tab" data-tab="remoteTracking">
           <h2 class="sp-tab-title" data-i18n="settings.sections.remoteTracking">Telefon kamera</h2>
           <div class="sp-group">
+            <div class="sp-select-row">
+              <span class="sp-label" data-i18n="remoteTracking.sourceLabel">Źródło śledzenia</span>
+              <select id="menuTrackingSource" class="sp-select" aria-label="Źródło śledzenia">
+                <option value="auto" data-i18n="remoteTracking.sourceAuto">Automatycznie</option>
+                <option value="camera" data-i18n="remoteTracking.sourceCamera">Kamera PC</option>
+                <option value="phone" data-i18n="remoteTracking.sourcePhone">Telefon</option>
+              </select>
+            </div>
+            <p class="sp-hint" id="menuTrackingSourceHint"></p>
+          </div>
+          <div class="sp-group">
             <div class="sp-toggle-row">
               <div class="sp-toggle-info">
                 <span class="sp-toggle-name" data-i18n="remoteTracking.hostTitle">TELEFON JAKO KAMERA</span>

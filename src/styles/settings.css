@@ -249,6 +249,7 @@
 }
 .sp-select:hover, .sp-select:focus { border-color:rgba(0,212,255,0.4); }
 .sp-select option { background:#0a0f1a; color:#fff; }
+.sp-hint.is-error { color:#ff8d9a; }
 .sp-hint {
   font-size:11px; color:rgba(148,163,184,0.45); line-height:1.5;
   padding:0 16px 8px; margin:0;

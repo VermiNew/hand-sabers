@@ -1,4 +1,4 @@
-import type { PerformanceMode, Settings } from '../types/index.js';
+import type { PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
 const KEY = 'hs_settings';
 const DEFAULT_PERFORMANCE_MODE: PerformanceMode = 'auto';
@@ -52,6 +52,7 @@ export const DEFAULTS: Settings = {
   noteSpeed: 1,
   hitboxSensitivity: 1,
   trainingMode: false,
+  trackingSource: 'auto',
 };
 
 let _settings: Settings = { ...DEFAULTS };
@@ -80,6 +81,10 @@ function normalizeHitboxSensitivity(value: unknown): number {
   ));
 }
 
+function normalizeTrackingSource(value: unknown): TrackingSourcePreference {
+  return value === 'camera' || value === 'phone' ? value : 'auto';
+}
+
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
@@ -88,6 +93,7 @@ export function loadSettings(): Settings {
   _settings.performanceMode = normalizePerformanceMode(_settings.performanceMode);
   _settings.noteSpeed = normalizeNoteSpeed(_settings.noteSpeed);
   _settings.hitboxSensitivity = normalizeHitboxSensitivity(_settings.hitboxSensitivity);
+  _settings.trackingSource = normalizeTrackingSource(_settings.trackingSource);
   return _settings;
 }
 

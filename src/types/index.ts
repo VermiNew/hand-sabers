@@ -18,6 +18,7 @@ export type PauseReason = 'hands' | 'manual' | null;
 
 export type OneHandMode = 'left' | 'right' | null;
 export type SaberSide = 'left' | 'right';
+export type TrackingSourcePreference = 'auto' | 'camera' | 'phone';
 
 // ── Geometry ──────────────────────────────────────────────────────────────────
 export interface Vec3 {
@@ -104,6 +105,7 @@ export interface Settings {
   noteSpeed: number;
   hitboxSensitivity: number;
   trainingMode: boolean;
+  trackingSource: TrackingSourcePreference;
 }
 
 // ── Performance ───────────────────────────────────────────────────────────────

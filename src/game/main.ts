@@ -24,9 +24,9 @@ import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
-import { initRemoteTrackingPairing } from '../remote/host-pairing.ts';
+import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
-import type { OneHandMode, PauseReason, PerformanceMode, Settings } from '../types/index.js';
+import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
 declare global {
   interface Window {
@@ -966,6 +966,7 @@ initMapDrop();
 updateHUD(state);
 
 let trackingStarted = false;
+let trackingStarting = false;
 async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
   initAudio();
   applyAudioSettings(settings);
@@ -990,8 +991,10 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
     return;
   }
 
-  trackingStarted = true;
-  initMP(startCalib);
+  if (trackingStarting) return;
+  trackingStarting = true;
+  trackingStarted = await initMP(startCalib);
+  trackingStarting = false;
 }
 
 function triggerMenuEnter(): void {
@@ -1023,6 +1026,8 @@ function initMainMenu(): void {
   const beatLimitInput   = document.getElementById('menuBeatLimit') as HTMLInputElement | null;
   const flipCameraInput  = document.getElementById('menuFlipCamera')as HTMLInputElement | null;
   const performanceInput = document.getElementById('menuPerformanceMode') as HTMLSelectElement | null;
+  const trackingSourceInput = document.getElementById('menuTrackingSource') as HTMLSelectElement | null;
+  const trackingSourceHint = document.getElementById('menuTrackingSourceHint');
   const performanceHint  = document.getElementById('menuPerformanceHint');
   const graphicsModeInfo = document.getElementById('menuGraphicsModeInfo');
   const developerModeInput = document.getElementById('menuDeveloperMode') as HTMLInputElement | null;
@@ -1162,6 +1167,19 @@ function initMainMenu(): void {
     if (graphicsModeInfo) graphicsModeInfo.textContent = getGraphicsModeSummary();
   }
 
+  function updateTrackingSourceHint(): void {
+    if (!trackingSourceHint) return;
+    const source = settings.trackingSource;
+    const connected = isRemoteTrackingConnected();
+    const key = source === 'camera'
+      ? 'remoteTracking.sourceCameraHint'
+      : source === 'phone'
+        ? connected ? 'remoteTracking.sourcePhoneReady' : 'remoteTracking.sourcePhoneMissing'
+        : connected ? 'remoteTracking.sourceAutoPhone' : 'remoteTracking.sourceAutoCamera';
+    trackingSourceHint.textContent = t(key);
+    trackingSourceHint.classList.toggle('is-error', source === 'phone' && !connected);
+  }
+
   const allNavItems = [...document.querySelectorAll<HTMLElement>('.main-nav-item')];
   allNavItems.forEach((item, i) => item.style.setProperty('--i', String(i)));
 
@@ -1197,10 +1215,22 @@ function initMainMenu(): void {
   }
 
   dispatchMenuAction('mainStart', () => {
+    if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
+      switchSettingsTab('remoteTracking');
+      setSettingsPanelVisible(true);
+      updateTrackingSourceHint();
+      return;
+    }
     setSettingsPanelVisible(false);
     void startFromMainMenu({ calibrate: false });
   });
   dispatchMenuAction('mainCalibrate', () => {
+    if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
+      switchSettingsTab('remoteTracking');
+      setSettingsPanelVisible(true);
+      updateTrackingSourceHint();
+      return;
+    }
     setSettingsPanelVisible(false);
     void startFromMainMenu({ calibrate: true });
   });
@@ -1238,6 +1268,24 @@ function initMainMenu(): void {
   });
 
   updateLangButtons();
+
+  if (trackingSourceInput) {
+    trackingSourceInput.value = settings.trackingSource;
+    trackingSourceInput.addEventListener('change', () => {
+      const value = trackingSourceInput.value as TrackingSourcePreference;
+      const changed = settings.trackingSource !== value;
+      settings.trackingSource = value;
+      setSetting('trackingSource', value);
+      if (changed && trackingStarted) {
+        stopTracking();
+        trackingStarted = false;
+        calibrationReady = false;
+      }
+      updateTrackingSourceHint();
+    });
+  }
+  window.addEventListener('hand-sabers:remote-tracking-state', updateTrackingSourceHint);
+  updateTrackingSourceHint();
 
   if (volumeInput) {
     volumeInput.value = String(settings.volume ?? 0.8);
@@ -1637,10 +1685,16 @@ function initMainMenu(): void {
 
     const localNoFail = settings.noFail;
     const localTrainingMode = settings.trainingMode;
+    const previousTrackingSource = settings.trackingSource;
     resetSettings();
     if (multiplayerRoomRules) {
       setSetting('noFail', localNoFail);
       setSetting('trainingMode', localTrainingMode);
+    }
+    if (trackingStarted && previousTrackingSource !== settings.trackingSource) {
+      stopTracking();
+      trackingStarted = false;
+      calibrationReady = false;
     }
     syncNoteSpeedButtons();
     syncHitboxSensitivityButtons();
@@ -1678,6 +1732,10 @@ function initMainMenu(): void {
     if (performanceInput) {
       performanceInput.value = settings.performanceMode;
       emit(performanceInput, 'change');
+    }
+    if (trackingSourceInput) {
+      trackingSourceInput.value = settings.trackingSource;
+      emit(trackingSourceInput, 'change');
     }
     if (developerModeInput) {
       developerModeInput.checked = settings.developerMode;

@@ -787,7 +787,7 @@ function updateCalibFeedback(ok: boolean, hint: string): void {
   setCalibFeedback(ok, hint);
 }
 
-export async function initMP(onReady: () => void): Promise<void> {
+export async function initMP(onReady: () => void): Promise<boolean> {
   trackCanvas = document.getElementById('trackCanvas') as HTMLCanvasElement | null;
   if (trackCanvas) {
     trackCanvas.width  = 240;
@@ -796,12 +796,17 @@ export async function initMP(onReady: () => void): Promise<void> {
   }
   handsPauseCanvas = document.getElementById('handsPauseCanvas') as HTMLCanvasElement | null;
   handsPauseCtx = handsPauseCanvas?.getContext('2d', { alpha: false }) ?? null;
-  const useRemoteTracking = isRemoteTrackingConnected();
+  const sourcePreference = getSettings().trackingSource;
+  const remoteConnected = isRemoteTrackingConnected();
+  const phoneRequiredButMissing = sourcePreference === 'phone' && !remoteConnected;
+  const useRemoteTracking = sourcePreference === 'phone'
+    || (sourcePreference === 'auto' && remoteConnected);
   trackingSource = useRemoteTracking ? 'remote' : 'camera';
 
   setupCalibFeed();
 
   try {
+    if (phoneRequiredButMissing) throw new Error(t('remoteTracking.phoneRequired'));
     if (useRemoteTracking) {
       setLoadingProgress(t('remoteTracking.preparingPhoneData'), t('remoteTracking.preparingPhoneDataDetail'), null);
       if (ui.dCam) ui.dCam.textContent = 'PHONE';
@@ -822,9 +827,11 @@ export async function initMP(onReady: () => void): Promise<void> {
     if (ui.dStatus) ui.dStatus.textContent = useRemoteTracking ? 'PHONE TRACKING' : 'TRACKING OK';
     scheduleCalibAuto();
     onReady();
+    return true;
   } catch (err) {
     trackingSource = null;
     console.error('initMP error:', err);
     showCameraError(err);
+    return false;
   }
 }
