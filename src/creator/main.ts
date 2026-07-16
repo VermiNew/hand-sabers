@@ -48,6 +48,24 @@ import {
 import { initKeybindsUI } from './keybinds-ui.ts';
 import { initCreatorPreview3d } from './preview-3d.ts';
 
+let lastCreatorError = '';
+let lastCreatorErrorAt = 0;
+
+function reportCreatorError(context: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  const signature = `${context}:${message}`;
+  const now = Date.now();
+  if (signature === lastCreatorError && now - lastCreatorErrorAt < 5_000) return;
+  lastCreatorError = signature;
+  lastCreatorErrorAt = now;
+  console.error(`[creator:${context}]`, error);
+  showToast(`${t('errors.error')}: ${message}`, { type: 'error' });
+}
+
+function runCreatorTask(context: string, task: () => Promise<unknown>): void {
+  void Promise.resolve().then(task).catch(error => reportCreatorError(context, error));
+}
+
 // ── i18n ──────────────────────────────────────────────────────────
 function applyCreatorTranslations(): void {
   document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
@@ -81,35 +99,40 @@ function syncPlayStopBtn(): void {
 function startRafLoop(): void {
   if (state.rafId) return;
   function tick(): void {
-    if (state.isPlaying) {
-      state.currentTime = getPlayPos();
-      const timelineCanvas = document.getElementById('timelineCanvas') as HTMLCanvasElement | null;
-      if (timelineCanvas) {
-        const trackW = timelineCanvas.width - getLabelWidth();
-        const px     = (state.currentTime - state.viewStart) * state.pxPerSec;
-        if (px > trackW * 0.78) state.viewStart = state.currentTime - (trackW * 0.22) / state.pxPerSec;
-        if (px < 0)             state.viewStart = state.currentTime;
-        state.viewStart = Math.max(0, state.viewStart);
-      }
+    try {
+      if (state.isPlaying) {
+        state.currentTime = getPlayPos();
+        const timelineCanvas = document.getElementById('timelineCanvas') as HTMLCanvasElement | null;
+        if (timelineCanvas) {
+          const trackW = timelineCanvas.width - getLabelWidth();
+          const px     = (state.currentTime - state.viewStart) * state.pxPerSec;
+          if (px > trackW * 0.78) state.viewStart = state.currentTime - (trackW * 0.22) / state.pxPerSec;
+          if (px < 0)             state.viewStart = state.currentTime;
+          state.viewStart = Math.max(0, state.viewStart);
+        }
 
-      if (state.currentTime >= state.map.meta.duration && state.map.meta.duration > 0) {
-        stopAudio(false);
-        state.currentTime = state.map.meta.duration;
-      }
+        if (state.currentTime >= state.map.meta.duration && state.map.meta.duration > 0) {
+          stopAudio(false);
+          state.currentTime = state.map.meta.duration;
+        }
 
-      if (state.loopEnabled && state.loopEnd !== null && state.currentTime >= state.loopEnd) {
-        playAudio(state.loopStart ?? 0, onPlayEnd);
+        if (state.loopEnabled && state.loopEnd !== null && state.currentTime >= state.loopEnd) {
+          playAudio(state.loopStart ?? 0, onPlayEnd);
+        }
       }
-    }
-    if (state.isPlaying || state.timelineDirty) {
-      renderAll();
-      if (state.isPlaying && state.audioBuffer) {
-        const wc = document.getElementById('waveCanvas') as HTMLCanvasElement | null;
-        if (wc) drawWaveformOverlay(wc.getContext('2d')!, wc.width, wc.height);
+      if (state.isPlaying || state.timelineDirty) {
+        renderAll();
+        if (state.isPlaying && state.audioBuffer) {
+          const wc = document.getElementById('waveCanvas') as HTMLCanvasElement | null;
+          if (wc) drawWaveformOverlay(wc.getContext('2d')!, wc.width, wc.height);
+        }
       }
+      syncPlayStopBtn();
+    } catch (error) {
+      reportCreatorError('render-loop', error);
+    } finally {
+      state.rafId = requestAnimationFrame(tick);
     }
-    syncPlayStopBtn();
-    state.rafId = requestAnimationFrame(tick);
   }
   state.rafId = requestAnimationFrame(tick);
 }
@@ -192,7 +215,7 @@ function bindDropZone(): void {
   dropBox.addEventListener('click', () => fileInput.click());
   fileInput.addEventListener('change', (e: Event) => {
     const f = (e.target as HTMLInputElement).files?.[0];
-    if (f) void handleFile(f);
+    if (f) runCreatorTask('file-load', () => handleFile(f));
   });
   document.addEventListener('dragover',  (e: DragEvent) => { e.preventDefault(); dropBox.classList.add('drag-over'); });
   document.addEventListener('dragleave', ()              => dropBox.classList.remove('drag-over'));
@@ -200,7 +223,7 @@ function bindDropZone(): void {
     e.preventDefault();
     dropBox.classList.remove('drag-over');
     const f = e.dataTransfer?.files[0];
-    if (f) void handleFile(f);
+    if (f) runCreatorTask('file-drop', () => handleFile(f));
   });
 }
 
@@ -342,17 +365,22 @@ bindDropZone();
 applyCreatorTranslations();
 
 bindTimelineEvents({
-  onSave:    () => void saveMap(),
+  onSave:    () => runCreatorTask('map-save', saveMap),
   onUndo:    () => { /* handled inside input.ts */ },
   onRedo:    () => { /* handled inside input.ts */ },
   onPlay,
   onPlayEnd,
 });
 
-document.getElementById('btnSave')?.addEventListener('click',   () => void saveMap());
-document.getElementById('btnExport')?.addEventListener('click', () => void exportZip(audioCallbacks));
+document.getElementById('btnSave')?.addEventListener('click', () => runCreatorTask('map-save', saveMap));
+document.getElementById('btnExport')?.addEventListener('click', () => {
+  runCreatorTask('map-export', () => exportZip(audioCallbacks));
+});
 document.getElementById('btnTest')?.addEventListener('click',   () => {
-  void saveMap().then(() => window.open(buildGameTestUrl(state.map.id), '_blank'));
+  runCreatorTask('map-test', async () => {
+    await saveMap();
+    window.open(buildGameTestUrl(state.map.id), '_blank');
+  });
 });
 
 window.addEventListener('resize', () => {
@@ -361,8 +389,8 @@ window.addEventListener('resize', () => {
   renderAll();
 });
 
-void loadInitialMap({
-  onDecoded:       audioCallbacks.onDecoded,
-  onMapLoaded:     () => { checkOverlaps(); renderAll(); },
+runCreatorTask('initial-map-load', () => loadInitialMap({
+  onDecoded: audioCallbacks.onDecoded,
+  onMapLoaded: () => { checkOverlaps(); renderAll(); },
   getLocalMapById: (id: string) => getLocalMapById(id),
-});
+}));
