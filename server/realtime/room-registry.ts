@@ -48,6 +48,11 @@ export interface RoomPlayer {
 
 export type RoomMode = 'coop' | 'score-attack';
 
+export interface RoomRules {
+  trainingMode: boolean;
+  noFail: boolean;
+}
+
 export interface RoomSnapshot {
   code: string;
   createdAt: string;
@@ -55,6 +60,7 @@ export interface RoomSnapshot {
   revision: number;
   mapId: string | null;
   mode: RoomMode;
+  rules: RoomRules;
   maxPlayers: number;
   round: RoomRound | null;
   players: RoomPlayer[];
@@ -138,13 +144,14 @@ export class RoomRegistry {
       revision: 0,
       mapId: null,
       mode: 'score-attack',
+      rules: { trainingMode: false, noFail: false },
       maxPlayers: SCORE_ATTACK_MAX_PLAYERS,
       round: null,
       nextRoundId: 1,
       players: [],
     };
     this.rooms.set(code, room);
-    return { ...room };
+    return { ...room, rules: { ...room.rules } };
   }
 
   get(code: string): RoomSnapshot | null {
@@ -158,6 +165,7 @@ export class RoomRegistry {
       revision: room.revision,
       mapId: room.mapId,
       mode: room.mode,
+      rules: { ...room.rules },
       maxPlayers: room.maxPlayers,
       round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),
@@ -370,6 +378,7 @@ export class RoomRegistry {
       revision: room.revision,
       mapId: room.mapId,
       mode: room.mode,
+      rules: { ...room.rules },
       maxPlayers: room.maxPlayers,
       round: room.round ? { ...room.round } : null,
       players: room.players.map(player => ({ ...player })),

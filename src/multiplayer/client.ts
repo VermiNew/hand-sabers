@@ -49,6 +49,7 @@ interface RoomSnapshot {
   revision: number;
   mapId: string | null;
   mode: 'coop' | 'score-attack';
+  rules: { trainingMode: boolean; noFail: boolean };
   maxPlayers: number;
   round: { id: number; mapId: string; startAt: number; finishedAt: number | null } | null;
   players: RoomPlayer[];
@@ -193,6 +194,7 @@ function parseRoomPlayer(value: unknown): RoomPlayer | null {
 function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const candidate = value as Record<string, unknown>;
+  const rulesValue = candidate['rules'];
   if (
     typeof candidate['code'] !== 'string'
     || !/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/.test(candidate['code'])
@@ -206,7 +208,14 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     || candidate['players'].length > Number(candidate['maxPlayers'])
     || (candidate['mapId'] !== null && typeof candidate['mapId'] !== 'string')
     || (typeof candidate['mapId'] === 'string' && !/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(candidate['mapId']))
+    || !rulesValue
+    || typeof rulesValue !== 'object'
+    || Array.isArray(rulesValue)
   ) return null;
+  const candidateRules = rulesValue as Record<string, unknown>;
+  if (typeof candidateRules['trainingMode'] !== 'boolean' || typeof candidateRules['noFail'] !== 'boolean') {
+    return null;
+  }
   const roundValue = candidate['round'];
   let round: RoomSnapshot['round'] = null;
   if (roundValue !== null) {
@@ -248,6 +257,10 @@ function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     revision: candidate['revision'] as number,
     mapId: candidate['mapId'] as string | null,
     mode: candidate['mode'],
+    rules: {
+      trainingMode: candidateRules['trainingMode'],
+      noFail: candidateRules['noFail'],
+    },
     maxPlayers: candidate['maxPlayers'] as number,
     round,
     players,
