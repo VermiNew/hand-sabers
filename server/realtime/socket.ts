@@ -218,7 +218,14 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
       alive: true,
     };
     clients.set(socket, client);
-    const joinTimeout = setTimeout(() => socket.close(1008, 'Join timeout'), JOIN_TIMEOUT_MS);
+    const joinTimeout = setTimeout(() => {
+      try {
+        socket.close(1008, 'Join timeout');
+      } catch (error) {
+        console.error('Multiplayer join timeout close failed:', error);
+        socket.terminate();
+      }
+    }, JOIN_TIMEOUT_MS);
     joinTimeout.unref();
 
     socket.on('message', (data, isBinary) => {

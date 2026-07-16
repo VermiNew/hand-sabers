@@ -34,7 +34,13 @@ export class RateLimiter {
   private readonly cleanupInterval: ReturnType<typeof setInterval>;
 
   constructor(cleanupMs = 300_000) {
-    this.cleanupInterval = setInterval(() => this.cleanup(), cleanupMs);
+    this.cleanupInterval = setInterval(() => {
+      try {
+        this.cleanup();
+      } catch (error) {
+        console.error('Rate limiter cleanup failed:', error);
+      }
+    }, cleanupMs);
     if (typeof this.cleanupInterval.unref === 'function') this.cleanupInterval.unref();
   }
 

@@ -90,7 +90,14 @@ export function registerRemoteTrackingServer(
   };
 
   webSocketServer.on('connection', socket => {
-    const joinTimer = setTimeout(() => socket.close(1008, 'Join timeout'), JOIN_TIMEOUT_MS);
+    const joinTimer = setTimeout(() => {
+      try {
+        socket.close(1008, 'Join timeout');
+      } catch (error) {
+        console.error('Remote tracking join timeout close failed:', error);
+        socket.terminate();
+      }
+    }, JOIN_TIMEOUT_MS);
     joinTimer.unref();
 
     socket.on('message', (data, isBinary) => {

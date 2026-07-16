@@ -209,9 +209,13 @@ function rateLimit(ip, key, maxPerMinute) {
 }
 // Sprzątanie co 5 minut
 setInterval(() => {
-  const now = Date.now();
-  for (const [k, calls] of _rlMap) {
-    if (!calls.some(t => now - t < 60_000)) _rlMap.delete(k);
+  try {
+    const now = Date.now();
+    for (const [k, calls] of _rlMap) {
+      if (!calls.some(t => now - t < 60_000)) _rlMap.delete(k);
+    }
+  } catch (error) {
+    console.error('Legacy rate limiter cleanup failed:', error);
   }
 }, 300_000).unref();
 

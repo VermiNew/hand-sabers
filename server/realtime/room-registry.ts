@@ -126,7 +126,13 @@ export class RoomRegistry {
   private readonly cleanupTimer: ReturnType<typeof setInterval>;
 
   constructor() {
-    this.cleanupTimer = setInterval(() => this.deleteExpired(), 60_000);
+    this.cleanupTimer = setInterval(() => {
+      try {
+        this.deleteExpired();
+      } catch (error) {
+        console.error('Room cleanup failed:', error);
+      }
+    }, 60_000);
     this.cleanupTimer.unref();
   }
 
