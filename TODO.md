@@ -136,7 +136,7 @@
 
 ## 20. Czat i komunikacja (backlog)
 
-- [ ] Czat tekstowy w Multiplayer
+- [x] Czat tekstowy w Multiplayer
 - [ ] (przyszłość) Czat głosowy z avatarami podświetlającymi się przy mówieniu + animacje
 
 ## 21. Narrator (Lora)
