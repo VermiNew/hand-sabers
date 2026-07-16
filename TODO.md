@@ -126,7 +126,7 @@
 - [ ] Globalne ustawienia rozgrywki kontrolowane przez hosta (tryb treningowy, no fail itd.) — zablokować lokalne zmiany ustawień w Multiplayer
 - [ ] Wybór mapy przez hosta przez `map.html` (otwiera picker, wybór utworu wraca do lobby bez wyrzucania/rozłączania) zamiast wyboru po identyfikatorze `map-*`
 - [x] Ustawienie nazwy użytkownika (w ustawieniach lub na ekranie dołączania do Multiplayer)
-- [ ] Widok rąk/pozycji przeciwników i partnerów z drużyny widoczny na ekranie (poza trybem dev, w dyskretnym miejscu, aby nie zasłaniać obszaru gry)
+- [x] Widok rąk/pozycji przeciwników i partnerów z drużyny widoczny na ekranie (poza trybem dev, w dyskretnym miejscu, aby nie zasłaniać obszaru gry)
 
 ## 19. Menu w trakcie gry (pauza)
 
