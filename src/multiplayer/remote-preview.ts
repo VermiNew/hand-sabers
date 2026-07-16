@@ -21,6 +21,11 @@ const HAND_CONNECTIONS: readonly [number, number][] = [
 const playerNames = new Map<number, string>();
 const previews = new Map<number, HTMLElement>();
 
+function updateOverlayVisibility(): void {
+  const overlay = document.getElementById('multiplayerCameras');
+  if (overlay) overlay.hidden = document.body.classList.contains('dev-tools') || previews.size === 0;
+}
+
 function drawHand(
   context: CanvasRenderingContext2D,
   landmarks: Float32Array,
@@ -65,7 +70,6 @@ function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanva
     element.dataset['streamId'] = String(streamId);
     const label = document.createElement('span');
     label.className = 'cam-tag ml';
-    label.textContent = document.body.classList.contains('dev-tools') ? `ML · ${name}` : name;
     const canvas = document.createElement('canvas');
     canvas.width = 400;
     canvas.height = 260;
@@ -73,6 +77,10 @@ function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanva
     container.append(element);
     previews.set(streamId, element);
   }
+  if (element.parentElement !== container) container.append(element);
+  const label = element.querySelector<HTMLElement>('.cam-tag');
+  if (label) label.textContent = document.body.classList.contains('dev-tools') ? `ML · ${name}` : name;
+  updateOverlayVisibility();
   const canvas = element.querySelector<HTMLCanvasElement>('canvas');
   return canvas ? { element, canvas } : null;
 }
@@ -109,8 +117,7 @@ function updatePlayers(detail: RoomStateDetail | null): void {
     }
   }
   // Show the gameplay overlay only when there are remote players and not in dev mode
-  const overlay = document.getElementById('multiplayerCameras');
-  if (overlay) overlay.hidden = previews.size === 0;
+  updateOverlayVisibility();
 }
 
 export function initRemoteTrackingPreviews(): void {
