@@ -1,5 +1,6 @@
 import { getCurrentLang, t } from '../i18n/index.ts';
 import { openRemoteTrackingChannel } from './channel.ts';
+import { initPhoneTracking } from './phone-tracking.ts';
 
 interface PhoneCredential {
   id: string;
@@ -27,6 +28,11 @@ const codeInput = element<HTMLInputElement>('remotePairCode');
 const claimButton = element<HTMLButtonElement>('remoteClaim');
 const ready = element<HTMLElement>('remoteCredentialReady');
 const errorMessage = element<HTMLElement>('remoteError');
+const phoneTracking = initPhoneTracking(packet => {
+  if (trackingSocket?.readyState !== WebSocket.OPEN || trackingSocket.bufferedAmount > 64 * 1024) return false;
+  trackingSocket.send(packet);
+  return true;
+});
 
 function applyTranslations(): void {
   document.documentElement.lang = getCurrentLang();
@@ -62,6 +68,12 @@ function acceptCredential(next: PhoneCredential): void {
       if (event.type === 'peer-connected') {
         status.dataset['state'] = 'connected';
         statusText.textContent = t('remoteTracking.streamConnected');
+        phoneTracking.setPeerConnected(true);
+      }
+      if (event.type === 'peer-disconnected') {
+        status.dataset['state'] = 'ready';
+        statusText.textContent = t('remoteTracking.waitingForComputer');
+        phoneTracking.setPeerConnected(false);
       }
       if (event.type === 'error') showError(t('remoteTracking.sessionNotFound'));
     },
@@ -69,6 +81,7 @@ function acceptCredential(next: PhoneCredential): void {
       if (trackingSocket !== socket) return;
       status.dataset['state'] = 'idle';
       statusText.textContent = t('remoteTracking.streamDisconnected');
+      phoneTracking.setPeerConnected(false);
     },
   });
   trackingSocket = socket;
@@ -118,6 +131,9 @@ async function claimCode(): Promise<void> {
 }
 
 applyTranslations();
+window.addEventListener('hand-sabers:phone-tracking-error', event => {
+  showError((event as CustomEvent<string>).detail);
+});
 codeInput.addEventListener('input', () => {
   codeInput.value = codeInput.value.toUpperCase().replace(/[^23456789ABCDEFGHJKLMNPQRSTUVWXYZ]/g, '').slice(0, 6);
 });

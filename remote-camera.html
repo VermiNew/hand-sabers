@@ -32,7 +32,16 @@
 
       <div class="remote-ready" id="remoteCredentialReady" hidden>
         <strong data-i18n="remoteTracking.credentialReady">DANE SESJI GOTOWE</strong>
-        <p data-i18n="remoteTracking.cameraNext">W następnym kroku uruchomisz kamerę i lokalne śledzenie dłoni.</p>
+        <p data-i18n="remoteTracking.cameraNext">Uruchom kamerę, aby rozpocząć lokalne śledzenie dłoni.</p>
+        <button id="remoteStartCamera" type="button" disabled data-i18n="remoteTracking.startCamera">URUCHOM KAMERĘ</button>
+      </div>
+
+      <div class="remote-tracking" id="remoteTrackingPreview" hidden>
+        <div class="remote-video-frame">
+          <video id="remoteVideo" autoplay muted playsinline></video>
+          <canvas id="remoteCanvas"></canvas>
+        </div>
+        <p id="remoteTrackingStatus" role="status" data-i18n="remoteTracking.loadingTracker">URUCHAMIANIE ŚLEDZENIA…</p>
       </div>
 
       <p class="remote-error" id="remoteError" role="alert" hidden></p>

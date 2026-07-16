@@ -39,6 +39,11 @@ button:disabled { opacity:.45; }
 .remote-ready { margin-top:20px; padding:18px; border:1px solid rgba(54,242,161,.25); border-radius:10px; background:rgba(54,242,161,.07); }
 .remote-ready strong { color:#36f2a1; font:800 13px 'Oxanium',sans-serif; letter-spacing:1.2px; }
 .remote-ready p,.remote-privacy { color:#91a3b8; font-size:10px; line-height:1.6; }
+.remote-tracking { margin-top:16px; }
+.remote-video-frame { position:relative; overflow:hidden; aspect-ratio:4/3; border:1px solid rgba(54,242,161,.25); border-radius:10px; background:#01040a; }
+.remote-video-frame video,.remote-video-frame canvas { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+.remote-video-frame canvas { pointer-events:none; }
+.remote-tracking > p { margin:10px 0 0; color:#36f2a1; font-size:10px; font-weight:700; letter-spacing:1px; }
 .remote-error { margin:14px 0 0; color:#ff9aa5; font-size:10px; }
 .remote-privacy { margin:18px 0 0; padding-top:16px; border-top:1px solid rgba(126,184,255,.1); }
 [hidden] { display:none!important; }
