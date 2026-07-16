@@ -29,6 +29,17 @@ const TOKEN_RE = /^[A-Za-z0-9_-]{32}$/;
 const CODE_RE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
 
 let activeSession: ActiveSession | null = null;
+let remoteTrackingConnected = false;
+
+export function isRemoteTrackingConnected(): boolean {
+  return remoteTrackingConnected;
+}
+
+function setRemoteTrackingConnected(connected: boolean): void {
+  if (remoteTrackingConnected === connected) return;
+  remoteTrackingConnected = connected;
+  window.dispatchEvent(new CustomEvent('hand-sabers:remote-tracking-state', { detail: { connected } }));
+}
 
 function element<T extends HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
@@ -71,6 +82,7 @@ export function initRemoteTrackingPairing(): void {
     clearPoll();
     activeSession?.socket?.close();
     activeSession = null;
+    setRemoteTrackingConnected(false);
     sessionPanel.hidden = true;
     qr.removeAttribute('src');
     code.textContent = '------';
@@ -124,9 +136,11 @@ export function initRemoteTrackingPairing(): void {
       onEvent: event => {
         if (activeSession !== session) return;
         if (event.type === 'peer-connected') {
+          setRemoteTrackingConnected(true);
           setStatus('connected', 'remoteTracking.phoneConnected');
           clearPoll();
         } else if (event.type === 'peer-disconnected') {
+          setRemoteTrackingConnected(false);
           setStatus('ready', 'remoteTracking.phoneClaimed');
           startPolling(session);
         }
@@ -137,7 +151,10 @@ export function initRemoteTrackingPairing(): void {
         }
       },
       onClose: () => {
-        if (activeSession === session) showError(t('remoteTracking.statusFailed'));
+        if (activeSession === session) {
+          setRemoteTrackingConnected(false);
+          showError(t('remoteTracking.statusFailed'));
+        }
       },
     });
     session.socket = socket;
@@ -190,7 +207,6 @@ export function initRemoteTrackingPairing(): void {
 
   const close = () => {
     overlay.hidden = true;
-    void revokeActiveSession();
     openButton.focus({ preventScroll: true });
   };
 
@@ -203,4 +219,5 @@ export function initRemoteTrackingPairing(): void {
   window.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !overlay.hidden) close();
   });
+  window.addEventListener('pagehide', () => void revokeActiveSession(), { once: true });
 }

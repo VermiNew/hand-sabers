@@ -453,7 +453,7 @@
     "createSession": "UTWÓRZ SESJĘ",
     "configure": "KONFIGURUJ",
     "openPhonePage": "Otwórz stronę telefonu",
-    "hostPrivacy": "Tokeny sesji nie są zapisywane. Po zamknięciu tego okna sesja zostanie unieważniona.",
+    "hostPrivacy": "Tokeny sesji nie są zapisywane. Możesz zamknąć to okno — połączenie pozostanie aktywne podczas gry.",
     "settingsHint": "Parowanie telefonu jest eksperymentalne. Obraz kamery zostaje na telefonie; komputer dostaje tylko dane śledzenia.",
     "waitingCredential": "ZESKANUJ QR LUB WPISZ KOD",
     "pairingCode": "KOD PAROWANIA",

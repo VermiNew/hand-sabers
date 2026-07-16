@@ -453,7 +453,7 @@
     "createSession": "CREATE SESSION",
     "configure": "CONFIGURE",
     "openPhonePage": "Open phone page",
-    "hostPrivacy": "Session tokens are not saved. Closing this window revokes the session.",
+    "hostPrivacy": "Session tokens are not saved. You can close this window — the connection remains active during play.",
     "settingsHint": "Phone pairing is experimental. Camera images stay on the phone; the computer receives tracking data only.",
     "waitingCredential": "SCAN THE QR OR ENTER THE CODE",
     "pairingCode": "PAIRING CODE",
