@@ -287,6 +287,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const playerList = element<HTMLElement>('multiplayerPlayers');
   const mapSelect = element<HTMLSelectElement>('multiplayerMap');
   const modeSelect = element<HTMLSelectElement>('multiplayerMode');
+  const rulesPanel = element<HTMLFieldSetElement>('multiplayerRules');
+  const trainingModeInput = element<HTMLInputElement>('multiplayerTrainingMode');
+  const noFailInput = element<HTMLInputElement>('multiplayerNoFail');
   const readyButton = element<HTMLButtonElement>('multiplayerReady');
   const startButton = element<HTMLButtonElement>('multiplayerStart');
   const disconnectButton = element<HTMLButtonElement>('multiplayerDisconnect');
@@ -339,6 +342,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     mapSelect.value = '';
     mapSelect.disabled = true;
     modeSelect.disabled = true;
+    rulesPanel.hidden = true;
+    trainingModeInput.checked = false;
+    noFailInput.checked = false;
     readyButton.disabled = true;
     readyButton.classList.remove('is-ready');
     readyButton.textContent = t('multiplayer.ready');
@@ -459,6 +465,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     mapSelect.disabled = currentRole !== 'host';
     modeSelect.value = snapshot.mode;
     modeSelect.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
+    rulesPanel.hidden = currentRole !== 'host';
+    trainingModeInput.checked = snapshot.rules.trainingMode;
+    noFailInput.checked = snapshot.rules.noFail;
+    rulesPanel.disabled = Boolean(snapshot.round && snapshot.round.finishedAt === null);
     const self = snapshot.players.find(player => player.id === currentPlayerId);
     readyButton.disabled = !snapshot.mapId || !self || Boolean(pendingPreparationMapId);
     readyButton.classList.toggle('is-ready', Boolean(self?.ready));
@@ -694,6 +704,16 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     pendingPreparationMapId = '';
     sendControl({ type: 'set-mode', mode: modeSelect.value });
   });
+  const sendRules = () => {
+    if (currentRole !== 'host') return;
+    sendControl({
+      type: 'set-rules',
+      trainingMode: trainingModeInput.checked,
+      noFail: noFailInput.checked,
+    });
+  };
+  trainingModeInput.addEventListener('change', sendRules);
+  noFailInput.addEventListener('change', sendRules);
   window.addEventListener('hand-sabers:multiplayer-prepared', event => {
     const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
     if (typeof mapId !== 'string' || mapId !== pendingPreparationMapId || currentRoom?.mapId !== mapId) return;
