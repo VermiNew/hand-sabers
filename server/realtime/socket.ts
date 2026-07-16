@@ -1,4 +1,5 @@
-import type { IncomingMessage, Server } from 'node:http';
+import type { IncomingMessage, Server as HttpServer } from 'node:http';
+import type { Server as HttpsServer } from 'node:https';
 import type { Duplex } from 'node:stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { RawData } from 'ws';
@@ -113,7 +114,7 @@ function consumeRealtimeToken(client: ClientState, now: number): boolean {
   return true;
 }
 
-export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { close(): void } {
+export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: RoomRegistry): { close(): void } {
   const webSocketServer = new WebSocketServer({
     noServer: true,
     maxPayload: 64 * 1024,

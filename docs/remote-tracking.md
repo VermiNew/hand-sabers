@@ -47,6 +47,23 @@ bounds, and sessions whose token has expired.
 - Apply origin checks, message-size limits and per-session rate limits to the
   signaling endpoint.
 
+## HTTPS in a local network
+
+Mobile browsers require a secure context before granting camera access. The
+production Express server can serve HTTPS directly when both certificate paths
+are provided:
+
+```powershell
+$env:HAND_SABERS_TLS_CERT='C:\certs\hand-sabers.pem'
+$env:HAND_SABERS_TLS_KEY='C:\certs\hand-sabers-key.pem'
+npm start
+```
+
+The certificate must be trusted by the phone and contain the LAN hostname or IP
+used in the QR link. Do not commit private keys or generated certificates. When
+TLS terminates in a reverse proxy, set `HAND_SABERS_TRUST_PROXY=1` so Express
+uses the forwarded HTTPS protocol while generating pairing links.
+
 ## Integration boundary
 
 Introduce a `TrackingProvider` interface only when implementing transport.

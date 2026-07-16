@@ -1,8 +1,9 @@
 import express from 'express';
 import type { ErrorRequestHandler, Request } from 'express';
 import multer from 'multer';
-import { createServer } from 'http';
-import { existsSync, mkdirSync } from 'fs';
+import { createServer as createHttpServer } from 'http';
+import { createServer as createHttpsServer } from 'https';
+import { existsSync, mkdirSync, readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
@@ -64,6 +65,7 @@ const upload = multer({
 });
 
 const app = express();
+if (process.env.HAND_SABERS_TRUST_PROXY === '1') app.set('trust proxy', 1);
 
 const limiter = new RateLimiter();
 const rooms = new RoomRegistry();
@@ -132,13 +134,23 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
 };
 app.use(errorHandler);
 
-const server = createServer(app);
+const tlsCertPath = process.env.HAND_SABERS_TLS_CERT;
+const tlsKeyPath = process.env.HAND_SABERS_TLS_KEY;
+if (Boolean(tlsCertPath) !== Boolean(tlsKeyPath)) {
+  throw new Error('HTTPS wymaga jednocześnie HAND_SABERS_TLS_CERT i HAND_SABERS_TLS_KEY.');
+}
+const secure = Boolean(tlsCertPath && tlsKeyPath);
+const server = secure
+  ? createHttpsServer({ cert: readFileSync(tlsCertPath!), key: readFileSync(tlsKeyPath!) }, app)
+  : createHttpServer(app);
 const realtimeServer = registerRealtimeServer(server, rooms);
 const remoteTrackingServer = registerRemoteTrackingServer(server, trackingSessions);
 const PORT = Number(process.env.PORT || 3000);
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Hand Sabers → http://localhost:${PORT}`);
-  console.log(`Przez VPN → http://<twoje-ip>:${PORT}`);
+  const protocol = secure ? 'https' : 'http';
+  console.log(`Hand Sabers → ${protocol}://localhost:${PORT}`);
+  console.log(`W sieci lokalnej → ${protocol}://<twoje-ip-lub-hostname>:${PORT}`);
+  if (!secure) console.log('Kamera telefonu poza localhost wymaga HTTPS (HAND_SABERS_TLS_CERT + HAND_SABERS_TLS_KEY).');
 });
 
 function shutdown(signal: NodeJS.Signals): void {

@@ -1,4 +1,5 @@
-import type { IncomingMessage, Server } from 'node:http';
+import type { IncomingMessage, Server as HttpServer } from 'node:http';
+import type { Server as HttpsServer } from 'node:https';
 import type { Duplex } from 'node:stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { TrackingSessionRegistry } from './tracking-session-registry.js';
@@ -62,7 +63,7 @@ function send(socket: WebSocket, payload: object): void {
 }
 
 export function registerRemoteTrackingServer(
-  server: Server,
+  server: HttpServer | HttpsServer,
   sessions: TrackingSessionRegistry,
 ): { close(): void } {
   const webSocketServer = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
