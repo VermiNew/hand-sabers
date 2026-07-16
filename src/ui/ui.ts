@@ -231,8 +231,16 @@ export function showCameraError(err: unknown): void {
   else if (isCameraError) hint = t('errors.cameraPermission');
 
   if (ui.spinner) ui.spinner.style.display = 'none';
-  if (ui.ovInstr)     ui.ovInstr.textContent      = isCameraError ? t('errors.cameraError') : t('errors.startError');
-  if (ui.ovLoadDetail) ui.ovLoadDetail.innerHTML  = `${message}<br>${hint}`;
+  if (ui.ovInstr) ui.ovInstr.textContent = isCameraError ? t('errors.cameraError') : t('errors.startError');
+  if (ui.ovLoadDetail) {
+    const lines = [message, ...hint.split(/<br\s*\/?>/i)];
+    const content: Array<Text | HTMLBRElement> = [];
+    lines.forEach((line, index) => {
+      if (index > 0) content.push(document.createElement('br'));
+      content.push(document.createTextNode(line));
+    });
+    ui.ovLoadDetail.replaceChildren(...content);
+  }
   refreshIcons();
   if (ui.dStatus) ui.dStatus.textContent = t('errors.error');
 }

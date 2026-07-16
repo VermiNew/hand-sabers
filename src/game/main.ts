@@ -1,5 +1,5 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateHandsResumeProgress, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
+import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateHandsResumeProgress, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition, showCameraError } from '../ui/ui.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
@@ -91,6 +91,38 @@ function applyTranslations(): void {
 }
 
 applyTranslations();
+
+let lastRuntimeError = '';
+let lastRuntimeErrorAt = 0;
+
+function reportRuntimeError(context: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  const signature = `${context}:${message}`;
+  const now = Date.now();
+  if (signature !== lastRuntimeError || now - lastRuntimeErrorAt > 5_000) {
+    console.error(`[${context}]`, error);
+    lastRuntimeError = signature;
+    lastRuntimeErrorAt = now;
+  }
+  if (ui.dStatus) ui.dStatus.textContent = `${t('errors.error')}: ${message}`;
+  if (state.appState === S.LOADING || state.appState === S.CALIB) {
+    showCameraError(error);
+    showOverlay();
+  }
+}
+
+function runAsyncTask(context: string, task: () => Promise<unknown>, onError?: () => void): void {
+  void Promise.resolve()
+    .then(task)
+    .catch(error => {
+      reportRuntimeError(context, error);
+      try {
+        onError?.();
+      } catch (recoveryError) {
+        reportRuntimeError(`${context}:recovery`, recoveryError);
+      }
+    });
+}
 
 function withDevQuery(url: string): string {
   const current = new URLSearchParams(location.search);
@@ -472,7 +504,7 @@ function endGame(): void {
   stopMapAudio();
   resetMapTimeline();
   clearGameplayEntities();
-  void submitScore(progress, wasTrainingMode);
+  runAsyncTask('score-submit', () => submitScore(progress, wasTrainingMode));
   fadeTransition(() => { showGameOver(state); });
 }
 
@@ -495,7 +527,7 @@ function restartWithoutCalib(): void {
   hidePauseMenu();
   handsLostSince = handsReturnedSince = 0;
   state.pauseReason = PAUSE_REASONS.NONE;
-  void beginPlaying();
+  runAsyncTask('game-restart', beginPlaying);
 }
 
 // ── Pauza ─────────────────────────────────────────────────────────────────────
@@ -723,6 +755,14 @@ function smoothProfileValue(previous: number, sample: number): number {
 function loop(timestamp: number): void {
   if (!mainLoopRunning) return;
   mainLoopRaf = requestAnimationFrame(loop);
+  try {
+    renderFrame(timestamp);
+  } catch (error) {
+    reportRuntimeError('render-loop', error);
+  }
+}
+
+function renderFrame(timestamp: number): void {
   const now = timestamp;
   updateFpsCounter(now);
   const t = now * 0.001;
@@ -835,13 +875,13 @@ function loop(timestamp: number): void {
     filteredHands: window.__filteredHandCount ?? 0,
     rawHands:      window.__rawHandCount      ?? 0,
   }, profiling ? frameProfile : undefined);
-};
+}
 
 // ── Przyciski overlay ─────────────────────────────────────────────────────────
 function handleOverlayButton(): void {
   initAudio();
   if (state.appState === S.GAMEOVER) restartWithoutCalib();
-  else void advanceCalib();
+  else runAsyncTask('calibration-advance', advanceCalib);
 }
 
 function handleCalibButton(): void {
@@ -927,7 +967,7 @@ function syncPauseMenuActions(): void {
 
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
 ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
-ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); void advanceCalib(); });
+ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', advanceCalib); });
 ui.calibBtnRetry?.addEventListener('click', () => { initAudio(); restartGame(); });
 ui.calibBtnMenu?.addEventListener('click',  returnToMainMenu);
 document.getElementById('pauseResume')?.addEventListener('click',  () => resumeGame(performance.now()));
@@ -990,7 +1030,9 @@ initKeyboardNav({
     if (backdrop && !backdrop.hidden) backdrop.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
   },
 });
-setCalibAutoAdvanceHandler(() => { if (state.appState === S.CALIB) void advanceCalib(); });
+setCalibAutoAdvanceHandler(() => {
+  if (state.appState === S.CALIB) runAsyncTask('calibration-auto-advance', advanceCalib);
+});
 initDevPanel(renderer, null);
 initMapDrop();
 updateHUD(state);
@@ -1252,7 +1294,7 @@ function initMainMenu(): void {
       return;
     }
     setSettingsPanelVisible(false);
-    void startFromMainMenu({ calibrate: false });
+    runAsyncTask('game-start', () => startFromMainMenu({ calibrate: false }));
   });
   dispatchMenuAction('mainCalibrate', () => {
     if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
@@ -1262,7 +1304,7 @@ function initMainMenu(): void {
       return;
     }
     setSettingsPanelVisible(false);
-    void startFromMainMenu({ calibrate: true });
+    runAsyncTask('calibration-start', () => startFromMainMenu({ calibrate: true }));
   });
   settingsButton?.addEventListener('click', () => {
     selectItem(settingsButton);
@@ -1854,7 +1896,7 @@ registerMlAssetCache();
 initRemoteTrackingPairing();
 window.addEventListener('hand-sabers:multiplayer-prepare', event => {
   const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
-  if (typeof mapId === 'string') void prepareMultiplayerMap(mapId);
+  if (typeof mapId === 'string') runAsyncTask('multiplayer-prepare', () => prepareMultiplayerMap(mapId));
 });
 window.addEventListener('hand-sabers:multiplayer-start', event => {
   const detail = (event as CustomEvent<{
@@ -1878,21 +1920,30 @@ window.addEventListener('hand-sabers:multiplayer-start', event => {
     && typeof (rules as Record<string, unknown>)['noFail'] === 'boolean'
     && typeof detail.startAtPerformance === 'number'
   ) {
-    void beginMultiplayerRound({
+    const roundDetail: Parameters<typeof beginMultiplayerRound>[0] = {
       mapId: detail.mapId,
       mode: detail.mode,
       rules: rules as MultiplayerRules,
       saber: detail.saber,
       startAtPerformance: detail.startAtPerformance,
-    });
+    };
+    runAsyncTask(
+      'multiplayer-round-start',
+      () => beginMultiplayerRound(roundDetail),
+      () => window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error')),
+    );
   }
 });
 initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 initMainMenu();
 
-(async () => {
-  await tryLoadMapFromUrl();
+runAsyncTask('application-startup', async () => {
+  try {
+    await tryLoadMapFromUrl();
+  } catch (error) {
+    reportRuntimeError('startup-map-load', error);
+  }
   startRenderLoop();
 
   // Dev/test: ?narrator&text=Hello+world!&speed=slow&narrator_timeout_start=1000&narrator_timeout_end=5000
@@ -1908,4 +1959,4 @@ initMainMenu();
     await narratorShow({ text, charMs });
     if (timeoutEnd > 0) await new Promise<void>(r => setTimeout(r, timeoutEnd));
   }
-})();
+});
