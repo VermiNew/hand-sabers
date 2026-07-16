@@ -19,6 +19,7 @@ export type RoomErrorCode =
   | 'HOST_ONLY'
   | 'INVALID_MAP'
   | 'INVALID_MODE'
+  | 'INVALID_RULES'
   | 'INVALID_SCORE';
 
 export class RoomError extends Error {
@@ -264,6 +265,25 @@ export class RoomRegistry {
       roomPlayer.saber = saberForPlayer(mode, roomPlayer.role);
       roomPlayer.ready = false;
     }
+    room.revision++;
+    return this.snapshot(room);
+  }
+
+  setRules(
+    code: string,
+    playerId: string,
+    rules: { trainingMode: unknown; noFail: unknown },
+  ): RoomSnapshot {
+    const room = this.requireRoom(code);
+    const player = room.players.find(candidate => candidate.id === playerId);
+    if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
+    if (typeof rules.trainingMode !== 'boolean' || typeof rules.noFail !== 'boolean') {
+      throw new RoomError('INVALID_RULES');
+    }
+    if (room.rules.trainingMode === rules.trainingMode && room.rules.noFail === rules.noFail) {
+      return this.snapshot(room);
+    }
+    room.rules = { trainingMode: rules.trainingMode, noFail: rules.noFail };
     room.revision++;
     return this.snapshot(room);
   }

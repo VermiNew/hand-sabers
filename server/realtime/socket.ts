@@ -35,6 +35,8 @@ interface ClientMessage {
   ready?: unknown;
   mapId?: unknown;
   mode?: unknown;
+  trainingMode?: unknown;
+  noFail?: unknown;
   score?: unknown;
   combo?: unknown;
   lives?: unknown;
@@ -243,6 +245,13 @@ export function registerRealtimeServer(server: Server, rooms: RoomRegistry): { c
         }
         if (type === 'set-mode') {
           broadcast(client.roomCode, rooms.setMode(client.roomCode, client.playerId, String(message.mode || '')));
+          return;
+        }
+        if (type === 'set-rules') {
+          broadcast(client.roomCode, rooms.setRules(client.roomCode, client.playerId, {
+            trainingMode: message.trainingMode,
+            noFail: message.noFail,
+          }));
           return;
         }
         if (type === 'start-game') {
