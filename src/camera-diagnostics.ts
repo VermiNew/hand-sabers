@@ -63,17 +63,23 @@ async function updatePermission(): Promise<void> {
 
 async function populateCameraList(selectedDeviceId = ''): Promise<void> {
   if (!navigator.mediaDevices?.enumerateDevices) return;
-  const devices = (await navigator.mediaDevices.enumerateDevices()).filter(device => device.kind === 'videoinput');
-  cameraSelect.replaceChildren();
-  if (!devices.length) {
-    cameraSelect.add(new Option('Brak wykrytych kamer', ''));
-    return;
-  }
-  devices.forEach((device, index) => {
-    cameraSelect.add(new Option(device.label || `Kamera ${index + 1}`, device.deviceId));
-  });
-  if (selectedDeviceId && devices.some(device => device.deviceId === selectedDeviceId)) {
-    cameraSelect.value = selectedDeviceId;
+  try {
+    const devices = (await navigator.mediaDevices.enumerateDevices()).filter(device => device.kind === 'videoinput');
+    cameraSelect.replaceChildren();
+    if (!devices.length) {
+      cameraSelect.add(new Option('Brak wykrytych kamer', ''));
+      return;
+    }
+    devices.forEach((device, index) => {
+      cameraSelect.add(new Option(device.label || `Kamera ${index + 1}`, device.deviceId));
+    });
+    if (selectedDeviceId && devices.some(device => device.deviceId === selectedDeviceId)) {
+      cameraSelect.value = selectedDeviceId;
+    }
+  } catch (error) {
+    console.error('Camera enumeration failed:', error);
+    cameraSelect.replaceChildren(new Option('Nie udało się pobrać listy kamer', ''));
+    diagnosticMessage.textContent = 'Nie udało się odczytać urządzeń. Diagnostyka może nadal działać z kamerą domyślną.';
   }
 }
 
@@ -103,21 +109,26 @@ function sampleLight(): void {
 
 function updateFrameMetrics(now: number): void {
   if (!stream) return;
-  frameCount++;
-  if (now - lastFrameCountAt >= 1000) {
-    const elapsed = Math.max(1, now - lastFrameCountAt);
-    const fps = Math.round(frameCount * 1000 / elapsed);
-    fpsMetric.textContent = `${fps} FPS`;
-    fpsHint.textContent = fps >= 24 ? 'Płynność wystarczająca do śledzenia' : 'Zamknij inne aplikacje używające kamery';
-    setMetricState(fpsMetric, fps >= 24 ? 'good' : fps >= 18 ? 'warn' : 'bad');
-    frameCount = 0;
-    lastFrameCountAt = now;
+  try {
+    frameCount++;
+    if (now - lastFrameCountAt >= 1000) {
+      const elapsed = Math.max(1, now - lastFrameCountAt);
+      const fps = Math.round(frameCount * 1000 / elapsed);
+      fpsMetric.textContent = `${fps} FPS`;
+      fpsHint.textContent = fps >= 24 ? 'Płynność wystarczająca do śledzenia' : 'Zamknij inne aplikacje używające kamery';
+      setMetricState(fpsMetric, fps >= 24 ? 'good' : fps >= 18 ? 'warn' : 'bad');
+      frameCount = 0;
+      lastFrameCountAt = now;
+    }
+    if (now - lastLightSampleAt >= 500) {
+      sampleLight();
+      lastLightSampleAt = now;
+    }
+  } catch (error) {
+    console.error('Camera metrics update failed:', error);
+    diagnosticMessage.textContent = 'Nie udało się zaktualizować części pomiarów. Podgląd kamery nadal działa.';
   }
-  if (now - lastLightSampleAt >= 500) {
-    sampleLight();
-    lastLightSampleAt = now;
-  }
-  frameRequest = video.requestVideoFrameCallback(updateFrameMetrics);
+  if (stream) frameRequest = video.requestVideoFrameCallback(updateFrameMetrics);
 }
 
 function resetMetrics(): void {
