@@ -469,6 +469,8 @@
     "trackingActive": "TRACKING ACTIVE — DATA IS BEING SENT",
     "trackingPaused": "TRACKING PAUSED — NO CONNECTION",
     "cameraFailed": "Could not start the camera or tracking model. Check permissions and the secure HTTPS connection.",
+    "preparingPhoneData": "CONNECTING PHONE TRACKING…",
+    "preparingPhoneDataDetail": "The computer camera will remain off",
     "privacy": "Only hand coordinates will be sent to the computer — never camera images.",
     "invalidCode": "The code must contain six valid characters.",
     "rateLimited": "Too many attempts. Wait a moment.",

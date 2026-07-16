@@ -469,6 +469,8 @@
     "trackingActive": "ŚLEDZENIE AKTYWNE — DANE SĄ WYSYŁANE",
     "trackingPaused": "ŚLEDZENIE WSTRZYMANE — BRAK POŁĄCZENIA",
     "cameraFailed": "Nie udało się uruchomić kamery lub modelu śledzenia. Sprawdź uprawnienia i bezpieczne połączenie HTTPS.",
+    "preparingPhoneData": "ŁĄCZENIE TRACKINGU Z TELEFONU…",
+    "preparingPhoneDataDetail": "Kamera komputera pozostanie wyłączona",
     "privacy": "Do komputera będą wysyłane wyłącznie współrzędne dłoni — nigdy obraz kamery.",
     "invalidCode": "Kod musi zawierać sześć poprawnych znaków.",
     "rateLimited": "Za dużo prób. Odczekaj chwilę.",

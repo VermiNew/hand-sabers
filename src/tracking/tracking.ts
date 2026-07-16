@@ -4,6 +4,7 @@ import { getSettings } from '../core/settings.ts';
 import { getDetectIntervalMs, getPerformanceProfile } from '../core/performance.ts';
 import { t } from '../i18n/index.ts';
 import { canSendRealtime, PROTOCOL_VERSION, sendRealtimePacket } from '../multiplayer/client.ts';
+import { isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import type { Settings, SaberQuat } from '../types/index.js';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
@@ -105,6 +106,34 @@ let dynamicDetectIntervalMs  = getDetectIntervalMs(trackingProfile);
 let realtimeSequence         = 0;
 let lastRealtimePoseMs       = -Infinity;
 let lastRealtimeLandmarksMs  = -Infinity;
+let trackingSource: 'camera' | 'remote' | null = null;
+
+function decodeRemoteLandmarks(packet: ArrayBuffer): DetectResult | null {
+  if (packet.byteLength !== 528) return null;
+  const view = new DataView(packet);
+  if (view.getUint8(0) !== PROTOCOL_VERSION || view.getUint8(1) !== 2 || view.getUint8(2) > 3) return null;
+  const flags = view.getUint8(2);
+  const landmarks: Landmark[][] = [];
+  const handedness: HandednessCategory[][] = [];
+  for (let handIndex = 0; handIndex < 2; handIndex++) {
+    if ((flags & (1 << handIndex)) === 0) continue;
+    const hand: Landmark[] = [];
+    for (let landmarkIndex = 0; landmarkIndex < 21; landmarkIndex++) {
+      const offset = 24 + handIndex * 252 + landmarkIndex * 12;
+      hand.push({
+        x: view.getFloat32(offset, true),
+        y: view.getFloat32(offset + 4, true),
+        z: view.getFloat32(offset + 8, true),
+      });
+    }
+    landmarks.push(hand);
+    handedness.push([{
+      score: view.getFloat32(handIndex === 0 ? 16 : 20, true),
+      categoryName: handIndex === 0 ? 'Left' : 'Right',
+    }]);
+  }
+  return { landmarks, handedness };
+}
 
 function writePose(
   view: DataView,
@@ -400,12 +429,17 @@ function setupCalibFeed(): void {
     if (active) {
       calibCtx!.clearRect(0, 0, w, h);
 
-      if (videoEl && videoEl.readyState >= 2) {
-        calibCtx!.save();
-        calibCtx!.translate(w, 0);
-        calibCtx!.scale(-1, 1);
-        calibCtx!.drawImage(videoEl, 0, 0, w, h);
-        calibCtx!.restore();
+      if ((videoEl && videoEl.readyState >= 2) || trackingSource === 'remote') {
+        if (videoEl && videoEl.readyState >= 2) {
+          calibCtx!.save();
+          calibCtx!.translate(w, 0);
+          calibCtx!.scale(-1, 1);
+          calibCtx!.drawImage(videoEl, 0, 0, w, h);
+          calibCtx!.restore();
+        } else {
+          calibCtx!.fillStyle = 'rgba(5,7,13,0.9)';
+          calibCtx!.fillRect(0, 0, w, h);
+        }
 
         // Draw ML hand skeleton overlay
         for (const hand of latestLandmarks) {
@@ -579,6 +613,60 @@ function collectAutoFlipSamples(result: DetectResult): void {
   }
 }
 
+function processDetectionResult(result: DetectResult, now: number, detectMs: number): void {
+  latestLandmarks = result.landmarks ?? [];
+  drawLandmarks(result);
+  collectAutoFlipSamples(result);
+  sendRealtimeLandmarks(result, now);
+
+  if (worker && result.landmarks?.length) {
+    const candidates = result.landmarks.map((landmarks, index) => {
+      const hand = result.handedness?.[index]?.[0];
+      return {
+        landmarks,
+        score: hand?.score ?? 0.8,
+        handedness: hand?.categoryName ?? hand?.displayName ?? null,
+      };
+    });
+    worker.postMessage({ type: 'setState', payload: { appState: state.appState, oneHandMode: state.oneHandMode || null } });
+    worker.postMessage({ type: 'analyze', payload: { candidates } });
+  } else if (worker) {
+    worker.postMessage({ type: 'analyze', payload: { candidates: [] } });
+  }
+
+  applyWorkerResult(latestWorkerResult);
+
+  if (state.appState === S.CALIB && result.landmarks?.length) {
+    for (const hand of result.landmarks) {
+      if (hand[0]) calibPoints.push(hand[0]);
+    }
+  }
+
+  if (ui.dConf) {
+    const confidence = result.handedness?.[0]?.[0]?.score ?? 0;
+    ui.dConf.textContent = confidence.toFixed(2);
+  }
+  if (ui.dLat) ui.dLat.textContent = `${detectMs.toFixed(1)}ms`;
+}
+
+window.addEventListener('hand-sabers:remote-tracking-packet', event => {
+  if (!trackingActive || trackingSource !== 'remote') return;
+  const startedAt = performance.now();
+  const result = decodeRemoteLandmarks((event as CustomEvent<ArrayBuffer>).detail);
+  if (!result) return;
+  processDetectionResult(result, startedAt, performance.now() - startedAt);
+});
+
+window.addEventListener('hand-sabers:remote-tracking-state', event => {
+  const connected = Boolean((event as CustomEvent<{ connected?: boolean }>).detail?.connected);
+  if (trackingSource === 'remote' && !connected) {
+    latestLandmarks = [];
+    latestWorkerResult = null;
+    worker?.postMessage({ type: 'analyze', payload: { candidates: [] } });
+    applyWorkerResult(null);
+  }
+});
+
 function runDetect(): void {
   if (!trackingActive) return;
   if (!handLandmarker || !videoEl || videoEl.readyState < 2) {
@@ -609,39 +697,7 @@ function runDetect(): void {
 
   if (ui.dDetect) ui.dDetect.textContent = `${detectMs.toFixed(1)}ms`;
 
-  latestLandmarks = result?.landmarks ?? [];
-  drawLandmarks(result);
-  collectAutoFlipSamples(result);
-  sendRealtimeLandmarks(result, now);
-
-  if (worker && result.landmarks?.length) {
-    const candidates = result.landmarks.map((lms, i) => {
-      const handedness = result.handedness?.[i]?.[0];
-      return {
-        landmarks:  lms,
-        score:      handedness?.score ?? 0.8,
-        handedness: handedness?.categoryName ?? handedness?.displayName ?? null,
-      };
-    });
-    worker.postMessage({ type: 'setState',  payload: { appState: state.appState, oneHandMode: state.oneHandMode || null } });
-    worker.postMessage({ type: 'analyze',   payload: { candidates } });
-  } else if (worker) {
-    worker.postMessage({ type: 'analyze', payload: { candidates: [] } });
-  }
-
-  applyWorkerResult(latestWorkerResult);
-
-  if (state.appState === S.CALIB && result.landmarks?.length) {
-    for (const hand of result.landmarks) {
-      if (hand[0]) calibPoints.push(hand[0]);
-    }
-  }
-
-  if (ui.dConf) {
-    const conf = result.handedness?.[0]?.[0]?.score ?? 0;
-    ui.dConf.textContent = conf.toFixed(2);
-  }
-  if (ui.dLat) ui.dLat.textContent = `${detectMs.toFixed(1)}ms`;
+  processDetectionResult(result, now, detectMs);
 
   scheduleDetect(dynamicDetectIntervalMs - (performance.now() - lastDetectMs));
 }
@@ -707,6 +763,7 @@ function scheduleCalibAuto(): void {
 
 export function stopTracking(): void {
   trackingActive     = false;
+  trackingSource     = null;
   latestWorkerResult = null;
   calibAutoScheduled = false;
 
@@ -739,26 +796,34 @@ export async function initMP(onReady: () => void): Promise<void> {
   }
   handsPauseCanvas = document.getElementById('handsPauseCanvas') as HTMLCanvasElement | null;
   handsPauseCtx = handsPauseCanvas?.getContext('2d', { alpha: false }) ?? null;
+  const useRemoteTracking = isRemoteTrackingConnected();
+  trackingSource = useRemoteTracking ? 'remote' : 'camera';
 
   setupCalibFeed();
 
   try {
-    setLoadingProgress(t('overlay.loadingModel'), t('overlay.loadingRuntimeDetail'), null);
-    await loadMediaPipe((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
-    setLoadingProgress(t('overlay.startingCamera'), t('overlay.startingCameraDetail'), null);
-    await startCamera();
-    setLoadingProgress(t('overlay.cameraReady'), t('overlay.cameraReadyDetail'), null);
-    setupCalibFeed();
+    if (useRemoteTracking) {
+      setLoadingProgress(t('remoteTracking.preparingPhoneData'), t('remoteTracking.preparingPhoneDataDetail'), null);
+      if (ui.dCam) ui.dCam.textContent = 'PHONE';
+    } else {
+      setLoadingProgress(t('overlay.loadingModel'), t('overlay.loadingRuntimeDetail'), null);
+      await loadMediaPipe((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
+      setLoadingProgress(t('overlay.startingCamera'), t('overlay.startingCameraDetail'), null);
+      await startCamera();
+      setLoadingProgress(t('overlay.cameraReady'), t('overlay.cameraReadyDetail'), null);
+      setupCalibFeed();
+    }
     setLoadingProgress(t('overlay.initializingWorker'), t('overlay.initializingWorkerDetail'), null);
     initWorker();
     trackingActive = true;
-    scheduleDetect();
+    if (!useRemoteTracking) scheduleDetect();
     setLoadingProgress(t('overlay.allReady'), t('overlay.allReadyDetail'), 1.0);
 
-    if (ui.dStatus) ui.dStatus.textContent = 'TRACKING OK';
+    if (ui.dStatus) ui.dStatus.textContent = useRemoteTracking ? 'PHONE TRACKING' : 'TRACKING OK';
     scheduleCalibAuto();
     onReady();
   } catch (err) {
+    trackingSource = null;
     console.error('initMP error:', err);
     showCameraError(err);
   }
