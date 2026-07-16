@@ -132,20 +132,26 @@ export function nearestBeats<T extends TimingBeat>(
 ): NearestBeat<T>[] {
   if (!Array.isArray(beats) || !beats.length || count <= 0) return [];
 
-  const withDelta: NearestBeat<T>[] = beats.map(beat => ({
-    beat,
-    timeSec: getBeatHitTimeSec(beat),
-    deltaMs: Math.round((getBeatHitTimeSec(beat) - songTimeSec) * 1000),
-  }));
-
-  withDelta.sort((a, b) => {
+  const compare = (a: NearestBeat<T>, b: NearestBeat<T>): number => {
     const absA = Math.abs(a.deltaMs);
     const absB = Math.abs(b.deltaMs);
     if (absA !== absB) return absA - absB;
     if (a.deltaMs >= 0 && b.deltaMs < 0) return -1;
     if (a.deltaMs < 0 && b.deltaMs >= 0) return 1;
     return 0;
-  });
+  };
 
-  return withDelta.slice(0, count);
+  const nearest: NearestBeat<T>[] = [];
+  for (const beat of beats) {
+    const timeSec = getBeatHitTimeSec(beat);
+    const candidate = { beat, timeSec, deltaMs: Math.round((timeSec - songTimeSec) * 1000) };
+    const insertAt = nearest.findIndex(item => compare(candidate, item) < 0);
+    if (insertAt < 0) {
+      if (nearest.length < count) nearest.push(candidate);
+    } else {
+      nearest.splice(insertAt, 0, candidate);
+      if (nearest.length > count) nearest.pop();
+    }
+  }
+  return nearest;
 }
