@@ -238,13 +238,27 @@
 .calib-camera-label {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
+  width: 100%;
   font-size: 11px;
   letter-spacing: 3px;
   color: var(--dim);
   text-transform: uppercase;
 }
 .calib-camera-label .material-symbols-rounded { font-size: 13px; }
+.calib-feed-name,
+.calib-source-badge { display:inline-flex; align-items:center; gap:6px; }
+.calib-source-badge {
+  padding:5px 8px; border:1px solid rgba(148,163,184,.18); border-radius:999px;
+  color:rgba(148,163,184,.72); background:rgba(5,7,13,.6); font-size:9px; letter-spacing:1.5px;
+}
+.calib-source-badge[data-state="phone-connected"] {
+  border-color:rgba(54,242,161,.35); color:#36f2a1; background:rgba(54,242,161,.07);
+}
+.calib-source-badge[data-state="phone-disconnected"] {
+  border-color:rgba(255,85,102,.4); color:#ff8d9a; background:rgba(255,85,102,.08);
+}
 
 /* ── Right: info ── */
 .calib-info-col {

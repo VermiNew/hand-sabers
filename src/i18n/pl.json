@@ -522,6 +522,10 @@
   "calib": {
     "abort": "ANULUJ",
     "cameraFeed": "PODGLĄD KAMERY",
+    "landmarkFeed": "PODGLĄD LANDMARKÓW",
+    "sourceCamera": "KAMERA PC",
+    "sourcePhoneConnected": "TELEFON POŁĄCZONY",
+    "sourcePhoneDisconnected": "TELEFON ROZŁĄCZONY",
     "holdStill": "Trzymaj pozycję…",
     "ok": "OK",
     "notOk": "NIE"

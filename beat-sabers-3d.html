@@ -759,8 +759,14 @@
           </div>
         </div>
         <div class="calib-camera-label">
-          <span class="material-symbols-rounded">videocam</span>
-          <span data-i18n="calib.cameraFeed">PODGLĄD KAMERY</span>
+          <span class="calib-feed-name">
+            <span class="material-symbols-rounded">visibility</span>
+            <span id="calibFeedLabel" data-i18n="calib.cameraFeed">PODGLĄD KAMERY</span>
+          </span>
+          <span class="calib-source-badge" id="calibTrackingSource" data-state="camera">
+            <span class="material-symbols-rounded" id="calibSourceIcon">videocam</span>
+            <span id="calibSourceText" data-i18n="calib.sourceCamera">KAMERA PC</span>
+          </span>
         </div>
       </div>
     </div>

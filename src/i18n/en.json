@@ -522,6 +522,10 @@
   "calib": {
     "abort": "CANCEL",
     "cameraFeed": "CAMERA FEED",
+    "landmarkFeed": "LANDMARK PREVIEW",
+    "sourceCamera": "PC CAMERA",
+    "sourcePhoneConnected": "PHONE CONNECTED",
+    "sourcePhoneDisconnected": "PHONE DISCONNECTED",
     "holdStill": "Hold position…",
     "ok": "OK",
     "notOk": "NO"

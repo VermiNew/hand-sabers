@@ -108,6 +108,25 @@ let lastRealtimePoseMs       = -Infinity;
 let lastRealtimeLandmarksMs  = -Infinity;
 let trackingSource: 'camera' | 'remote' | null = null;
 
+function updateCalibrationSourceIndicator(remoteConnected = isRemoteTrackingConnected()): void {
+  const badge = document.getElementById('calibTrackingSource');
+  const icon = document.getElementById('calibSourceIcon');
+  const text = document.getElementById('calibSourceText');
+  const feedLabel = document.getElementById('calibFeedLabel');
+  if (!badge || !icon || !text || !feedLabel) return;
+  if (trackingSource === 'remote') {
+    badge.dataset['state'] = remoteConnected ? 'phone-connected' : 'phone-disconnected';
+    icon.textContent = remoteConnected ? 'smartphone' : 'phonelink_off';
+    text.textContent = t(remoteConnected ? 'calib.sourcePhoneConnected' : 'calib.sourcePhoneDisconnected');
+    feedLabel.textContent = t('calib.landmarkFeed');
+    return;
+  }
+  badge.dataset['state'] = 'camera';
+  icon.textContent = 'videocam';
+  text.textContent = t('calib.sourceCamera');
+  feedLabel.textContent = t('calib.cameraFeed');
+}
+
 function decodeRemoteLandmarks(packet: ArrayBuffer): DetectResult | null {
   if (packet.byteLength !== 528) return null;
   const view = new DataView(packet);
@@ -659,6 +678,7 @@ window.addEventListener('hand-sabers:remote-tracking-packet', event => {
 
 window.addEventListener('hand-sabers:remote-tracking-state', event => {
   const connected = Boolean((event as CustomEvent<{ connected?: boolean }>).detail?.connected);
+  updateCalibrationSourceIndicator(connected);
   if (trackingSource === 'remote' && !connected) {
     latestLandmarks = [];
     latestWorkerResult = null;
@@ -802,6 +822,7 @@ export async function initMP(onReady: () => void): Promise<boolean> {
   const useRemoteTracking = sourcePreference === 'phone'
     || (sourcePreference === 'auto' && remoteConnected);
   trackingSource = useRemoteTracking ? 'remote' : 'camera';
+  updateCalibrationSourceIndicator(remoteConnected);
 
   setupCalibFeed();
 
