@@ -27,6 +27,31 @@ function attr(str: unknown): string {
   return escHtml(str).replace(/'/g, '&#39;');
 }
 
+let lastMapsError = '';
+let lastMapsErrorAt = 0;
+
+function reportMapsError(context: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  const signature = `${context}:${message}`;
+  const now = Date.now();
+  if (signature === lastMapsError && now - lastMapsErrorAt < 5_000) return;
+  lastMapsError = signature;
+  lastMapsErrorAt = now;
+  console.error(`[maps:${context}]`, error);
+  showToast(`${t('errors.error')}: ${message}`, { type: 'error' });
+}
+
+function runMapsTask(context: string, task: () => Promise<unknown>, onError?: () => void): void {
+  void Promise.resolve().then(task).catch(error => {
+    reportMapsError(context, error);
+    try {
+      onError?.();
+    } catch (recoveryError) {
+      reportMapsError(`${context}:recovery`, recoveryError);
+    }
+  });
+}
+
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
@@ -583,22 +608,27 @@ function fadePreviewVolume(fromVolume: number, toVolume: number, durationMs: num
   previewAudio.volume = from;
 
   const step = (now: number) => {
-    if (token !== previewToken) {
+    try {
+      if (token !== previewToken) {
+        previewFadeFrame = null;
+        return;
+      }
+
+      const progress = durationMs <= 0 ? 1 : Math.max(0, Math.min(1, (now - startedAt) / durationMs));
+      const eased = progress * progress * (3 - 2 * progress);
+      previewAudio.volume = from + (to - from) * eased;
+
+      if (progress < 1) {
+        previewFadeFrame = requestAnimationFrame(step);
+        return;
+      }
+
       previewFadeFrame = null;
-      return;
+      onDone?.();
+    } catch (error) {
+      previewFadeFrame = null;
+      reportMapsError('preview-fade', error);
     }
-
-    const progress = durationMs <= 0 ? 1 : Math.max(0, Math.min(1, (now - startedAt) / durationMs));
-    const eased = progress * progress * (3 - 2 * progress);
-    previewAudio.volume = from + (to - from) * eased;
-
-    if (progress < 1) {
-      previewFadeFrame = requestAnimationFrame(step);
-      return;
-    }
-
-    previewFadeFrame = null;
-    onDone?.();
   };
 
   previewFadeFrame = requestAnimationFrame(step);
@@ -613,13 +643,18 @@ function setPreviewProgress(progress: number, remainingMs = PREVIEW_MAX_MS): voi
 }
 
 function updatePreviewProgress(): void {
-  const elapsedMs = PREVIEW_MAX_MS - previewRemainingMs + (performance.now() - previewStartedAtMs);
-  const remainingMs = Math.max(0, PREVIEW_MAX_MS - elapsedMs);
-  setPreviewProgress(elapsedMs / PREVIEW_MAX_MS, remainingMs);
-  if (!previewAudio.paused && remainingMs > 0) {
-    previewProgressFrame = requestAnimationFrame(updatePreviewProgress);
-  } else {
+  try {
+    const elapsedMs = PREVIEW_MAX_MS - previewRemainingMs + (performance.now() - previewStartedAtMs);
+    const remainingMs = Math.max(0, PREVIEW_MAX_MS - elapsedMs);
+    setPreviewProgress(elapsedMs / PREVIEW_MAX_MS, remainingMs);
+    if (!previewAudio.paused && remainingMs > 0) {
+      previewProgressFrame = requestAnimationFrame(updatePreviewProgress);
+    } else {
+      previewProgressFrame = null;
+    }
+  } catch (error) {
     previewProgressFrame = null;
+    reportMapsError('preview-progress', error);
   }
 }
 
@@ -1022,7 +1057,10 @@ function showTab(name: 'maps' | 'scores'): void {
   });
   if (name === 'scores') {
     stopMapPreview(true);
-    void loadScores();
+    runMapsTask('scores-load', loadScores, () => {
+      const scoreList = document.getElementById('scoreList');
+      if (scoreList) scoreList.textContent = t('maps.noScores');
+    });
   }
 }
 
@@ -1098,6 +1136,9 @@ export function init(): void {
   initDragDrop();
   window.addEventListener('pagehide', () => stopMapPreview());
   window.addEventListener('beforeunload', () => stopMapPreview());
-  void loadMaps();
+  runMapsTask('maps-load', loadMaps, () => {
+    const mapList = document.getElementById('mapList');
+    if (mapList) mapList.textContent = t('maps.noMaps');
+  });
   initKeyboardNav({ isMapsPage: true });
 }
