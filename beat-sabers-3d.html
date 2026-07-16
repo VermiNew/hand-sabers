@@ -570,6 +570,18 @@
             <p data-i18n="multiplayer.readyHint">Zmiana mapy resetuje gotowość wszystkich graczy.</p>
           </div>
         </div>
+        <section class="mp-chat" aria-labelledby="multiplayerChatTitle">
+          <header class="mp-chat-head">
+            <span class="mp-label" id="multiplayerChatTitle" data-i18n="multiplayer.chat">CZAT POKOJU</span>
+            <span data-i18n="multiplayer.chatLimit">DO 240 ZNAKÓW</span>
+          </header>
+          <div class="mp-chat-messages" id="multiplayerChatMessages" role="log" aria-live="polite"></div>
+          <form class="mp-chat-form" id="multiplayerChatForm">
+            <input id="multiplayerChatInput" type="text" maxlength="240" autocomplete="off"
+              placeholder="Napisz wiadomość…" aria-label="Wiadomość na czacie" disabled>
+            <button id="multiplayerChatSend" type="submit" disabled data-i18n="multiplayer.chatSend">WYŚLIJ</button>
+          </form>
+        </section>
         <div class="mp-scoreboard" id="multiplayerLobbyScores" hidden></div>
       </section>
     </div>

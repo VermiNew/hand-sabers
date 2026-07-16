@@ -26,8 +26,16 @@ interface ServerMessage {
   role?: unknown;
   room?: unknown;
   player?: unknown;
+  message?: unknown;
   sentAt?: unknown;
   serverTime?: unknown;
+}
+
+interface ChatMessage {
+  playerId: string;
+  playerName: string;
+  text: string;
+  sentAt: number;
 }
 
 interface RoomPlayer {
@@ -188,6 +196,30 @@ function parseRoomPlayer(value: unknown): RoomPlayer | null {
   };
 }
 
+function parseChatMessage(value: unknown): ChatMessage | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const message = value as Record<string, unknown>;
+  if (
+    typeof message['playerId'] !== 'string'
+    || message['playerId'].length > 64
+    || typeof message['playerName'] !== 'string'
+    || message['playerName'].length > 32
+    || typeof message['text'] !== 'string'
+    || message['text'].length < 1
+    || message['text'].length > 240
+    || typeof message['sentAt'] !== 'number'
+    || !Number.isFinite(message['sentAt'])
+    || message['sentAt'] < 0
+    || message['sentAt'] > 8_640_000_000_000_000
+  ) return null;
+  return {
+    playerId: message['playerId'],
+    playerName: message['playerName'],
+    text: message['text'],
+    sentAt: message['sentAt'],
+  };
+}
+
 function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const candidate = value as Record<string, unknown>;
@@ -291,6 +323,43 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const disconnectButton = element<HTMLButtonElement>('multiplayerDisconnect');
   const lobbyScores = element<HTMLElement>('multiplayerLobbyScores');
   const hudScores = element<HTMLElement>('multiplayerHudScores');
+  const chatMessages = element<HTMLElement>('multiplayerChatMessages');
+  const chatForm = element<HTMLFormElement>('multiplayerChatForm');
+  const chatInput = element<HTMLInputElement>('multiplayerChatInput');
+  const chatSend = element<HTMLButtonElement>('multiplayerChatSend');
+
+  chatInput.placeholder = t('multiplayer.chatPlaceholder');
+  chatInput.setAttribute('aria-label', t('multiplayer.chatPlaceholder'));
+
+  const resetChat = () => {
+    chatMessages.replaceChildren();
+    const empty = document.createElement('p');
+    empty.className = 'mp-chat-empty';
+    empty.textContent = t('multiplayer.chatEmpty');
+    chatMessages.append(empty);
+    chatInput.value = '';
+    chatInput.disabled = true;
+    chatSend.disabled = true;
+  };
+  const appendChatMessage = (chatMessage: ChatMessage) => {
+    chatMessages.querySelector('.mp-chat-empty')?.remove();
+    const row = document.createElement('article');
+    row.className = `mp-chat-message${chatMessage.playerId === currentPlayerId ? ' is-own' : ''}`;
+    const playerName = document.createElement('strong');
+    playerName.textContent = chatMessage.playerName;
+    const text = document.createElement('p');
+    text.textContent = chatMessage.text;
+    const time = document.createElement('time');
+    const timestamp = new Date(chatMessage.sentAt);
+    time.dateTime = timestamp.toISOString();
+    time.textContent = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    row.append(playerName, text, time);
+    chatMessages.append(row);
+    while (chatMessages.childElementCount > 50) chatMessages.firstElementChild?.remove();
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  };
+
+  resetChat();
 
   nameInput.value = normalizePlayerName(defaultPlayerName);
 
@@ -346,6 +415,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     readyButton.textContent = t('multiplayer.ready');
     startButton.hidden = true;
     copyButton.textContent = t('multiplayer.copyLink');
+    resetChat();
   };
   const disconnectRoom = () => {
     if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) {
@@ -500,6 +570,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     pendingPreparationMapId = '';
     announcedRoundId = 0;
     lobby.hidden = true;
+    resetChat();
     showRoom();
     const nextSocket = new WebSocket(websocketUrl());
     nextSocket.binaryType = 'arraybuffer';
@@ -539,6 +610,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         if (incoming.type === 'joined') {
           currentPlayerId = String(incoming.playerId || '');
           currentRole = incoming.role === 'host' ? 'host' : 'guest';
+          chatInput.disabled = false;
+          chatSend.disabled = false;
           status.textContent = t('multiplayer.connected');
           setBusy(false);
           const snapshot = parseRoomSnapshot(incoming.room);
@@ -562,6 +635,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
             renderScores(currentRoom);
             window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-score', { detail: player }));
           }
+        } else if (incoming.type === 'chat') {
+          const chatMessage = parseChatMessage(incoming.message);
+          if (chatMessage) appendChatMessage(chatMessage);
         } else if (incoming.type === 'pong') {
           const sentAt = Number(incoming.sentAt);
           const serverTime = Number(incoming.serverTime);
@@ -685,6 +761,13 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     }
     pendingPreparationMapId = '';
     sendControl({ type: 'set-mode', mode: modeSelect.value });
+  });
+  chatForm.addEventListener('submit', event => {
+    event.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text || !currentPlayerId) return;
+    sendControl({ type: 'chat', text });
+    chatInput.value = '';
   });
   const sendRules = () => {
     if (currentRole !== 'host') return;

@@ -146,6 +146,22 @@
 .mp-rules > p { color:var(--dim); font-size:9px; line-height:1.4; }
 .mp-lobby-controls .mp-primary { margin-top:14px; }
 .mp-lobby-controls > p { margin-top:9px; color:var(--dim); font-size:9px; line-height:1.45; }
+.mp-chat { margin-top:16px; overflow:hidden; border:1px solid rgba(142,200,255,.12); border-radius:8px; background:rgba(3,8,18,.72); }
+.mp-chat-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border-bottom:1px solid rgba(142,200,255,.1); }
+.mp-chat-head > span:last-child { color:var(--dim); font-size:8px; font-weight:700; letter-spacing:1.2px; }
+.mp-chat-messages { height:132px; overflow:auto; padding:7px 12px; }
+.mp-chat-empty { padding:42px 0; color:var(--dim); font-size:9px; text-align:center; }
+.mp-chat-message { display:grid; grid-template-columns:auto 1fr auto; gap:8px; padding:6px 0; font-size:10px; line-height:1.45; }
+.mp-chat-message + .mp-chat-message { border-top:1px solid rgba(142,200,255,.07); }
+.mp-chat-message strong { max-width:140px; overflow:hidden; color:var(--main-light); text-overflow:ellipsis; white-space:nowrap; }
+.mp-chat-message.is-own strong { color:var(--accent); }
+.mp-chat-message p { min-width:0; overflow-wrap:anywhere; color:var(--text); }
+.mp-chat-message time { color:var(--dim); font-size:8px; }
+.mp-chat-form { display:grid; grid-template-columns:1fr auto; gap:8px; padding:10px; border-top:1px solid rgba(142,200,255,.1); }
+.mp-chat-form input { min-width:0; height:38px; padding:0 11px; border:1px solid rgba(142,200,255,.2); border-radius:7px; outline:none; background:#07101c; color:#fff; font:600 10px 'JetBrains Mono',monospace; }
+.mp-chat-form input:focus { border-color:var(--main); box-shadow:0 0 0 3px rgba(47,124,255,.12); }
+.mp-chat-form button { min-width:88px; border:1px solid rgba(47,124,255,.6); border-radius:7px; background:rgba(47,124,255,.13); color:var(--main-light); font:800 9px 'Oxanium',sans-serif; letter-spacing:1.3px; cursor:pointer; }
+.mp-chat-form button:disabled,.mp-chat-form input:disabled { opacity:.45; cursor:not-allowed; }
 .mp-scoreboard { margin-top:14px; padding:10px; border:1px solid rgba(142,200,255,.12); border-radius:8px; background:rgba(3,8,18,.72); }
 .mp-scoreboard[hidden] { display:none; }
 .mp-score-row { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:5px 2px; color:var(--dim); font:600 10px 'JetBrains Mono',monospace; }
