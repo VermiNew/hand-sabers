@@ -241,8 +241,21 @@ function getMapTimelineSec(now = performance.now()): number {
   return getSongTimeSec(songElapsedSec, settings, state.map);
 }
 
+let durationCacheMap: typeof state.map = null;
+let durationCacheBeats: NonNullable<typeof state.map>['beats'] | null = null;
+let durationCacheAudio = -1;
+let durationCacheValue = 0;
+
 function getCurrentMapDuration(): number {
-  return getEffectiveMapDuration(state.map, getMapDuration());
+  const audioDuration = getMapDuration();
+  const beats = state.map?.beats ?? null;
+  if (durationCacheMap !== state.map || durationCacheBeats !== beats || durationCacheAudio !== audioDuration) {
+    durationCacheMap = state.map;
+    durationCacheBeats = beats;
+    durationCacheAudio = audioDuration;
+    durationCacheValue = getEffectiveMapDuration(state.map, audioDuration);
+  }
+  return durationCacheValue;
 }
 
 function showOverlay(): void {
@@ -747,7 +760,7 @@ function loop(timestamp: number): void {
     if (state.map) {
       const progressTime = Math.max(0, mapTimeSec);
       const duration = getCurrentMapDuration();
-      updateMapProgress(progressTime, getCurrentMapDuration());
+      updateMapProgress(progressTime, duration);
       if (mapTimeSec >= 0) publishMultiplayerScore(now, duration > 0 ? progressTime / duration : 0);
       if (isDeveloperPanelEnabled() && now - _nearestBeatAt > 250) {
         _nearestBeatAt = now;
@@ -760,7 +773,7 @@ function loop(timestamp: number): void {
         }));
       }
       window.__audioOffsetMs      = Math.round(getAudioOffsetSec(settings, state.map) * 1000);
-      if ((mapAudioStarted || !hasMapAudio()) && progressTime >= getCurrentMapDuration() && getCurrentMapDuration() > 0) {
+      if ((mapAudioStarted || !hasMapAudio()) && progressTime >= duration && duration > 0) {
         endGame();
       }
     }
