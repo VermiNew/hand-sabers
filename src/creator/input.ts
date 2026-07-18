@@ -9,6 +9,7 @@ import type { BeatSide, CutDirection } from '../types/index.js';
 import { CUT_DIRECTIONS } from '../core/gameplay-rules.ts';
 import { matchAction, loadKeybinds } from './keybinds.ts';
 import { TimelineDragSelection } from './drag-selection.ts';
+import { TimelineContextMenu } from './timeline-context-menu.ts';
 
 const MAX_UNDO = 60;
 const DEFAULT_BEAT_X = 0.82;
@@ -241,81 +242,7 @@ export function handlePlay(onPlay: () => void): void {
 }
 
 const dragSelection = new TimelineDragSelection();
-
-let contextMenu: HTMLElement | null = null;
-
-function removeContextMenu(): void {
-  if (contextMenu) { contextMenu.remove(); contextMenu = null; }
-}
-
-function showTimelineContextMenu(
-  clientX: number, clientY: number, clickT: number,
-  onPlayEnd: () => void
-): void {
-  removeContextMenu();
-  const menu = document.createElement('div');
-  menu.className = 'ctx-menu';
-  menu.style.left = `${clientX}px`;
-  menu.style.top  = `${clientY}px`;
-
-  const items: Array<{ label: string; action: () => void }> = [
-    {
-      label: '⏸ Seekuj tutaj',
-      action: () => {
-        const wasPlaying = state.isPlaying;
-        state.currentTime = Math.max(0, Math.min(clickT, state.map.meta.duration));
-        if (wasPlaying) playAudio(state.currentTime, onPlayEnd);
-        renderAll();
-      },
-    },
-    {
-      label: '[ Ustaw LOOP START',
-      action: () => {
-        state.loopStart = snapTime(clickT);
-        if (state.loopEnd !== null && state.loopStart > state.loopEnd) state.loopEnd = null;
-        renderAll();
-      },
-    },
-    {
-      label: '] Ustaw LOOP END',
-      action: () => {
-        state.loopEnd = snapTime(clickT);
-        if (state.loopStart !== null && state.loopEnd < state.loopStart) state.loopStart = null;
-        renderAll();
-      },
-    },
-  ];
-
-  if (state.clipboard.length) {
-    items.push({
-      label: '📋 Wklej tutaj',
-      action: () => {
-        pushUndo();
-        const pasted = state.clipboard.map(b => ({ ...b, t: snapTime(clickT + b.t) }));
-        state.map.beats.push(...pasted);
-        sortBeatsByTime(state.map.beats);
-        state.selectedBeats.clear();
-        pasted.forEach(b => state.selectedBeats.add(b));
-        checkOverlaps();
-        scheduleAutosave();
-        renderAll();
-      },
-    });
-  }
-
-  for (const item of items) {
-    const btn = document.createElement('button');
-    btn.textContent = item.label;
-    btn.addEventListener('click', () => { item.action(); removeContextMenu(); });
-    menu.appendChild(btn);
-  }
-
-  document.body.appendChild(menu);
-  contextMenu = menu;
-
-  const close = () => removeContextMenu();
-  setTimeout(() => window.addEventListener('mousedown', close, { once: true }), 0);
-}
+const timelineContextMenu = new TimelineContextMenu({ checkOverlaps, pushUndo, snapTime });
 
 export function bindTimelineEvents(callbacks: {
   onSave:     () => void;
@@ -368,7 +295,7 @@ export function bindTimelineEvents(callbacks: {
         scheduleAutosave();
         renderAll();
       } else {
-        showTimelineContextMenu(e.clientX, e.clientY, clickT, callbacks.onPlayEnd);
+        timelineContextMenu.show(e.clientX, e.clientY, clickT, callbacks.onPlayEnd);
       }
       return;
     }
