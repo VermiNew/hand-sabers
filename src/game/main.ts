@@ -6,7 +6,7 @@ import {
   animateIdleSabers, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel,
 } from './scene.ts';
-import { initAudio, startMapAudio, stopMapAudio, pauseMapAudio, getMapTime, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
+import { initAudio, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
@@ -16,7 +16,7 @@ import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
 import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
 import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.ts';
-import { getAudioOffsetSec, getEffectiveMapDuration, getSongTimeSec, nearestBeats } from '../core/timing.ts';
+import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
 import { t, setLang, getCurrentLang } from '../i18n/index.ts';
@@ -28,6 +28,7 @@ import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
+import { MapTimeline } from './map-timeline.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
 declare global {
@@ -232,64 +233,14 @@ async function ensureCurrentMapAudio(): Promise<void> {
   }
 }
 
-const MAP_LEAD_IN_MS = 1800;
-const TRAINING_RATE  = 0.75;
-let mapTimelineZeroAtMs  = 0;
-let mapAudioStarted      = false;
-let pausedMapTimelineSec: number | null = null;
 let multiplayerRoundActive = false;
 let lastMultiplayerScoreAt = 0;
 
-function resetMapTimeline(): void {
-  mapTimelineZeroAtMs  = 0;
-  mapAudioStarted      = false;
-  pausedMapTimelineSec = null;
-}
-
-function startMapTimeline(now = performance.now()): void {
-  mapTimelineZeroAtMs  = now + MAP_LEAD_IN_MS;
-  mapAudioStarted      = false;
-  pausedMapTimelineSec = null;
-}
-
-function startMapTimelineAt(zeroAtMs: number): void {
-  mapTimelineZeroAtMs = zeroAtMs;
-  mapAudioStarted = false;
-  pausedMapTimelineSec = null;
-}
-
-function getPlaybackRate(): number {
-  const trainingMode = multiplayerRoundActive
+const mapTimeline = new MapTimeline({
+  isTrainingMode: () => multiplayerRoundActive
     ? Boolean(multiplayerRoundRules?.trainingMode)
-    : settings.trainingMode;
-  return trainingMode ? TRAINING_RATE : 1;
-}
-
-function getMapTimelineSec(now = performance.now()): number {
-  if (!state.map) return 0;
-  if (hasMapAudio() && mapAudioStarted) return getSongTimeSec(getMapTime(), settings, state.map);
-  if (!mapTimelineZeroAtMs) return 0;
-  const elapsedSec = (now - mapTimelineZeroAtMs) / 1000;
-  const songElapsedSec = elapsedSec < 0 ? elapsedSec : elapsedSec * getPlaybackRate();
-  return getSongTimeSec(songElapsedSec, settings, state.map);
-}
-
-let durationCacheMap: typeof state.map = null;
-let durationCacheBeats: NonNullable<typeof state.map>['beats'] | null = null;
-let durationCacheAudio = -1;
-let durationCacheValue = 0;
-
-function getCurrentMapDuration(): number {
-  const audioDuration = getMapDuration();
-  const beats = state.map?.beats ?? null;
-  if (durationCacheMap !== state.map || durationCacheBeats !== beats || durationCacheAudio !== audioDuration) {
-    durationCacheMap = state.map;
-    durationCacheBeats = beats;
-    durationCacheAudio = audioDuration;
-    durationCacheValue = getEffectiveMapDuration(state.map, audioDuration);
-  }
-  return durationCacheValue;
-}
+    : settings.trainingMode,
+});
 
 function showOverlay(): void {
   if (!ui.overlay) return;
@@ -299,41 +250,6 @@ function showOverlay(): void {
 function hideOverlay(): void {
   if (!ui.overlay) return;
   ui.overlay.classList.remove('show', 'is-gameover');
-}
-
-function updateMapAudioSchedule(now = performance.now()): void {
-  if (!state.map || !hasMapAudio() || mapAudioStarted || !mapTimelineZeroAtMs) return;
-  if (now >= mapTimelineZeroAtMs) {
-    const elapsedSec = Math.max(0, (now - mapTimelineZeroAtMs) / 1000) * getPlaybackRate();
-    if (getMapDuration() > 0 && elapsedSec >= getMapDuration()) {
-      mapAudioStarted = true;
-      return;
-    }
-    startMapAudio(elapsedSec, 0, getPlaybackRate());
-    mapAudioStarted = true;
-  }
-}
-
-function pauseMapTimeline(now = performance.now()): void {
-  if (!state.map) return;
-  pausedMapTimelineSec = getMapTimelineSec(now);
-  if (hasMapAudio() && mapAudioStarted) pauseMapAudio();
-}
-
-function resumeMapTimeline(now = performance.now()): void {
-  if (!state.map || pausedMapTimelineSec === null) return;
-  const rawElapsedSec = pausedMapTimelineSec - getAudioOffsetSec(settings, state.map);
-  const realElapsedSec = rawElapsedSec < 0 ? rawElapsedSec : rawElapsedSec / getPlaybackRate();
-  mapTimelineZeroAtMs = now - realElapsedSec * 1000;
-  if (hasMapAudio()) {
-    if (rawElapsedSec >= 0) {
-      startMapAudio(rawElapsedSec, 0, getPlaybackRate());
-      mapAudioStarted = true;
-    } else {
-      mapAudioStarted = false;
-    }
-  }
-  pausedMapTimelineSec = null;
 }
 
 let calibrationReady = false;
@@ -424,7 +340,7 @@ async function beginMultiplayerRound(detail: {
   await ensureCurrentMapAudio();
   clearGameplayEntities();
   stopMapAudio();
-  resetMapTimeline();
+  mapTimeline.reset();
   hideCalibPanel();
   hideOverlay();
   hideHandsPaused();
@@ -447,7 +363,7 @@ async function beginMultiplayerRound(detail: {
   document.body.classList.toggle('training-mode', detail.rules.trainingMode);
   document.body.dataset['multiplayerMode'] = detail.mode;
   resetMapSpawn();
-  startMapTimelineAt(detail.startAtPerformance);
+  mapTimeline.startAt(detail.startAtPerformance);
   startGameplay(detail.saber);
   showMapTitle(state.map?.meta?.title ?? t('game.unknownTrack'));
   if (ui.dStatus) ui.dStatus.textContent = 'MULTIPLAYER';
@@ -468,10 +384,10 @@ async function beginPlaying(): Promise<void> {
   if (state.map) {
     await ensureCurrentMapAudio();
     resetMapSpawn();
-    startMapTimeline(performance.now());
+    mapTimeline.start(performance.now());
     showMapTitle(state.map.meta?.title ?? t('game.unknownTrack'));
   } else {
-    resetMapTimeline();
+    mapTimeline.reset();
   }
 
   startGameplay();
@@ -481,8 +397,8 @@ async function beginPlaying(): Promise<void> {
 function endGame(): void {
   state.appState    = S.GAMEOVER;
   state.pauseReason = PAUSE_REASONS.NONE;
-  const dur = getCurrentMapDuration();
-  const pos = getMapTimelineSec();
+  const dur = mapTimeline.getDuration();
+  const pos = mapTimeline.getTime();
   const progress = dur > 0 ? Math.max(0, Math.min(1, pos / dur)) : undefined;
   const wasMultiplayerRound = multiplayerRoundActive;
   const wasTrainingMode = wasMultiplayerRound
@@ -503,7 +419,7 @@ function endGame(): void {
   document.body.classList.toggle('training-mode', settings.trainingMode);
   delete document.body.dataset['multiplayerMode'];
   stopMapAudio();
-  resetMapTimeline();
+  mapTimeline.reset();
   clearGameplayEntities();
   runAsyncTask('score-submit', () => submitScore(progress, wasTrainingMode));
   fadeTransition(() => { showGameOver(state); });
@@ -512,7 +428,7 @@ function endGame(): void {
 function restartGame(): void {
   clearGameplayEntities();
   stopMapAudio();
-  resetMapTimeline();
+  mapTimeline.reset();
   hideHandsPaused();
   hidePauseMenu();
   handsLostSince = handsReturnedSince = 0;
@@ -523,7 +439,7 @@ function restartGame(): void {
 function restartWithoutCalib(): void {
   clearGameplayEntities();
   stopMapAudio();
-  resetMapTimeline();
+  mapTimeline.reset();
   hideHandsPaused();
   hidePauseMenu();
   handsLostSince = handsReturnedSince = 0;
@@ -556,7 +472,7 @@ function pauseGame(reason: PauseReason, now = performance.now()): void {
   if (state.appState !== S.PLAYING) return;
   state.appState    = S.PAUSED;
   state.pauseReason = reason;
-  pauseMapTimeline(now);
+  mapTimeline.pause(now);
   if (reason === PAUSE_REASONS.HANDS) {
     showHandsPaused(missingHandsText());
   } else {
@@ -571,7 +487,7 @@ function resumeGame(now = performance.now()): void {
   if (state.appState !== S.PAUSED) return;
   state.appState    = S.PLAYING;
   state.pauseReason = PAUSE_REASONS.NONE;
-  resumeMapTimeline(now);
+  mapTimeline.resume(now);
   hideHandsPaused();
   hidePauseMenu();
   if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
@@ -792,15 +708,15 @@ function renderFrame(timestamp: number): void {
   } else if (state.appState === S.PLAYING) {
     updateSabers(now);
 
-    updateMapAudioSchedule(now);
+    mapTimeline.updateAudioSchedule(now);
     const mapBeats   = state.map?.beats ?? null;
-    const mapTimeSec = state.map ? getMapTimelineSec(now) : 0;
+    const mapTimeSec = state.map ? mapTimeline.getTime(now) : 0;
     window.__songTimeSec = mapTimeSec;
     updateBlocks(now, mapBeats, mapTimeSec);
 
     if (state.map) {
       const progressTime = Math.max(0, mapTimeSec);
-      const duration = getCurrentMapDuration();
+      const duration = mapTimeline.getDuration();
       updateMapProgress(progressTime, duration);
       if (mapTimeSec >= 0) publishMultiplayerScore(now, duration > 0 ? progressTime / duration : 0);
       if (isDeveloperPanelEnabled() && now - _nearestBeatAt > 250) {
@@ -814,7 +730,7 @@ function renderFrame(timestamp: number): void {
         }));
       }
       window.__audioOffsetMs      = Math.round(getAudioOffsetSec(settings, state.map) * 1000);
-      if ((mapAudioStarted || !hasMapAudio()) && progressTime >= duration && duration > 0) {
+      if ((mapTimeline.hasStartedAudio || !hasMapAudio()) && progressTime >= duration && duration > 0) {
         endGame();
       }
     }
@@ -916,7 +832,7 @@ function initMapDrop(): void {
       clearMapAudio();
       clearGameplayEntities();
       resetMapSpawn();
-      resetMapTimeline();
+      mapTimeline.reset();
 
       const map = await loadMapFromFile(file);
       state.map = validateMap(map) ? map : { ...map, beats: null } as typeof state.map;
@@ -930,7 +846,7 @@ function initMapDrop(): void {
         state.appState    = S.PLAYING;
         if (ui.hud) ui.hud.style.display = 'flex';
         if (ui.mapProgress && state.map) ui.mapProgress.style.display = 'flex';
-        startMapTimeline(performance.now());
+        mapTimeline.start(performance.now());
         startGameplay();
         showMapTitle(state.map?.meta?.title ?? file.name);
       }
@@ -994,7 +910,7 @@ function returnToMainMenu(): void {
     state.noFail = settings.noFail;
     document.body.classList.toggle('training-mode', settings.trainingMode);
     stopMapAudio();
-    resetMapTimeline();
+    mapTimeline.reset();
     clearGameplayEntities();
     hidePauseMenu();
     hideHandsPaused();
