@@ -27,6 +27,7 @@ import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/cli
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
+import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
 declare global {
@@ -1591,146 +1592,21 @@ function initMainMenu(): void {
   );
 
   // ── Custom color picker modal ────────────────────────────────────────────
-  function hexToHsl(hex: string): [number, number, number] {
-    const r = parseInt(hex.slice(1,3),16)/255;
-    const g = parseInt(hex.slice(3,5),16)/255;
-    const b = parseInt(hex.slice(5,7),16)/255;
-    const max = Math.max(r,g,b), min = Math.min(r,g,b);
-    let h = 0, s = 0;
-    const l = (max + min) / 2;
-    if (max !== min) {
-      const d = max - min;
-      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-      if      (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-      else if (max === g) h = ((b - r) / d + 2) / 6;
-      else                h = ((r - g) / d + 4) / 6;
-    }
-    return [Math.round(h * 360), Math.round(s * 100), Math.round(l * 100)];
-  }
-
-  function hslToHex(h: number, s: number, l: number): string {
-    const sl = s / 100, ll = l / 100;
-    const c  = (1 - Math.abs(2 * ll - 1)) * sl;
-    const x  = c * (1 - Math.abs((h / 60) % 2 - 1));
-    const m  = ll - c / 2;
-    let r = 0, g = 0, b = 0;
-    if      (h < 60)  { r=c; g=x; b=0; }
-    else if (h < 120) { r=x; g=c; b=0; }
-    else if (h < 180) { r=0; g=c; b=x; }
-    else if (h < 240) { r=0; g=x; b=c; }
-    else if (h < 300) { r=x; g=0; b=c; }
-    else              { r=c; g=0; b=x; }
-    const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
-    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-  }
-
-  function hexToRgb(hex: string): [number, number, number] {
-    return [
-      parseInt(hex.slice(1,3),16),
-      parseInt(hex.slice(3,5),16),
-      parseInt(hex.slice(5,7),16),
-    ];
-  }
-
-  {
-    const modal      = document.getElementById('cpModal');
-    const backdrop   = modal?.querySelector<HTMLElement>('.cp-modal-backdrop');
-    const sideBadge  = document.getElementById('cpModalSideBadge');
-    const swatch     = document.getElementById('cpModalSwatch');
-    const hexVal     = document.getElementById('cpModalHexVal');
-    const rgbVal     = document.getElementById('cpModalRgbVal');
-    const slH        = document.getElementById('cpModalH')  as HTMLInputElement | null;
-    const slS        = document.getElementById('cpModalS')  as HTMLInputElement | null;
-    const slL        = document.getElementById('cpModalL')  as HTMLInputElement | null;
-    const vH         = document.getElementById('cpModalHVal');
-    const vS         = document.getElementById('cpModalSVal');
-    const vL         = document.getElementById('cpModalLVal');
-    const rVal       = document.getElementById('cpModalR');
-    const gVal       = document.getElementById('cpModalG');
-    const bVal       = document.getElementById('cpModalB');
-    const hexInput   = document.getElementById('cpModalHexInput') as HTMLInputElement | null;
-    const applyBtn   = document.getElementById('cpModalApply');
-    const rejectBtn  = document.getElementById('cpModalReject');
-
-    let cpSide: 'left' | 'right' = 'left';
-    let cpH = 0, cpS = 100, cpL = 55;
-
-    function cpSync(): void {
-      if (slH) { slH.value = String(cpH); }
-      if (slS) { slS.value = String(cpS); }
-      if (slL) { slL.value = String(cpL); }
-      if (vH) vH.textContent = String(cpH);
-      if (vS) vS.textContent = String(cpS);
-      if (vL) vL.textContent = String(cpL);
-      modal?.style.setProperty('--cp-h', String(cpH));
-      const hex = hslToHex(cpH, cpS, cpL);
-      const [r, g, b] = hexToRgb(hex);
-      if (swatch) {
-        swatch.style.background = hex;
-        swatch.style.setProperty('--cp-glow', `${hex}88`);
-      }
-      if (hexVal)  hexVal.textContent  = hex.toUpperCase();
-      if (rgbVal)  rgbVal.textContent  = `RGB(${r}, ${g}, ${b})`;
-      if (rVal)    rVal.textContent    = String(r);
-      if (gVal)    gVal.textContent    = String(g);
-      if (bVal)    bVal.textContent    = String(b);
-      if (hexInput) hexInput.value     = hex;
-    }
-
-    function cpOpen(side: 'left' | 'right'): void {
-      cpSide = side;
-      const initHex = side === 'left'
-        ? (settings.saberColorLeft  || '#36f2a1')
-        : (settings.saberColorRight || '#2f7cff');
-      [cpH, cpS, cpL] = hexToHsl(initHex);
-      if (sideBadge) sideBadge.textContent = side === 'left'
-        ? t('settings.gameplay.leftHand')
-        : t('settings.gameplay.rightHand');
-      cpSync();
-      modal?.classList.add('is-open');
-    }
-
-    function cpClose(): void {
-      modal?.classList.remove('is-open');
-    }
-
-    function cpApply(): void {
-      const hex = hslToHex(cpH, cpS, cpL);
-      setSaberColor(cpSide, hex);
-      setBlockColor(cpSide, parseInt(hex.replace('#', ''), 16));
-      const key = cpSide === 'left' ? 'saberColorLeft' : 'saberColorRight';
-      (settings as unknown as Record<string, unknown>)[key] = hex;
-      setSetting(key as keyof Settings, hex);
-      const previewBar  = document.getElementById(cpSide === 'left' ? 'saberColorPreviewLeft'  : 'saberColorPreviewRight');
-      const previewName = document.getElementById(cpSide === 'left' ? 'saberColorNameLeft'      : 'saberColorNameRight');
+  initSaberColorPicker({
+    getColor: side => side === 'left'
+      ? settings.saberColorLeft || '#36f2a1'
+      : settings.saberColorRight || '#2f7cff',
+    onApply: (side, hex) => {
+      setSaberColor(side, hex);
+      setBlockColor(side, parseInt(hex.replace('#', ''), 16));
+      const key = side === 'left' ? 'saberColorLeft' : 'saberColorRight';
+      settings[key] = hex;
+      setSetting(key, hex);
+      const previewBar = document.getElementById(side === 'left' ? 'saberColorPreviewLeft' : 'saberColorPreviewRight');
+      const previewName = document.getElementById(side === 'left' ? 'saberColorNameLeft' : 'saberColorNameRight');
       updateColorPreview(previewBar, previewName, { hex, label: t('settings.gameplay.custom') });
-      cpClose();
-    }
-
-    slH?.addEventListener('input', () => { cpH = Number(slH.value); cpSync(); });
-    slS?.addEventListener('input', () => { cpS = Number(slS.value); cpSync(); });
-    slL?.addEventListener('input', () => { cpL = Number(slL.value); cpSync(); });
-    hexInput?.addEventListener('input', () => {
-      const v = hexInput.value.trim();
-      if (/^#[0-9a-fA-F]{6}$/.test(v)) {
-        [cpH, cpS, cpL] = hexToHsl(v);
-        cpSync();
-      }
-    });
-    applyBtn?.addEventListener('click',  cpApply);
-    rejectBtn?.addEventListener('click', cpClose);
-    backdrop?.addEventListener('pointerdown', cpClose);
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal?.classList.contains('is-open')) cpClose();
-    });
-
-    document.querySelectorAll<HTMLButtonElement>('.cp-toggle').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const side = (btn.dataset['side'] ?? 'left') as 'left' | 'right';
-        cpOpen(side);
-      });
-    });
-  }
+    },
+  });
 
   // ── Picker modelu miecza ──────────────────────────────────────────────────
   const modelPicker = document.getElementById('saberModelPicker');
