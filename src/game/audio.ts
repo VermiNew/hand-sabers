@@ -31,6 +31,7 @@ let musicGain:  GainNode | null = null;
 let sfxGain:    GainNode | null = null;
 let musicAnalyser: AnalyserNode | null = null;
 let musicFrequencyData: Uint8Array<ArrayBuffer> | null = null;
+let lastMusicAnalysisAt = -Infinity;
 
 export interface MusicFrequencyLevels {
   bass: number;
@@ -38,6 +39,9 @@ export interface MusicFrequencyLevels {
   treble: number;
   overall: number;
 }
+
+const musicFrequencyLevels: MusicFrequencyLevels = { bass: 0, mid: 0, treble: 0, overall: 0 };
+const MUSIC_ANALYSIS_INTERVAL_SEC = 1 / 30;
 
 const SOUND_KEYS = [
   'beatSoundVolume',
@@ -297,18 +301,25 @@ function averageFrequencyRange(data: Uint8Array, lowHz: number, highHz: number):
 
 export function getMusicFrequencyLevels(): MusicFrequencyLevels {
   if (!musicAnalyser || !musicFrequencyData || !mapPlaying) {
-    return { bass: 0, mid: 0, treble: 0, overall: 0 };
+    musicFrequencyLevels.bass = 0;
+    musicFrequencyLevels.mid = 0;
+    musicFrequencyLevels.treble = 0;
+    musicFrequencyLevels.overall = 0;
+    lastMusicAnalysisAt = -Infinity;
+    return musicFrequencyLevels;
   }
+  const now = ctx?.currentTime ?? 0;
+  if (now - lastMusicAnalysisAt < MUSIC_ANALYSIS_INTERVAL_SEC) return musicFrequencyLevels;
+  lastMusicAnalysisAt = now;
   musicAnalyser.getByteFrequencyData(musicFrequencyData);
   const bass = averageFrequencyRange(musicFrequencyData, 40, 250);
   const mid = averageFrequencyRange(musicFrequencyData, 250, 2_000);
   const treble = averageFrequencyRange(musicFrequencyData, 2_000, 8_000);
-  return {
-    bass,
-    mid,
-    treble,
-    overall: bass * 0.5 + mid * 0.35 + treble * 0.15,
-  };
+  musicFrequencyLevels.bass = bass;
+  musicFrequencyLevels.mid = mid;
+  musicFrequencyLevels.treble = treble;
+  musicFrequencyLevels.overall = bass * 0.5 + mid * 0.35 + treble * 0.15;
+  return musicFrequencyLevels;
 }
 
 // ── Combo milestone sound ─────────────────────────────────────────────────────
