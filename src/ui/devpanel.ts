@@ -248,11 +248,14 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     pane = new Pane({ title: 'HAND SABERS DEV', expanded: true });
 
     const tabs = pane.addTab({ pages: [
-      { title: 'PERF'  },
-      { title: 'GAME'  },
-      { title: 'MAP'   },
-      { title: 'TRACK' },
-      { title: 'CFG'   },
+      { title: 'PERF' },
+      { title: 'GPU'  },
+      { title: 'GAME' },
+      { title: 'MAP'  },
+      { title: 'BEAT' },
+      { title: 'HAND' },
+      { title: 'SND'  },
+      { title: 'CFG'  },
     ]});
 
     // ── PERF ──
@@ -268,40 +271,33 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     perf.addMonitor(devData, 'reflectionMs', { label: 'Reflection ms', interval: 500 });
     perf.addMonitor(devData, 'cpuMs',      { label: 'Profiled CPU ms', interval: 500 });
     perf.addMonitor(devData, 'bottleneck', { label: 'Bottleneck', interval: 500 });
-    addSeparator(perf);
-    perf.addMonitor(devData, 'graphicsMode',    { label: 'Graphics', interval: 500 });
-    perf.addMonitor(devData, 'graphicsProfile', { label: 'Profile',  interval: 500 });
-    perf.addMonitor(devData, 'renderScale',     { label: 'DPR',      interval: 500 });
-    perf.addMonitor(devData, 'canvasSize',      { label: 'CSS px',   interval: 1000 });
-    perf.addMonitor(devData, 'drawingBuffer',   { label: 'Render px', interval: 1000 });
-    perf.addMonitor(devData, 'gpuRenderer',     { label: 'GPU',      interval: 2000 });
-    perf.addMonitor(devData, 'antialias',       { label: 'AA',       interval: 1000 });
-    perf.addMonitor(devData, 'reflections',     { label: 'Reflect',  interval: 1000 });
-    perf.addMonitor(devData, 'shadows',         { label: 'Shadows',  interval: 1000 });
-    addSeparator(perf);
-    perf.addMonitor(devData, 'drawCalls', { label: 'Draw calls', interval: 500 });
-    perf.addMonitor(devData, 'triangles', { label: 'Triangles',  interval: 500 });
-    perf.addMonitor(devData, 'geoMem',    { label: 'Geo MB',     interval: 1000 });
-    perf.addMonitor(devData, 'texMem',    { label: 'Texture MB', interval: 1000 });
-    perf.addMonitor(devData, 'vramMem',   { label: 'VRAM MB',    interval: 1000 });
-    perf.addMonitor(devData, 'vramMem',   { label: 'VRAM graph', view: 'graph', min: 0, max: 256, interval: 1000 });
+
+    // ── GPU ──
+    const gpu = tabs.pages[1]!;
+    gpu.addMonitor(devData, 'graphicsMode',    { label: 'Graphics', interval: 500 });
+    gpu.addMonitor(devData, 'graphicsProfile', { label: 'Profile',  interval: 500 });
+    gpu.addMonitor(devData, 'renderScale',     { label: 'DPR',      interval: 500 });
+    gpu.addMonitor(devData, 'canvasSize',      { label: 'CSS px',   interval: 1000 });
+    gpu.addMonitor(devData, 'drawingBuffer',   { label: 'Render px', interval: 1000 });
+    gpu.addMonitor(devData, 'gpuRenderer',     { label: 'GPU',      interval: 2000 });
+    gpu.addMonitor(devData, 'antialias',       { label: 'AA',       interval: 1000 });
+    gpu.addMonitor(devData, 'reflections',     { label: 'Reflect',  interval: 1000 });
+    gpu.addMonitor(devData, 'shadows',         { label: 'Shadows',  interval: 1000 });
+    addSeparator(gpu);
+    gpu.addMonitor(devData, 'drawCalls', { label: 'Draw calls', interval: 500 });
+    gpu.addMonitor(devData, 'triangles', { label: 'Triangles',  interval: 500 });
+    gpu.addMonitor(devData, 'geoMem',    { label: 'Geo MB',     interval: 1000 });
+    gpu.addMonitor(devData, 'texMem',    { label: 'Texture MB', interval: 1000 });
+    gpu.addMonitor(devData, 'vramMem',   { label: 'VRAM MB',    interval: 1000 });
+    gpu.addMonitor(devData, 'vramMem',   { label: 'VRAM graph', view: 'graph', min: 0, max: 256, interval: 1000 });
 
     // ── GAME ──
-    const game = tabs.pages[1]!;
+    const game = tabs.pages[2]!;
     game.addMonitor(devData, 'appState',     { label: 'State',   interval: 200 });
     addSeparator(game);
     game.addMonitor(devData, 'score',        { label: 'Score',   interval: 200 });
     game.addMonitor(devData, 'combo',        { label: 'Combo',   interval: 200 });
     game.addMonitor(devData, 'lives',        { label: 'Lives',   interval: 200 });
-    addSeparator(game);
-    game.addMonitor(devData, 'songTime',           { label: 'Song time', interval: 100 });
-    game.addMonitor(devData, 'nearestBeatDeltaMs', { label: 'Beat Δ ms', interval: 100 });
-    const nearestFolder = game.addFolder?.({ title: 'Nearest beats' });
-    if (nearestFolder) {
-      nearestFolder.addMonitor(devData, 'nearestBeat1', { label: 'Beat 1', interval: 100 });
-      nearestFolder.addMonitor(devData, 'nearestBeat2', { label: 'Beat 2', interval: 100 });
-      nearestFolder.addMonitor(devData, 'nearestBeat3', { label: 'Beat 3', interval: 100 });
-    }
     addSeparator(game);
     game.addMonitor(devData, 'activeBlocks', { label: 'Blocks',  view: 'graph', min: 0, max: 30, interval: 200 });
     game.addMonitor(devData, 'activeSparks', { label: 'Sparks',  interval: 200 });
@@ -310,7 +306,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     game.addMonitor(devData, 'pooledShards', { label: 'Pool shards', interval: 1000 });
 
     // ── MAP ──
-    const map = tabs.pages[2]!;
+    const map = tabs.pages[3]!;
     map.addMonitor(devData, 'mapTitle',      { label: 'Title',      interval: 1000 });
     map.addMonitor(devData, 'mapArtist',     { label: 'Artist',     interval: 1000 });
     map.addMonitor(devData, 'mapDifficulty', { label: 'Difficulty', interval: 1000 });
@@ -318,17 +314,66 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     map.addMonitor(devData, 'mapDuration',   { label: 'Duration',   interval: 1000 });
     map.addMonitor(devData, 'mapBeats',      { label: 'Beats total', interval: 1000 });
 
-    // ── TRACK ──
-    const track = tabs.pages[3]!;
-    track.addMonitor(devData, 'leftActive',    { label: 'L hand' });
-    track.addMonitor(devData, 'rightActive',   { label: 'R hand' });
-    track.addMonitor(devData, 'conf',          { label: 'Conf',    view: 'graph', min: 0, max: 1, interval: 100 });
-    track.addMonitor(devData, 'filteredHands', { label: 'Filtered' });
-    track.addMonitor(devData, 'rawHands',      { label: 'Raw' });
-    track.addMonitor(devData, 'latMs',         { label: 'Latency', view: 'graph', min: 0, max: 80, interval: 500 });
+    // ── BEAT ──
+    const beat = tabs.pages[4]!;
+    beat.addMonitor(devData, 'songTime',           { label: 'Song time', interval: 100 });
+    beat.addMonitor(devData, 'nearestBeatDeltaMs', { label: 'Beat Δ ms', interval: 100 });
+    beat.addMonitor(devData, 'audioOffsetMs',      { label: 'Audio offset ms', interval: 500 });
+    const nearestFolder = beat.addFolder?.({ title: 'Nearest beats' });
+    if (nearestFolder) {
+      nearestFolder.addMonitor(devData, 'nearestBeat1', { label: 'Beat 1', interval: 100 });
+      nearestFolder.addMonitor(devData, 'nearestBeat2', { label: 'Beat 2', interval: 100 });
+      nearestFolder.addMonitor(devData, 'nearestBeat3', { label: 'Beat 3', interval: 100 });
+    }
+
+    // ── HAND ──
+    const hand = tabs.pages[5]!;
+    hand.addMonitor(devData, 'leftActive',    { label: 'L hand' });
+    hand.addMonitor(devData, 'rightActive',   { label: 'R hand' });
+    hand.addMonitor(devData, 'conf',          { label: 'Conf',    view: 'graph', min: 0, max: 1, interval: 100 });
+    hand.addMonitor(devData, 'filteredHands', { label: 'Filtered' });
+    hand.addMonitor(devData, 'rawHands',      { label: 'Raw' });
+    hand.addMonitor(devData, 'latMs',         { label: 'Latency', view: 'graph', min: 0, max: 80, interval: 500 });
+    addSeparator(hand);
+    hand.addInput(devData, 'sensitivity', { label: 'Sensitivity', min: 0.5, max: 2.0, step: 0.05 }).on('change', ev => {
+      setSetting('sensitivity', Number(ev.value));
+      notifyTrackingSettings({ sensitivity: Number(ev.value) });
+    });
+    hand.addInput(devData, 'flipCamera', { label: 'Flip kamera' }).on('change', ev => {
+      setSetting('flipCamera', Boolean(ev.value));
+      notifyTrackingSettings({ flipCamera: Boolean(ev.value) });
+    });
+
+    // ── SND ──
+    const sound = tabs.pages[6]!;
+    sound.addInput(devData, 'volume', { label: 'Master', min: 0, max: 1, step: 0.05 }).on('change', ev => {
+      setSetting('volume', Number(ev.value));
+      setVolume(Number(ev.value));
+    });
+    const audioControls: Array<[keyof DevData, string]> = [
+      ['musicVolume',       'Muzyka'],
+      ['sfxVolume',         'Efekty'],
+      ['hitSoundVolume',    'Trafienie'],
+      ['comboSoundVolume',  'Combo'],
+      ['missSoundVolume',   'Pudło'],
+      ['bombSoundVolume',   'Bomba'],
+      ['beatSoundVolume',   'Beat cue'],
+      ['milestoneSoundVolume', 'Milestone'],
+    ];
+    for (const [key, label] of audioControls) {
+      sound.addInput(devData, key, { label, min: 0, max: 1, step: 0.05 }).on('change', ev => {
+        setSetting(key as keyof Settings, Number(ev.value) as never); // 'as never' — Tweakpane zwraca unknown, setSetting wymaga konkretnych typów
+        if (key === 'musicVolume')    setMusicVolume(Number(ev.value));
+        else if (key === 'sfxVolume') setSfxVolume(Number(ev.value));
+        else setSoundVolume(key, Number(ev.value));
+      });
+    }
+    sound.addInput(devData, 'audioOffsetMs', { label: 'Audio offset ms', min: -500, max: 500, step: 10 }).on('change', ev => {
+      setSetting('audioOffsetMs', Number(ev.value));
+    });
 
     // ── CFG ──
-    const cfg = tabs.pages[4]!;
+    const cfg = tabs.pages[7]!;
     cfg.addInput(devData, 'wireframe', { label: 'Hitbox wire' }).on('change', ev => {
       setWireframeVisible(Boolean(ev.value));
     });
@@ -356,40 +401,6 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
       setScenePerformanceProfile({ ...getSettings(), performanceMode: value as PerformanceMode });
       notifyTrackingSettings({ performanceMode: value });
       devData.performanceMode = getPerformanceMode({ performanceMode: value });
-    });
-    addSeparator(cfg);
-    cfg.addInput(devData, 'sensitivity', { label: 'Sensitivity', min: 0.5, max: 2.0, step: 0.05 }).on('change', ev => {
-      setSetting('sensitivity', Number(ev.value));
-      notifyTrackingSettings({ sensitivity: Number(ev.value) });
-    });
-    cfg.addInput(devData, 'flipCamera', { label: 'Flip kamera' }).on('change', ev => {
-      setSetting('flipCamera', Boolean(ev.value));
-      notifyTrackingSettings({ flipCamera: Boolean(ev.value) });
-    });
-    cfg.addInput(devData, 'volume', { label: 'Master', min: 0, max: 1, step: 0.05 }).on('change', ev => {
-      setSetting('volume', Number(ev.value));
-      setVolume(Number(ev.value));
-    });
-    const audioControls: Array<[keyof DevData, string]> = [
-      ['musicVolume',       'Muzyka'],
-      ['sfxVolume',         'Efekty'],
-      ['hitSoundVolume',    'Trafienie'],
-      ['comboSoundVolume',  'Combo'],
-      ['missSoundVolume',   'Pudło'],
-      ['bombSoundVolume',   'Bomba'],
-      ['beatSoundVolume',   'Beat cue'],
-      ['milestoneSoundVolume', 'Milestone'],
-    ];
-    for (const [key, label] of audioControls) {
-      cfg.addInput(devData, key, { label, min: 0, max: 1, step: 0.05 }).on('change', ev => {
-        setSetting(key as keyof Settings, Number(ev.value) as never); // 'as never' — Tweakpane zwraca unknown, setSetting wymaga konkretnych typów
-        if (key === 'musicVolume')    setMusicVolume(Number(ev.value));
-        else if (key === 'sfxVolume') setSfxVolume(Number(ev.value));
-        else setSoundVolume(key, Number(ev.value));
-      });
-    }
-    cfg.addInput(devData, 'audioOffsetMs', { label: 'Audio offset ms', min: -500, max: 500, step: 10 }).on('change', ev => {
-      setSetting('audioOffsetMs', Number(ev.value));
     });
 
     const panelEl = pane.element;
