@@ -29,6 +29,15 @@ export function getAudioContext(): AudioContext | null { return ctx; }
 let masterGain: GainNode | null = null;
 let musicGain:  GainNode | null = null;
 let sfxGain:    GainNode | null = null;
+let musicAnalyser: AnalyserNode | null = null;
+let musicFrequencyData: Uint8Array<ArrayBuffer> | null = null;
+
+export interface MusicFrequencyLevels {
+  bass: number;
+  mid: number;
+  treble: number;
+  overall: number;
+}
 
 const SOUND_KEYS = [
   'beatSoundVolume',
@@ -67,6 +76,13 @@ function ensureAudioGraph(): void {
   if (!musicGain) {
     musicGain = ctx.createGain();
     musicGain.connect(masterGain);
+  }
+  if (!musicAnalyser) {
+    musicAnalyser = ctx.createAnalyser();
+    musicAnalyser.fftSize = 256;
+    musicAnalyser.smoothingTimeConstant = 0.78;
+    musicAnalyser.connect(musicGain);
+    musicFrequencyData = new Uint8Array(musicAnalyser.frequencyBinCount);
   }
   if (!sfxGain) {
     sfxGain = ctx.createGain();
@@ -235,7 +251,7 @@ export function startMapAudio(offsetSec = 0, delaySec = 0, playbackRate = 1): vo
   mapSource.buffer = mapBuffer;
   mapPlaybackRate = Math.max(0.5, Math.min(1.5, Number(playbackRate) || 1));
   mapSource.playbackRate.value = mapPlaybackRate;
-  mapSource.connect(musicGain ?? masterGain ?? ctx.destination);
+  mapSource.connect(musicAnalyser ?? musicGain ?? masterGain ?? ctx.destination);
 
   const safeOffset = Math.max(0, offsetSec);
   const safeDelay  = Math.max(0, delaySec);
@@ -266,6 +282,33 @@ export function getMapTime(): number {
 
 export function getMapDuration(): number {
   return mapBuffer?.duration ?? 0;
+}
+
+function averageFrequencyRange(data: Uint8Array, lowHz: number, highHz: number): number {
+  if (!ctx || !musicAnalyser || data.length === 0) return 0;
+  const nyquist = ctx.sampleRate / 2;
+  const start = Math.max(0, Math.floor((lowHz / nyquist) * data.length));
+  const end = Math.min(data.length, Math.ceil((highHz / nyquist) * data.length));
+  if (end <= start) return 0;
+  let sum = 0;
+  for (let index = start; index < end; index++) sum += data[index] ?? 0;
+  return sum / (end - start) / 255;
+}
+
+export function getMusicFrequencyLevels(): MusicFrequencyLevels {
+  if (!musicAnalyser || !musicFrequencyData || !mapPlaying) {
+    return { bass: 0, mid: 0, treble: 0, overall: 0 };
+  }
+  musicAnalyser.getByteFrequencyData(musicFrequencyData);
+  const bass = averageFrequencyRange(musicFrequencyData, 40, 250);
+  const mid = averageFrequencyRange(musicFrequencyData, 250, 2_000);
+  const treble = averageFrequencyRange(musicFrequencyData, 2_000, 8_000);
+  return {
+    bass,
+    mid,
+    treble,
+    overall: bass * 0.5 + mid * 0.35 + treble * 0.15,
+  };
 }
 
 // ── Combo milestone sound ─────────────────────────────────────────────────────

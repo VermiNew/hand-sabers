@@ -9,6 +9,7 @@ import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutD
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import { showHitFeedback } from './hit-feedback.ts';
 import { MapSpawnQueue } from './map-spawn-queue.ts';
+import { resetMusicVisualizer, triggerMusicVisualizerBeat } from './music-visualizer.ts';
 import type { CutDirection, Beat, SaberSide } from '../types/index.js';
 
 type PoolMesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material> & { __poolKind: 'block' | 'bomb'; __inFreeList: boolean };
@@ -553,6 +554,7 @@ export function startGameplay(sabers: SaberSide | 'both' = 'both') {
   nextBeatMs   = now + BEAT_MS / getTrainingRate();
   lastBlockMs  = now;
   nextSideLeft = true;
+  resetMusicVisualizer();
   resetBladeHitboxes();
   publishGameplayStats();
   updateHUD(state);
@@ -1012,6 +1014,7 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
     if (now >= nextBeatMs) {
       nextBeatMs = now + BEAT_MS / getTrainingRate();
       playBeat();
+      triggerMusicVisualizerBeat();
       const bombChance = 0.12;
       if (Math.random() < bombChance) spawnBlock(null, true);
       else spawnBlock();

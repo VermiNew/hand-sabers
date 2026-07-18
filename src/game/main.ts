@@ -29,6 +29,7 @@ import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { MapTimeline } from './map-timeline.ts';
+import { updateMusicVisualizer } from './music-visualizer.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
 declare global {
@@ -748,6 +749,14 @@ function renderFrame(timestamp: number): void {
     (lSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = 0.7 + Math.sin(t * 4) * 0.15;
     (rSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = 0.7 + Math.sin(t * 4 + 1) * 0.15;
   }
+  updateMusicVisualizer({
+    active: state.appState === S.PLAYING,
+    beats: state.map?.beats ?? null,
+    deltaSec: state.deltaSec,
+    nowSec: t,
+    profile: perfProfile,
+    songTimeSec: state.map ? mapTimeline.getTime(now) : t,
+  });
   if (profiling) frameProfile.gameMs = smoothProfileValue(frameProfile.gameMs, performance.now() - gamePhaseStart);
 
   const effectsPhaseStart = profiling ? performance.now() : 0;
