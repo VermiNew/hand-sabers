@@ -5,7 +5,7 @@ import { assertFileSize, findPreferredAudioEntry, normalizeMap, validateZipEntry
 import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
 import { t } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
-import { loadSettings, setSetting } from '../core/settings.ts';
+import { createMapPreviewController } from './preview.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -51,6 +51,8 @@ function runMapsTask(context: string, task: () => Promise<unknown>, onError?: ()
     }
   });
 }
+
+const mapPreview = createMapPreviewController({ reportError: reportMapsError });
 
 function formatTime(sec: number): string {
   const m = Math.floor(sec / 60);
@@ -196,7 +198,7 @@ async function importLocally(file: File): Promise<{ id: string; beats: number; a
 }
 
 async function importMapFile(file: File): Promise<void> {
-  stopMapPreview(true);
+  mapPreview.stop(true);
   showToast(`Importuję ${file.name}…`, { type: 'info' });
   try {
     const imported = await importToServer(file);
@@ -224,23 +226,6 @@ let selectedId: string | null = null;
 let activeDiff: string      = '';
 let activeSort: string      = 'newest';
 let searchQuery: string     = '';
-
-const PREVIEW_DELAY_MS = 850;
-const PREVIEW_MAX_MS = 30_000;
-const PREVIEW_BASE_VOLUME = 0.34;
-const PREVIEW_FADE_IN_MS = 420;
-const PREVIEW_FADE_OUT_MS = 360;
-const previewAudio = new Audio();
-let previewTimer: ReturnType<typeof setTimeout> | null = null;
-let previewStopTimer: ReturnType<typeof setTimeout> | null = null;
-let previewProgressFrame: number | null = null;
-let previewFadeFrame: number | null = null;
-let previewObjectUrl: string | null = null;
-let previewToken = 0;
-let previewRemainingMs = PREVIEW_MAX_MS;
-let previewStartedAtMs = 0;
-let previewPaused = false;
-let currentPreviewMap: MapEntry | null = null;
 
 let fuse: Fuse<MapEntry> | null = null;
 
@@ -446,8 +431,8 @@ function renderDetail(map: MapEntry | null): void {
           </div>
           <div class="preview-volume-row">
             <label for="previewVolume">Preview vol</label>
-            <input id="previewVolume" type="range" min="0" max="100" step="1" value="${getPreviewMusicPercent()}">
-            <span id="previewVolumeValue">${getPreviewMusicPercent()}%</span>
+            <input id="previewVolume" type="range" min="0" max="100" step="1" value="${mapPreview.getMusicPercent()}">
+            <span id="previewVolumeValue">${mapPreview.getMusicPercent()}%</span>
           </div>
 
           <div class="detail-stats">
@@ -495,7 +480,7 @@ function renderDetail(map: MapEntry | null): void {
 
   document.getElementById('btnDelete')?.addEventListener('click', async btn => {
     const el = btn.currentTarget as HTMLButtonElement;
-    stopMapPreview();
+    mapPreview.stop();
     await deleteMap(el.dataset['id']!, el.dataset['server'] === '1');
   });
 
@@ -504,10 +489,10 @@ function renderDetail(map: MapEntry | null): void {
     await exportMap(el.dataset['id']!);
   });
 
-  document.querySelector<HTMLAnchorElement>('.btn-play')?.addEventListener('click', () => stopMapPreview());
-  document.querySelector<HTMLAnchorElement>('.detail-secondary-actions a')?.addEventListener('click', () => stopMapPreview());
-  document.getElementById('previewToggle')?.addEventListener('click', toggleMapPreview);
-  bindPreviewVolumeControl();
+  document.querySelector<HTMLAnchorElement>('.btn-play')?.addEventListener('click', () => mapPreview.stop());
+  document.querySelector<HTMLAnchorElement>('.detail-secondary-actions a')?.addEventListener('click', () => mapPreview.stop());
+  document.getElementById('previewToggle')?.addEventListener('click', () => mapPreview.toggle());
+  mapPreview.bindControls();
   bindDetailTilt();
 }
 
@@ -544,339 +529,7 @@ function selectMap(id: string): void {
   });
   const map = allMaps.find(m => m.id === id) ?? null;
   renderDetail(map);
-  if (map) scheduleMapPreview(map);
-}
-
-function setPreviewStatus(message: string, state: 'idle' | 'loading' | 'playing' | 'paused' | 'warning' | 'error' = 'idle'): void {
-  const el = document.getElementById('previewStatus');
-  if (el) {
-    el.className = `preview-status is-${state}`;
-    const icon = el.querySelector<HTMLElement>('.material-symbols-rounded');
-    if (icon) {
-      icon.textContent = state === 'warning' || state === 'error' ? 'warning' : 'graphic_eq';
-    }
-    const text = el.querySelector<HTMLElement>('span:last-child');
-    if (text) text.textContent = message;
-  }
-  updatePreviewToggle(state);
-}
-
-function updatePreviewToggle(state: 'idle' | 'loading' | 'playing' | 'paused' | 'warning' | 'error'): void {
-  const btn = document.getElementById('previewToggle') as HTMLButtonElement | null;
-  if (!btn) return;
-  const icon = btn.querySelector<HTMLElement>('.material-symbols-rounded');
-  const label = btn.querySelector<HTMLElement>('span:last-child');
-  btn.className = `preview-toggle is-${state}`;
-  btn.disabled = state === 'loading';
-  if (state === 'playing') {
-    if (icon) icon.textContent = 'pause';
-    if (label) label.textContent = 'Pause';
-  } else if (state === 'paused') {
-    if (icon) icon.textContent = 'play_arrow';
-    if (label) label.textContent = 'Resume';
-  } else {
-    if (icon) icon.textContent = 'play_arrow';
-    if (label) label.textContent = 'Preview';
-  }
-}
-
-function clearPreviewTimers(): void {
-  if (previewTimer) clearTimeout(previewTimer);
-  if (previewStopTimer) clearTimeout(previewStopTimer);
-  if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
-  if (previewFadeFrame !== null) cancelAnimationFrame(previewFadeFrame);
-  previewTimer = null;
-  previewStopTimer = null;
-  previewProgressFrame = null;
-  previewFadeFrame = null;
-}
-
-function unloadPreviewAudio(): void {
-  previewAudio.pause();
-  previewAudio.removeAttribute('src');
-  previewAudio.load();
-  if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
-  previewObjectUrl = null;
-}
-
-function fadePreviewVolume(fromVolume: number, toVolume: number, durationMs: number, token: number, onDone?: () => void): void {
-  if (previewFadeFrame !== null) cancelAnimationFrame(previewFadeFrame);
-  previewFadeFrame = null;
-
-  const from = Math.max(0, Math.min(1, fromVolume));
-  const to = Math.max(0, Math.min(1, toVolume));
-  const startedAt = performance.now();
-  previewAudio.volume = from;
-
-  const step = (now: number) => {
-    try {
-      if (token !== previewToken) {
-        previewFadeFrame = null;
-        return;
-      }
-
-      const progress = durationMs <= 0 ? 1 : Math.max(0, Math.min(1, (now - startedAt) / durationMs));
-      const eased = progress * progress * (3 - 2 * progress);
-      previewAudio.volume = from + (to - from) * eased;
-
-      if (progress < 1) {
-        previewFadeFrame = requestAnimationFrame(step);
-        return;
-      }
-
-      previewFadeFrame = null;
-      onDone?.();
-    } catch (error) {
-      previewFadeFrame = null;
-      reportMapsError('preview-fade', error);
-    }
-  };
-
-  previewFadeFrame = requestAnimationFrame(step);
-}
-
-function setPreviewProgress(progress: number, remainingMs = PREVIEW_MAX_MS): void {
-  const clamped = Math.max(0, Math.min(1, progress));
-  const fill = document.getElementById('previewProgressFill');
-  const time = document.getElementById('previewProgressTime');
-  if (fill) fill.style.width = `${Math.round(clamped * 100)}%`;
-  if (time) time.textContent = `${Math.max(0, Math.ceil(remainingMs / 1000))}s`;
-}
-
-function updatePreviewProgress(): void {
-  try {
-    const elapsedMs = PREVIEW_MAX_MS - previewRemainingMs + (performance.now() - previewStartedAtMs);
-    const remainingMs = Math.max(0, PREVIEW_MAX_MS - elapsedMs);
-    setPreviewProgress(elapsedMs / PREVIEW_MAX_MS, remainingMs);
-    if (!previewAudio.paused && remainingMs > 0) {
-      previewProgressFrame = requestAnimationFrame(updatePreviewProgress);
-    } else {
-      previewProgressFrame = null;
-    }
-  } catch (error) {
-    previewProgressFrame = null;
-    reportMapsError('preview-progress', error);
-  }
-}
-
-function stopMapPreview(clearStatus = false): void {
-  const shouldFadeOut = Boolean(previewAudio.src) && !previewAudio.paused && previewAudio.volume > 0;
-  const srcToStop = previewAudio.src;
-  clearPreviewTimers();
-  const token = ++previewToken;
-  previewRemainingMs = PREVIEW_MAX_MS;
-  previewStartedAtMs = 0;
-  previewPaused = false;
-  setPreviewProgress(0);
-  if (clearStatus) setPreviewStatus('Preview zatrzymane');
-
-  if (!shouldFadeOut) {
-    unloadPreviewAudio();
-    return;
-  }
-
-  fadePreviewVolume(previewAudio.volume, 0, PREVIEW_FADE_OUT_MS, token, () => {
-    if (token === previewToken && previewAudio.src === srcToStop) unloadPreviewAudio();
-  });
-}
-
-function scheduleMapPreview(map: MapEntry): void {
-  stopMapPreview();
-  currentPreviewMap = map;
-  if (getPreviewVolume() <= 0) {
-    setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
-    return;
-  }
-  const token = previewToken;
-  setPreviewStatus('Preview wystartuje za chwilę...', 'loading');
-  previewTimer = setTimeout(() => {
-    void startMapPreview(map, token);
-  }, PREVIEW_DELAY_MS);
-}
-
-async function startMapPreview(map: MapEntry, token: number): Promise<void> {
-  try {
-    const effectiveVolume = getPreviewVolume();
-    if (effectiveVolume <= 0) {
-      setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
-      return;
-    }
-
-    setPreviewStatus('Ładuję audio preview...', 'loading');
-    const source = await loadPreviewSource(map);
-    if (token !== previewToken) {
-      if (source?.url) URL.revokeObjectURL(source.url);
-      return;
-    }
-    if (!source) {
-      setPreviewStatus('Ta mapa nie ma audio do preview', 'error');
-      return;
-    }
-
-    if (previewFadeFrame !== null) cancelAnimationFrame(previewFadeFrame);
-    previewFadeFrame = null;
-    unloadPreviewAudio();
-
-    previewObjectUrl = source.url;
-    previewAudio.volume = 0;
-    previewAudio.src = source.url;
-    await waitForPreviewMetadata();
-
-    const requestedStart = Number(map.meta?.previewStartSec ?? 0);
-    const maxStart = Number.isFinite(previewAudio.duration) ? Math.max(0, previewAudio.duration - 2) : 0;
-    previewAudio.currentTime = Math.max(0, Math.min(Number.isFinite(requestedStart) ? requestedStart : 0, maxStart));
-    await previewAudio.play();
-    previewPaused = false;
-    previewRemainingMs = PREVIEW_MAX_MS;
-    armPreviewStopTimer(previewRemainingMs);
-    fadePreviewVolume(0, effectiveVolume, PREVIEW_FADE_IN_MS, token);
-    setPreviewStatus('Odtwarzam preview', 'playing');
-  } catch (error) {
-    if (token !== previewToken) return;
-    const message = error instanceof DOMException && error.name === 'NotAllowedError'
-      ? 'Kliknij mapę ponownie, aby uruchomić preview'
-      : 'Nie udało się odtworzyć preview';
-    setPreviewStatus(message, 'error');
-  }
-}
-
-function getPreviewVolume(): number {
-  const settings = loadSettings();
-  const master = Math.max(0, Math.min(1, Number(settings.volume) || 0));
-  const music = Math.max(0, Math.min(1, Number(settings.musicVolume) || 0));
-  return Math.max(0, Math.min(1, master * music * PREVIEW_BASE_VOLUME));
-}
-
-function getPreviewMusicPercent(): number {
-  const settings = loadSettings();
-  return Math.round(Math.max(0, Math.min(1, Number(settings.musicVolume) || 0)) * 100);
-}
-
-function bindPreviewVolumeControl(): void {
-  const input = document.getElementById('previewVolume') as HTMLInputElement | null;
-  const value = document.getElementById('previewVolumeValue');
-  if (!input || !value) return;
-
-  const updateVisual = () => {
-    const numeric = Math.max(0, Math.min(100, Number(input.value) || 0));
-    input.style.setProperty('--range-progress', `${numeric}%`);
-    value.textContent = `${Math.round(numeric)}%`;
-  };
-
-  updateVisual();
-  input.addEventListener('input', () => {
-    updateVisual();
-    setSetting('musicVolume', (Math.max(0, Math.min(100, Number(input.value) || 0)) / 100));
-    const effectiveVolume = getPreviewVolume();
-    previewAudio.volume = effectiveVolume;
-    if (effectiveVolume <= 0) {
-      if (!previewAudio.paused) pausePreview();
-      setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
-    } else if (previewPaused) {
-      setPreviewStatus('Preview w pauzie. Kliknij Resume, aby wznowić.', 'paused');
-    }
-  });
-}
-
-function armPreviewStopTimer(ms: number): void {
-  if (previewStopTimer) clearTimeout(previewStopTimer);
-  if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
-  previewProgressFrame = null;
-  const fadeMs = Math.min(PREVIEW_FADE_OUT_MS, Math.max(0, ms));
-  const stopDelayMs = Math.max(0, ms - fadeMs);
-  const token = previewToken;
-  const srcToStop = previewAudio.src;
-  previewStartedAtMs = performance.now();
-  previewStopTimer = setTimeout(() => {
-    previewStopTimer = null;
-    fadePreviewVolume(previewAudio.volume, 0, fadeMs, token, () => {
-      if (token !== previewToken || previewAudio.src !== srcToStop) return;
-      if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
-      previewProgressFrame = null;
-      unloadPreviewAudio();
-      previewPaused = false;
-      previewRemainingMs = PREVIEW_MAX_MS;
-      setPreviewProgress(1, 0);
-      setPreviewStatus('Preview zakończone');
-    });
-  }, stopDelayMs);
-  updatePreviewProgress();
-}
-
-function pausePreview(): void {
-  if (previewAudio.paused) return;
-  if (previewStopTimer) clearTimeout(previewStopTimer);
-  if (previewProgressFrame !== null) cancelAnimationFrame(previewProgressFrame);
-  previewStopTimer = null;
-  previewProgressFrame = null;
-  const token = previewToken;
-  previewRemainingMs = Math.max(0, previewRemainingMs - (performance.now() - previewStartedAtMs));
-  previewPaused = true;
-  setPreviewProgress((PREVIEW_MAX_MS - previewRemainingMs) / PREVIEW_MAX_MS, previewRemainingMs);
-  setPreviewStatus('Preview w pauzie. Kliknij, aby wznowić.', 'paused');
-  fadePreviewVolume(previewAudio.volume, 0, PREVIEW_FADE_OUT_MS, token, () => {
-    if (token === previewToken && previewPaused) previewAudio.pause();
-  });
-}
-
-async function resumePreview(): Promise<void> {
-  const effectiveVolume = getPreviewVolume();
-  if (effectiveVolume <= 0) {
-    setPreviewStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
-    return;
-  }
-  const token = previewToken;
-  const startVolume = Math.max(0, Math.min(1, previewAudio.volume));
-  await previewAudio.play();
-  previewPaused = false;
-  armPreviewStopTimer(previewRemainingMs || PREVIEW_MAX_MS);
-  fadePreviewVolume(startVolume, effectiveVolume, PREVIEW_FADE_IN_MS, token);
-  setPreviewStatus('Odtwarzam preview', 'playing');
-}
-
-function toggleMapPreview(): void {
-  if (!previewAudio.src && currentPreviewMap) {
-    scheduleMapPreview(currentPreviewMap);
-    return;
-  }
-  if (!previewAudio.src) return;
-  if (previewPaused) {
-    void resumePreview().catch(() => setPreviewStatus('Nie udało się wznowić preview', 'error'));
-    return;
-  }
-  if (!previewAudio.paused) {
-    pausePreview();
-  }
-}
-
-function waitForPreviewMetadata(): Promise<void> {
-  if (previewAudio.readyState >= HTMLMediaElement.HAVE_METADATA) return Promise.resolve();
-  return new Promise((resolve, reject) => {
-    const cleanup = () => {
-      previewAudio.removeEventListener('loadedmetadata', onReady);
-      previewAudio.removeEventListener('error', onError);
-    };
-    const onReady = () => { cleanup(); resolve(); };
-    const onError = () => { cleanup(); reject(new Error('Preview audio load failed')); };
-    previewAudio.addEventListener('loadedmetadata', onReady, { once: true });
-    previewAudio.addEventListener('error', onError, { once: true });
-  });
-}
-
-async function loadPreviewSource(map: MapEntry): Promise<{ url: string } | null> {
-  const shouldTryServer = map.source === 'server' || map.source === 'server+local';
-  if (shouldTryServer) {
-    const audioUrl = map.meta?.audioUrl ?? `/api/maps/${encodeURIComponent(map.id)}/audio`;
-    try {
-      const res = await fetch(audioUrl);
-      if (res.ok) return { url: URL.createObjectURL(await res.blob()) };
-    } catch {}
-  }
-
-  const local = await loadLocalMapAudio(map.id).catch(() => null);
-  if (!local?.arrayBuffer) return null;
-  const blob = new Blob([local.arrayBuffer], { type: local.mimeType || 'application/octet-stream' });
-  return { url: URL.createObjectURL(blob) };
+  if (map) mapPreview.schedule(map);
 }
 
 function selectAdjacentMap(direction: -1 | 1): void {
@@ -899,7 +552,7 @@ async function deleteMap(id: string, tryServer: boolean): Promise<void> {
   );
   if (!confirmed) return;
 
-  stopMapPreview();
+  mapPreview.stop();
 
   let serverDeleted = false;
   if (tryServer) {
@@ -1057,7 +710,7 @@ function showTab(name: 'maps' | 'scores'): void {
     btn.classList.toggle('is-active', btn.dataset['tab'] === name);
   });
   if (name === 'scores') {
-    stopMapPreview(true);
+    mapPreview.stop(true);
     runMapsTask('scores-load', loadScores, () => {
       const scoreList = document.getElementById('scoreList');
       if (scoreList) scoreList.textContent = t('maps.noScores');
@@ -1135,8 +788,8 @@ export function init(): void {
   });
 
   initDragDrop();
-  window.addEventListener('pagehide', () => stopMapPreview());
-  window.addEventListener('beforeunload', () => stopMapPreview());
+  window.addEventListener('pagehide', () => mapPreview.stop());
+  window.addEventListener('beforeunload', () => mapPreview.stop());
   runMapsTask('maps-load', loadMaps, () => {
     const mapList = document.getElementById('mapList');
     if (mapList) mapList.textContent = t('maps.noMaps');
