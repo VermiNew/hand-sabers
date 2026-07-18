@@ -4,10 +4,11 @@ import { getPerformanceProfile } from '../core/performance.ts';
 import { updateHUD, showComboMilestone } from '../ui/ui.ts';
 import { THEME } from '../core/theme.ts';
 import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.ts';
-import { getBeatHitTimeSec, isBeatTooLate, noteZAtSongTime, shouldSpawnBeat } from '../core/timing.ts';
+import { noteZAtSongTime } from '../core/timing.ts';
 import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import { showHitFeedback } from './hit-feedback.ts';
+import { MapSpawnQueue } from './map-spawn-queue.ts';
 import type { CutDirection, Beat, SaberSide } from '../types/index.js';
 
 type PoolMesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material> & { __poolKind: 'block' | 'bomb'; __inFreeList: boolean };
@@ -971,40 +972,12 @@ export function updateMenuDemo(now: number, t: number): void {
 }
 
 // ── Map mode ─────────────────────────────────────────────────────────────────
-interface QueuedBeat { beat: Beat; index: number; hitTime: number }
-let mapSpawnSource: Beat[] | null = null;
-let mapSpawnQueue: QueuedBeat[] = [];
-let nextMapSpawnIndex = 0;
-let lastMapSpawnTimeSec = 0;
-
-function ensureMapSpawnQueue(beats: Beat[]): void {
-  if (beats === mapSpawnSource) return;
-  mapSpawnSource = beats;
-  mapSpawnQueue = Array.isArray(beats)
-    ? beats.map((beat, index) => ({ beat, index, hitTime: getBeatHitTimeSec(beat) })).sort((a, b) => a.hitTime - b.hitTime || a.index - b.index)
-    : [];
-  nextMapSpawnIndex = 0;
-  lastMapSpawnTimeSec = 0;
-}
+const mapSpawnQueue = new MapSpawnQueue();
 
 export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: number): void {
   if (!beats) return;
-  ensureMapSpawnQueue(beats);
-  const LOOKAHEAD = 0.12;
-  const DROP_LATE_BY = 0.45;
   const approachSec = getMapApproachTimeSec();
-
-  if (currentTimeSec < lastMapSpawnTimeSec - 0.35) {
-    nextMapSpawnIndex = 0;
-  }
-  lastMapSpawnTimeSec = currentTimeSec;
-
-  while (nextMapSpawnIndex < mapSpawnQueue.length) {
-    const { beat: b, index, hitTime } = mapSpawnQueue[nextMapSpawnIndex]!;
-    if (!shouldSpawnBeat(b, currentTimeSec, approachSec, LOOKAHEAD)) break;
-    nextMapSpawnIndex++;
-    if (isBeatTooLate(b, currentTimeSec, DROP_LATE_BY)) continue;
-
+  for (const { beat: b, index, hitTime } of mapSpawnQueue.takeDue(beats, currentTimeSec, approachSec)) {
     const deterministicSide = ((index * 0x9e37_79b1) >>> 0) % 2 === 0 ? 'left' : 'right';
     const side = effectiveOneHandMode() || (b.side === 'random' ? deterministicSide : b.side);
     const lane = laneForBeat(side, b);
@@ -1022,10 +995,7 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
 }
 
 export function resetMapSpawn() {
-  mapSpawnSource = null;
-  mapSpawnQueue = [];
-  nextMapSpawnIndex = 0;
-  lastMapSpawnTimeSec = 0;
+  mapSpawnQueue.reset();
 }
 
 // ── Update loop ───────────────────────────────────────────────────────────────
