@@ -347,6 +347,23 @@ export const rTarget = new THREE.Vector3( 0.45, 1.1, 1.5);
 export const lVel    = new THREE.Vector3();
 export const rVel    = new THREE.Vector3();
 
+function publishSaberColorCss(side: 'left' | 'right', color: THREE.Color): void {
+  const hex = color.getHexString();
+  const rgb = [hex.slice(0, 2), hex.slice(2, 4), hex.slice(4, 6)]
+    .map(channel => parseInt(channel, 16))
+    .join(',');
+  document.documentElement.style.setProperty(`--${side}`, `#${hex}`);
+  document.documentElement.style.setProperty(`--${side}-rgb`, rgb);
+}
+
+publishSaberColorCss('left', new THREE.Color(THEME.left));
+publishSaberColorCss('right', new THREE.Color(THEME.right));
+
+export function getSaberColor(side: 'left' | 'right'): number {
+  const saber = side === 'left' ? lSaber : rSaber;
+  return (saber.userData as SaberUserData).color;
+}
+
 export function setSaberColor(side: 'left' | 'right', hex: string): void {
   const saber      = side === 'left' ? lSaber : rSaber;
   const light      = side === 'left' ? lLight : rLight;
@@ -385,6 +402,7 @@ export function setSaberColor(side: 'left' | 'right', hex: string): void {
   }
 
   ud.color = new THREE.Color(colorHex).getHex();
+  publishSaberColorCss(side, color);
 }
 
 export type SaberModel = 'classic' | 'wide' | 'thin';

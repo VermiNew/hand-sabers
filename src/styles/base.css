@@ -14,6 +14,8 @@
   --dim:         rgba(226,232,240,0.38);
   --left:        var(--accent);
   --right:       var(--main);
+  --left-rgb:    54,242,161;
+  --right-rgb:   47,124,255;
   --bomb:        #ff3a3a;
 }
 * { margin:0; padding:0; box-sizing:border-box; }

@@ -70,7 +70,7 @@ body.training-mode #trainingBadge { display:block; }
 }
 #mapProgressFill {
   height:100%; width:0%;
-  background:linear-gradient(90deg,var(--accent),var(--main));
+  background:linear-gradient(90deg,var(--left),var(--right));
   transition:width 0.5s linear;
 }
 
@@ -80,17 +80,17 @@ body.training-mode #trainingBadge { display:block; }
   display:flex; align-items:center; justify-content:space-between;
   font-size:14px; font-weight:900; letter-spacing:3px; color:var(--muted); margin-bottom:7px;
 }
-#lives { color:var(--accent); text-shadow:0 0 12px rgba(54,242,161,0.75); }
+#lives { color:var(--left); text-shadow:0 0 12px rgba(var(--left-rgb),0.75); }
 .hp-shell {
   position:relative; height:16px; overflow:hidden;
   border:1px solid rgba(148,163,184,0.22); border-radius:4px;
   background:linear-gradient(180deg,rgba(226,232,240,0.08),rgba(226,232,240,0)),rgba(5,7,13,0.7);
-  box-shadow:inset 0 0 10px rgba(0,0,0,0.8),0 0 18px rgba(54,242,161,0.12);
+  box-shadow:inset 0 0 10px rgba(0,0,0,0.8),0 0 18px rgba(var(--left-rgb),0.12);
 }
 .hp-fill {
   width:100%; height:100%;
-  background:linear-gradient(90deg,var(--accent) 0%,var(--main) 74%,var(--gray) 100%);
-  box-shadow:0 0 18px rgba(54,242,161,0.62);
+  background:linear-gradient(90deg,var(--left),var(--right));
+  box-shadow:0 0 18px rgba(var(--left-rgb),0.62);
   transform-origin:left center;
   transition:transform 0.28s ease,filter 0.28s ease,box-shadow 0.28s ease;
 }
@@ -115,9 +115,9 @@ body.training-mode #trainingBadge { display:block; }
 .hp-empty .hp-shell { box-shadow:inset 0 0 10px rgba(0,0,0,0.8),0 0 20px rgba(148,163,184,0.34); }
 
 @keyframes hpGain {
-  0%   { box-shadow:0 0 18px rgba(54,242,161,0.62); filter:brightness(1); }
-  35%  { box-shadow:0 0 50px rgba(54,242,161,1),0 0 80px rgba(54,242,161,0.5); filter:brightness(1.6) saturate(1.4); }
-  100% { box-shadow:0 0 18px rgba(54,242,161,0.62); filter:brightness(1); }
+  0%   { box-shadow:0 0 18px rgba(var(--left-rgb),0.62); filter:brightness(1); }
+  35%  { box-shadow:0 0 50px rgba(var(--left-rgb),1),0 0 80px rgba(var(--right-rgb),0.5); filter:brightness(1.6) saturate(1.4); }
+  100% { box-shadow:0 0 18px rgba(var(--left-rgb),0.62); filter:brightness(1); }
 }
 @keyframes hpLoss {
   0%   { filter:brightness(1); }
@@ -140,8 +140,8 @@ body.training-mode #trainingBadge { display:block; }
   70%     { transform:scale(1); }
 }
 .hp-icon {
-  font-size:18px; color:var(--accent);
-  text-shadow:0 0 14px rgba(54,242,161,0.7);
+  font-size:18px; color:var(--left);
+  text-shadow:0 0 14px rgba(var(--left-rgb),0.7);
   transition:color 0.3s, text-shadow 0.3s;
 }
 #hpHud.hp-mid  .hp-icon { color:#ffaa00; text-shadow:0 0 14px rgba(255,170,0,0.8); }
@@ -171,7 +171,7 @@ body.training-mode #trainingBadge { display:block; }
 .hp-meta span:first-child {
   font-weight:900;
   color:#fff;
-  text-shadow:0 0 18px rgba(54,242,161,0.42);
+  text-shadow:0 0 18px rgba(var(--left-rgb),0.42);
 }
 #lives {
   font-size:clamp(20px,3.6vw,30px);
@@ -186,11 +186,11 @@ body.training-mode #trainingBadge { display:block; }
   background:
     linear-gradient(180deg,rgba(226,232,240,0.16),rgba(226,232,240,0.02)),
     rgba(5,7,13,0.78);
-  box-shadow:inset 0 0 12px rgba(0,0,0,0.82),0 0 24px rgba(54,242,161,0.18);
+  box-shadow:inset 0 0 12px rgba(0,0,0,0.82),0 0 24px rgba(var(--left-rgb),0.18);
 }
 .hp-fill {
   border-radius:999px;
-  background:linear-gradient(90deg,var(--accent) 0%,#7bffd1 44%,var(--main) 82%);
+  background:linear-gradient(90deg,var(--left),var(--right));
 }
 .map-time-row {
   align-items:flex-end;
@@ -205,20 +205,20 @@ body.training-mode #trainingBadge { display:block; }
   font-size:clamp(20px,3.4vw,30px);
   line-height:0.9;
   letter-spacing:2px;
-  color:var(--main-light);
-  text-shadow:0 0 18px rgba(47,124,255,0.78);
+  color:var(--right);
+  text-shadow:0 0 18px rgba(var(--right-rgb),0.78);
 }
 .map-prog-shell {
   height:12px;
   border-radius:999px;
   border:1px solid rgba(142,200,255,0.26);
   background:rgba(148,163,184,0.12);
-  box-shadow:inset 0 0 12px rgba(0,0,0,0.82),0 0 22px rgba(47,124,255,0.12);
+  box-shadow:inset 0 0 12px rgba(0,0,0,0.82),0 0 22px rgba(var(--right-rgb),0.12);
 }
 #mapProgressFill {
   border-radius:999px;
-  background:linear-gradient(90deg,var(--accent),#8ec8ff,var(--main));
-  box-shadow:0 0 18px rgba(47,124,255,0.55);
+  background:linear-gradient(90deg,var(--left),var(--right));
+  box-shadow:0 0 18px rgba(var(--right-rgb),0.55);
   position:relative; overflow:visible;
 }
 .map-prog-dot {
@@ -226,6 +226,6 @@ body.training-mode #trainingBadge { display:block; }
   transform:translateY(-50%);
   width:11px; height:11px; border-radius:50%;
   background:#fff;
-  box-shadow:0 0 8px 3px rgba(142,200,255,0.9), 0 0 18px 5px rgba(47,124,255,0.5);
+  box-shadow:0 0 8px 3px rgba(var(--right-rgb),0.9), 0 0 18px 5px rgba(var(--right-rgb),0.5);
   pointer-events:none;
 }

@@ -1,7 +1,7 @@
 import { THEME } from '../core/theme.ts';
 import { getBeatHitTimeSec } from '../core/timing.ts';
 import { getMusicFrequencyLevels } from './audio.ts';
-import { THREE, scene } from './scene.ts';
+import { getSaberColor, THREE, scene } from './scene.ts';
 import type { Beat, PerformanceProfile } from '../types/index.js';
 
 interface MusicVisualizerFrame {
@@ -26,18 +26,30 @@ const portalMaterial = new THREE.MeshBasicMaterial({
 const portals = new THREE.InstancedMesh(portalGeometry, portalMaterial, MAX_PORTAL_COUNT);
 const portalTransform = new THREE.Object3D();
 const portalColor = new THREE.Color();
+let portalLeftColor = -1;
+let portalRightColor = -1;
 
 portals.count = 0;
 portals.visible = false;
 portals.frustumCulled = false;
 portals.renderOrder = 1;
 portals.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-for (let index = 0; index < MAX_PORTAL_COUNT; index++) {
-  portalColor.setHex(index % 2 === 0 ? THEME.left : THEME.right);
-  portals.setColorAt(index, portalColor);
-}
-if (portals.instanceColor) portals.instanceColor.needsUpdate = true;
 scene.add(portals);
+
+function syncPortalColors(): void {
+  const left = getSaberColor('left');
+  const right = getSaberColor('right');
+  if (left === portalLeftColor && right === portalRightColor) return;
+  portalLeftColor = left;
+  portalRightColor = right;
+  for (let index = 0; index < MAX_PORTAL_COUNT; index++) {
+    portalColor.setHex(index % 2 === 0 ? left : right);
+    portals.setColorAt(index, portalColor);
+  }
+  if (portals.instanceColor) portals.instanceColor.needsUpdate = true;
+}
+
+syncPortalColors();
 
 const PORTAL_COUNTS: Record<string, number> = {
   lowest: 0,
@@ -103,6 +115,7 @@ export function resetMusicVisualizer(): void {
 }
 
 export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
+  syncPortalColors();
   syncBeatTimeline(frame.beats, frame.songTimeSec);
   beatPulse *= Math.exp(-7.5 * Math.max(0, frame.deltaSec));
 
