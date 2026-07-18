@@ -5,9 +5,9 @@ import { updateHUD, showComboMilestone } from '../ui/ui.ts';
 import { THEME } from '../core/theme.ts';
 import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.ts';
 import { getBeatHitTimeSec, isBeatTooLate, noteZAtSongTime, shouldSpawnBeat } from '../core/timing.ts';
-import { classifyHitQuality, cutDirectionLabel, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
-import { t } from '../i18n/index.ts';
+import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
+import { showHitFeedback } from './hit-feedback.ts';
 import type { CutDirection, Beat, SaberSide } from '../types/index.js';
 
 type PoolMesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material> & { __poolKind: 'block' | 'bomb'; __inFreeList: boolean };
@@ -744,7 +744,7 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
   const points = scoreForHit(quality.basePoints, comboBefore);
 
   shatterBlock(entry.mesh, color, cache, { strong: quality.strong });
-  showHitLabel(entry.mesh.position, quality.label, quality.label === 'PERFECT', quality.reason, deltaMs, entry.cut);
+  showHitFeedback(entry.mesh.position, quality.label, quality.label === 'PERFECT', quality.reason, deltaMs, entry.cut);
   releaseBlock(entry.mesh);
 
   state.score += points;
@@ -794,60 +794,6 @@ function hitBomb(entry: ActiveBlock): void {
   playBomb();
   triggerShake(0.10);
   if (state.lives <= 0 && !state.noFail) gameOverHandler();
-}
-
-// Floating hit label (DOM overlay)
-const hitLabelContainer = document.createElement('div');
-hitLabelContainer.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:300;overflow:hidden;';
-document.body.appendChild(hitLabelContainer);
-
-function showHitLabel(
-  pos3d: THREE.Vector3,
-  label: string,
-  perfect: boolean,
-  reason = '',
-  deltaMs = 0,
-  requiredCut: CutDirection = 'any',
-): void {
-  const el    = document.createElement('div');
-  const isBad = label === 'BAD';
-  const col   = isBad ? '#ffaa44' : perfect ? '#36f2a1' : '#8ec8ff';
-  const msAbs = Math.abs(Math.round(deltaMs));
-  const msSign = deltaMs > 0 ? '+' : deltaMs < 0 ? '−' : '';
-  const msCol  = msAbs < 30 ? '#36f2a1' : msAbs < 80 ? '#8ec8ff' : '#ffaa44';
-  const cutFeedback = reason === 'cut'
-    ? `<span style="display:block;font-size:10px;letter-spacing:1.5px;color:#ffb45c;margin-top:3px">${t('hit.wrongDirection')} ${cutDirectionLabel(requiredCut)}</span>`
-    : '';
-  el.innerHTML = `
-    <span style="display:block">${label}</span>
-    <span style="display:block;font-size:11px;letter-spacing:2px;color:${msCol};opacity:0.85;margin-top:2px">${msSign}${msAbs} ms</span>
-    ${cutFeedback}
-  `;
-  el.style.cssText = `
-    position:absolute;
-    font-family:'Oxanium',sans-serif;
-    font-size:${perfect ? 22 : isBad ? 18 : 16}px;
-    font-weight:900;
-    letter-spacing:4px;
-    color:${col};
-    text-shadow:0 0 20px ${col};
-    text-align:center;
-    opacity:1;
-    transition:opacity 0.35s, transform 0.35s;
-    pointer-events:none;
-    white-space:nowrap;
-  `;
-  const sx = window.innerWidth  * (0.5 - pos3d.x * 0.08);
-  const sy = window.innerHeight * (0.42 - pos3d.y * 0.06);
-  el.style.left      = `${sx}px`;
-  el.style.top       = `${sy}px`;
-  el.style.transform = 'translate(-50%, -50%)';
-  hitLabelContainer.appendChild(el);
-  requestAnimationFrame(() => {
-    el.style.opacity   = '0';
-    el.style.transform = 'translate(-50%, -120%)';
-  });
-  setTimeout(() => el.remove(), 380);
 }
 
 function bladeInsideHeld(entry: ActiveBlock, cache: BladeCache): boolean {
@@ -945,7 +891,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
           lastHitMs = performance.now();
           updateHUD(state);
           playHit(Math.max(1, state.combo));
-          showHitLabel(pos, 'HOLD', true, '', 0);
+          showHitFeedback(pos, 'HOLD', true, '', 0);
           light.intensity = 12;
           if (light.userData.hitTimer) clearTimeout(light.userData.hitTimer);
           light.userData.hitTimer = setTimeout(() => { light.intensity = 4; light.userData.hitTimer = null; }, 120);
