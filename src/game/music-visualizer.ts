@@ -82,6 +82,7 @@ let lastSongTimeSec: number | null = null;
 let beatPulse = 0;
 let runningPeakBass = 0.4;
 let musicVisualsEnabled = false;
+let currentEffectiveMusicIntensity = 0;
 
 export function getEffectiveMusicIntensity(
   energy: MusicFrequencyLevels,
@@ -95,6 +96,10 @@ export function getEffectiveMusicIntensity(
   const normalizedBass = runningPeakBass > 0.05 ? Math.min(1.4, 1 / runningPeakBass) : 1;
   const tierMultiplier = TIER_INTENSITY[profile.qualityMode] ?? 1;
   return Math.max(0, Math.min(1.5, tierMultiplier * normalizedBass));
+}
+
+export function getCurrentMusicIntensity(): number {
+  return currentEffectiveMusicIntensity;
 }
 
 function findNextBeatIndex(songTimeSec: number): number {
@@ -144,6 +149,7 @@ export function resetMusicVisualizer(): void {
   beatPulse = 0;
   runningPeakBass = 0.4;
   musicVisualsEnabled = false;
+  currentEffectiveMusicIntensity = 0;
   portals.count = 0;
   portals.visible = false;
   portalMaterial.opacity = 0;
@@ -159,6 +165,7 @@ export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
     portals.visible = false;
     portalMaterial.opacity = 0;
     musicVisualsEnabled = false;
+    currentEffectiveMusicIntensity = 0;
     return;
   }
   musicVisualsEnabled = true;
@@ -169,6 +176,7 @@ export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
   const portalCount = PORTAL_COUNTS[frame.profile.qualityMode] ?? 2;
   const levels = getMusicFrequencyLevels();
   const intensity = getEffectiveMusicIntensity(levels, frame.profile);
+  currentEffectiveMusicIntensity = intensity;
   portals.count = portalCount;
   portals.visible = portalCount > 0 && intensity > 0.001;
   portalMaterial.opacity = Math.min(0.42, (0.065 + levels.overall * 0.2 + beatPulse * 0.24) * intensity);

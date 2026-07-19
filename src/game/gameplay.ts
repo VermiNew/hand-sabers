@@ -9,7 +9,7 @@ import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutD
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import { showHitFeedback } from './hit-feedback.ts';
 import { MapSpawnQueue } from './map-spawn-queue.ts';
-import { resetMusicVisualizer, triggerMusicVisualizerBeat } from './music-visualizer.ts';
+import { getCurrentMusicIntensity, resetMusicVisualizer, triggerMusicVisualizerBeat } from './music-visualizer.ts';
 import type { CutDirection, Beat, SaberSide } from '../types/index.js';
 
 type PoolMesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material> & { __poolKind: 'block' | 'bomb'; __inFreeList: boolean };
@@ -385,7 +385,14 @@ function shatterBlock(mesh: THREE.Object3D, colorHex: number, cache: BladeCache 
   const perf = getPerformanceProfile(getSettings());
   const perfShardCount = Math.max(0, Math.min(SHARDS_PER_HIT_MAX, Number(perf.hitShards) || SHARDS_PER_HIT_MAX));
   const baseCount = demo ? Math.min(2, perfShardCount) : perfShardCount;
-  const count = Math.min(baseCount + (strong && !demo && perfShardCount >= 4 ? 1 : 0), freeSlots);
+  const musicBonus = !demo && perf.musicReactive && getSettings().musicReactiveEnabled
+    ? Math.round(baseCount * getCurrentMusicIntensity() * 0.18)
+    : 0;
+  const count = Math.min(
+    baseCount + musicBonus + (strong && !demo && perfShardCount >= 4 ? 1 : 0),
+    SHARDS_PER_HIT_MAX,
+    freeSlots,
+  );
 
   for (let i = 0; i < count; i++) {
     const shard = acquireShard(colorHex);
