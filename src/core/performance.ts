@@ -8,6 +8,15 @@ type GraphicsTier = typeof GRAPHICS_TIERS[number];
 interface PerformanceSettingsLike {
   performanceMode?: string | null;
   autoQualityMode?: string | null;
+  customAntialias?: boolean;
+  customReflections?: boolean;
+  customFloorGlows?: boolean;
+  customSaberGlints?: boolean;
+  customBackgroundShader?: boolean;
+  customFog?: boolean;
+  customGrid?: boolean;
+  customHitShards?: number;
+  customRenderScale?: number;
 }
 
 interface PerformanceModeOption {
@@ -18,7 +27,7 @@ interface PerformanceModeOption {
 
 type PerformanceProfileBase = Omit<PerformanceProfile, 'auto'>;
 
-const MODES: readonly PerformanceMode[] = [DEFAULT_PERFORMANCE_MODE, ...GRAPHICS_TIERS];
+const MODES: readonly PerformanceMode[] = [DEFAULT_PERFORMANCE_MODE, ...GRAPHICS_TIERS, 'custom'];
 const LEGACY_MODE_MAP: Record<string, PerformanceMode> = {
   turbo: 'low',
   performance: 'medium',
@@ -46,6 +55,7 @@ const PROFILES = {
     backgroundShader: false,
     fog: false,
     grid: false,
+    musicReactive: false,
     menuDemo: false,
     hitShards: 0,
     camera: { width: 320, height: 180, frameRate: 20 },
@@ -67,6 +77,7 @@ const PROFILES = {
     backgroundShader: false,
     fog: false,
     grid: false,
+    musicReactive: false,
     menuDemo: false,
     hitShards: 1,
     camera: { width: 424, height: 240, frameRate: 24 },
@@ -88,6 +99,7 @@ const PROFILES = {
     backgroundShader: false,
     fog: false,
     grid: false,
+    musicReactive: false,
     menuDemo: false,
     hitShards: 1,
     camera: { width: 424, height: 240, frameRate: 30 },
@@ -109,6 +121,7 @@ const PROFILES = {
     backgroundShader: true,
     fog: true,
     grid: true,
+    musicReactive: true,
     menuDemo: true,
     hitShards: 2,
     camera: { width: 640, height: 360, frameRate: 30 },
@@ -130,6 +143,7 @@ const PROFILES = {
     backgroundShader: true,
     fog: true,
     grid: true,
+    musicReactive: true,
     menuDemo: true,
     hitShards: 3,
     camera: { width: 640, height: 480, frameRate: 30 },
@@ -151,6 +165,7 @@ const PROFILES = {
     backgroundShader: true,
     fog: true,
     grid: true,
+    musicReactive: true,
     menuDemo: true,
     hitShards: 5,
     camera: { width: 960, height: 540, frameRate: 30 },
@@ -172,6 +187,7 @@ const PROFILES = {
     backgroundShader: true,
     fog: true,
     grid: true,
+    musicReactive: true,
     menuDemo: true,
     hitShards: 7,
     camera: { width: 1280, height: 720, frameRate: 30 },
@@ -246,7 +262,7 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
       ? (window as Window & { __graphicsQualityMode?: string }).__graphicsQualityMode
       : null;
     const qualityMode = normalizeMode(settings.autoQualityMode || runtimeQualityMode || detectAutoGraphicsTier());
-    const profile = qualityMode === 'auto' ? PROFILES.medium : PROFILES[qualityMode];
+    const profile = qualityMode === 'auto' || qualityMode === 'custom' ? PROFILES.medium : PROFILES[qualityMode];
     return {
       ...profile,
       mode: 'auto',
@@ -254,6 +270,31 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
       label: `Auto -> ${profile.label}`,
       description: 'Auto dobiera profil do sprzętu i reguluje jakość w trakcie gry, gdy FPS spada albo jest duży zapas.',
       auto: true,
+    };
+  }
+  if (mode === 'custom') {
+    return {
+      mode: 'custom',
+      qualityMode: 'custom',
+      label: 'Custom',
+      description: 'Własna konfiguracja efektów graficznych.',
+      targetFps: 60,
+      minDpr: 0.32,
+      maxDpr: Math.max(0.32, Math.min(1.75, settings.customRenderScale ?? 1)),
+      antialias: Boolean(settings.customAntialias),
+      reflections: Boolean(settings.customReflections),
+      floorGlows: Boolean(settings.customFloorGlows),
+      saberGlints: Boolean(settings.customSaberGlints),
+      backgroundShader: Boolean(settings.customBackgroundShader),
+      fog: Boolean(settings.customFog),
+      grid: Boolean(settings.customGrid),
+      musicReactive: Boolean(settings.customFloorGlows),
+      menuDemo: true,
+      hitShards: Math.max(0, Math.min(7, Math.round(settings.customHitShards ?? 2))),
+      camera: PROFILES.medium.camera,
+      detectFps: PROFILES.medium.detectFps,
+      devRefreshMs: PROFILES.medium.devRefreshMs,
+      auto: false,
     };
   }
   return { ...PROFILES[mode] };
@@ -269,6 +310,7 @@ export function getPerformanceModes(): PerformanceModeOption[] {
     { value: 'high', label: 'High', description: PROFILES.high.description },
     { value: 'ultra', label: 'Ultra', description: PROFILES.ultra.description },
     { value: 'maximum', label: 'Maximum', description: PROFILES.maximum.description },
+    { value: 'custom', label: 'Custom', description: 'Ustaw każdy efekt graficzny osobno.' },
   ];
 }
 

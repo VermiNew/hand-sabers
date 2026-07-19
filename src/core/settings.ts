@@ -11,6 +11,7 @@ const PERFORMANCE_MODES: PerformanceMode[] = [
   'high',
   'ultra',
   'maximum',
+  'custom',
 ];
 const NOTE_SPEED_PRESETS = [0.75, 1, 1.35, 1.75] as const;
 const HITBOX_SENSITIVITY_PRESETS = [0.82, 1, 1.2] as const;
@@ -48,6 +49,18 @@ export const DEFAULTS: Settings = {
   oneHandMode: null,
   audioOffsetMs: 0,
   performanceMode: DEFAULT_PERFORMANCE_MODE,
+  customAntialias: false,
+  customReflections: true,
+  customFloorGlows: true,
+  customSaberGlints: true,
+  customBackgroundShader: true,
+  customFog: true,
+  customGrid: true,
+  customHitShards: 2,
+  customRenderScale: 1,
+  musicReactiveEnabled: true,
+  musicReactiveIntensityMode: 'auto',
+  musicReactiveIntensity: 1,
   playerName: 'Gracz',
   noteSpeed: 1,
   hitboxSensitivity: 1,
@@ -81,6 +94,16 @@ function normalizeHitboxSensitivity(value: unknown): number {
   ));
 }
 
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.max(min, Math.min(max, number));
+}
+
+function normalizeMusicReactiveIntensityMode(value: unknown): Settings['musicReactiveIntensityMode'] {
+  return value === 'manual' ? 'manual' : 'auto';
+}
+
 function normalizeTrackingSource(value: unknown): TrackingSourcePreference {
   return value === 'camera' || value === 'phone' ? value : 'auto';
 }
@@ -93,6 +116,10 @@ export function loadSettings(): Settings {
   _settings.performanceMode = normalizePerformanceMode(_settings.performanceMode);
   _settings.noteSpeed = normalizeNoteSpeed(_settings.noteSpeed);
   _settings.hitboxSensitivity = normalizeHitboxSensitivity(_settings.hitboxSensitivity);
+  _settings.customHitShards = Math.round(clampNumber(_settings.customHitShards, 0, 7, DEFAULTS.customHitShards));
+  _settings.customRenderScale = clampNumber(_settings.customRenderScale, 0.5, 1.5, DEFAULTS.customRenderScale);
+  _settings.musicReactiveIntensityMode = normalizeMusicReactiveIntensityMode(_settings.musicReactiveIntensityMode);
+  _settings.musicReactiveIntensity = clampNumber(_settings.musicReactiveIntensity, 0, 1.5, DEFAULTS.musicReactiveIntensity);
   _settings.trackingSource = normalizeTrackingSource(_settings.trackingSource);
   return _settings;
 }

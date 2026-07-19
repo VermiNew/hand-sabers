@@ -75,7 +75,7 @@ export interface GameMap {
 }
 
 // ── Settings ──────────────────────────────────────────────────────────────────
-export const PERFORMANCE_MODES = ['auto', 'lowest', 'very-low', 'low', 'medium', 'high', 'ultra', 'maximum'] as const;
+export const PERFORMANCE_MODES = ['auto', 'lowest', 'very-low', 'low', 'medium', 'high', 'ultra', 'maximum', 'custom'] as const;
 export type PerformanceMode = typeof PERFORMANCE_MODES[number];
 
 export interface Settings {
@@ -96,6 +96,18 @@ export interface Settings {
   oneHandMode: OneHandMode;
   audioOffsetMs: number;
   performanceMode: PerformanceMode;
+  customAntialias: boolean;
+  customReflections: boolean;
+  customFloorGlows: boolean;
+  customSaberGlints: boolean;
+  customBackgroundShader: boolean;
+  customFog: boolean;
+  customGrid: boolean;
+  customHitShards: number;
+  customRenderScale: number;
+  musicReactiveEnabled: boolean;
+  musicReactiveIntensityMode: 'auto' | 'manual';
+  musicReactiveIntensity: number;
   saberColorLeft: string;
   saberColorRight: string;
   saberModel: string;
@@ -130,6 +142,7 @@ export interface PerformanceProfile {
   backgroundShader: boolean;
   fog: boolean;
   grid: boolean;
+  musicReactive: boolean;
   menuDemo: boolean;
   hitShards: number;
   camera: CameraProfile;
