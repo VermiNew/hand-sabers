@@ -223,6 +223,28 @@
       "autoHint": "Automatically checks hardware and adjusts quality during gameplay.",
       "currentMode": "Current mode: —"
     },
+    "customGraphics": {
+      "title": "Graphics (advanced)",
+      "antialias": "Antialiasing",
+      "reflections": "Floor reflections",
+      "floorGlows": "Floor glow",
+      "saberGlints": "Saber glints",
+      "backgroundShader": "Background shader",
+      "fog": "Fog",
+      "grid": "Floor grid",
+      "hitShards": "Hit shard count",
+      "renderScale": "Render scale"
+    },
+    "musicEffects": {
+      "title": "Music effects",
+      "enabled": "Music effects",
+      "enabledDesc": "Tunnel pulses and other effects reacting to music.",
+      "intensityMode": "Intensity",
+      "intensityModeDesc": "Auto adjusts effect strength to the track and PC performance.",
+      "auto": "AUTO",
+      "manual": "MANUAL",
+      "intensity": "Effect strength"
+    },
     "developer": {
       "name": "Developer mode",
       "desc": "Shows diagnostic panel, rendering metrics, VRAM, tracking and camera preview",

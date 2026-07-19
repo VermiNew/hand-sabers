@@ -103,6 +103,7 @@
   color:rgba(148,163,184,0.4); text-transform:uppercase;
   margin:16px 0 6px; padding:0 2px;
 }
+.is-hidden { display:none !important; }
 
 /* ── Slider rows ── */
 .sp-row {

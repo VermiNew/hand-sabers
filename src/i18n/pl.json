@@ -223,6 +223,28 @@
       "autoHint": "Auto sprawdza sprzęt i reguluje jakość w trakcie gry.",
       "currentMode": "Obecny tryb: —"
     },
+    "customGraphics": {
+      "title": "Grafika (zaawansowane)",
+      "antialias": "Antyaliasing",
+      "reflections": "Odbicia podłogi",
+      "floorGlows": "Poświata podłogi",
+      "saberGlints": "Błyski na mieczach",
+      "backgroundShader": "Shader tła",
+      "fog": "Mgła",
+      "grid": "Siatka podłogi",
+      "hitShards": "Liczba odłamków",
+      "renderScale": "Skala renderu"
+    },
+    "musicEffects": {
+      "title": "Efekty muzyczne",
+      "enabled": "Efekty muzyczne",
+      "enabledDesc": "Pulsowanie tunelu i inne efekty reagujące na muzykę.",
+      "intensityMode": "Intensywność",
+      "intensityModeDesc": "Auto dobiera siłę efektów do utworu i wydajności PC.",
+      "auto": "AUTO",
+      "manual": "RĘCZNIE",
+      "intensity": "Siła efektów"
+    },
     "developer": {
       "name": "Tryb developera",
       "desc": "Pokazuje panel diagnostyczny, metryki renderowania, VRAM, tracking i podgląd kamery",

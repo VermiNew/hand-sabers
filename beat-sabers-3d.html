@@ -295,6 +295,76 @@
             <p class="sp-hint" id="menuPerformanceHint" data-i18n="settings.performance.autoHint">Auto sprawdza sprzęt i reguluje jakość w trakcie gry.</p>
             <p class="sp-hint sp-hint-mode" id="menuGraphicsModeInfo" data-i18n="settings.performance.currentMode">Obecny tryb: —</p>
           </div>
+
+          <div class="sp-conditional is-hidden" id="menuCustomGraphicsSection">
+            <div class="sp-group-title" data-i18n="settings.customGraphics.title">Grafika (zaawansowane)</div>
+            <div class="sp-group">
+              <div class="sp-toggle-row">
+                <div class="sp-toggle-info"><span class="sp-toggle-name" data-i18n="settings.customGraphics.antialias">Antyaliasing</span></div>
+                <label class="sp-switch"><input id="menuCustomAntialias" type="checkbox"><span class="sp-knob"></span></label>
+              </div>
+              <div class="sp-toggle-row">
+                <div class="sp-toggle-info"><span class="sp-toggle-name" data-i18n="settings.customGraphics.reflections">Odbicia podłogi</span></div>
+                <label class="sp-switch"><input id="menuCustomReflections" type="checkbox"><span class="sp-knob"></span></label>
+              </div>
+              <div class="sp-toggle-row">
+                <div class="sp-toggle-info"><span class="sp-toggle-name" data-i18n="settings.customGraphics.floorGlows">Poświata podłogi</span></div>
+                <label class="sp-switch"><input id="menuCustomFloorGlows" type="checkbox"><span class="sp-knob"></span></label>
+              </div>
+              <div class="sp-toggle-row">
+                <div class="sp-toggle-info"><span class="sp-toggle-name" data-i18n="settings.customGraphics.saberGlints">Błyski na mieczach</span></div>
+                <label class="sp-switch"><input id="menuCustomSaberGlints" type="checkbox"><span class="sp-knob"></span></label>
+              </div>
+              <div class="sp-toggle-row">
+                <div class="sp-toggle-info"><span class="sp-toggle-name" data-i18n="settings.customGraphics.backgroundShader">Shader tła</span></div>
+                <label class="sp-switch"><input id="menuCustomBackgroundShader" type="checkbox"><span class="sp-knob"></span></label>
+              </div>
+              <div class="sp-toggle-row">
+                <div class="sp-toggle-info"><span class="sp-toggle-name" data-i18n="settings.customGraphics.fog">Mgła</span></div>
+                <label class="sp-switch"><input id="menuCustomFog" type="checkbox"><span class="sp-knob"></span></label>
+              </div>
+              <div class="sp-toggle-row">
+                <div class="sp-toggle-info"><span class="sp-toggle-name" data-i18n="settings.customGraphics.grid">Siatka podłogi</span></div>
+                <label class="sp-switch"><input id="menuCustomGrid" type="checkbox"><span class="sp-knob"></span></label>
+              </div>
+              <div class="sp-row">
+                <span class="sp-label" data-i18n="settings.customGraphics.hitShards">Liczba odłamków</span>
+                <div class="sp-slider-wrap"><input id="menuCustomHitShards" type="range" min="0" max="7" step="1"></div>
+                <span class="sp-value" id="menuCustomHitShardsValue">2</span>
+              </div>
+              <div class="sp-row">
+                <span class="sp-label" data-i18n="settings.customGraphics.renderScale">Skala renderu</span>
+                <div class="sp-slider-wrap"><input id="menuCustomRenderScale" type="range" min="0.5" max="1.5" step="0.05"></div>
+                <span class="sp-value" id="menuCustomRenderScaleValue">100%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sp-group-title" data-i18n="settings.musicEffects.title">Efekty muzyczne</div>
+          <div class="sp-group">
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.musicEffects.enabled">Efekty muzyczne</span>
+                <span class="sp-toggle-desc" data-i18n="settings.musicEffects.enabledDesc">Pulsowanie tunelu i inne efekty reagujące na muzykę.</span>
+              </div>
+              <label class="sp-switch"><input id="menuMusicReactive" type="checkbox"><span class="sp-knob"></span></label>
+            </div>
+            <div class="sp-toggle-row sp-choice-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.musicEffects.intensityMode">Intensywność</span>
+                <span class="sp-toggle-desc" data-i18n="settings.musicEffects.intensityModeDesc">Auto dobiera siłę efektów do utworu i wydajności PC.</span>
+              </div>
+              <div class="sp-segmented" role="group" aria-label="Intensywność efektów muzycznych">
+                <button type="button" class="sp-seg" id="btnMusicIntensityAuto" data-i18n="settings.musicEffects.auto">AUTO</button>
+                <button type="button" class="sp-seg" id="btnMusicIntensityManual" data-i18n="settings.musicEffects.manual">RĘCZNIE</button>
+              </div>
+            </div>
+            <div class="sp-row is-hidden" id="menuMusicIntensityManualRow">
+              <span class="sp-label" data-i18n="settings.musicEffects.intensity">Siła efektów</span>
+              <div class="sp-slider-wrap"><input id="menuMusicReactiveIntensity" type="range" min="0" max="1.5" step="0.1"></div>
+              <span class="sp-value" id="menuMusicReactiveIntensityValue">1.0×</span>
+            </div>
+          </div>
         </div>
 
         <!-- TAB: JĘZYK -->
