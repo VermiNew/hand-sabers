@@ -1,7 +1,9 @@
 import { THEME } from '../core/theme.ts';
+import { getSettings } from '../core/settings.ts';
 import { getBeatHitTimeSec } from '../core/timing.ts';
 import { getMusicFrequencyLevels } from './audio.ts';
 import { getSaberColor, THREE, scene } from './scene.ts';
+import type { MusicFrequencyLevels } from './audio.ts';
 import type { Beat, PerformanceProfile } from '../types/index.js';
 
 interface MusicVisualizerFrame {
@@ -59,6 +61,18 @@ const PORTAL_COUNTS: Record<string, number> = {
   high: 3,
   ultra: 4,
   maximum: 5,
+  custom: 3,
+};
+
+const TIER_INTENSITY: Record<string, number> = {
+  lowest: 0,
+  'very-low': 0,
+  low: 0,
+  medium: 0.7,
+  high: 1,
+  ultra: 1.2,
+  maximum: 1.35,
+  custom: 1,
 };
 
 let beatSource: Beat[] | null = null;
@@ -66,6 +80,22 @@ let beatTimes: number[] = [];
 let nextBeatIndex = 0;
 let lastSongTimeSec: number | null = null;
 let beatPulse = 0;
+let runningPeakBass = 0.4;
+let musicVisualsEnabled = false;
+
+export function getEffectiveMusicIntensity(
+  energy: MusicFrequencyLevels,
+  profile: PerformanceProfile,
+): number {
+  const settings = getSettings();
+  if (settings.musicReactiveIntensityMode === 'manual') {
+    return Math.max(0, Math.min(1.5, settings.musicReactiveIntensity ?? 1));
+  }
+  runningPeakBass = Math.max(energy.bass, runningPeakBass * 0.999);
+  const normalizedBass = runningPeakBass > 0.05 ? Math.min(1.4, 1 / runningPeakBass) : 1;
+  const tierMultiplier = TIER_INTENSITY[profile.qualityMode] ?? 1;
+  return Math.max(0, Math.min(1.5, tierMultiplier * normalizedBass));
+}
 
 function findNextBeatIndex(songTimeSec: number): number {
   let low = 0;
@@ -112,26 +142,44 @@ export function resetMusicVisualizer(): void {
   nextBeatIndex = 0;
   lastSongTimeSec = null;
   beatPulse = 0;
+  runningPeakBass = 0.4;
+  musicVisualsEnabled = false;
+  portals.count = 0;
+  portals.visible = false;
+  portalMaterial.opacity = 0;
 }
 
 export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
+  const settings = getSettings();
+  const enabled = frame.active && frame.profile.musicReactive && settings.musicReactiveEnabled;
+  if (!enabled) {
+    if (musicVisualsEnabled) resetMusicVisualizer();
+    beatPulse = 0;
+    portals.count = 0;
+    portals.visible = false;
+    portalMaterial.opacity = 0;
+    musicVisualsEnabled = false;
+    return;
+  }
+  musicVisualsEnabled = true;
   syncPortalColors();
   syncBeatTimeline(frame.beats, frame.songTimeSec);
   beatPulse *= Math.exp(-7.5 * Math.max(0, frame.deltaSec));
 
-  const portalCount = frame.active ? PORTAL_COUNTS[frame.profile.qualityMode] ?? 2 : 0;
+  const portalCount = PORTAL_COUNTS[frame.profile.qualityMode] ?? 2;
   const levels = getMusicFrequencyLevels();
+  const intensity = getEffectiveMusicIntensity(levels, frame.profile);
   portals.count = portalCount;
-  portals.visible = portalCount > 0;
-  portalMaterial.opacity = Math.min(0.42, 0.065 + levels.overall * 0.2 + beatPulse * 0.24);
+  portals.visible = portalCount > 0 && intensity > 0.001;
+  portalMaterial.opacity = Math.min(0.42, (0.065 + levels.overall * 0.2 + beatPulse * 0.24) * intensity);
 
   for (let index = 0; index < portalCount; index++) {
     const wave = 0.5 + Math.sin(frame.nowSec * 2.4 - index * 0.72) * 0.5;
     const localPulse = beatPulse * (0.62 + wave * 0.38);
-    const scale = 1 + levels.bass * 0.055 + localPulse * 0.035;
+    const scale = 1 + (levels.bass * 0.055 + localPulse * 0.035) * intensity;
     portalTransform.position.set(0, 1.7, -6.5 - index * PORTAL_SPACING);
-    portalTransform.scale.set(scale, (0.7 + levels.mid * 0.025) * scale, 1);
-    portalTransform.rotation.set(0, 0, Math.sin(frame.nowSec * 0.3 + index * 0.5) * (0.01 + levels.treble * 0.018));
+    portalTransform.scale.set(scale, (0.7 + levels.mid * 0.025 * intensity) * scale, 1);
+    portalTransform.rotation.set(0, 0, Math.sin(frame.nowSec * 0.3 + index * 0.5) * (0.01 + levels.treble * 0.018) * intensity);
     portalTransform.updateMatrix();
     portals.setMatrixAt(index, portalTransform.matrix);
   }

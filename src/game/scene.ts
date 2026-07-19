@@ -17,25 +17,30 @@ declare global {
   }
 }
 
-const canvas3d = document.getElementById('gameCanvas') as HTMLCanvasElement;
+let canvas3d = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const initialSettings    = loadSettings();
 const initialPerfProfile = getPerformanceProfile(initialSettings);
 let perfProfile          = initialPerfProfile;
 
-export const renderer = new THREE.WebGLRenderer({
-  canvas:          canvas3d,
-  antialias:       initialPerfProfile.antialias,
-  alpha:           false,
-  powerPreference: 'high-performance',
-  stencil:         false,
-  depth:           true,
-});
-renderer.setPixelRatio(clampDpr(window.devicePixelRatio || 1, initialPerfProfile));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled   = false;
-renderer.toneMapping         = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = ['lowest', 'very-low', 'low'].includes(initialPerfProfile.qualityMode) ? 1.0 : 1.2;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
+function createRenderer(canvas: HTMLCanvasElement, profile: PerformanceProfile): THREE.WebGLRenderer {
+  const nextRenderer = new THREE.WebGLRenderer({
+    canvas,
+    antialias: profile.antialias,
+    alpha: false,
+    powerPreference: 'high-performance',
+    stencil: false,
+    depth: true,
+  });
+  nextRenderer.setPixelRatio(clampDpr(window.devicePixelRatio || 1, profile));
+  nextRenderer.setSize(window.innerWidth, window.innerHeight);
+  nextRenderer.shadowMap.enabled = false;
+  nextRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  nextRenderer.toneMappingExposure = ['lowest', 'very-low', 'low'].includes(profile.qualityMode) ? 1.0 : 1.2;
+  nextRenderer.outputColorSpace = THREE.SRGBColorSpace;
+  return nextRenderer;
+}
+
+export let renderer = createRenderer(canvas3d, initialPerfProfile);
 
 export const scene = new THREE.Scene();
 scene.background = new THREE.Color(THEME.dark);
@@ -575,6 +580,19 @@ function applyActiveProfileDpr(targetDpr: number | null = null): void {
   publishGraphicsStatus();
 }
 
+function applyRendererAntialias(): void {
+  const currentAntialias = Boolean(renderer.getContext().getContextAttributes()?.antialias);
+  if (currentAntialias === perfProfile.antialias) return;
+
+  const previousRenderer = renderer;
+  const nextCanvas = canvas3d.cloneNode(false) as HTMLCanvasElement;
+  canvas3d.replaceWith(nextCanvas);
+  canvas3d = nextCanvas;
+  renderer = createRenderer(canvas3d, perfProfile);
+  previousRenderer.dispose();
+  window.dispatchEvent(new CustomEvent('hand-sabers:renderer-canvas-replaced', { detail: canvas3d }));
+}
+
 export function setScenePerformanceProfile(settingsOrProfile: Settings | PerformanceProfile = {} as Settings): void {
   perfProfile      = (settingsOrProfile as PerformanceProfile).camera
     ? { ...(settingsOrProfile as PerformanceProfile) }
@@ -582,6 +600,7 @@ export function setScenePerformanceProfile(settingsOrProfile: Settings | Perform
   autoSlowChecks       = 0;
   autoFastChecks       = 0;
   lastAutoTierChangeAt = performance.now();
+  applyRendererAntialias();
   applyActiveProfileDpr();
 }
 

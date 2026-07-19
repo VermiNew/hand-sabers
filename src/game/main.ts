@@ -827,8 +827,7 @@ function handleKeydown(e: KeyboardEvent): void {
 }
 
 // ── Wczytanie mapy (drag & drop na ekranie gry) ───────────────────────────────
-function initMapDrop(): void {
-  const canvas = document.getElementById('gameCanvas')!;
+function bindMapDrop(canvas: HTMLElement): void {
   canvas.addEventListener('dragover', e => e.preventDefault());
   canvas.addEventListener('drop', async (e: DragEvent) => {
     e.preventDefault();
@@ -863,6 +862,15 @@ function initMapDrop(): void {
       console.error('Map load error:', err);
       if (ui.dStatus) ui.dStatus.textContent = `MAP ERROR: ${(err as Error).message}`;
     }
+  });
+}
+
+function initMapDrop(): void {
+  const canvas = document.getElementById('gameCanvas');
+  if (canvas) bindMapDrop(canvas);
+  window.addEventListener('hand-sabers:renderer-canvas-replaced', event => {
+    const nextCanvas = (event as CustomEvent<HTMLCanvasElement>).detail;
+    if (nextCanvas) bindMapDrop(nextCanvas);
   });
 }
 
@@ -1024,6 +1032,24 @@ function initMainMenu(): void {
   const beatLimitInput   = document.getElementById('menuBeatLimit') as HTMLInputElement | null;
   const flipCameraInput  = document.getElementById('menuFlipCamera')as HTMLInputElement | null;
   const performanceInput = document.getElementById('menuPerformanceMode') as HTMLSelectElement | null;
+  const customGraphicsSection = document.getElementById('menuCustomGraphicsSection');
+  const customAntialiasInput = document.getElementById('menuCustomAntialias') as HTMLInputElement | null;
+  const customReflectionsInput = document.getElementById('menuCustomReflections') as HTMLInputElement | null;
+  const customFloorGlowsInput = document.getElementById('menuCustomFloorGlows') as HTMLInputElement | null;
+  const customSaberGlintsInput = document.getElementById('menuCustomSaberGlints') as HTMLInputElement | null;
+  const customBackgroundShaderInput = document.getElementById('menuCustomBackgroundShader') as HTMLInputElement | null;
+  const customFogInput = document.getElementById('menuCustomFog') as HTMLInputElement | null;
+  const customGridInput = document.getElementById('menuCustomGrid') as HTMLInputElement | null;
+  const customHitShardsInput = document.getElementById('menuCustomHitShards') as HTMLInputElement | null;
+  const customHitShardsValue = document.getElementById('menuCustomHitShardsValue');
+  const customRenderScaleInput = document.getElementById('menuCustomRenderScale') as HTMLInputElement | null;
+  const customRenderScaleValue = document.getElementById('menuCustomRenderScaleValue');
+  const musicReactiveInput = document.getElementById('menuMusicReactive') as HTMLInputElement | null;
+  const musicIntensityAutoButton = document.getElementById('btnMusicIntensityAuto');
+  const musicIntensityManualButton = document.getElementById('btnMusicIntensityManual');
+  const musicIntensityManualRow = document.getElementById('menuMusicIntensityManualRow');
+  const musicReactiveIntensityInput = document.getElementById('menuMusicReactiveIntensity') as HTMLInputElement | null;
+  const musicReactiveIntensityValue = document.getElementById('menuMusicReactiveIntensityValue');
   const trackingSourceInput = document.getElementById('menuTrackingSource') as HTMLSelectElement | null;
   const trackingSourceHint = document.getElementById('menuTrackingSourceHint');
   const performanceHint  = document.getElementById('menuPerformanceHint');
@@ -1176,6 +1202,75 @@ function initMainMenu(): void {
         : connected ? 'remoteTracking.sourceAutoPhone' : 'remoteTracking.sourceAutoCamera';
     trackingSourceHint.textContent = t(key);
     trackingSourceHint.classList.toggle('is-error', source === 'phone' && !connected);
+  }
+
+  function updateCustomGraphicsVisibility(): void {
+    customGraphicsSection?.classList.toggle('is-hidden', performanceInput?.value !== 'custom');
+  }
+
+  function updateMusicIntensityMode(): void {
+    const manual = settings.musicReactiveIntensityMode === 'manual';
+    musicIntensityAutoButton?.classList.toggle('is-active', !manual);
+    musicIntensityManualButton?.classList.toggle('is-active', manual);
+    musicIntensityAutoButton?.setAttribute('aria-pressed', String(!manual));
+    musicIntensityManualButton?.setAttribute('aria-pressed', String(manual));
+    musicIntensityManualRow?.classList.toggle('is-hidden', !manual);
+    if (musicReactiveIntensityInput) musicReactiveIntensityInput.disabled = !manual;
+  }
+
+  function applyLivePerformanceSettings(): void {
+    setScenePerformanceProfile(settings);
+    updateGraphicsModeInfo();
+  }
+
+  type CustomBooleanSetting =
+    | 'customAntialias'
+    | 'customReflections'
+    | 'customFloorGlows'
+    | 'customSaberGlints'
+    | 'customBackgroundShader'
+    | 'customFog'
+    | 'customGrid';
+
+  function bindCustomToggle(input: HTMLInputElement | null, key: CustomBooleanSetting): void {
+    if (!input) return;
+    input.checked = settings[key];
+    input.addEventListener('change', () => {
+      settings[key] = input.checked;
+      setSetting(key, input.checked);
+      if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
+    });
+  }
+
+  function syncAdvancedSettings(): void {
+    const customToggles: Array<[HTMLInputElement | null, CustomBooleanSetting]> = [
+      [customAntialiasInput, 'customAntialias'],
+      [customReflectionsInput, 'customReflections'],
+      [customFloorGlowsInput, 'customFloorGlows'],
+      [customSaberGlintsInput, 'customSaberGlints'],
+      [customBackgroundShaderInput, 'customBackgroundShader'],
+      [customFogInput, 'customFog'],
+      [customGridInput, 'customGrid'],
+    ];
+    for (const [input, key] of customToggles) if (input) input.checked = settings[key];
+    if (customHitShardsInput) {
+      customHitShardsInput.value = String(settings.customHitShards);
+      updateRangeProgress(customHitShardsInput);
+    }
+    if (customHitShardsValue) customHitShardsValue.textContent = String(settings.customHitShards);
+    if (customRenderScaleInput) {
+      customRenderScaleInput.value = String(settings.customRenderScale);
+      updateRangeProgress(customRenderScaleInput);
+    }
+    if (customRenderScaleValue) customRenderScaleValue.textContent = `${Math.round(settings.customRenderScale * 100)}%`;
+    if (musicReactiveInput) musicReactiveInput.checked = settings.musicReactiveEnabled;
+    if (musicReactiveIntensityInput) {
+      musicReactiveIntensityInput.value = String(settings.musicReactiveIntensity);
+      updateRangeProgress(musicReactiveIntensityInput);
+    }
+    if (musicReactiveIntensityValue) musicReactiveIntensityValue.textContent = `${settings.musicReactiveIntensity.toFixed(1)}×`;
+    updateCustomGraphicsVisibility();
+    updateMusicIntensityMode();
   }
 
   const allNavItems = [...document.querySelectorAll<HTMLElement>('.main-nav-item')];
@@ -1371,6 +1466,7 @@ function initMainMenu(): void {
       .map(mode => `<option value="${mode.value}">${mode.label}</option>`)
       .join('');
     performanceInput.value = getPerformanceMode(settings);
+    updateCustomGraphicsVisibility();
     updatePerformanceHint();
     performanceInput.addEventListener('change', () => {
       const value = performanceInput.value as PerformanceMode;
@@ -1381,9 +1477,61 @@ function initMainMenu(): void {
       applyTrackingSettings({ performanceMode: value });
       const profile = getPerformanceProfile(settings);
       if (ui.dStatus) ui.dStatus.textContent = `PERF: ${profile.label}`;
+      updateCustomGraphicsVisibility();
       updatePerformanceHint();
     });
   }
+
+  bindCustomToggle(customAntialiasInput, 'customAntialias');
+  bindCustomToggle(customReflectionsInput, 'customReflections');
+  bindCustomToggle(customFloorGlowsInput, 'customFloorGlows');
+  bindCustomToggle(customSaberGlintsInput, 'customSaberGlints');
+  bindCustomToggle(customBackgroundShaderInput, 'customBackgroundShader');
+  bindCustomToggle(customFogInput, 'customFog');
+  bindCustomToggle(customGridInput, 'customGrid');
+
+  customHitShardsInput?.addEventListener('input', () => {
+    const value = Math.max(0, Math.min(7, Math.round(Number(customHitShardsInput.value))));
+    settings.customHitShards = value;
+    setSetting('customHitShards', value);
+    updateRangeProgress(customHitShardsInput);
+    if (customHitShardsValue) customHitShardsValue.textContent = String(value);
+    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
+  });
+
+  customRenderScaleInput?.addEventListener('input', () => {
+    const value = Math.max(0.5, Math.min(1.5, Number(customRenderScaleInput.value)));
+    settings.customRenderScale = value;
+    setSetting('customRenderScale', value);
+    updateRangeProgress(customRenderScaleInput);
+    if (customRenderScaleValue) customRenderScaleValue.textContent = `${Math.round(value * 100)}%`;
+    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
+  });
+
+  musicReactiveInput?.addEventListener('change', () => {
+    settings.musicReactiveEnabled = musicReactiveInput.checked;
+    setSetting('musicReactiveEnabled', musicReactiveInput.checked);
+    applyLivePerformanceSettings();
+  });
+
+  function setMusicIntensityMode(mode: Settings['musicReactiveIntensityMode']): void {
+    settings.musicReactiveIntensityMode = mode;
+    setSetting('musicReactiveIntensityMode', mode);
+    updateMusicIntensityMode();
+    applyLivePerformanceSettings();
+  }
+
+  musicIntensityAutoButton?.addEventListener('click', () => setMusicIntensityMode('auto'));
+  musicIntensityManualButton?.addEventListener('click', () => setMusicIntensityMode('manual'));
+  musicReactiveIntensityInput?.addEventListener('input', () => {
+    const value = Math.max(0, Math.min(1.5, Number(musicReactiveIntensityInput.value)));
+    settings.musicReactiveIntensity = value;
+    setSetting('musicReactiveIntensity', value);
+    updateRangeProgress(musicReactiveIntensityInput);
+    if (musicReactiveIntensityValue) musicReactiveIntensityValue.textContent = `${value.toFixed(1)}×`;
+    applyLivePerformanceSettings();
+  });
+  syncAdvancedSettings();
 
   if (developerModeInput) {
     developerModeInput.checked = Boolean(settings.developerMode) || isDeveloperPanelEnabled();
@@ -1606,6 +1754,7 @@ function initMainMenu(): void {
       performanceInput.value = settings.performanceMode;
       emit(performanceInput, 'change');
     }
+    syncAdvancedSettings();
     if (trackingSourceInput) {
       trackingSourceInput.value = settings.trackingSource;
       emit(trackingSourceInput, 'change');
