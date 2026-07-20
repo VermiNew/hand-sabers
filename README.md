@@ -173,3 +173,15 @@ Allowed values:
 - Make sure your hands are clearly visible.
 - Avoid strong backlighting.
 - If left and right sides are swapped, enable **Flip camera sides** in Settings.
+
+## OpenAI Build Week 2026
+
+During OpenAI Build Week, I used Codex with GPT-5.6 to extend Hand Sabers
+with new tracking, multiplayer, editor, visual, performance, and reliability
+improvements.
+
+Codex helped me inspect the codebase, implement focused changes, refactor
+larger systems, investigate bugs, and validate the result. I remained
+responsible for product decisions, code review, and gameplay testing.
+
+The dated commit history documents the work completed during the submission period.
