@@ -1,3 +1,4 @@
+import { t } from '../i18n/index.ts';
 import type { PerformanceMode, PerformanceProfile } from '../types/index.js';
 
 export const GRAPHICS_TIERS = ['lowest', 'very-low', 'low', 'medium', 'high', 'ultra', 'maximum'] as const;
@@ -39,12 +40,16 @@ const LEGACY_MODE_MAP: Record<string, PerformanceMode> = {
   quality: 'ultra',
 };
 
+function getProfileDescription(tier: GraphicsTier): string {
+  return t(`performance.desc.${tier}`);
+}
+
 const PROFILES = {
   lowest: {
     mode: 'lowest',
     qualityMode: 'lowest',
     label: 'Lowest',
-    description: 'Najlżejszy tryb awaryjny: ekstremalnie niska rozdzielczość renderu, minimum efektów i najniższe obciążenie kamery/ML.',
+    get description() { return getProfileDescription('lowest'); },
     targetFps: 60,
     minDpr: 0.32,
     maxDpr: 0.45,
@@ -66,7 +71,7 @@ const PROFILES = {
     mode: 'very-low',
     qualityMode: 'very-low',
     label: 'Very Low',
-    description: 'Bardzo lekki tryb dla słabszych laptopów i zintegrowanych GPU: niska rozdzielczość, wyłączone ozdobniki i mniejszy koszt trackingu.',
+    get description() { return getProfileDescription('very-low'); },
     targetFps: 60,
     minDpr: 0.38,
     maxDpr: 0.56,
@@ -88,7 +93,7 @@ const PROFILES = {
     mode: 'low',
     qualityMode: 'low',
     label: 'Low',
-    description: 'Na słabe sprzęty: minimalne efekty, niskie obciążenie GPU i stabilny FPS.',
+    get description() { return getProfileDescription('low'); },
     targetFps: 60,
     minDpr: 0.48,
     maxDpr: 0.68,
@@ -110,7 +115,7 @@ const PROFILES = {
     mode: 'medium',
     qualityMode: 'medium',
     label: 'Medium',
-    description: 'Na średnie sprzęty: czytelny obraz, lekki shader tła i umiarkowane efekty.',
+    get description() { return getProfileDescription('medium'); },
     targetFps: 60,
     minDpr: 0.62,
     maxDpr: 0.9,
@@ -132,7 +137,7 @@ const PROFILES = {
     mode: 'high',
     qualityMode: 'high',
     label: 'High',
-    description: 'Na sprzęty średnio-dobre: wyższa ostrość, odbicia światła i pełniejsze efekty.',
+    get description() { return getProfileDescription('high'); },
     targetFps: 60,
     minDpr: 0.75,
     maxDpr: 1.08,
@@ -154,7 +159,7 @@ const PROFILES = {
     mode: 'ultra',
     qualityMode: 'ultra',
     label: 'Ultra',
-    description: 'Na dobre sprzęty: odbicia podłogi, wysoka ostrość i komplet efektów.',
+    get description() { return getProfileDescription('ultra'); },
     targetFps: 60,
     minDpr: 0.9,
     maxDpr: 1.3,
@@ -176,7 +181,7 @@ const PROFILES = {
     mode: 'maximum',
     qualityMode: 'maximum',
     label: 'Maximum',
-    description: 'Najlepsze ustawienia graficzne: najwyższa rozdzielczość renderu i najbogatsze efekty.',
+    get description() { return getProfileDescription('maximum'); },
     targetFps: 60,
     minDpr: 1.0,
     maxDpr: 1.75,
@@ -267,8 +272,8 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
       ...profile,
       mode: 'auto',
       qualityMode: profile.qualityMode,
-      label: `Auto -> ${profile.label}`,
-      description: 'Auto dobiera profil do sprzętu i reguluje jakość w trakcie gry, gdy FPS spada albo jest duży zapas.',
+      label: t('performance.autoArrow', { label: profile.label }),
+      description: t('performance.autoDesc'),
       auto: true,
     };
   }
@@ -276,8 +281,8 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
     return {
       mode: 'custom',
       qualityMode: 'custom',
-      label: 'Custom',
-      description: 'Własna konfiguracja efektów graficznych.',
+      label: t('performance.customLabel'),
+      description: t('performance.customDesc'),
       targetFps: 60,
       minDpr: 0.32,
       maxDpr: Math.max(0.32, Math.min(1.75, settings.customRenderScale ?? 1)),
@@ -302,7 +307,7 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
 
 export function getPerformanceModes(): PerformanceModeOption[] {
   return [
-    { value: 'auto', label: 'Auto (domyślnie)', description: 'Sam sprawdza sprzęt i reguluje jakość w trakcie gry.' },
+    { value: 'auto', label: t('performance.autoLabel'), description: t('performance.autoDesc') },
     { value: 'lowest', label: 'Lowest', description: PROFILES.lowest.description },
     { value: 'very-low', label: 'Very Low', description: PROFILES['very-low'].description },
     { value: 'low', label: 'Low', description: PROFILES.low.description },
@@ -310,7 +315,7 @@ export function getPerformanceModes(): PerformanceModeOption[] {
     { value: 'high', label: 'High', description: PROFILES.high.description },
     { value: 'ultra', label: 'Ultra', description: PROFILES.ultra.description },
     { value: 'maximum', label: 'Maximum', description: PROFILES.maximum.description },
-    { value: 'custom', label: 'Custom', description: 'Ustaw każdy efekt graficzny osobno.' },
+    { value: 'custom', label: t('performance.customLabel'), description: t('performance.customDesc') },
   ];
 }
 

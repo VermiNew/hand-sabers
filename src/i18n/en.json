@@ -341,7 +341,39 @@
     "sortNewest": "Newest",
     "sortAlpha": "Alphabetical",
     "sortBeats": "Beats (descending)",
-    "sortScore": "Best score"
+    "sortScore": "Best score",
+    "noResultsTitle": "NO RESULTS",
+    "noResultsSub": "Change filters or search term.",
+    "noMapsTitle": "NO MAPS",
+    "noMapsSub": "You don't have any maps yet.",
+    "createFirst": "Create your first map",
+    "selectFromList": "SELECT A MAP FROM THE LIST",
+    "bestScore": "BEST SCORE",
+    "triesCount": "{{count}} attempts",
+    "previewHint": "Select a map to hear a preview",
+    "preview": "Preview",
+    "previewDuration": "Preview duration",
+    "previewVolume": "Preview vol",
+    "statTime": "TIME",
+    "statBeats": "BEATS",
+    "statSource": "SOURCE",
+    "sourceLocal": "LOCAL",
+    "sourceServer": "SERVER",
+    "exportBtn": "EXPORT",
+    "deleteBtn": "DELETE",
+    "noScoresFirst": "No scores yet — be the first to play!",
+    "noScoresTitle": "NO SCORES",
+    "noScoresSub": "Play a few maps to see scores.",
+    "localSuffix": "LOCAL",
+    "deleteConfirmText": "Delete map \"{{id}}\"?",
+    "deleteConfirmTitle": "Delete map",
+    "deleteSuccess": "Map deleted",
+    "deleteServerFail": "Deleted locally (server did not respond)",
+    "exportSuccess": "Export ready",
+    "exportFail": "Export failed — server unavailable?",
+    "exportLocalSuccess": "Local export ready",
+    "exportLocalFail": "Local export failed",
+    "beatsCount": "{{count}} beats"
   },
   "creator": {
     "title": "MAP CREATOR",
@@ -561,5 +593,28 @@
     "holdStill": "Hold position…",
     "ok": "OK",
     "notOk": "NO"
+  },
+  "narrator": {
+    "hint": "← → arrows · Enter"
+  },
+  "player": {
+    "defaultName": "Player"
+  },
+  "performance": {
+    "autoLabel": "Auto (default)",
+    "autoDesc": "Automatically checks hardware and adjusts quality during gameplay when FPS drops or there is headroom.",
+    "autoArrow": "Auto → {{label}}",
+    "customLabel": "Custom",
+    "customDesc": "Configure each graphics effect individually.",
+    "activeProfile": " Active: {{mode}}.",
+    "desc": {
+      "lowest": "Emergency mode: extremely low render resolution, minimum effects and lowest camera/ML load.",
+      "very-low": "Very light mode for weaker laptops and integrated GPUs: low resolution, decorations disabled and reduced tracking cost.",
+      "low": "For weak hardware: minimal effects, low GPU load and stable FPS.",
+      "medium": "For mid-range hardware: clear image, light background shader and moderate effects.",
+      "high": "For mid-to-good hardware: higher sharpness, light reflections and fuller effects.",
+      "ultra": "For good hardware: floor reflections, high sharpness and all effects.",
+      "maximum": "Best graphics settings: highest render resolution and richest effects."
+    }
   }
 }

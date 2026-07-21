@@ -150,7 +150,7 @@ async function submitScore(progress?: number, trainingMode = settings.trainingMo
 
   const payload = {
     mapId:  state.map?.id ?? 'random',
-    player: settings.playerName || 'Gracz',
+    player: settings.playerName || t('player.defaultName'),
     score:  state.score,
     combo:  state.maxCombo,
     date:   new Date().toISOString(),
@@ -1458,7 +1458,7 @@ function initMainMenu(): void {
     const updatePerformanceHint = () => {
       if (!performanceHint) return;
       const mode        = getPerformanceMode({ performanceMode: performanceInput.value } as Settings);
-      const activeProfile = window.__graphicsQualityMode ? ` Aktywnie: ${window.__graphicsQualityMode}.` : '';
+      const activeProfile = window.__graphicsQualityMode ? t('performance.activeProfile', { mode: window.__graphicsQualityMode }) : '';
       performanceHint.textContent = `${getPerformanceModeDescription(mode)}${mode === 'auto' ? activeProfile : ''}`;
       updateGraphicsModeInfo();
     };

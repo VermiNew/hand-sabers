@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.ts';
+
 const LOCAL_MAPS_KEY = 'hs_local_maps';
 const LOCAL_SCORES_KEY = 'hs_local_scores';
 const AUDIO_DB_NAME = 'hs_audio_store';
@@ -115,7 +117,7 @@ export function appendLocalScore(score: LocalScoreInput | null | undefined): voi
   const scores = readLocalScores({ limit: 500 });
   scores.push({
     mapId: score.mapId || 'random',
-    player: score.player || 'Gracz',
+    player: score.player || t('player.defaultName'),
     score: Math.max(0, Math.floor(score.score || 0)),
     combo: Math.max(0, Math.floor(score.combo || 0)),
     date: score.date || new Date().toISOString(),

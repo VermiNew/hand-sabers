@@ -341,7 +341,39 @@
     "sortNewest": "Najnowsze",
     "sortAlpha": "Alfabetycznie",
     "sortBeats": "Beatów (malejąco)",
-    "sortScore": "Najlepszy wynik"
+    "sortScore": "Najlepszy wynik",
+    "noResultsTitle": "BRAK WYNIKÓW",
+    "noResultsSub": "Zmień filtry lub wyszukiwaną frazę.",
+    "noMapsTitle": "BRAK MAP",
+    "noMapsSub": "Nie masz jeszcze żadnych map.",
+    "createFirst": "Stwórz pierwszą mapę",
+    "selectFromList": "WYBIERZ MAPĘ Z LISTY",
+    "bestScore": "NAJLEPSZY WYNIK",
+    "triesCount": "{{count}} prób",
+    "previewHint": "Wybierz mapę, aby usłyszeć preview",
+    "preview": "Preview",
+    "previewDuration": "Czas preview",
+    "previewVolume": "Głośność",
+    "statTime": "CZAS",
+    "statBeats": "BEATY",
+    "statSource": "ŹRÓDŁO",
+    "sourceLocal": "LOCAL",
+    "sourceServer": "SERVER",
+    "exportBtn": "EKSPORT",
+    "deleteBtn": "USUŃ",
+    "noScoresFirst": "Brak wyników — zagraj jako pierwszy!",
+    "noScoresTitle": "BRAK WYNIKÓW",
+    "noScoresSub": "Zagraj kilka map, aby zobaczyć wyniki.",
+    "localSuffix": "LOCAL",
+    "deleteConfirmText": "Usunąć mapę \"{{id}}\"?",
+    "deleteConfirmTitle": "Usuń mapę",
+    "deleteSuccess": "Mapa usunięta",
+    "deleteServerFail": "Usunięto lokalnie (serwer nie odpowiedział)",
+    "exportSuccess": "Eksport gotowy",
+    "exportFail": "Eksport nie powiódł się — brak serwera?",
+    "exportLocalSuccess": "Eksport lokalny gotowy",
+    "exportLocalFail": "Eksport lokalny nie powiódł się",
+    "beatsCount": "{{count}} beatów"
   },
   "creator": {
     "title": "MAP CREATOR",
@@ -561,5 +593,28 @@
     "holdStill": "Trzymaj pozycję…",
     "ok": "OK",
     "notOk": "NIE"
+  },
+  "narrator": {
+    "hint": "← → strzałki · Enter"
+  },
+  "player": {
+    "defaultName": "Gracz"
+  },
+  "performance": {
+    "autoLabel": "Auto (domyślnie)",
+    "autoDesc": "Sam sprawdza sprzęt i reguluje jakość w trakcie gry, gdy FPS spada albo jest duży zapas.",
+    "autoArrow": "Auto → {{label}}",
+    "customLabel": "Custom",
+    "customDesc": "Ustaw każdy efekt graficzny osobno.",
+    "activeProfile": " Aktywnie: {{mode}}.",
+    "desc": {
+      "lowest": "Najlżejszy tryb awaryjny: ekstremalnie niska rozdzielczość renderu, minimum efektów i najniższe obciążenie kamery/ML.",
+      "very-low": "Bardzo lekki tryb dla słabszych laptopów i zintegrowanych GPU: niska rozdzielczość, wyłączone ozdobniki i mniejszy koszt trackingu.",
+      "low": "Na słabe sprzęty: minimalne efekty, niskie obciążenie GPU i stabilny FPS.",
+      "medium": "Na średnie sprzęty: czytelny obraz, lekki shader tła i umiarkowane efekty.",
+      "high": "Na sprzęty średnio-dobre: wyższa ostrość, odbicia światła i pełniejsze efekty.",
+      "ultra": "Na dobre sprzęty: odbicia podłogi, wysoka ostrość i komplet efektów.",
+      "maximum": "Najlepsze ustawienia graficzne: najwyższa rozdzielczość renderu i najbogatsze efekty."
+    }
   }
 }

@@ -99,7 +99,7 @@ function requestErrorMessage(error: unknown): string {
 }
 
 function normalizePlayerName(value: string): string {
-  return value.trim().replace(/\s+/g, ' ').slice(0, 32) || 'Gracz';
+  return value.trim().replace(/\s+/g, ' ').slice(0, 32) || t('player.defaultName');
 }
 
 function websocketUrl(): string {

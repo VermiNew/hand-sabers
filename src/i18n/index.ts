@@ -20,8 +20,8 @@ void i18next.init({
   interpolation: { escapeValue: false },
 });
 
-export function t(key: string): string {
-  return i18next.t(key);
+export function t(key: string, options?: Record<string, unknown>): string {
+  return options ? i18next.t(key, options) : i18next.t(key);
 }
 
 export function setLang(lang: Lang): void {

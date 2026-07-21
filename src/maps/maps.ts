@@ -285,10 +285,10 @@ function renderMapList(maps: MapEntry[]): void {
     container.innerHTML = `
       <div class="empty-state">
         <span class="material-symbols-rounded">search_off</span>
-        <div class="empty-title">${isFiltered ? 'BRAK WYNIKÓW' : 'BRAK MAP'}</div>
-        <div class="empty-sub">${isFiltered ? 'Zmień filtry lub wyszukiwaną frazę.' : 'Nie masz jeszcze żadnych map.'}</div>
+        <div class="empty-title">${isFiltered ? t('maps.noResultsTitle') : t('maps.noMapsTitle')}</div>
+        <div class="empty-sub">${isFiltered ? t('maps.noResultsSub') : t('maps.noMapsSub')}</div>
         ${!isFiltered ? `<a class="empty-cta" href="${withDevQuery('./map-creator.html')}">
-          <span class="material-symbols-rounded">add</span>Stwórz pierwszą mapę</a>` : ''}
+          <span class="material-symbols-rounded">add</span>${t('maps.createFirst')}</a>` : ''}
       </div>`;
     return;
   }
@@ -322,7 +322,7 @@ function renderMapCard(m: MapEntry, i: number, activeIndex: number): string {
     const beats  = m.beats?.length ?? 0;
     const dur    = m.meta?.duration ? formatTime(m.meta.duration) : null;
     const isLocal = m.source === 'local' || m.source === 'autosave';
-    const subParts = [artist, dur ? dur : null, beats ? `${beats} beatów` : null].filter(Boolean);
+    const subParts = [artist, dur ? dur : null, beats ? t('maps.beatsCount', { count: beats }) : null].filter(Boolean);
     const score = getMapScoreData(m.id).best?.score ?? 0;
     const offset = Math.max(-3, Math.min(3, i - activeIndex));
     const absOffset = Math.abs(offset);
@@ -371,7 +371,7 @@ function renderDetail(map: MapEntry | null): void {
     pane.innerHTML = `
       <div class="detail-empty">
         <span class="material-symbols-rounded">arrow_back</span>
-        <div class="detail-empty-hint">WYBIERZ MAPĘ<br>Z LISTY</div>
+        <div class="detail-empty-hint">${t('maps.selectFromList').replace(' ', '<br>')}</div>
       </div>`;
     return;
   }
@@ -388,10 +388,10 @@ function renderDetail(map: MapEntry | null): void {
 
   const scoreSection = sd.best ? `
     <div class="detail-score-section">
-      <div class="detail-score-label">NAJLEPSZY WYNIK</div>
+      <div class="detail-score-label">${t('maps.bestScore')}</div>
       <div class="detail-best-score">${String(sd.best.score).padStart(6, '0')}</div>
       <div class="detail-score-meta">
-        <span><span class="material-symbols-rounded">cycle</span>${sd.tries} prób</span>
+        <span><span class="material-symbols-rounded">cycle</span>${t('maps.triesCount', { count: sd.tries })}</span>
         <span><span class="material-symbols-rounded">local_fire_department</span>×${sd.best.combo} combo</span>
         ${sd.best.player ? `<span><span class="material-symbols-rounded">person</span>${escHtml(sd.best.player)}</span>` : ''}
       </div>
@@ -399,7 +399,7 @@ function renderDetail(map: MapEntry | null): void {
         <div class="detail-progress-wrap">
           <div class="detail-progress-fill" style="width:${Math.round(sd.progress * 100)}%"></div>
         </div>` : ''}
-    </div>` : `<div class="detail-no-score">Brak wyników — zagraj jako pierwszy!</div>`;
+    </div>` : `<div class="detail-no-score">${t('maps.noScoresFirst')}</div>`;
 
   pane.innerHTML = `
     <div class="detail-scroll">
@@ -413,11 +413,11 @@ function renderDetail(map: MapEntry | null): void {
           <div class="preview-panel">
           <div id="previewStatus" class="preview-status" role="status" aria-live="polite">
             <span class="material-symbols-rounded">graphic_eq</span>
-            <span>Wybierz mapę, aby usłyszeć preview</span>
+            <span>${t('maps.previewHint')}</span>
           </div>
           <button id="previewToggle" class="preview-toggle" type="button">
             <span class="material-symbols-rounded">play_arrow</span>
-            <span>Preview</span>
+            <span>${t('maps.preview')}</span>
           </button>
           </div>
           <div class="preview-progress" aria-label="Postęp preview">
@@ -425,23 +425,23 @@ function renderDetail(map: MapEntry | null): void {
               <div id="previewProgressFill" class="preview-progress-fill"></div>
             </div>
             <div class="preview-progress-meta">
-              <span>Preview duration</span>
+              <span>${t('maps.previewDuration')}</span>
               <span id="previewProgressTime">30s</span>
             </div>
           </div>
           <div class="preview-volume-row">
-            <label for="previewVolume">Preview vol</label>
+            <label for="previewVolume">${t('maps.previewVolume')}</label>
             <input id="previewVolume" type="range" min="0" max="100" step="1" value="${mapPreview.getMusicPercent()}">
             <span id="previewVolumeValue">${mapPreview.getMusicPercent()}%</span>
           </div>
 
           <div class="detail-stats">
             <div class="detail-stat">
-              <div class="detail-stat-label">CZAS</div>
+              <div class="detail-stat-label">${t('maps.statTime')}</div>
               <div class="detail-stat-value">${escHtml(dur)}</div>
             </div>
             <div class="detail-stat">
-              <div class="detail-stat-label">BEATY</div>
+              <div class="detail-stat-label">${t('maps.statBeats')}</div>
               <div class="detail-stat-value">${beats}</div>
             </div>
             <div class="detail-stat">
@@ -449,8 +449,8 @@ function renderDetail(map: MapEntry | null): void {
               <div class="detail-stat-value">${escHtml(bpm)}</div>
             </div>
             <div class="detail-stat">
-              <div class="detail-stat-label">ŹRÓDŁO</div>
-              <div class="detail-stat-value" style="font-size:12px">${isLocal ? 'LOCAL' : 'SERVER'}</div>
+              <div class="detail-stat-label">${t('maps.statSource')}</div>
+              <div class="detail-stat-value" style="font-size:12px">${isLocal ? t('maps.sourceLocal') : t('maps.sourceServer')}</div>
             </div>
           </div>
 
@@ -462,18 +462,18 @@ function renderDetail(map: MapEntry | null): void {
 
     <div class="detail-actions">
       <a class="btn-play" href="${withDevQuery(`./beat-sabers-3d.html?map=${encodeURIComponent(map.id)}`)}">
-        <span class="material-symbols-rounded">play_arrow</span>ZAGRAJ
+        <span class="material-symbols-rounded">play_arrow</span>${t('maps.playBtn')}
       </a>
       <div class="detail-secondary-actions">
         <a class="btn-secondary" href="${withDevQuery(`./map-creator.html?id=${encodeURIComponent(map.id)}`)}">
-          <span class="material-symbols-rounded">edit</span>EDYTUJ
+          <span class="material-symbols-rounded">edit</span>${t('maps.editBtn')}
         </a>
         <button class="btn-secondary" id="btnExport" data-id="${attr(map.id)}">
-          <span class="material-symbols-rounded">download</span>EKSPORT
+          <span class="material-symbols-rounded">download</span>${t('maps.exportBtn')}
         </button>
         <button class="btn-secondary danger" id="btnDelete"
                 data-id="${attr(map.id)}" data-server="${canDeleteServer ? '1' : '0'}">
-          <span class="material-symbols-rounded">delete</span>USUŃ
+          <span class="material-symbols-rounded">delete</span>${t('maps.deleteBtn')}
         </button>
       </div>
     </div>`;
@@ -547,8 +547,8 @@ function selectAdjacentMap(direction: -1 | 1): void {
 
 async function deleteMap(id: string, tryServer: boolean): Promise<void> {
   const confirmed = await showConfirm(
-    `Usunąć mapę "${id}"?`,
-    { title: 'Usuń mapę', confirmText: 'USUŃ', cancelText: 'ANULUJ', danger: true }
+    t('maps.deleteConfirmText', { id }),
+    { title: t('maps.deleteConfirmTitle'), confirmText: t('maps.deleteBtn'), cancelText: t('calib.abort'), danger: true }
   );
   if (!confirmed) return;
 
@@ -565,8 +565,8 @@ async function deleteMap(id: string, tryServer: boolean): Promise<void> {
   rebuildFuse();
   if (selectedId === id) { selectedId = null; renderDetail(null); }
   renderMapList(getFilteredMaps());
-  if (!serverDeleted && tryServer) showToast('Usunięto lokalnie (serwer nie odpowiedział)', { type: 'error' });
-  else showToast('Mapa usunięta', { type: 'success' });
+  if (!serverDeleted && tryServer) showToast(t('maps.deleteServerFail'), { type: 'error' });
+  else showToast(t('maps.deleteSuccess'), { type: 'success' });
 }
 
 async function exportMap(id: string): Promise<void> {
@@ -576,10 +576,10 @@ async function exportMap(id: string): Promise<void> {
     if (!res.ok) throw new Error(`${res.status}`);
     const blob = await res.blob();
     downloadBlob(blob, `${id}.zip`);
-    showToast('Eksport gotowy', { type: 'success' });
+    showToast(t('maps.exportSuccess'), { type: 'success' });
   } catch {
     if (!map || (map.source !== 'local' && map.source !== 'autosave' && map.source !== 'server+local')) {
-      showToast('Eksport nie powiódł się — brak serwera?', { type: 'error' });
+      showToast(t('maps.exportFail'), { type: 'error' });
       return;
     }
 
@@ -600,9 +600,9 @@ async function exportMap(id: string): Promise<void> {
       zip.file('map.json', JSON.stringify(mapJson, null, 2));
       const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
       downloadBlob(blob, `${id}.zip`);
-      showToast('Eksport lokalny gotowy', { type: 'success' });
+      showToast(t('maps.exportLocalSuccess'), { type: 'success' });
     } catch {
-      showToast('Eksport lokalny nie powiódł się', { type: 'error' });
+      showToast(t('maps.exportLocalFail'), { type: 'error' });
     }
   }
 }
@@ -682,8 +682,8 @@ async function loadScores(): Promise<void> {
     scoreList.innerHTML = `
       <div class="empty-state">
         <span class="material-symbols-rounded">leaderboard</span>
-        <div class="empty-title">BRAK WYNIKÓW</div>
-        <div class="empty-sub">Zagraj kilka map, aby zobaczyć wyniki.</div>
+        <div class="empty-title">${t('maps.noScoresTitle')}</div>
+        <div class="empty-sub">${t('maps.noScoresSub')}</div>
       </div>`;
     return;
   }
