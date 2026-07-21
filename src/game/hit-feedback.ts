@@ -47,7 +47,9 @@ export function showHitFeedback(
     pointer-events:none;
     white-space:nowrap;
   `;
-  const screenX = window.innerWidth * (0.5 + position.x * 0.08);
+  // World-space X is mirrored by the camera view; invert it so feedback follows the visible block side.
+  const laneOffset = Math.max(-0.16, Math.min(0.16, -position.x * 0.10));
+  const screenX = window.innerWidth * (0.5 + laneOffset);
   const screenY = window.innerHeight * (0.42 - position.y * 0.06);
   element.style.left = `${screenX}px`;
   element.style.top = `${screenY}px`;

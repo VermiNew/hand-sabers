@@ -60,7 +60,7 @@ export function stopAudio(reset = true): void {
   state.isPlaying = false;
   if (reset) { state.currentTime = 0; state.viewStart = 0; }
   const btnPlay = document.getElementById('btnPlay') as HTMLButtonElement | null;
-  if (btnPlay) btnPlay.innerHTML = '<span class="material-symbols-rounded inline-icon">play_arrow</span>PLAY';
+  if (btnPlay) btnPlay.innerHTML = `<span class="material-symbols-rounded inline-icon">play_arrow</span>${t('creator.play')}`;
 }
 
 export function playAudio(fromSec: number, onEnded: () => void): void {
@@ -78,7 +78,7 @@ export function playAudio(fromSec: number, onEnded: () => void): void {
   state.audioSource.start(0, fromSec);
   state.isPlaying = true;
   const btnPlay = document.getElementById('btnPlay') as HTMLButtonElement | null;
-  if (btnPlay) btnPlay.innerHTML = '<span class="material-symbols-rounded inline-icon">pause</span>PAUSE';
+  if (btnPlay) btnPlay.innerHTML = `<span class="material-symbols-rounded inline-icon">pause</span>${t('pause.pause')}`;
 }
 
 export function pauseAudio(): void {
@@ -86,7 +86,7 @@ export function pauseAudio(): void {
   state.currentTime = getPlayPos();
   stopAudio(false);
   const btnPlay = document.getElementById('btnPlay') as HTMLButtonElement | null;
-  if (btnPlay) btnPlay.innerHTML = '<span class="material-symbols-rounded inline-icon">play_arrow</span>PLAY';
+  if (btnPlay) btnPlay.innerHTML = `<span class="material-symbols-rounded inline-icon">play_arrow</span>${t('creator.play')}`;
 }
 
 export async function decodeAndAttachAudio(

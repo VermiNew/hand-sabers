@@ -4,6 +4,7 @@ import { sortBeatsByTime } from '../core/creator-rules.ts';
 import { getLocalMapById, saveLocalMap } from '../core/localstore.ts';
 import { showAlert, showToast } from './dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
+import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
 
 import { state, MAP_ID } from './state.ts';
 import type { CreatorMap } from './state.ts';
@@ -65,6 +66,8 @@ function reportCreatorError(context: string, error: unknown): void {
 function runCreatorTask(context: string, task: () => Promise<unknown>): void {
   void Promise.resolve().then(task).catch(error => reportCreatorError(context, error));
 }
+
+initPageInterfaceSounds();
 
 // ── i18n ──────────────────────────────────────────────────────────
 function applyCreatorTranslations(): void {

@@ -1,6 +1,8 @@
 import { t, translateDom } from './i18n/index.ts';
+import { initPageInterfaceSounds } from './ui/interface-sounds.ts';
 
 translateDom();
+initPageInterfaceSounds();
 document.title = t('cameraDiagnostics.pageTitle');
 
 const video = document.getElementById('cameraVideo') as HTMLVideoElement;

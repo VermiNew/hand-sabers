@@ -5,9 +5,12 @@ import { assertFileSize, findPreferredAudioEntry, normalizeMap, validateZipEntry
 import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
+import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
 import { createMapPreviewController } from './preview.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
+
+initPageInterfaceSounds();
 
 export function applyTranslations(): void {
   translateDom();
