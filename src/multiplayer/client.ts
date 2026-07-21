@@ -142,6 +142,16 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   chatInput.placeholder = t('multiplayer.chatPlaceholder');
   chatInput.setAttribute('aria-label', t('multiplayer.chatPlaceholder'));
 
+  const secureHostingWarning = document.createElement('aside');
+  secureHostingWarning.className = 'mp-network-warning';
+  secureHostingWarning.classList.toggle(
+    'is-insecure',
+    location.protocol !== 'https:' && !['localhost', '127.0.0.1', '[::1]'].includes(location.hostname),
+  );
+  secureHostingWarning.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">https</span><p></p>';
+  secureHostingWarning.querySelector('p')!.textContent = t('multiplayer.secureHostingWarning');
+  setup.prepend(secureHostingWarning);
+
   const resetChat = () => {
     chatMessages.replaceChildren();
     const empty = document.createElement('p');

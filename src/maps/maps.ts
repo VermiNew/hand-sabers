@@ -3,17 +3,14 @@ import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, sa
 import { getJSZip } from '../jszip-loader.ts';
 import { assertFileSize, findPreferredAudioEntry, normalizeMap, validateZipEntryNames } from '../core/map-format.ts';
 import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
-import { t } from '../i18n/index.ts';
+import { t, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { createMapPreviewController } from './preview.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
 export function applyTranslations(): void {
-  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
-    const key = el.dataset['i18n'];
-    if (key) el.textContent = t(key);
-  });
+  translateDom();
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -124,9 +121,18 @@ function getMapScoreData(mapId: string): MapScoreData {
 // ── Server fetch ──────────────────────────────────────────────────────────────
 
 async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, options);
+  const res = await fetch(url, { cache: 'no-store', credentials: 'same-origin', ...options });
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json() as Promise<T>;
+}
+
+async function checkServerHealth(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/health', { cache: 'no-store', credentials: 'same-origin' });
+    return response.ok;
+  } catch {
+    return false;
+  }
 }
 
 async function loadServerMaps(): Promise<MapEntry[]> {
@@ -181,7 +187,7 @@ async function importLocally(file: File): Promise<{ id: string; beats: number; a
     const entries = Object.values(zip.files);
     validateZipEntryNames(entries);
     const jsonFile = zip.file('map.json');
-    if (!jsonFile) throw new Error('Brak map.json w ZIP.');
+    if (!jsonFile) throw new Error(t('maps.importJsonMissing'));
     map = normalizeMap(JSON.parse(await jsonFile.async('string')), { fallbackId: file.name.replace(/\.[^.]+$/, '') }) as unknown as MapEntry;
     const audioFile = findPreferredAudioEntry(entries, map.meta?.audioFile);
     if (audioFile) {
@@ -190,7 +196,7 @@ async function importLocally(file: File): Promise<{ id: string; beats: number; a
       await saveLocalMapAudio(map.id, await audioFile.async('arraybuffer'), { fileName: audioName ?? '', mimeType: 'application/octet-stream' });
     }
   } else {
-    throw new Error('Import obsługuje tylko .zip albo .json.');
+    throw new Error(t('maps.importUnsupported'));
   }
 
   saveLocalMap(map as unknown as Parameters<typeof saveLocalMap>[0]);
@@ -199,20 +205,20 @@ async function importLocally(file: File): Promise<{ id: string; beats: number; a
 
 async function importMapFile(file: File): Promise<void> {
   mapPreview.stop(true);
-  showToast(`Importuję ${file.name}…`, { type: 'info' });
+  showToast(t('maps.importing', { name: file.name }), { type: 'info' });
   try {
     const imported = await importToServer(file);
-    showToast(`Zaimportowano: ${imported.id}${imported.audio ? ` + audio` : ''}`, { type: 'success' });
+    showToast(t('maps.importedServer', { id: imported.id, audio: imported.audio ? t('maps.withAudio') : '' }), { type: 'success' });
     await loadMaps();
   } catch (serverErr) {
     try {
       const imported = await importLocally(file);
-      showToast(`Zaimportowano lokalnie: ${imported.id}${imported.audio ? ` + audio` : ''}`, { type: 'success' });
+      showToast(t('maps.importedLocal', { id: imported.id, audio: imported.audio ? t('maps.withAudio') : '' }), { type: 'success' });
       await loadMaps();
     } catch (localErr) {
       const msg = localErr instanceof Error ? localErr.message : String(localErr);
-      showToast(`Błąd importu: ${msg}`, { type: 'error' });
-      void showAlert(`Błąd importu: ${msg}`, { title: 'Import nie powiódł się' })
+      showToast(t('maps.importFailed', { message: msg }), { type: 'error' });
+      void showAlert(t('maps.importFailed', { message: msg }), { title: t('maps.importFailedTitle') })
         .catch(error => reportMapsError('import-error-dialog', error));
       console.error('Server import failed:', serverErr);
     }
@@ -619,6 +625,7 @@ function downloadBlob(blob: Blob, filename: string): void {
 // ── Load maps ─────────────────────────────────────────────────────────────────
 
 let loadMapsInProgress = false;
+let serverMapsWarningShown = false;
 
 async function loadMaps(): Promise<void> {
   if (loadMapsInProgress) return;
@@ -633,6 +640,7 @@ async function loadMaps(): Promise<void> {
 
     let serverMaps: MapEntry[] = [];
     let serverError: Error | null = null;
+    const healthPromise = checkServerHealth();
     try { serverMaps = await loadServerMaps(); }
     catch (e) {
       serverError = e instanceof Error ? e : new Error(String(e));
@@ -648,8 +656,13 @@ async function loadMaps(): Promise<void> {
     allMaps   = mergeMaps(serverMaps, localMaps);
     rebuildFuse();
 
+    const serverOnline = await healthPromise;
     const offlineEl = document.getElementById('offlineNotice');
-    if (offlineEl) offlineEl.hidden = !serverError;
+    if (offlineEl) offlineEl.hidden = !(serverError && !serverOnline);
+    if (serverError && serverOnline && !serverMapsWarningShown) {
+      serverMapsWarningShown = true;
+      showToast(t('maps.serverMapsUnavailable'), { type: 'info' });
+    }
 
     renderMapList(getFilteredMaps());
 

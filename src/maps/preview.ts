@@ -1,5 +1,6 @@
 import { loadLocalMapAudio } from '../core/localstore.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
+import { t } from '../i18n/index.ts';
 
 const PREVIEW_DELAY_MS = 850;
 const PREVIEW_MAX_MS = 30_000;
@@ -52,13 +53,13 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
     button.disabled = status === 'loading';
     if (status === 'playing') {
       if (icon) icon.textContent = 'pause';
-      if (label) label.textContent = 'Pause';
+      if (label) label.textContent = t('maps.previewPauseButton');
     } else if (status === 'paused') {
       if (icon) icon.textContent = 'play_arrow';
-      if (label) label.textContent = 'Resume';
+      if (label) label.textContent = t('maps.previewResumeButton');
     } else {
       if (icon) icon.textContent = 'play_arrow';
-      if (label) label.textContent = 'Preview';
+      if (label) label.textContent = t('maps.previewButton');
     }
   }
 
@@ -167,7 +168,7 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
     startedAtMs = 0;
     paused = false;
     setProgress(0);
-    if (clearStatus) setStatus('Preview zatrzymane');
+    if (clearStatus) setStatus(t('maps.previewStopped'));
     if (!shouldFadeOut) {
       unloadAudio();
       return;
@@ -196,7 +197,7 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
         paused = false;
         remainingMs = PREVIEW_MAX_MS;
         setProgress(1, 0);
-        setStatus('Preview zakończone');
+        setStatus(t('maps.previewFinished'));
       });
     }, stopDelayMs);
     updateProgress();
@@ -212,7 +213,7 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
     remainingMs = Math.max(0, remainingMs - (performance.now() - startedAtMs));
     paused = true;
     setProgress((PREVIEW_MAX_MS - remainingMs) / PREVIEW_MAX_MS, remainingMs);
-    setStatus('Preview w pauzie. Kliknij, aby wznowić.', 'paused');
+    setStatus(t('maps.previewPaused'), 'paused');
     fadeVolume(audio.volume, 0, PREVIEW_FADE_OUT_MS, pauseToken, () => {
       if (pauseToken === token && paused) audio.pause();
     });
@@ -221,7 +222,7 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
   async function resume(): Promise<void> {
     const effectiveVolume = getVolume();
     if (effectiveVolume <= 0) {
-      setStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
+      setStatus(t('maps.previewMuted'), 'warning');
       return;
     }
     const resumeToken = token;
@@ -230,7 +231,7 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
     paused = false;
     armStopTimer(remainingMs || PREVIEW_MAX_MS);
     fadeVolume(startVolume, effectiveVolume, PREVIEW_FADE_IN_MS, resumeToken);
-    setStatus('Odtwarzam preview', 'playing');
+    setStatus(t('maps.previewPlaying'), 'playing');
   }
 
   function waitForMetadata(): Promise<void> {
@@ -265,17 +266,17 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
     try {
       const effectiveVolume = getVolume();
       if (effectiveVolume <= 0) {
-        setStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
+        setStatus(t('maps.previewMuted'), 'warning');
         return;
       }
-      setStatus('Ładuję audio preview...', 'loading');
+      setStatus(t('maps.previewLoading'), 'loading');
       const source = await loadSource(map);
       if (startToken !== token) {
         if (source?.url) URL.revokeObjectURL(source.url);
         return;
       }
       if (!source) {
-        setStatus('Ta mapa nie ma audio do preview', 'error');
+        setStatus(t('maps.previewNoAudio'), 'error');
         return;
       }
       if (fadeFrame !== null) cancelAnimationFrame(fadeFrame);
@@ -293,12 +294,12 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
       remainingMs = PREVIEW_MAX_MS;
       armStopTimer(remainingMs);
       fadeVolume(0, effectiveVolume, PREVIEW_FADE_IN_MS, startToken);
-      setStatus('Odtwarzam preview', 'playing');
+      setStatus(t('maps.previewPlaying'), 'playing');
     } catch (error) {
       if (startToken !== token) return;
       const message = error instanceof DOMException && error.name === 'NotAllowedError'
-        ? 'Kliknij mapę ponownie, aby uruchomić preview'
-        : 'Nie udało się odtworzyć preview';
+        ? t('maps.previewClickAgain')
+        : t('maps.previewPlayFailed');
       setStatus(message, 'error');
     }
   }
@@ -307,11 +308,11 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
     stop();
     currentMap = map;
     if (getVolume() <= 0) {
-      setStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
+      setStatus(t('maps.previewMuted'), 'warning');
       return;
     }
     const startToken = token;
-    setStatus('Preview wystartuje za chwilę...', 'loading');
+    setStatus(t('maps.previewSoon'), 'loading');
     delayTimer = setTimeout(() => { void start(map, startToken); }, PREVIEW_DELAY_MS);
   }
 
@@ -322,7 +323,7 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
     }
     if (!audio.src) return;
     if (paused) {
-      void resume().catch(() => setStatus('Nie udało się wznowić preview', 'error'));
+      void resume().catch(() => setStatus(t('maps.previewResumeFailed'), 'error'));
     } else if (!audio.paused) {
       pause();
     }
@@ -345,9 +346,9 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
       audio.volume = effectiveVolume;
       if (effectiveVolume <= 0) {
         if (!audio.paused) pause();
-        setStatus('Preview wyciszone. Zmień głośność lub muzykę w ustawieniach.', 'warning');
+        setStatus(t('maps.previewMuted'), 'warning');
       } else if (paused) {
-        setStatus('Preview w pauzie. Kliknij Resume, aby wznowić.', 'paused');
+        setStatus(t('maps.previewPaused'), 'paused');
       }
     });
   }

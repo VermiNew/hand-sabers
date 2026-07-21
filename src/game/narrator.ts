@@ -1,4 +1,5 @@
 // Narrator — Lyra dialog system
+import { playInterfaceSound, playTypingTick } from './audio.ts';
 // narratorShow() returns a Promise resolving to the index of the button clicked.
 
 const CHAR_MS_BASE = 28;
@@ -114,6 +115,7 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
     // Wire button clicks
     btns.forEach((btn, i) => {
       btn.addEventListener('click', () => {
+        playInterfaceSound('activate');
         btn.classList.add('is-pressed');
         clearKeyHandler();
         setTimeout(() => {
@@ -160,6 +162,7 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
       }
       const ch = text[i]!;
       speech.textContent = text.slice(0, i + 1);
+      playTypingTick(ch);
       i++;
       typingTimer = setTimeout(typeNext, charDelay(ch, text[i], charMs));
     }

@@ -20,27 +20,26 @@
   flex-direction: column;
   gap: 0;
   align-items: stretch;
-  width: min(420px, calc(100vw - 32px));
+  width: min(224px, calc(100vw - 32px));
   padding: 0;
   pointer-events: none;
   z-index: 8900;
-}
-
-body:not(.dev-tools) #camPanel { display: none; }
-
-body.dev-tools #camPanel {
-  pointer-events: auto;
   border: 1px solid rgba(47, 124, 255, 0.18);
   border-radius: 12px;
   overflow: hidden;
   background:
-    linear-gradient(160deg, rgba(5, 10, 22, 0.96), rgba(3, 6, 16, 0.90)),
+    linear-gradient(160deg, rgba(5, 10, 22, 0.92), rgba(3, 6, 16, 0.86)),
     radial-gradient(circle at 80% 0%, rgba(47, 124, 255, 0.10), transparent 55%);
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-    0 18px 54px rgba(0, 0, 0, 0.78),
-    0 0 24px rgba(47, 124, 255, 0.08);
-  backdrop-filter: blur(18px) saturate(1.2);
+    0 12px 34px rgba(0, 0, 0, 0.66),
+    0 0 20px rgba(47, 124, 255, 0.08);
+  backdrop-filter: blur(14px) saturate(1.15);
+}
+
+body.dev-tools #camPanel {
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: auto;
 }
 
 .cam-panel-head {
@@ -55,10 +54,14 @@ body.dev-tools #camPanel {
 }
 .cam-feeds {
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:minmax(0,1fr);
   gap:7px;
   padding:7px;
 }
+
+body:not(.dev-tools) .cam-box:first-child { display:none; }
+body.dev-tools .cam-feeds { grid-template-columns:repeat(2,minmax(0,1fr)); }
+body.dev-tools .cam-box:first-child { display:block; }
 
 /* ── Camera / canvas box ─────────────────────────────────────────────────── */
 .cam-box {
@@ -338,14 +341,19 @@ body.dev-tools #camPanel {
     overflow: auto;
   }
 
+  #camPanel {
+    right: 12px;
+    bottom: 12px;
+    width:min(210px, calc(100vw - 24px));
+  }
+
   body.dev-tools #camPanel {
     left: 12px;
     right: 12px;
-    bottom: 12px;
     width:auto;
   }
 
-  .cam-feeds {
+  body.dev-tools .cam-feeds {
     grid-template-columns:repeat(2,minmax(150px,1fr));
     overflow-x:auto;
   }

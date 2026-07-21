@@ -3,6 +3,7 @@ import { getPlayPos } from './audio.ts';
 import { state } from './state.ts';
 import { showToast } from './dialogs.ts';
 import type { CreatorBeat } from './state.ts';
+import { t } from '../i18n/index.ts';
 
 const LOOK_AHEAD_SECONDS = 4;
 const APPROACH_SPEED = 5.5;
@@ -160,7 +161,7 @@ export function initCreatorPreview3d(): void {
       const now = Date.now();
       if (now - lastRenderErrorAt > 5_000) {
         lastRenderErrorAt = now;
-        showToast('Nie udało się odświeżyć podglądu 3D. Kreator nadal działa.', { type: 'error' });
+        showToast(t('creator.previewError'), { type: 'error' });
       }
     } finally {
       frameId = requestAnimationFrame(render);

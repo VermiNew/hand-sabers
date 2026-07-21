@@ -59,7 +59,7 @@ export function checkOverlaps(): boolean {
   const warningMsg = document.getElementById('warningMsg');
   if (warningMsg) {
     warningMsg.innerHTML = hasOverlap
-      ? '<span class="material-symbols-rounded inline-icon">warning</span>Niektóre bloki są za blisko siebie'
+      ? `<span class="material-symbols-rounded inline-icon">warning</span>${t('creator.overlapWarning')}`
       : '';
   }
   return hasOverlap;

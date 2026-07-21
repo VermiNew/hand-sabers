@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="Diagnostyka kamery dla Hand Sabers.">
-<title>Hand Sabers — Diagnostyka kamery</title>
+<meta name="description" content="Hand Sabers camera diagnostics.">
+<title>Camera diagnostics · Hand Sabers</title>
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./src/styles/camera-diagnostics.css">
@@ -15,23 +15,23 @@
     <header class="diagnostics-header">
       <a class="back-link" href="./beat-sabers-3d.html">
         <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
-        GRA
+        <span data-i18n="cameraDiagnostics.back">GAME</span>
       </a>
       <div>
-        <p class="eyebrow">HAND SABERS / NARZĘDZIA</p>
-        <h1>Diagnostyka kamery</h1>
-        <p class="header-copy">Sprawdź obraz, płynność i oświetlenie przed rozpoczęciem gry.</p>
+        <p class="eyebrow" data-i18n="cameraDiagnostics.eyebrow">TOOLS / CAMERA</p>
+        <h1 data-i18n="cameraDiagnostics.title">CAMERA DIAGNOSTICS</h1>
+        <p class="header-copy" data-i18n="cameraDiagnostics.intro">Check permissions, lighting, framing and camera frame rate before calibration.</p>
       </div>
       <div class="status-pill" id="cameraStatus" data-state="idle">
         <span class="status-dot"></span>
-        <span id="cameraStatusText">KAMERA ZATRZYMANA</span>
+        <span id="cameraStatusText" data-i18n="cameraDiagnostics.statusReady">READY TO TEST</span>
       </div>
     </header>
 
     <section class="diagnostics-grid">
       <div class="preview-card">
         <div class="preview-head">
-          <span>SUROWY OBRAZ</span>
+          <span data-i18n="cameraDiagnostics.rawImage">RAW CAMERA IMAGE</span>
           <span id="previewResolution">—</span>
         </div>
         <div class="preview-frame">
@@ -39,7 +39,7 @@
           <div class="preview-grid" aria-hidden="true"></div>
           <div class="preview-empty" id="previewEmpty">
             <span class="material-symbols-rounded" aria-hidden="true">videocam_off</span>
-            <span>Uruchom kamerę, aby rozpocząć test</span>
+            <span data-i18n="cameraDiagnostics.startHint">Start the test to see the camera image.</span>
           </div>
         </div>
         <canvas id="sampleCanvas" width="64" height="36" hidden></canvas>
@@ -47,57 +47,55 @@
 
       <aside class="control-card">
         <div class="control-section">
-          <label for="cameraSelect">URZĄDZENIE</label>
+          <label for="cameraSelect" data-i18n="cameraDiagnostics.device">DEVICE</label>
           <select id="cameraSelect">
-            <option value="">Kamera domyślna</option>
+            <option value="" data-i18n="cameraDiagnostics.defaultCamera">DEFAULT CAMERA</option>
           </select>
         </div>
 
         <div class="metric-grid">
           <div class="metric">
-            <span class="metric-label">ROZDZIELCZOŚĆ</span>
+            <span class="metric-label" data-i18n="cameraDiagnostics.resolution">RESOLUTION</span>
             <strong id="resolutionMetric">—</strong>
-            <small id="resolutionHint">Oczekiwane minimum: 640×360</small>
+            <small id="resolutionHint" data-i18n="cameraDiagnostics.resolutionMin">Recommended minimum: 640 × 360</small>
           </div>
           <div class="metric">
-            <span class="metric-label">PŁYNNOŚĆ</span>
+            <span class="metric-label" data-i18n="cameraDiagnostics.frameRate">FRAME RATE</span>
             <strong id="fpsMetric">—</strong>
-            <small id="fpsHint">Oczekiwane minimum: 24 FPS</small>
+            <small id="fpsHint" data-i18n="cameraDiagnostics.fpsMin">Recommended minimum: 24 FPS</small>
           </div>
           <div class="metric">
-            <span class="metric-label">OŚWIETLENIE</span>
+            <span class="metric-label" data-i18n="cameraDiagnostics.brightness">BRIGHTNESS</span>
             <strong id="lightMetric">—</strong>
-            <small id="lightHint">Stań przodem do źródła światła</small>
+            <small id="lightHint" data-i18n="cameraDiagnostics.lightFacing">Face the main light source</small>
           </div>
           <div class="metric">
-            <span class="metric-label">UPRAWNIENIE</span>
-            <strong id="permissionMetric">NIEZNANE</strong>
-            <small>Przeglądarka zapyta przy uruchomieniu</small>
+            <span class="metric-label" data-i18n="cameraDiagnostics.permission">PERMISSION</span>
+            <strong id="permissionMetric" data-i18n="cameraDiagnostics.permissionUnknown">NOT CHECKED</strong>
+            <small data-i18n="cameraDiagnostics.permissionHint">The browser will ask when the test starts</small>
           </div>
         </div>
 
-        <div class="diagnostic-message" id="diagnosticMessage" role="status">
-          Test nie wysyła obrazu poza urządzenie.
+        <div class="diagnostic-message" id="diagnosticMessage" role="status" data-i18n="cameraDiagnostics.privacy">
+          The preview stays in this browser. Nothing is uploaded.
         </div>
 
         <div class="control-actions">
           <button class="primary-action" id="startCamera" type="button">
             <span class="material-symbols-rounded" aria-hidden="true">videocam</span>
-            URUCHOM KAMERĘ
+            <span data-i18n="cameraDiagnostics.start">START CAMERA TEST</span>
           </button>
-          <button class="secondary-action" id="stopCamera" type="button" disabled>
-            ZATRZYMAJ
-          </button>
+          <button class="secondary-action" id="stopCamera" type="button" disabled data-i18n="cameraDiagnostics.stop">STOP TEST</button>
         </div>
       </aside>
     </section>
 
     <section class="tips-card">
-      <h2>Warunki dobrego śledzenia</h2>
+      <h2 data-i18n="cameraDiagnostics.tipsTitle">QUICK CHECKLIST</h2>
       <div class="tips-grid">
-        <p><span>01</span> Pokaż w kadrze dłonie, przedramiona i górną część tułowia.</p>
-        <p><span>02</span> Unikaj mocnego światła i okna bezpośrednio za plecami.</p>
-        <p><span>03</span> Ustaw kamerę stabilnie, około 1–1,5 m od miejsca gry.</p>
+        <p><span>01</span> <span data-i18n="cameraDiagnostics.tipLight">Light yourself from the front.</span></p>
+        <p><span>02</span> <span data-i18n="cameraDiagnostics.tipDistance">Stand about 1–1.5 m away.</span></p>
+        <p><span>03</span> <span data-i18n="cameraDiagnostics.tipCamera">Keep the camera stable.</span></p>
       </div>
     </section>
   </main>

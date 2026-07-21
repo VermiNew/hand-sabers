@@ -24,17 +24,15 @@ const HAND_CONNECTIONS: readonly [number, number][] = Object.freeze([
 ]);
 
 export interface CalibStep {
-  id:     string;
-  title:  string;
-  instr:  string;
+  id: 'arms' | 'zone' | 'sides' | 'confirm';
   autoMs: number;
 }
 
 export const CALIB_STEPS: readonly CalibStep[] = [
-  { id: 'arms',    title: 'KROK 1 / 4 — ZASIĘG RĄK',    instr: 'Wyciągnij obie ręce do przodu jak najszerzej.\nTrzymaj przez 2 sekundy.',                                           autoMs: 2000 },
-  { id: 'zone',    title: 'KROK 2 / 4 — STREFA GRY',    instr: 'Porusz rękami w całym obszarze gry.\nGóra, dół, boki — obejmij cały zakres.',                                       autoMs: 3000 },
-  { id: 'sides',   title: 'KROK 3 / 4 — STRONY KAMERY', instr: 'Pokaż ręce po właściwych stronach ciała.\nSprawdzę, czy kamera nie zamienia lewej i prawej strony.',               autoMs: 1600 },
-  { id: 'confirm', title: 'KROK 4 / 4 — POTWIERDZENIE', instr: 'Pokaż obie ręce wyprostowane.\nUpewnij się że obie są widoczne.',                                                   autoMs: 1500 },
+  { id: 'arms', autoMs: 2000 },
+  { id: 'zone', autoMs: 3000 },
+  { id: 'sides', autoMs: 1600 },
+  { id: 'confirm', autoMs: 1500 },
 ];
 
 declare global {
@@ -155,15 +153,12 @@ export function finishCalibStep(idx: number): void {
 }
 
 function getCalibInstruction(step: CalibStep): string {
-  if (!state.oneHandMode) return step.instr;
-  if (step.id === 'arms')    return 'Wyciągnij jedną rękę do przodu i na bok.\nTrzymaj przez 2 sekundy.';
-  if (step.id === 'zone')    return 'Porusz jedną ręką po całym obszarze gry.\nGóra, dół, boki — obejmij cały zakres.';
-  if (step.id === 'sides')   return 'Podnieś rękę, którą chcesz grać.\nSprawdzę stronę kamery dla wybranego miecza.';
-  if (step.id === 'confirm') return 'Pokaż jedną rękę wyprostowaną.\nUpewnij się, że jest dobrze widoczna.';
-  return step.instr;
+  return t(`calib.steps.${step.id}.${state.oneHandMode ? 'oneHand' : 'instruction'}`);
 }
 
-const CALIB_STEP_LABELS = ['ZASIĘG', 'STREFA', 'STRONY', 'POTW.'];
+function getCalibStepLabel(step: CalibStep): string {
+  return t(`calib.labels.${step.id}`);
+}
 
 export function renderCalibStep(): void {
   const step = CALIB_STEPS[state.calibIdx];
@@ -172,12 +167,12 @@ export function renderCalibStep(): void {
   const idx   = state.calibIdx;
   const pct   = ((idx + 1) / total) * 100;
 
-  if (ui.calibStep)  ui.calibStep.textContent  = step.title;
+  if (ui.calibStep)  ui.calibStep.textContent  = t(`calib.steps.${step.id}.title`);
   if (ui.calibInstr) ui.calibInstr.textContent = getCalibInstruction(step);
   if (ui.calibBar)   ui.calibBar.style.width   = `${pct}%`;
 
   if (ui.calibStepBadge) {
-    ui.calibStepBadge.textContent = `KROK ${idx + 1} / ${total}`;
+    ui.calibStepBadge.textContent = t('calib.stepBadge', { current: idx + 1, total });
   }
   if (ui.calibProgressLabel) {
     ui.calibProgressLabel.textContent = `${Math.round(pct)}%`;
@@ -191,7 +186,7 @@ export function renderCalibStep(): void {
         : '';
       return `<div class="calib-step-dot ${cls}">
         <div class="calib-step-num">${i < idx ? '<span class="material-symbols-rounded" style="font-size:13px">check</span>' : i + 1}</div>
-        <span class="calib-step-label">${CALIB_STEP_LABELS[i] ?? ''}</span>
+        <span class="calib-step-label">${getCalibStepLabel(CALIB_STEPS[i]!)}</span>
       </div>${connector}`;
     }).join('');
   }
@@ -334,7 +329,7 @@ function setupCalibFeed(): void {
         calibCtx!.fillStyle   = 'rgba(226,232,240,0.62)';
         calibCtx!.font        = '12px JetBrains Mono, monospace';
         calibCtx!.textAlign   = 'center';
-        calibCtx!.fillText('Czekam na kamerę…', w / 2, h / 2);
+        calibCtx!.fillText(t('calib.waitingCamera'), w / 2, h / 2);
       }
     }
 
@@ -384,11 +379,12 @@ function drawLandmarksToCanvas(
   canvas: HTMLCanvasElement,
   context: CanvasRenderingContext2D,
   result: DetectResult,
+  includeVideo = true,
 ): void {
   const w = canvas.width, h = canvas.height;
   context.clearRect(0, 0, w, h);
 
-  if (videoEl && videoEl.readyState >= 2) {
+  if (includeVideo && videoEl && videoEl.readyState >= 2) {
     context.save();
     context.translate(w, 0);
     context.scale(-1, 1);
@@ -420,8 +416,8 @@ function drawLandmarksToCanvas(
 }
 
 function drawLandmarks(result: DetectResult): void {
-  if (isDebugVisuals() && trackCtx && trackCanvas) {
-    drawLandmarksToCanvas(trackCanvas, trackCtx, result);
+  if (trackCtx && trackCanvas) {
+    drawLandmarksToCanvas(trackCanvas, trackCtx, result, isDebugVisuals());
   }
   if (state.appState === S.PAUSED && handsPauseCtx && handsPauseCanvas) {
     drawLandmarksToCanvas(handsPauseCanvas, handsPauseCtx, result);
@@ -608,10 +604,10 @@ function scheduleCalibAuto(): void {
     calibAutoScheduled = false;
     calibAutoTimer     = null;
     if (hasRequiredCalibrationHands()) {
-      updateCalibFeedback(true, state.oneHandMode ? 'Wykryto rękę' : 'Wykryto obie ręce');
+      updateCalibFeedback(true, t(state.oneHandMode ? 'calib.detectedOne' : 'calib.detectedBoth'));
       setTimeout(() => autoAdvance(), 400);
     } else {
-      updateCalibFeedback(false, state.oneHandMode ? 'Pokaż wybraną rękę' : 'Pokaż obie ręce');
+      updateCalibFeedback(false, t(state.oneHandMode ? 'calib.showOne' : 'calib.showBoth'));
       scheduleCalibAuto();
     }
   }, step.autoMs);

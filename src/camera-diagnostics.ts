@@ -1,3 +1,8 @@
+import { t, translateDom } from './i18n/index.ts';
+
+translateDom();
+document.title = t('cameraDiagnostics.pageTitle');
+
 const video = document.getElementById('cameraVideo') as HTMLVideoElement;
 const previewFrame = video.closest('.preview-frame') as HTMLElement;
 const sampleCanvas = document.getElementById('sampleCanvas') as HTMLCanvasElement;
@@ -24,9 +29,9 @@ let lastFrameCountAt = 0;
 let frameCount = 0;
 let lastLightSampleAt = 0;
 
-function setStatus(state: 'idle' | 'loading' | 'ready' | 'error', text: string): void {
+function setStatus(state: 'idle' | 'loading' | 'ready' | 'error', key: string): void {
   cameraStatus.dataset['state'] = state;
-  cameraStatusText.textContent = text;
+  cameraStatusText.textContent = t(key);
 }
 
 function setMetricState(element: HTMLElement, state: 'good' | 'warn' | 'bad' | null): void {
@@ -36,28 +41,33 @@ function setMetricState(element: HTMLElement, state: 'good' | 'warn' | 'bad' | n
 
 function describeCameraError(error: unknown): string {
   const name = error instanceof DOMException ? error.name : '';
-  if (name === 'NotAllowedError' || name === 'SecurityError') {
-    return 'Brak dostępu do kamery. Zezwól na użycie kamery w ustawieniach witryny.';
-  }
-  if (name === 'NotFoundError') return 'Nie znaleziono kamery podłączonej do urządzenia.';
-  if (name === 'NotReadableError') return 'Kamera jest zajęta przez inną aplikację lub kartę.';
-  if (name === 'OverconstrainedError') return 'Wybrana kamera nie obsługuje wymaganych parametrów.';
-  return 'Nie udało się uruchomić kamery. Sprawdź urządzenie i spróbuj ponownie.';
+  if (name === 'NotAllowedError' || name === 'SecurityError') return t('cameraDiagnostics.errorPermission');
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return t('cameraDiagnostics.errorNotFound');
+  if (name === 'NotReadableError') return t('cameraDiagnostics.errorBusy');
+  const message = error instanceof Error ? error.message : String(error);
+  return t('cameraDiagnostics.errorGeneric', { message });
 }
 
 async function updatePermission(): Promise<void> {
-  if (!navigator.permissions?.query) return;
+  if (!navigator.permissions?.query) {
+    permissionMetric.textContent = t('cameraDiagnostics.unsupportedPermission');
+    return;
+  }
   try {
     const status = await navigator.permissions.query({ name: 'camera' as PermissionName });
     const render = () => {
-      const labels = { granted: 'PRZYZNANE', denied: 'ZABLOKOWANE', prompt: 'OCZEKUJE' };
-      permissionMetric.textContent = labels[status.state];
+      const key = status.state === 'granted'
+        ? 'cameraDiagnostics.granted'
+        : status.state === 'denied'
+          ? 'cameraDiagnostics.deniedPermission'
+          : 'cameraDiagnostics.promptPermission';
+      permissionMetric.textContent = t(key);
       setMetricState(permissionMetric, status.state === 'granted' ? 'good' : status.state === 'denied' ? 'bad' : 'warn');
     };
     render();
     status.addEventListener('change', render);
   } catch {
-    // Some browsers expose Permissions API without supporting the camera name.
+    permissionMetric.textContent = t('cameraDiagnostics.unsupportedPermission');
   }
 }
 
@@ -67,19 +77,17 @@ async function populateCameraList(selectedDeviceId = ''): Promise<void> {
     const devices = (await navigator.mediaDevices.enumerateDevices()).filter(device => device.kind === 'videoinput');
     cameraSelect.replaceChildren();
     if (!devices.length) {
-      cameraSelect.add(new Option('Brak wykrytych kamer', ''));
+      cameraSelect.add(new Option(t('cameraDiagnostics.noCamera'), ''));
       return;
     }
     devices.forEach((device, index) => {
-      cameraSelect.add(new Option(device.label || `Kamera ${index + 1}`, device.deviceId));
+      cameraSelect.add(new Option(device.label || `${t('cameraDiagnostics.selectCamera')} ${index + 1}`, device.deviceId));
     });
-    if (selectedDeviceId && devices.some(device => device.deviceId === selectedDeviceId)) {
-      cameraSelect.value = selectedDeviceId;
-    }
+    if (selectedDeviceId && devices.some(device => device.deviceId === selectedDeviceId)) cameraSelect.value = selectedDeviceId;
   } catch (error) {
     console.error('Camera enumeration failed:', error);
-    cameraSelect.replaceChildren(new Option('Nie udało się pobrać listy kamer', ''));
-    diagnosticMessage.textContent = 'Nie udało się odczytać urządzeń. Diagnostyka może nadal działać z kamerą domyślną.';
+    cameraSelect.replaceChildren(new Option(t('cameraDiagnostics.listFailed'), ''));
+    diagnosticMessage.textContent = t('cameraDiagnostics.listFailedHint');
   }
 }
 
@@ -93,16 +101,16 @@ function sampleLight(): void {
   }
   const average = luminance / (pixels.length / 4);
   if (average < 45) {
-    lightMetric.textContent = 'ZA CIEMNO';
-    lightHint.textContent = 'Dodaj światło przed sobą';
+    lightMetric.textContent = t('cameraDiagnostics.brightnessDark');
+    lightHint.textContent = t('cameraDiagnostics.lightAdd');
     setMetricState(lightMetric, 'bad');
   } else if (average > 215) {
-    lightMetric.textContent = 'ZA JASNO';
-    lightHint.textContent = 'Ogranicz prześwietlenie obrazu';
+    lightMetric.textContent = t('cameraDiagnostics.brightnessBright');
+    lightHint.textContent = t('cameraDiagnostics.lightReduce');
     setMetricState(lightMetric, 'warn');
   } else {
-    lightMetric.textContent = 'DOBRE';
-    lightHint.textContent = `Średnia jasność: ${Math.round(average)} / 255`;
+    lightMetric.textContent = t('cameraDiagnostics.brightnessGood');
+    lightHint.textContent = t('cameraDiagnostics.brightnessAverage', { value: Math.round(average) });
     setMetricState(lightMetric, 'good');
   }
 }
@@ -114,8 +122,8 @@ function updateFrameMetrics(now: number): void {
     if (now - lastFrameCountAt >= 1000) {
       const elapsed = Math.max(1, now - lastFrameCountAt);
       const fps = Math.round(frameCount * 1000 / elapsed);
-      fpsMetric.textContent = `${fps} FPS`;
-      fpsHint.textContent = fps >= 24 ? 'Płynność wystarczająca do śledzenia' : 'Zamknij inne aplikacje używające kamery';
+      fpsMetric.textContent = t('cameraDiagnostics.fpsValue', { value: fps });
+      fpsHint.textContent = t(fps >= 24 ? 'cameraDiagnostics.fpsGood' : 'cameraDiagnostics.fpsBad');
       setMetricState(fpsMetric, fps >= 24 ? 'good' : fps >= 18 ? 'warn' : 'bad');
       frameCount = 0;
       lastFrameCountAt = now;
@@ -126,7 +134,7 @@ function updateFrameMetrics(now: number): void {
     }
   } catch (error) {
     console.error('Camera metrics update failed:', error);
-    diagnosticMessage.textContent = 'Nie udało się zaktualizować części pomiarów. Podgląd kamery nadal działa.';
+    diagnosticMessage.textContent = t('cameraDiagnostics.metricsFailed');
   }
   if (stream) frameRequest = video.requestVideoFrameCallback(updateFrameMetrics);
 }
@@ -136,9 +144,9 @@ function resetMetrics(): void {
   resolutionMetric.textContent = '—';
   fpsMetric.textContent = '—';
   lightMetric.textContent = '—';
-  resolutionHint.textContent = 'Oczekiwane minimum: 640×360';
-  fpsHint.textContent = 'Oczekiwane minimum: 24 FPS';
-  lightHint.textContent = 'Stań przodem do źródła światła';
+  resolutionHint.textContent = t('cameraDiagnostics.resolutionMin');
+  fpsHint.textContent = t('cameraDiagnostics.fpsMin');
+  lightHint.textContent = t('cameraDiagnostics.lightFacing');
   [resolutionMetric, fpsMetric, lightMetric].forEach(metric => setMetricState(metric, null));
 }
 
@@ -153,23 +161,23 @@ function stopCamera(): void {
   startButton.disabled = false;
   stopButton.disabled = true;
   cameraSelect.disabled = false;
-  setStatus('idle', 'KAMERA ZATRZYMANA');
-  diagnosticMessage.textContent = 'Test nie wysyła obrazu poza urządzenie.';
+  setStatus('idle', 'cameraDiagnostics.stopped');
+  diagnosticMessage.textContent = t('cameraDiagnostics.privacy');
   resetMetrics();
 }
 
 async function startCamera(): Promise<void> {
   if (!navigator.mediaDevices?.getUserMedia) {
-    setStatus('error', 'BRAK OBSŁUGI KAMERY');
-    diagnosticMessage.textContent = 'Ta przeglądarka nie udostępnia API kamery.';
+    setStatus('error', 'cameraDiagnostics.unavailable');
+    diagnosticMessage.textContent = t('cameraDiagnostics.noApi');
     return;
   }
 
   stopCamera();
   startButton.disabled = true;
   cameraSelect.disabled = true;
-  setStatus('loading', 'URUCHAMIANIE KAMERY');
-  diagnosticMessage.textContent = 'Czekam na dostęp do urządzenia…';
+  setStatus('loading', 'cameraDiagnostics.requesting');
+  diagnosticMessage.textContent = t('cameraDiagnostics.requesting');
 
   try {
     const deviceId = cameraSelect.value;
@@ -189,11 +197,11 @@ async function startCamera(): Promise<void> {
     const settings = track.getSettings();
     const width = settings.width ?? video.videoWidth;
     const height = settings.height ?? video.videoHeight;
-    const resolution = `${width}×${height}`;
+    const resolution = t('cameraDiagnostics.resolutionValue', { width, height });
     const resolutionGood = width >= 640 && height >= 360;
     previewResolution.textContent = resolution;
     resolutionMetric.textContent = resolution;
-    resolutionHint.textContent = resolutionGood ? 'Rozdzielczość wystarczająca' : 'Wybierz kamerę o wyższej rozdzielczości';
+    resolutionHint.textContent = t(resolutionGood ? 'cameraDiagnostics.resolutionGood' : 'cameraDiagnostics.resolutionBad');
     setMetricState(resolutionMetric, resolutionGood ? 'good' : 'bad');
 
     await populateCameraList(settings.deviceId);
@@ -201,8 +209,8 @@ async function startCamera(): Promise<void> {
     previewEmpty.hidden = true;
     stopButton.disabled = false;
     cameraSelect.disabled = false;
-    setStatus('ready', 'KAMERA DZIAŁA');
-    diagnosticMessage.textContent = 'Porusz dłońmi w całym obszarze kadru i sprawdź płynność obrazu.';
+    setStatus('ready', 'cameraDiagnostics.active');
+    diagnosticMessage.textContent = t('cameraDiagnostics.movingHint');
     lastFrameCountAt = performance.now();
     lastLightSampleAt = 0;
     frameCount = 0;
@@ -212,7 +220,7 @@ async function startCamera(): Promise<void> {
     stream = null;
     startButton.disabled = false;
     cameraSelect.disabled = false;
-    setStatus('error', 'BŁĄD KAMERY');
+    setStatus('error', 'cameraDiagnostics.denied');
     diagnosticMessage.textContent = describeCameraError(error);
     await updatePermission();
   }

@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="dark">
 <meta name="description" content="Kreator map do Hand Sabers z eksportem ZIP i autosave.">
-<title>Hand Sabers — Map Creator</title>
+<title>Map Creator · Hand Sabers</title>
 <link rel="icon" href="./favicon.svg" type="image/svg+xml">
 <link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="./src/styles/creator.css">
@@ -29,7 +29,7 @@
 <div id="transport">
   <button class="transport-btn play-stop" id="btnPlayStop">
     <span class="material-symbols-rounded" id="btnPlayStopIcon">play_arrow</span>
-    <span id="btnPlayStopLabel">PLAY</span>
+    <span id="btnPlayStopLabel" data-i18n="creator.play">PLAY</span>
   </button>
   <!-- hidden stop kept for JS compat -->
   <button id="btnStop" style="display:none"></button>
@@ -40,7 +40,7 @@
   <span id="timecode">0:00.0</span>
   <div class="transport-sep"></div>
 
-  <div class="creator-volume" title="Głośność odsłuchu">
+  <div class="creator-volume" title="Song volume" data-i18n-title="creator.volumeTitle">
     <label for="songVolume" data-i18n="creator.track">UTWÓR</label>
     <input id="songVolume" type="range" min="0" max="100" value="50" step="1">
     <span id="songVolumeValue">50%</span>
@@ -49,13 +49,13 @@
   <div class="transport-sep"></div>
   <div class="bpm-group">
     <label for="bpmInput" class="bpm-label">BPM</label>
-    <input id="bpmInput" type="number" min="20" max="400" step="0.5" placeholder="—" title="Tempo. Wyznacza siatkę BPM na timeline.">
-    <button class="transport-btn" id="btnTapTempo" title="Klikaj w rytm aby wyznaczyć BPM">TAP</button>
+    <input id="bpmInput" type="number" min="20" max="400" step="0.5" placeholder="—" title="Beats per minute" data-i18n-title="creator.bpmTitle">
+    <button class="transport-btn" id="btnTapTempo" title="Tap tempo" data-i18n-title="creator.tapTempoTitle">TAP</button>
   </div>
 
   <div class="transport-sep"></div>
-  <button class="transport-btn" id="btnSnap">SNAP: WYŁ</button>
-  <button class="transport-btn" id="btnLoop">LOOP: WYŁ</button>
+  <button class="transport-btn" id="btnSnap" data-i18n="creator.snapOff">SNAP: OFF</button>
+  <button class="transport-btn" id="btnLoop" data-i18n="creator.loopOff">LOOP: OFF</button>
 
   <div class="transport-sep"></div>
   <div class="zoom-group">
@@ -65,13 +65,13 @@
   </div>
 
   <div class="transport-sep"></div>
-  <button class="transport-btn" id="btnUndo">↩ UNDO</button>
-  <button class="transport-btn" id="btnRedo">↪ REDO</button>
+  <button class="transport-btn" id="btnUndo"><span aria-hidden="true">↩</span> <span data-i18n="creator.undo">UNDO</span></button>
+  <button class="transport-btn" id="btnRedo"><span aria-hidden="true">↪</span> <span data-i18n="creator.redo">REDO</span></button>
   <div class="cut-dir-wrap">
-    <button class="transport-btn" id="btnCutDirection">CIĘCIE: •</button>
+    <button class="transport-btn" id="btnCutDirection">CUT: •</button>
     <div id="cutDirPanel" class="cut-dir-panel" role="tooltip">
-      <div class="cut-dir-title">KIERUNEK CIĘCIA</div>
-      <div class="cut-dir-subtitle">Numpad lub klawisze 1–9</div>
+      <div class="cut-dir-title" data-i18n="creator.cutDirectionTitle">CUT DIRECTION</div>
+      <div class="cut-dir-subtitle" data-i18n="creator.cutDirectionSubtitle">Applies to new and selected blocks</div>
       <div class="cut-dir-grid">
         <span data-cut="up-left">7 ↖</span>
         <span data-cut="up">8 ↑</span>
@@ -87,7 +87,7 @@
   </div>
 
   <div class="transport-spacer"></div>
-  <button class="transport-btn" id="btnShortcuts" title="Skróty klawiszowe (?)">?</button>
+  <button class="transport-btn" id="btnShortcuts" title="Keyboard shortcuts" data-i18n-title="creator.kbTitle">?</button>
 
   <!-- Tap flash indicator -->
   <div id="tapFlash"></div>
@@ -96,81 +96,81 @@
 <!-- TAP HINTS BAR (below timeline, minimal) -->
 <div id="tapHints">
   <span class="tap-hint-label">TAP:</span>
-  <span class="tap-hint tap-hint-left"  id="tapModeF">F — LEWO</span>
-  <span class="tap-hint tap-hint-right" id="tapModeJ">J — PRAWO</span>
-  <span class="tap-hint tap-hint-rand"  id="tapModeR">R — RANDOM</span>
-  <span class="tap-hint tap-hint-bomb"  id="tapModeB">B — BOMBA</span>
-  <span class="tap-hint tap-hint-held"  title="Shift+F/J podczas nagrywania">Shift+F/J — HELD</span>
+  <span class="tap-hint tap-hint-left" id="tapModeF" data-i18n="creator.tapLeft">F — LEFT</span>
+  <span class="tap-hint tap-hint-right" id="tapModeJ" data-i18n="creator.tapRight">J — RIGHT</span>
+  <span class="tap-hint tap-hint-rand" id="tapModeR" data-i18n="creator.tapRandom">R — RANDOM</span>
+  <span class="tap-hint tap-hint-bomb" id="tapModeB" data-i18n="creator.tapBomb">B — BOMB</span>
+  <span class="tap-hint tap-hint-held" title="Held notes" data-i18n="creator.tapHeld">Shift+F/J — HELD</span>
 </div>
 
 <!-- CREATOR COACH -->
-<div id="creatorCoach" aria-label="Szybki workflow edytora">
-  <div class="coach-title">WORKFLOW</div>
-  <div class="coach-step"><kbd>1</kbd><span>Wczytaj audio lub ZIP</span></div>
-  <div class="coach-step"><kbd>Space</kbd><span>Start / pauza z odliczaniem</span></div>
-  <div class="coach-step"><kbd>F</kbd><kbd>J</kbd><span>Tapuj beaty w rytmie</span></div>
-  <div class="coach-step"><kbd>Shift+F/J</kbd><span>Held notes</span></div>
-  <div class="coach-step"><kbd>?</kbd><span>Pełna mapa skrótów</span></div>
+<div id="creatorCoach" aria-label="Creator workflow tips" data-i18n-aria-label="creator.workflowAria">
+  <div class="coach-title" data-i18n="creator.coachTitle">WORKFLOW</div>
+  <div class="coach-step"><kbd>1</kbd><span data-i18n="creator.coachLoad">Load audio or ZIP</span></div>
+  <div class="coach-step"><kbd>Space</kbd><span data-i18n="creator.coachPlay">Start / pause from the playhead</span></div>
+  <div class="coach-step"><kbd>F</kbd><kbd>J</kbd><span data-i18n="creator.coachTap">Tap blocks to the rhythm</span></div>
+  <div class="coach-step"><kbd>Shift+F/J</kbd><span data-i18n="creator.coachHeld">Hold keys for held notes</span></div>
+  <div class="coach-step"><kbd>?</kbd><span data-i18n="creator.coachHelp">Open the full shortcut list</span></div>
 </div>
 
 <!-- SHORTCUTS PANEL -->
 <div id="shortcutsPanel" class="shortcuts-panel hidden">
   <div class="shortcuts-header">
-    <span>SKRÓTY KLAWISZOWE</span>
+    <span data-i18n="creator.kbTitle">KEYBOARD SHORTCUTS</span>
     <button id="btnShortcutsClose">✕</button>
   </div>
 
   <div class="shortcuts-tabs">
-    <button class="shortcuts-tab-btn is-active" data-tab="list">LISTA</button>
-    <button class="shortcuts-tab-btn" data-tab="edit">EDYTUJ</button>
+    <button class="shortcuts-tab-btn is-active" data-tab="list" data-i18n="creator.kbTabList">LIST</button>
+    <button class="shortcuts-tab-btn" data-tab="edit" data-i18n="creator.kbTabEdit">EDIT</button>
   </div>
 
   <!-- TAB: list -->
   <div class="shortcuts-tab-pane is-active" id="spTabList">
     <div class="shortcuts-body">
       <div class="shortcuts-col">
-        <div class="shortcuts-section">TRANSPORT</div>
-        <div class="shortcut-row"><kbd>Space</kbd><span>Play / Pause</span></div>
-        <div class="shortcut-row"><kbd>Shift+R</kbd><span>Stop (wróć do początku)</span></div>
-        <div class="shortcut-row"><kbd>Home</kbd><span>Skocz na początek</span></div>
-        <div class="shortcut-row"><kbd>End</kbd><span>Skocz na koniec</span></div>
-        <div class="shortcut-row"><kbd>Tab</kbd><span>Następny beat</span></div>
-        <div class="shortcut-row"><kbd>Shift+Tab</kbd><span>Poprzedni beat</span></div>
+        <div class="shortcuts-section" data-i18n="creator.kbGroups.Transport">TRANSPORT</div>
+        <div class="shortcut-row"><kbd>Space</kbd><span data-i18n="creator.kbActions.play">Play / Pause</span></div>
+        <div class="shortcut-row"><kbd>Shift+R</kbd><span data-i18n="creator.kbActions.stop">Stop (wróć do początku)</span></div>
+        <div class="shortcut-row"><kbd>Home</kbd><span data-i18n="creator.kbActions.jumpStart">Skocz na początek</span></div>
+        <div class="shortcut-row"><kbd>End</kbd><span data-i18n="creator.kbActions.jumpEnd">Skocz na koniec</span></div>
+        <div class="shortcut-row"><kbd>Tab</kbd><span data-i18n="creator.kbActions.nextBeat">Następny beat</span></div>
+        <div class="shortcut-row"><kbd>Shift+Tab</kbd><span data-i18n="creator.kbActions.prevBeat">Poprzedni beat</span></div>
       </div>
       <div class="shortcuts-col">
-        <div class="shortcuts-section">TAPPING</div>
-        <div class="shortcut-row"><kbd>F</kbd><span>Tap LEWO</span></div>
-        <div class="shortcut-row"><kbd>J</kbd><span>Tap PRAWO</span></div>
-        <div class="shortcut-row"><kbd>R</kbd><span>Tap RANDOM</span></div>
-        <div class="shortcut-row"><kbd>B</kbd><span>Tap BOMBA</span></div>
-        <div class="shortcut-row"><kbd>Shift+F</kbd><span>Held LEWO (trzymaj)</span></div>
-        <div class="shortcut-row"><kbd>Shift+J</kbd><span>Held PRAWO (trzymaj)</span></div>
-        <div class="shortcut-row"><kbd>1–9</kbd><span>Kierunek cięcia</span></div>
-        <div class="shortcut-row"><kbd>[</kbd><span>Loop START tu</span></div>
-        <div class="shortcut-row"><kbd>]</kbd><span>Loop END tu</span></div>
+        <div class="shortcuts-section" data-i18n="creator.kbGroups.Tapping">TAPPING</div>
+        <div class="shortcut-row"><kbd>F</kbd><span data-i18n="creator.kbActions.tapLeft">Tap LEWO</span></div>
+        <div class="shortcut-row"><kbd>J</kbd><span data-i18n="creator.kbActions.tapRight">Tap PRAWO</span></div>
+        <div class="shortcut-row"><kbd>R</kbd><span data-i18n="creator.kbActions.tapRandom">Tap RANDOM</span></div>
+        <div class="shortcut-row"><kbd>B</kbd><span data-i18n="creator.kbActions.tapBomb">Tap BOMBA</span></div>
+        <div class="shortcut-row"><kbd>Shift+F</kbd><span data-i18n="creator.kbActions.heldLeft">Held LEWO (trzymaj)</span></div>
+        <div class="shortcut-row"><kbd>Shift+J</kbd><span data-i18n="creator.kbActions.heldRight">Held PRAWO (trzymaj)</span></div>
+        <div class="shortcut-row"><kbd>1–9</kbd><span data-i18n="creator.kbActions.cutDir5">Kierunek cięcia</span></div>
+        <div class="shortcut-row"><kbd>[</kbd><span data-i18n="creator.kbActions.loopStart">Loop START tu</span></div>
+        <div class="shortcut-row"><kbd>]</kbd><span data-i18n="creator.kbActions.loopEnd">Loop END tu</span></div>
       </div>
       <div class="shortcuts-col">
-        <div class="shortcuts-section">EDYCJA</div>
-        <div class="shortcut-row"><kbd>Delete</kbd><span>Usuń zaznaczone / nearest</span></div>
-        <div class="shortcut-row"><kbd>Esc</kbd><span>Odznacz wszystko</span></div>
-        <div class="shortcut-row"><kbd>Ctrl+Z</kbd><span>Undo</span></div>
-        <div class="shortcut-row"><kbd>Ctrl+Y</kbd><span>Redo</span></div>
-        <div class="shortcut-row"><kbd>Ctrl+A</kbd><span>Zaznacz wszystko</span></div>
-        <div class="shortcut-row"><kbd>Ctrl+C / V</kbd><span>Kopiuj / Wklej</span></div>
-        <div class="shortcut-row"><kbd>Ctrl+S</kbd><span>Zapisz</span></div>
+        <div class="shortcuts-section" data-i18n="creator.kbGroups.Edycja">EDYCJA</div>
+        <div class="shortcut-row"><kbd>Delete</kbd><span data-i18n="creator.kbActions.deleteSelected">Usuń zaznaczone / nearest</span></div>
+        <div class="shortcut-row"><kbd>Esc</kbd><span data-i18n="creator.kbActions.deselectAll">Odznacz wszystko</span></div>
+        <div class="shortcut-row"><kbd>Ctrl+Z</kbd><span data-i18n="creator.kbActions.undo">Undo</span></div>
+        <div class="shortcut-row"><kbd>Ctrl+Y</kbd><span data-i18n="creator.kbActions.redo">Redo</span></div>
+        <div class="shortcut-row"><kbd>Ctrl+A</kbd><span data-i18n="creator.kbActions.selectAll">Zaznacz wszystko</span></div>
+        <div class="shortcut-row"><kbd>Ctrl+C / V</kbd><span data-i18n="creator.kbActions.copy">Kopiuj / Wklej</span></div>
+        <div class="shortcut-row"><kbd>Ctrl+S</kbd><span data-i18n="creator.kbActions.save">Zapisz</span></div>
       </div>
       <div class="shortcuts-col">
-        <div class="shortcuts-section">WIDOK</div>
-        <div class="shortcut-row"><kbd>+</kbd> / <kbd>−</kbd><span>Zoom</span></div>
-        <div class="shortcut-row"><kbd>Ctrl+Kółko</kbd><span>Zoom na kursorze</span></div>
-        <div class="shortcut-row"><kbd>Środk.przycisk</kbd><span>Przewijanie widoku</span></div>
-        <div class="shortcut-row"><kbd>PPM (puste)</kbd><span>Menu kontekstowe</span></div>
-        <div class="shortcut-row"><kbd>PPM (beat)</kbd><span>Usuń beat</span></div>
-        <div class="shortcut-row"><kbd>Shift+klik</kbd><span>Loop marker / multi-select</span></div>
+        <div class="shortcuts-section" data-i18n="creator.kbGroups.Widok">WIDOK</div>
+        <div class="shortcut-row"><kbd>+</kbd> / <kbd>−</kbd><span data-i18n="creator.kbActions.zoomIn">Zoom</span></div>
+        <div class="shortcut-row"><kbd>Ctrl+Kółko</kbd><span data-i18n="creator.kbActions.zoomCursor">Zoom na kursorze</span></div>
+        <div class="shortcut-row"><kbd>Środk.przycisk</kbd><span data-i18n="creator.kbActions.panTimeline">Przewijanie widoku</span></div>
+        <div class="shortcut-row"><kbd>PPM (puste)</kbd><span data-i18n="creator.kbActions.contextMenu">Menu kontekstowe</span></div>
+        <div class="shortcut-row"><kbd>PPM (beat)</kbd><span data-i18n="creator.kbActions.deleteBeat">Usuń beat</span></div>
+        <div class="shortcut-row"><kbd>Shift+klik</kbd><span data-i18n="creator.kbActions.loopMarker">Loop marker / multi-select</span></div>
       </div>
     </div>
     <div class="shortcuts-cuts">
-      <div class="shortcuts-section">KIERUNKI CIĘCIA (1–9)</div>
+      <div class="shortcuts-section" data-i18n="creator.kbGroups.Kierunki cięcia">KIERUNKI CIĘCIA (1–9)</div>
       <div class="cuts-grid">
         <span>7 ↖ up-left</span><span>8 ↑ up</span><span>9 ↗ up-right</span>
         <span>4 ← left</span><span>5 • any</span><span>6 → right</span>
@@ -202,7 +202,7 @@
     </div>
   </div>
 
-  <aside id="creatorPreview3d" aria-label="Podgląd 3D mapy">
+  <aside id="creatorPreview3d" aria-label="3D preview of upcoming blocks" data-i18n-aria-label="creator.previewAria">
     <div class="creator-preview-title">
       <span data-i18n="creator.preview3d">PODGLĄD 3D</span>
       <span data-i18n="creator.previewWindow">NAJBLIŻSZE 4 SEKUNDY</span>
@@ -219,9 +219,9 @@
       <div data-i18n="creator.dropAudio">Przeciągnij plik MP3 / OGG / WAV</div>
       <div class="drop-hint" data-i18n="creator.dropAudioSub">lub kliknij aby wybrać</div>
       <div class="drop-mini-guide">
-        <span><kbd>Space</kbd> odsłuch</span>
-        <span><kbd>F/J</kbd> tap</span>
-        <span><kbd>Ctrl+S</kbd> zapis</span>
+        <span data-i18n="creator.dropPreview">Space previews playback · F/J place blocks</span>
+        
+        <span><kbd>Ctrl+S</kbd> SAVE</span>
       </div>
     </div>
     <input type="file" id="fileInput" accept="audio/*,.json,.zip">
@@ -261,7 +261,7 @@
   </div>
   <div class="status-item">
     <span class="status-key" data-i18n="creator.statSnap">SNAP</span>
-    <span class="status-val" id="stSnap">wył</span>
+    <span class="status-val" id="stSnap" data-i18n="creator.off">off</span>
   </div>
   <span id="warningMsg"></span>
 </div>

@@ -245,13 +245,13 @@ export function showCameraError(err: unknown): void {
   if (ui.dStatus) ui.dStatus.textContent = t('errors.error');
 }
 
-export function showGameOver(state: GameState): void {
+export function showGameOver(state: GameState, victory = false): void {
   clearDangerPulse();
   if (ui.overlay) ui.overlay.classList.add('is-gameover');
   showModalElement(ui.overlay);
   if (ui.hud)         ui.hud.style.display        = 'none';
   if (ui.mapProgress) ui.mapProgress.style.display = 'none';
-  if (ui.goTitle) ui.goTitle.textContent = t('gameover.title');
+  if (ui.goTitle) ui.goTitle.textContent = t(victory ? 'gameover.victoryTitle' : 'gameover.defeatTitle');
   const scoreStr = String(state.score).padStart(6, '0');
   const combo    = Math.max(0, state.maxCombo);
   if (ui.goBody) ui.goBody.innerHTML = `
@@ -269,7 +269,7 @@ export function showGameOver(state: GameState): void {
   setIconButton(ui.ovBtnMenu,  t('gameover.mainMenu'), 'house');
   if (ui.ovBtnCalib) ui.ovBtnCalib.style.display = 'inline-flex';
   if (ui.ovBtnMenu)  ui.ovBtnMenu.style.display  = 'inline-flex';
-  if (ui.dStatus)    ui.dStatus.textContent = 'GAME OVER';
+  if (ui.dStatus)    ui.dStatus.textContent = t(victory ? 'gameover.victoryTitle' : 'gameover.defeatTitle');
 }
 
 export function showPauseMenu(): void {

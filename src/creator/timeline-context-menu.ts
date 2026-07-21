@@ -3,6 +3,7 @@ import { playAudio } from './audio.ts';
 import { scheduleAutosave } from './storage.ts';
 import { state } from './state.ts';
 import { renderAll } from './timeline.ts';
+import { t } from '../i18n/index.ts';
 
 interface TimelineContextMenuOptions {
   checkOverlaps(): boolean;
@@ -27,7 +28,7 @@ export class TimelineContextMenu {
 
     const items: Array<{ label: string; action: () => void }> = [
       {
-        label: '⏸ Seekuj tutaj',
+        label: t('creator.contextSeek'),
         action: () => {
           const wasPlaying = state.isPlaying;
           state.currentTime = Math.max(0, Math.min(clickTime, state.map.meta.duration));
@@ -36,7 +37,7 @@ export class TimelineContextMenu {
         },
       },
       {
-        label: '[ Ustaw LOOP START',
+        label: t('creator.contextLoopStart'),
         action: () => {
           state.loopStart = this.options.snapTime(clickTime);
           if (state.loopEnd !== null && state.loopStart > state.loopEnd) state.loopEnd = null;
@@ -44,7 +45,7 @@ export class TimelineContextMenu {
         },
       },
       {
-        label: '] Ustaw LOOP END',
+        label: t('creator.contextLoopEnd'),
         action: () => {
           state.loopEnd = this.options.snapTime(clickTime);
           if (state.loopStart !== null && state.loopEnd < state.loopStart) state.loopStart = null;
@@ -55,7 +56,7 @@ export class TimelineContextMenu {
 
     if (state.clipboard.length) {
       items.push({
-        label: '📋 Wklej tutaj',
+        label: t('creator.contextPaste'),
         action: () => {
           this.options.pushUndo();
           const pasted = state.clipboard.map(beat => ({ ...beat, t: this.options.snapTime(clickTime + beat.t) }));

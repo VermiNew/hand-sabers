@@ -140,6 +140,83 @@ function connectSfx(gain: GainNode): void {
   gain.connect(sfxGain ?? masterGain ?? ctx.destination);
 }
 
+export type InterfaceSoundKind = 'hover' | 'activate' | 'back';
+
+let lastInterfaceSoundAt = -Infinity;
+let lastTypingSoundAt = -Infinity;
+let interfaceSoundsBound = false;
+
+function playSoftTone(
+  frequency: number,
+  duration: number,
+  volume: number,
+  type: OscillatorType = 'sine',
+  endFrequency = frequency,
+): void {
+  if (!ctx) return;
+  ensureAudioGraph();
+  const now = ctx.currentTime;
+  const oscillator = ctx.createOscillator();
+  const gain = ctx.createGain();
+  oscillator.type = type;
+  oscillator.frequency.setValueAtTime(frequency, now);
+  oscillator.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), now + duration);
+  gain.gain.setValueAtTime(Math.max(0.0001, volume), now);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  oscillator.connect(gain);
+  connectSfx(gain);
+  oscillator.start(now);
+  oscillator.stop(now + duration);
+}
+
+export function playInterfaceSound(kind: InterfaceSoundKind = 'activate'): void {
+  if (!ctx) return;
+  const now = performance.now();
+  const minInterval = kind === 'hover' ? 65 : 24;
+  if (now - lastInterfaceSoundAt < minInterval) return;
+  lastInterfaceSoundAt = now;
+  if (kind === 'hover') {
+    playSoftTone(430, 0.045, 0.012, 'sine', 510);
+  } else if (kind === 'back') {
+    playSoftTone(290, 0.075, 0.022, 'triangle', 205);
+  } else {
+    playSoftTone(520, 0.075, 0.025, 'triangle', 690);
+  }
+}
+
+export function playTypingTick(character: string): void {
+  if (!ctx || !character.trim()) return;
+  const now = performance.now();
+  if (now - lastTypingSoundAt < 22) return;
+  lastTypingSoundAt = now;
+  const variation = character.charCodeAt(0) % 5;
+  playSoftTone(610 + variation * 18, 0.025, 0.008, 'triangle', 540 + variation * 12);
+}
+
+export function initInterfaceSounds(root: ParentNode = document): void {
+  if (interfaceSoundsBound) return;
+  interfaceSoundsBound = true;
+  let lastHovered: Element | null = null;
+  const selector = 'button, a, [role="button"], input, select';
+
+  root.addEventListener('pointerover', event => {
+    const target = event.target instanceof Element ? event.target.closest(selector) : null;
+    if (!target || target === lastHovered) return;
+    lastHovered = target;
+    playInterfaceSound('hover');
+  });
+  root.addEventListener('pointerout', event => {
+    const target = event.target instanceof Element ? event.target.closest(selector) : null;
+    if (target === lastHovered) lastHovered = null;
+  });
+  root.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target.closest(selector) : null;
+    if (!target) return;
+    initAudio();
+    playInterfaceSound(target.matches('[data-sound="back"]') ? 'back' : 'activate');
+  });
+}
+
 function rampGain(
   gain: GainNode,
   now: number,

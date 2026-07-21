@@ -44,3 +44,16 @@
 @media (max-width:560px) {
   .rt-session { grid-template-columns:1fr; justify-items:center; text-align:center; }
 }
+
+
+.experimental-badge {
+  display:inline-flex; align-items:center; margin-left:10px; padding:4px 7px;
+  border:1px solid rgba(255,190,92,.42); border-radius:999px;
+  background:rgba(255,160,60,.09); color:#ffd08a;
+  font:800 8px 'JetBrains Mono',monospace; letter-spacing:1px; vertical-align:middle;
+  white-space:nowrap;
+}
+.sp-tab-title .experimental-badge { transform:translateY(-2px); }
+@media (max-width:560px) {
+  .experimental-badge { display:flex; width:max-content; margin:8px 0 0; }
+}

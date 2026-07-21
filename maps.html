@@ -37,7 +37,7 @@
     <div class="topbar-search">
       <span class="material-symbols-rounded">search</span>
       <input id="searchInput" class="search-input" type="search"
-             placeholder="Szukaj map…" autocomplete="off" spellcheck="false">
+             placeholder="Szukaj map…" data-i18n-placeholder="maps.searchPlaceholder" autocomplete="off" spellcheck="false">
     </div>
 
     <div class="topbar-actions">
@@ -66,7 +66,7 @@
           <button class="filter-chip" data-diff="medium" type="button" data-i18n="maps.diffMedium">MEDIUM</button>
           <button class="filter-chip" data-diff="hard"   type="button" data-i18n="maps.diffHard">HARD</button>
           <button class="filter-chip" data-diff="expert" type="button" data-i18n="maps.diffExpert">EXPERT</button>
-          <select class="filter-sort" id="sortSelect" aria-label="Sortowanie">
+          <select class="filter-sort" id="sortSelect" aria-label="Sortowanie" data-i18n-aria-label="maps.sortAria">
             <option value="newest"  data-i18n="maps.sortNewest">Najnowsze</option>
             <option value="alpha"   data-i18n="maps.sortAlpha">Alfabetycznie</option>
             <option value="beats"   data-i18n="maps.sortBeats">Beatów (malejąco)</option>
@@ -87,7 +87,7 @@
       <div class="maps-detail-pane">
         <div id="detailPane" class="detail-empty">
           <span class="material-symbols-rounded">arrow_back</span>
-          <div class="detail-empty-hint">WYBIERZ MAPĘ<br>Z LISTY</div>
+          <div class="detail-empty-hint" data-i18n="maps.selectFromList">WYBIERZ MAPĘ Z LISTY</div>
         </div>
       </div>
 

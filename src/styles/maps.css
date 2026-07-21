@@ -539,6 +539,7 @@ option { background: #0a1628; }
 .maps-detail-pane {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   overflow: hidden;
   background: rgba(5, 7, 13, 0.6);
   perspective: 900px;
@@ -556,6 +557,7 @@ option { background: #0a1628; }
 }
 .detail-empty .material-symbols-rounded { font-size: 36px; opacity: 0.2; }
 .detail-empty-hint {
+  white-space: pre-line;
   font-size: 10px;
   letter-spacing: 2px;
   color: var(--dim);
@@ -564,7 +566,9 @@ option { background: #0a1628; }
 
 .detail-scroll {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px 20px;
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.15) transparent;
@@ -638,6 +642,9 @@ option { background: #0a1628; }
 }
 
 .detail-title {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   font-family: 'Oxanium', sans-serif;
   font-size: clamp(18px, 2.2vw, 26px);
   font-weight: 900;

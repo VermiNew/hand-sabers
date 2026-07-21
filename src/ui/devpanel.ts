@@ -130,9 +130,9 @@ function isDevModeRequested(): boolean {
   return params.has('dev') || params.has('testing') || Boolean(getSettings().developerMode);
 }
 
-function setCameraPanelInlineVisibility(enabled: boolean): void {
+function setCameraPanelInlineVisibility(_enabled: boolean): void {
   const camPanel = document.getElementById('camPanel');
-  if (camPanel) camPanel.style.display = enabled ? '' : 'none';
+  if (camPanel) camPanel.style.removeProperty('display');
 }
 
 export function isDeveloperPanelEnabled(): boolean {

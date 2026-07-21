@@ -47,7 +47,7 @@ export function showHitFeedback(
     pointer-events:none;
     white-space:nowrap;
   `;
-  const screenX = window.innerWidth * (0.5 - position.x * 0.08);
+  const screenX = window.innerWidth * (0.5 + position.x * 0.08);
   const screenY = window.innerHeight * (0.42 - position.y * 0.06);
   element.style.left = `${screenX}px`;
   element.style.top = `${screenY}px`;

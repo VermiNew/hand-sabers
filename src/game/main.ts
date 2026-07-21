@@ -6,7 +6,7 @@ import {
   animateIdleSabers, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel,
 } from './scene.ts';
-import { initAudio, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
+import { initAudio, initInterfaceSounds, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
@@ -19,7 +19,7 @@ import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes,
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
-import { t, setLang, getCurrentLang } from '../i18n/index.ts';
+import { t, setLang, getCurrentLang, needsLanguageSelection, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
@@ -82,10 +82,7 @@ setSaberTargetSetter((side, pos) => {
 });
 
 function applyTranslations(): void {
-  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
-    const key = el.dataset['i18n'];
-    if (key) el.textContent = t(key);
-  });
+  translateDom();
   // ov-instruction uses innerHTML (two keys) — handle separately
   const ovInstr = document.getElementById('ovInstr');
   if (ovInstr && !ovInstr.dataset['loading']) {
@@ -94,6 +91,7 @@ function applyTranslations(): void {
 }
 
 applyTranslations();
+initInterfaceSounds();
 
 let lastRuntimeError = '';
 let lastRuntimeErrorAt = 0;
@@ -395,7 +393,7 @@ async function beginPlaying(): Promise<void> {
   if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
 }
 
-function endGame(): void {
+function endGame(victory = false): void {
   state.appState    = S.GAMEOVER;
   state.pauseReason = PAUSE_REASONS.NONE;
   const dur = mapTimeline.getDuration();
@@ -423,7 +421,7 @@ function endGame(): void {
   mapTimeline.reset();
   clearGameplayEntities();
   runAsyncTask('score-submit', () => submitScore(progress, wasTrainingMode));
-  fadeTransition(() => { showGameOver(state); });
+  fadeTransition(() => { showGameOver(state, victory); });
 }
 
 function restartGame(): void {
@@ -732,7 +730,7 @@ function renderFrame(timestamp: number): void {
       }
       window.__audioOffsetMs      = Math.round(getAudioOffsetSec(settings, state.map) * 1000);
       if ((mapTimeline.hasStartedAudio || !hasMapAudio()) && progressTime >= duration && duration > 0) {
-        endGame();
+        endGame(true);
       }
     }
 
@@ -950,7 +948,7 @@ ui.calibAbortBtn?.addEventListener('click', returnToMainMenu);
 
 window.addEventListener('resize',  resizeRenderer);
 window.addEventListener('keydown', handleKeydown);
-setGameOverHandler(endGame);
+setGameOverHandler(() => endGame(false));
 
 // Keyboard navigation — focus traps, arrow keys, escape stack
 initKeyboardNav({
@@ -1122,6 +1120,12 @@ function initMainMenu(): void {
       (settingsButton as HTMLElement | null)?.focus({ preventScroll: true });
     }
   }
+
+  window.addEventListener('hand-sabers:open-settings', event => {
+    const detail = (event as CustomEvent<{ tab?: string }>).detail;
+    switchSettingsTab(detail?.tab ?? 'audio');
+    setSettingsPanelVisible(true);
+  });
 
   function syncOneHandButtons(): void {
     oneHandButtons.forEach(btn => {
@@ -1308,6 +1312,16 @@ function initMainMenu(): void {
   }
 
   dispatchMenuAction('mainStart', () => {
+    if (!state.map) {
+      runAsyncTask('map-selection-prompt', async () => {
+        const choice = await narratorShow({
+          text: t('narrator.selectMap'),
+          buttons: [t('narrator.openMaps'), t('narrator.cancel')],
+        });
+        if (choice === 0) location.href = withDevQuery('./maps.html');
+      });
+      return;
+    }
     if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
       switchSettingsTab('remoteTracking');
       setSettingsPanelVisible(true);
@@ -1887,6 +1901,25 @@ window.addEventListener('hand-sabers:multiplayer-start', event => {
 initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 initMainMenu();
+
+if (needsLanguageSelection()) {
+  window.dispatchEvent(new CustomEvent('hand-sabers:open-settings', { detail: { tab: 'language' } }));
+  window.setTimeout(() => {
+    void narratorShow({ text: t('narrator.chooseLanguage'), buttons: [t('calib.ok')] });
+  }, 250);
+} else if (localStorage.getItem('hs_settings_recommendation_seen') !== '1') {
+  localStorage.setItem('hs_settings_recommendation_seen', '1');
+  window.setTimeout(() => {
+    void narratorShow({
+      text: t('narrator.configureSettings'),
+      buttons: [t('narrator.openSettings'), t('narrator.later')],
+    }).then(choice => {
+      if (choice === 0) {
+        window.dispatchEvent(new CustomEvent('hand-sabers:open-settings', { detail: { tab: 'gameplay' } }));
+      }
+    });
+  }, 900);
+}
 
 runAsyncTask('application-startup', async () => {
   try {

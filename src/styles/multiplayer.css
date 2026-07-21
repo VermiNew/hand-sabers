@@ -31,6 +31,15 @@
 .mp-close:hover { color:#fff; border-color:var(--main); }
 .mp-setup { display:grid; grid-template-columns:1fr 1fr; gap:16px; padding:22px 28px 28px; }
 .mp-setup[hidden],.mp-room[hidden] { display:none; }
+.mp-network-warning {
+  grid-column:1/-1; display:flex; align-items:flex-start; gap:10px; padding:12px 14px;
+  border:1px solid rgba(126,184,255,.2); border-radius:9px;
+  background:rgba(47,124,255,.07); color:var(--muted); font-size:10px; line-height:1.55;
+}
+.mp-network-warning .material-symbols-rounded { flex:0 0 auto; color:var(--main-light); font-size:18px; }
+.mp-network-warning p { margin:0; }
+.mp-network-warning.is-insecure { border-color:rgba(255,184,92,.36); background:rgba(255,160,60,.08); color:#ffd7a2; }
+.mp-network-warning.is-insecure .material-symbols-rounded { color:#ffb45c; }
 .mp-action-card,.mp-share-card,.mp-connected-card {
   border:1px solid rgba(142,200,255,.16); border-radius:12px;
   background:rgba(4,10,19,.62);

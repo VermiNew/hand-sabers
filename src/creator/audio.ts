@@ -106,7 +106,7 @@ export async function decodeAndAttachAudio(
   } catch (err) {
     state.audioBuffer      = null;
     state.audioArrayBuffer = null;
-    throw new Error(`Nie udało się zdekodować audio: ${(err as Error).message}`);
+    throw new Error(`${t('creator.audioDecodeError')}: ${(err as Error).message}`);
   }
 
   if (!keepMapId) state.map.id = MAP_ID();

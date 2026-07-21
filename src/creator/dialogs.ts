@@ -1,3 +1,5 @@
+import { t } from '../i18n/index.ts';
+
 type ToastType = 'info' | 'error' | 'success';
 
 interface ToastOptions {
@@ -52,7 +54,7 @@ export function showToast(message: string, { type = 'info', timeout = 2800 }: To
 
 export function showConfirm(
   message: string,
-  { title = 'Potwierdź', confirmText = 'OK', cancelText = 'Anuluj', danger = false }: ConfirmOptions = {},
+  { title = t('creator.dialogConfirm'), confirmText = 'OK', cancelText = t('creator.dialogCancel'), danger = false }: ConfirmOptions = {},
 ): Promise<boolean> {
   const root = ensureModalRoot();
   root.hidden = false;
@@ -82,7 +84,7 @@ export function showConfirm(
 
 export function showAlert(
   message: string,
-  { title = 'Komunikat', type = 'error' }: AlertOptions = {},
+  { title = t('errors.error'), type = 'error' }: AlertOptions = {},
 ): Promise<boolean> {
   showToast(message, { type });
   return showConfirm(message, { title, confirmText: 'OK', cancelText: '', danger: type === 'error' });

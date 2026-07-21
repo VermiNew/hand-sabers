@@ -3,9 +3,12 @@ import { t } from '../i18n/index.ts';
 
 const TUTORIAL_SEEN_KEY = 'hs_tutorial_seen';
 const TUTORIAL_STEPS = [
+  { key: 'settings', icon: 'tune' },
+  { key: 'maps', icon: 'library_music' },
   { key: 'calibration', icon: 'center_focus_strong' },
   { key: 'movement', icon: 'swipe' },
   { key: 'hit', icon: 'ads_click' },
+  { key: 'tracking', icon: 'visibility' },
 ] as const;
 
 export function initHelpOverlay(): void {

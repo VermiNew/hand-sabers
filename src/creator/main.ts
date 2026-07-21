@@ -3,7 +3,7 @@ import { validateAudioFile } from '../core/audio-validation.ts';
 import { sortBeatsByTime } from '../core/creator-rules.ts';
 import { getLocalMapById, saveLocalMap } from '../core/localstore.ts';
 import { showAlert, showToast } from './dialogs.ts';
-import { t } from '../i18n/index.ts';
+import { t, translateDom } from '../i18n/index.ts';
 
 import { state, MAP_ID } from './state.ts';
 import type { CreatorMap } from './state.ts';
@@ -68,10 +68,8 @@ function runCreatorTask(context: string, task: () => Promise<unknown>): void {
 
 // ── i18n ──────────────────────────────────────────────────────────
 function applyCreatorTranslations(): void {
-  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach(el => {
-    const key = el.dataset['i18n'];
-    if (key) el.textContent = t(key);
-  });
+  translateDom();
+  document.title = t('creator.pageTitle');
 }
 
 // ── Audio callbacks ───────────────────────────────────────────────
@@ -92,7 +90,7 @@ function syncPlayStopBtn(): void {
   const playing = state.isPlaying || !!state.precountTimer;
   btn.classList.toggle('is-playing', playing);
   if (icon)  icon.textContent  = playing ? 'stop'       : 'play_arrow';
-  if (label) label.textContent = playing ? 'STOP'       : 'PLAY';
+  if (label) label.textContent = playing ? t('creator.stop') : t('creator.play');
 }
 
 // ── RAF render loop ───────────────────────────────────────────────
@@ -198,7 +196,7 @@ async function handleFile(file: File): Promise<void> {
       renderAll();
       showToast(t('creator.zipLoaded'), { type: 'success' });
     } else {
-      throw new Error(`Nieobsługiwany format pliku: ${file.name}. Obsługiwane: audio (.mp3, .ogg, .wav), .json, .zip`);
+      throw new Error(t('creator.unsupportedFile', { name: file.name }));
     }
   } catch (err) {
     const warningMsg = document.getElementById('warningMsg');

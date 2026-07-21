@@ -66,6 +66,19 @@ export function initRemoteTrackingPairing(): void {
   const errorMessage = element<HTMLElement>('remoteTrackingError');
   if (!openButton || !overlay || !closeButton || !createButton || !sessionPanel || !qr || !code || !phoneLink || !status || !statusText || !errorMessage) return;
 
+  const badgeTargets = [
+    document.querySelector<HTMLElement>('.sp-tab[data-tab="remoteTracking"] .sp-tab-title'),
+    element<HTMLElement>('remoteTrackingTitle'),
+  ];
+  for (const target of badgeTargets) {
+    if (!target || target.querySelector('.experimental-badge')) continue;
+    const badge = document.createElement('span');
+    badge.className = 'experimental-badge';
+    badge.dataset['i18n'] = 'remoteTracking.experimentalBadge';
+    badge.textContent = t('remoteTracking.experimentalBadge');
+    target.append(badge);
+  }
+
   const showError = (message = '') => {
     errorMessage.textContent = message;
     errorMessage.hidden = !message;
