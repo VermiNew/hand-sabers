@@ -127,12 +127,23 @@ async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 async function checkServerHealth(): Promise<boolean> {
-  try {
-    const response = await fetch('/api/health', { cache: 'no-store', credentials: 'same-origin' });
-    return response.ok;
-  } catch {
-    return false;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 2500);
+      const response = await fetch('/api/health', {
+        cache: 'no-store',
+        credentials: 'same-origin',
+        signal: controller.signal,
+      });
+      window.clearTimeout(timeout);
+      if (response.ok) return true;
+    } catch {
+      // The server may still be starting. Retry once before showing offline UI.
+    }
+    if (attempt === 0) await new Promise(resolve => window.setTimeout(resolve, 700));
   }
+  return false;
 }
 
 async function loadServerMaps(): Promise<MapEntry[]> {
@@ -658,7 +669,8 @@ async function loadMaps(): Promise<void> {
 
     const serverOnline = await healthPromise;
     const offlineEl = document.getElementById('offlineNotice');
-    if (offlineEl) offlineEl.hidden = !(serverError && !serverOnline);
+    const definitelyOffline = Boolean(serverError && !serverOnline && serverMaps.length === 0);
+    if (offlineEl) offlineEl.hidden = !definitelyOffline;
     if (serverError && serverOnline && !serverMapsWarningShown) {
       serverMapsWarningShown = true;
       showToast(t('maps.serverMapsUnavailable'), { type: 'info' });
