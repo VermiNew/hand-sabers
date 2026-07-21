@@ -221,7 +221,9 @@
       "title": "Performance",
       "graphicsSettings": "Graphics settings",
       "autoHint": "Automatically checks hardware and adjusts quality during gameplay.",
-      "currentMode": "Current mode: —"
+      "currentMode": "Current mode: —",
+      "currentModeAuto": "Current mode: Auto → {{active}} ({{details}})",
+      "currentModeActive": "Current mode: {{active}} ({{details}})"
     },
     "customGraphics": {
       "title": "Graphics (advanced)",
@@ -304,7 +306,21 @@
       "saberModelLabel": "Blade shape",
       "modelClassic": "Classic",
       "modelWide": "Wide",
-      "modelThin": "Thin"
+      "modelThin": "Thin",
+      "colorNames": {
+        "green": "Green",
+        "blue": "Blue",
+        "red": "Red",
+        "purple": "Purple",
+        "yellow": "Yellow",
+        "orange": "Orange",
+        "pink": "Pink",
+        "cyan": "Cyan",
+        "white": "White",
+        "gold": "Gold",
+        "lime": "Lime",
+        "indigo": "Indigo"
+      }
     }
   },
   "maps": {
@@ -616,5 +632,19 @@
       "ultra": "For good hardware: floor reflections, high sharpness and all effects.",
       "maximum": "Best graphics settings: highest render resolution and richest effects."
     }
+  },
+  "validation": {
+    "audioNotSelected": "No audio file was selected.",
+    "audioUnsupported": "Unsupported audio format. Use MP3, OGG, WAV, or FLAC.",
+    "audioTooShort": "The audio is too short or corrupted.",
+    "audioTooLong": "The audio is too long. The creator limit is 60 minutes.",
+    "audioDecodeFailed": "The audio could not be decoded correctly.",
+    "fileTooLarge": "The file is too large ({{size}} MB). Limit: {{limit}} MB.",
+    "unsafeZipPath": "Unsafe path in ZIP: {{name}}",
+    "mapMustBeObject": "The map must be a JSON object.",
+    "mapTooLong": "The map is longer than the allowed 24 hours.",
+    "tooManyBeats": "The map contains too many beats ({{count}}). Limit: {{limit}}.",
+    "beatTooLate": "Beat {{index}} exceeds the allowed map length of 24 hours.",
+    "mapNeedsBeats": "The map must contain a beats array."
   }
 }

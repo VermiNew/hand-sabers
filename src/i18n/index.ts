@@ -2,6 +2,7 @@ import i18next from 'i18next';
 import pl from './pl.json';
 import en from './en.json';
 import { contestTranslations } from './contest.ts';
+import { setCoreLang } from '../core/translate.js';
 
 export type Lang = 'pl' | 'en';
 
@@ -27,12 +28,14 @@ function mergeTranslations(base: TranslationTree, overrides: TranslationTree): T
 }
 
 function detectLang(): Lang {
-  const stored = localStorage.getItem('lang');
+  const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('lang') : null;
   if (stored === 'pl' || stored === 'en') return stored;
 
-  const browserLanguages = [...(navigator.languages ?? []), navigator.language]
-    .map(language => String(language || '').toLowerCase())
-    .filter(Boolean);
+  const browserLanguages = typeof navigator !== 'undefined'
+    ? [...(navigator.languages ?? []), navigator.language]
+      .map(language => String(language || '').toLowerCase())
+      .filter(Boolean)
+    : ['pl'];
   if (browserLanguages.some(language => language === 'pl' || language.startsWith('pl-'))) return 'pl';
   if (browserLanguages.some(language => language === 'en' || language.startsWith('en-'))) return 'en';
 
@@ -41,8 +44,9 @@ function detectLang(): Lang {
 }
 
 const initialLanguage = detectLang();
+setCoreLang(initialLanguage);
 
-document.documentElement.lang = initialLanguage;
+if (typeof document !== 'undefined') document.documentElement.lang = initialLanguage;
 
 void i18next.init({
   lng: initialLanguage,
@@ -78,8 +82,9 @@ export function translateDom(root: ParentNode = document): void {
 
 export function setLang(lang: Lang): void {
   languageSelectionNeeded = false;
-  localStorage.setItem('lang', lang);
-  document.documentElement.lang = lang;
+  setCoreLang(lang);
+  if (typeof localStorage !== 'undefined') localStorage.setItem('lang', lang);
+  if (typeof document !== 'undefined') document.documentElement.lang = lang;
   void i18next.changeLanguage(lang);
 }
 

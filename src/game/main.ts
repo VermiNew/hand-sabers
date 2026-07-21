@@ -1187,8 +1187,8 @@ function initMainMenu(): void {
     const label    = window.__graphicsProfile     ?? profile.label       ?? active;
     const dpr      = window.__graphicsDpr ? `, DPR ${Number(window.__graphicsDpr).toFixed(2)}` : '';
     return selected === 'auto'
-      ? `Obecny tryb: Auto → ${active} (${label}${dpr})`
-      : `Obecny tryb: ${active} (${label}${dpr})`;
+      ? t('settings.performance.currentModeAuto', { active, details: `${label}${dpr}` })
+      : t('settings.performance.currentModeActive', { active, details: `${label}${dpr}` });
   }
 
   function updateGraphicsModeInfo(): void {
@@ -1615,12 +1615,12 @@ function initMainMenu(): void {
   syncHitboxSensitivityButtons();
 
   // ── Kolory mieczy ─────────────────────────────────────────────────────────
-  function updateColorPreview(previewBar: HTMLElement | null, previewName: HTMLElement | null, colorDef: { hex: string; label: string }): void {
+  function updateColorPreview(previewBar: HTMLElement | null, previewName: HTMLElement | null, colorDef: { hex: string; labelKey?: string; label?: string }): void {
     if (previewBar) {
       previewBar.style.background  = colorDef.hex;
       previewBar.style.boxShadow   = `0 0 8px 2px ${colorDef.hex}88`;
     }
-    if (previewName) previewName.textContent = colorDef.label;
+    if (previewName) previewName.textContent = colorDef.labelKey ? t(colorDef.labelKey) : (colorDef.label ?? '');
   }
 
   function buildColorGrid(gridEl: HTMLElement | null, previewBar: HTMLElement | null, previewName: HTMLElement | null, side: 'left' | 'right', currentHex: string): void {
@@ -1633,8 +1633,8 @@ function initMainMenu(): void {
       const btn      = document.createElement('button');
       btn.type       = 'button';
       btn.className  = 'saber-color-swatch' + (selected ? ' is-selected' : '');
-      btn.title      = colorDef.label;
-      btn.setAttribute('aria-label',   colorDef.label);
+      btn.title      = t(colorDef.labelKey);
+      btn.setAttribute('aria-label',   t(colorDef.labelKey));
       btn.setAttribute('aria-checked', String(selected));
       btn.setAttribute('role', 'radio');
       btn.style.setProperty('background-color', colorDef.hex);

@@ -1,3 +1,4 @@
+import { coreT } from './translate.js';
 import { AUDIO_EXT_RE, MAX_IMPORT_BYTES, assertFileSize } from './map-format.ts';
 
 export const MIN_AUDIO_DURATION_SEC = 0.25;
@@ -26,10 +27,10 @@ export function validateAudioFile(
   fileLike: AudioFileLike | null | undefined,
   { maxBytes = MAX_IMPORT_BYTES }: AudioValidationOptions = {},
 ): boolean {
-  if (!fileLike) throw new Error('Nie wybrano pliku audio.');
+  if (!fileLike) throw new Error(coreT('audioNotSelected'));
   assertFileSize(fileLike, maxBytes);
   if (!isSupportedAudioFile(fileLike)) {
-    throw new Error('Nieobsługiwany format audio. Użyj MP3, OGG, WAV albo FLAC.');
+    throw new Error(coreT('audioUnsupported'));
   }
   return true;
 }
@@ -37,14 +38,14 @@ export function validateAudioFile(
 export function validateDecodedAudio(audioBuffer: DecodedAudioLike | null | undefined): boolean {
   const duration = Number(audioBuffer?.duration ?? 0);
   if (!Number.isFinite(duration) || duration < MIN_AUDIO_DURATION_SEC) {
-    throw new Error('Audio jest zbyt krótkie albo uszkodzone.');
+    throw new Error(coreT('audioTooShort'));
   }
   if (duration > MAX_AUDIO_DURATION_SEC) {
-    throw new Error('Audio jest za długie. Limit kreatora to 60 minut.');
+    throw new Error(coreT('audioTooLong'));
   }
   const sampleRate = Number(audioBuffer?.sampleRate ?? 0);
   if (!Number.isFinite(sampleRate) || sampleRate <= 0) {
-    throw new Error('Nie udało się poprawnie zdekodować audio.');
+    throw new Error(coreT('audioDecodeFailed'));
   }
   return true;
 }

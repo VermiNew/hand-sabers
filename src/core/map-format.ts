@@ -1,3 +1,4 @@
+import { coreT } from './translate.js';
 import type { Beat, BeatSide, BeatType, CutDirection, GameMap, MapMeta } from '../types/index.js';
 
 export const MAP_FORMAT_VERSION = 1;
@@ -104,14 +105,14 @@ export function findPreferredAudioEntry<T extends { dir?: boolean; name?: string
 export function assertFileSize(fileLike: FileLike, limitBytes = MAX_IMPORT_BYTES): void {
   const size = Number(fileLike?.size ?? fileLike?.buffer?.length ?? 0);
   if (Number.isFinite(size) && size > limitBytes) {
-    throw new Error(`Plik jest za duży (${Math.round(size / 1024 / 1024)} MB). Limit: ${Math.round(limitBytes / 1024 / 1024)} MB.`);
+    throw new Error(coreT('fileTooLarge', { size: Math.round(size / 1024 / 1024), limit: Math.round(limitBytes / 1024 / 1024) }));
   }
 }
 
 export function validateZipEntryNames(entries: Array<string | ZipEntryLike>): void {
   for (const entry of entries) {
     const name = typeof entry === 'string' ? entry : entry?.name;
-    if (!isSafeZipPath(name)) throw new Error(`Niebezpieczna ścieżka w ZIP: ${name}`);
+    if (!isSafeZipPath(name)) throw new Error(coreT('unsafeZipPath', { name: String(name ?? '') }));
   }
 }
 
@@ -137,18 +138,18 @@ function normalizeBeat(rawBeat: unknown, index = 0): NormalizedBeat {
 }
 
 export function upgradeMapFormat(rawMap: unknown, options: NormalizeMapOptions = {}): GameMap & UnknownRecord {
-  if (!isPlainObject(rawMap)) throw new Error('Mapa musi być obiektem JSON.');
+  if (!isPlainObject(rawMap)) throw new Error(coreT('mapMustBeObject'));
   const metaSource = asRecord(rawMap.meta);
   const declaredDuration = Number(metaSource.duration ?? rawMap.duration ?? 0);
   if (declaredDuration > MAX_MAP_DURATION_SEC) {
-    throw new Error('Mapa jest dłuższa niż dozwolone 24 godziny.');
+    throw new Error(coreT('mapTooLong'));
   }
 
   const rawBeats = Array.isArray(rawMap.beats) ? rawMap.beats : [];
   const maxBeats = options.maxBeats ?? MAX_BEATS_DEFAULT;
   if (rawBeats.length > maxBeats) {
     if (options.throwOnLimit) {
-      throw new Error(`Mapa zawiera zbyt wiele beatów (${rawBeats.length}). Limit: ${maxBeats}.`);
+      throw new Error(coreT('tooManyBeats', { count: rawBeats.length, limit: maxBeats }));
     }
   }
   const beats = rawBeats
@@ -156,12 +157,12 @@ export function upgradeMapFormat(rawMap: unknown, options: NormalizeMapOptions =
     .map((rawBeat, index) => {
       const beat = normalizeBeat(rawBeat, index);
       if (beat.t > MAX_MAP_DURATION_SEC) {
-        throw new Error(`Beat ${index + 1} przekracza dozwoloną długość mapy wynoszącą 24 godziny.`);
+        throw new Error(coreT('beatTooLate', { index: index + 1 }));
       }
       return beat;
     })
     .sort((a, b) => a.t - b.t);
-  if (!beats.length && options.requireBeats !== false) throw new Error('Mapa musi zawierać tablicę beats.');
+  if (!beats.length && options.requireBeats !== false) throw new Error(coreT('mapNeedsBeats'));
 
   const meta: MapMeta = { ...metaSource };
   const id = sanitizeMapId(rawMap.id || meta.title || rawMap.title || options.fallbackId || 'custom-map');

@@ -221,7 +221,9 @@
       "title": "Wydajność",
       "graphicsSettings": "Ustawienia graficzne",
       "autoHint": "Auto sprawdza sprzęt i reguluje jakość w trakcie gry.",
-      "currentMode": "Obecny tryb: —"
+      "currentMode": "Obecny tryb: —",
+      "currentModeAuto": "Obecny tryb: Auto → {{active}} ({{details}})",
+      "currentModeActive": "Obecny tryb: {{active}} ({{details}})"
     },
     "customGraphics": {
       "title": "Grafika (zaawansowane)",
@@ -304,7 +306,21 @@
       "saberModelLabel": "Kształt ostrza",
       "modelClassic": "Klasyczny",
       "modelWide": "Szeroki",
-      "modelThin": "Cienki"
+      "modelThin": "Cienki",
+      "colorNames": {
+        "green": "Zielony",
+        "blue": "Niebieski",
+        "red": "Czerwony",
+        "purple": "Fioletowy",
+        "yellow": "Żółty",
+        "orange": "Pomarańczowy",
+        "pink": "Różowy",
+        "cyan": "Cyjan",
+        "white": "Biały",
+        "gold": "Złoty",
+        "lime": "Limonkowy",
+        "indigo": "Indygo"
+      }
     }
   },
   "maps": {
@@ -616,5 +632,19 @@
       "ultra": "Na dobre sprzęty: odbicia podłogi, wysoka ostrość i komplet efektów.",
       "maximum": "Najlepsze ustawienia graficzne: najwyższa rozdzielczość renderu i najbogatsze efekty."
     }
+  },
+  "validation": {
+    "audioNotSelected": "Nie wybrano pliku audio.",
+    "audioUnsupported": "Nieobsługiwany format audio. Użyj MP3, OGG, WAV albo FLAC.",
+    "audioTooShort": "Audio jest zbyt krótkie albo uszkodzone.",
+    "audioTooLong": "Audio jest za długie. Limit kreatora to 60 minut.",
+    "audioDecodeFailed": "Nie udało się poprawnie zdekodować audio.",
+    "fileTooLarge": "Plik jest za duży ({{size}} MB). Limit: {{limit}} MB.",
+    "unsafeZipPath": "Niebezpieczna ścieżka w ZIP: {{name}}",
+    "mapMustBeObject": "Mapa musi być obiektem JSON.",
+    "mapTooLong": "Mapa jest dłuższa niż dozwolone 24 godziny.",
+    "tooManyBeats": "Mapa zawiera zbyt wiele beatów ({{count}}). Limit: {{limit}}.",
+    "beatTooLate": "Beat {{index}} przekracza dozwoloną długość mapy wynoszącą 24 godziny.",
+    "mapNeedsBeats": "Mapa musi zawierać tablicę beats."
   }
 }
