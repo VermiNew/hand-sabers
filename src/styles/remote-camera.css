@@ -47,3 +47,7 @@ button:disabled { opacity:.45; }
 .remote-error { margin:14px 0 0; color:#ff9aa5; font-size:10px; }
 .remote-privacy { margin:18px 0 0; padding-top:16px; border-top:1px solid rgba(126,184,255,.1); }
 [hidden] { display:none!important; }
+
+.remote-title-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.remote-title-row h1 { margin:0; }
+.remote-experimental { display:inline-flex; align-items:center; min-height:24px; padding:4px 8px; border:1px solid rgba(255,184,77,.42); border-radius:999px; color:#ffc66d; background:rgba(255,151,47,.08); font:700 10px/1 JetBrains Mono,monospace; letter-spacing:.9px; text-transform:uppercase; }
