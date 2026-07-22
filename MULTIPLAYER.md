@@ -11,7 +11,7 @@ Każdy gracz uruchamia grę i tracking na swoim urządzeniu. Serwer synchronizuj
 Na komputerze hosta:
 
 ```bash
-npm install
+npm install --package-lock=false
 npm run build
 npm run start
 ```

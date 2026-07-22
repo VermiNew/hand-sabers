@@ -14,7 +14,7 @@ Przeglądarki traktują `http://localhost` jako bezpieczny wyjątek. Zwykły adr
 ## Uruchomienie lokalne
 
 ```bash
-npm install
+npm install --package-lock=false
 npm start
 ```
 

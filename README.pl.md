@@ -14,7 +14,7 @@ Beat Saber bez VR: gra rytmiczna sterowana rękami przez kamerę. Frontend dzia�
 ## Instalacja
 
 ```bash
-npm install
+npm install --package-lock=false
 ```
 
 ## Najprostsze uruchomienie

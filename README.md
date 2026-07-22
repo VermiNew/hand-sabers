@@ -14,7 +14,7 @@ Beat Saber without VR: a rhythm game controlled by your hands via webcam. The fr
 ## Installation
 
 ```bash
-npm install
+npm install --package-lock=false
 ```
 
 ## Quickstart

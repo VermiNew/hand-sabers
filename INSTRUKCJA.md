@@ -10,7 +10,7 @@
 ## Uruchomienie lokalne
 
 ```bash
-npm install
+npm install --package-lock=false
 npm run dev
 ```
 
