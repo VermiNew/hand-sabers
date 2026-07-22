@@ -15,9 +15,10 @@ interface MusicVisualizerFrame {
   songTimeSec: number;
 }
 
-const MAX_PORTAL_COUNT = 5;
-const PORTAL_SPACING = 3.5;
-const portalGeometry = new THREE.TorusGeometry(2.35, 0.015, 3, 24);
+const MAX_PORTAL_COUNT = 6;
+const PORTAL_SPACING = 2.15;
+const portalGeometry = new THREE.TorusGeometry(2.35, 0.016, 3, 24);
+const portalGlowGeometry = new THREE.TorusGeometry(2.35, 0.055, 3, 24);
 const portalMaterial = new THREE.MeshBasicMaterial({
   color: THEME.white,
   transparent: true,
@@ -25,18 +26,28 @@ const portalMaterial = new THREE.MeshBasicMaterial({
   depthWrite: false,
   blending: THREE.AdditiveBlending,
 });
+const portalGlowMaterial = new THREE.MeshBasicMaterial({
+  color: THEME.white,
+  transparent: true,
+  opacity: 0,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
 const portals = new THREE.InstancedMesh(portalGeometry, portalMaterial, MAX_PORTAL_COUNT);
+const portalGlows = new THREE.InstancedMesh(portalGlowGeometry, portalGlowMaterial, MAX_PORTAL_COUNT);
 const portalTransform = new THREE.Object3D();
 const portalColor = new THREE.Color();
 let portalLeftColor = -1;
 let portalRightColor = -1;
 
-portals.count = 0;
-portals.visible = false;
-portals.frustumCulled = false;
-portals.renderOrder = 1;
-portals.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-scene.add(portals);
+for (const [mesh, renderOrder] of [[portalGlows, 0], [portals, 1]] as const) {
+  mesh.count = 0;
+  mesh.visible = false;
+  mesh.frustumCulled = false;
+  mesh.renderOrder = renderOrder;
+  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  scene.add(mesh);
+}
 
 function syncPortalColors(): void {
   const left = getSaberColor('left');
@@ -47,8 +58,10 @@ function syncPortalColors(): void {
   for (let index = 0; index < MAX_PORTAL_COUNT; index++) {
     portalColor.setHex(index % 2 === 0 ? left : right);
     portals.setColorAt(index, portalColor);
+    portalGlows.setColorAt(index, portalColor);
   }
   if (portals.instanceColor) portals.instanceColor.needsUpdate = true;
+  if (portalGlows.instanceColor) portalGlows.instanceColor.needsUpdate = true;
 }
 
 syncPortalColors();
@@ -57,11 +70,11 @@ const PORTAL_COUNTS: Record<string, number> = {
   lowest: 0,
   'very-low': 0,
   low: 1,
-  medium: 2,
-  high: 3,
-  ultra: 4,
-  maximum: 5,
-  custom: 3,
+  medium: 3,
+  high: 4,
+  ultra: 5,
+  maximum: 6,
+  custom: 4,
 };
 
 const TIER_INTENSITY: Record<string, number> = {
@@ -152,7 +165,10 @@ export function resetMusicVisualizer(): void {
   currentEffectiveMusicIntensity = 0;
   portals.count = 0;
   portals.visible = false;
+  portalGlows.count = 0;
+  portalGlows.visible = false;
   portalMaterial.opacity = 0;
+  portalGlowMaterial.opacity = 0;
 }
 
 export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
@@ -163,7 +179,10 @@ export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
     beatPulse = 0;
     portals.count = 0;
     portals.visible = false;
+    portalGlows.count = 0;
+    portalGlows.visible = false;
     portalMaterial.opacity = 0;
+    portalGlowMaterial.opacity = 0;
     musicVisualsEnabled = false;
     currentEffectiveMusicIntensity = 0;
     return;
@@ -177,19 +196,28 @@ export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
   const levels = getMusicFrequencyLevels();
   const intensity = getEffectiveMusicIntensity(levels, frame.profile);
   currentEffectiveMusicIntensity = intensity;
+  const portalVisible = portalCount > 0 && intensity > 0.001;
   portals.count = portalCount;
-  portals.visible = portalCount > 0 && intensity > 0.001;
-  portalMaterial.opacity = Math.min(0.42, (0.065 + levels.overall * 0.2 + beatPulse * 0.24) * intensity);
+  portals.visible = portalVisible;
+  portalGlows.count = portalCount;
+  portalGlows.visible = portalVisible;
+  portalMaterial.opacity = Math.min(0.5, (0.07 + levels.overall * 0.22 + beatPulse * 0.28) * intensity);
+  portalGlowMaterial.opacity = Math.min(0.18, (0.025 + levels.bass * 0.07 + beatPulse * 0.095) * intensity);
 
   for (let index = 0; index < portalCount; index++) {
     const wave = 0.5 + Math.sin(frame.nowSec * 2.4 - index * 0.72) * 0.5;
     const localPulse = beatPulse * (0.62 + wave * 0.38);
-    const scale = 1 + (levels.bass * 0.055 + localPulse * 0.035) * intensity;
-    portalTransform.position.set(0, 1.7, -6.5 - index * PORTAL_SPACING);
-    portalTransform.scale.set(scale, (0.7 + levels.mid * 0.025 * intensity) * scale, 1);
-    portalTransform.rotation.set(0, 0, Math.sin(frame.nowSec * 0.3 + index * 0.5) * (0.01 + levels.treble * 0.018) * intensity);
+    const scale = 1 + (levels.bass * 0.065 + localPulse * 0.05) * intensity;
+    const depthDrift = Math.sin(frame.nowSec * 0.7 - index * 0.9) * 0.045 * intensity;
+    portalTransform.position.set(0, 1.7, -6.5 - index * PORTAL_SPACING + depthDrift);
+    portalTransform.scale.set(scale, (0.7 + levels.mid * 0.035 * intensity) * scale, 1);
+    portalTransform.rotation.set(0, 0, Math.sin(frame.nowSec * 0.3 + index * 0.5) * (0.01 + levels.treble * 0.022) * intensity);
     portalTransform.updateMatrix();
     portals.setMatrixAt(index, portalTransform.matrix);
+    portalGlows.setMatrixAt(index, portalTransform.matrix);
   }
-  if (portalCount > 0) portals.instanceMatrix.needsUpdate = true;
+  if (portalCount > 0) {
+    portals.instanceMatrix.needsUpdate = true;
+    portalGlows.instanceMatrix.needsUpdate = true;
+  }
 }
