@@ -25,6 +25,20 @@ export function initAudio(): void {
 
 export function getAudioContext(): AudioContext | null { return ctx; }
 
+export async function resumeAudioContext(): Promise<boolean> {
+  if (!ctx) return true;
+  if (ctx.state === 'closed') return false;
+  if (ctx.state === 'suspended') {
+    try {
+      await ctx.resume();
+    } catch (error) {
+      console.warn('Audio context resume failed:', error);
+      return false;
+    }
+  }
+  return ctx.state === 'running';
+}
+
 // ── Globalny mixer ────────────────────────────────────────────────────────────
 let masterGain: GainNode | null = null;
 let musicGain:  GainNode | null = null;

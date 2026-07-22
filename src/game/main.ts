@@ -6,7 +6,7 @@ import {
   animateIdleSabers, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel,
 } from './scene.ts';
-import { initAudio, initInterfaceSounds, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
+import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
@@ -337,6 +337,7 @@ async function beginMultiplayerRound(detail: {
   }
   initAudio();
   await ensureCurrentMapAudio();
+  resetGameplayFocusProtection();
   clearGameplayEntities();
   stopMapAudio();
   mapTimeline.reset();
@@ -369,6 +370,7 @@ async function beginMultiplayerRound(detail: {
 }
 
 async function beginPlaying(): Promise<void> {
+  resetGameplayFocusProtection();
   hideCalibPanel();
   hideOverlay();
   if (ui.hud)                       ui.hud.style.display        = 'flex';
@@ -394,6 +396,7 @@ async function beginPlaying(): Promise<void> {
 }
 
 function endGame(victory = false): void {
+  resetGameplayFocusProtection();
   state.appState    = S.GAMEOVER;
   state.pauseReason = PAUSE_REASONS.NONE;
   const dur = mapTimeline.getDuration();
@@ -467,38 +470,127 @@ function missingHandsText(): string {
     : t('hands.rightMissing');
 }
 
+type ResumeSource = 'ui' | 'keyboard' | 'hands';
+
+const FOCUS_RESUME_GUARD_MS = 450;
+let focusResumeAllowedAt = 0;
+let focusResumeGuardTimer = 0;
+let resumeInFlight = false;
+
+function setPauseMenuMessage(reason: PauseReason): void {
+  const message = document.getElementById('pauseMenuSub');
+  if (!message) return;
+  if (reason === PAUSE_REASONS.FOCUS) {
+    message.textContent = `${t('pause.focusLost')} ${t('pause.focusResumeHint')}`;
+    message.hidden = false;
+  } else {
+    message.textContent = '';
+    message.hidden = true;
+  }
+}
+
+function setFocusResumeButtonDisabled(disabled: boolean): void {
+  const resumeButton = document.getElementById('pauseResume') as HTMLButtonElement | null;
+  if (resumeButton) resumeButton.disabled = disabled;
+}
+
+function armFocusResumeGuard(now = performance.now()): void {
+  window.clearTimeout(focusResumeGuardTimer);
+  focusResumeAllowedAt = now + FOCUS_RESUME_GUARD_MS;
+  setFocusResumeButtonDisabled(true);
+  focusResumeGuardTimer = window.setTimeout(() => {
+    if (
+      state.appState === S.PAUSED
+      && state.pauseReason === PAUSE_REASONS.FOCUS
+      && !document.hidden
+      && document.hasFocus()
+    ) {
+      setFocusResumeButtonDisabled(false);
+    }
+  }, FOCUS_RESUME_GUARD_MS);
+}
+
 function pauseGame(reason: PauseReason, now = performance.now()): void {
   if (state.appState !== S.PLAYING) return;
   state.appState    = S.PAUSED;
   state.pauseReason = reason;
   mapTimeline.pause(now);
   if (reason === PAUSE_REASONS.HANDS) {
+    setPauseMenuMessage(PAUSE_REASONS.NONE);
     showHandsPaused(missingHandsText());
   } else {
+    if (reason === PAUSE_REASONS.FOCUS) {
+      focusResumeAllowedAt = Number.POSITIVE_INFINITY;
+      setFocusResumeButtonDisabled(true);
+    } else {
+      setFocusResumeButtonDisabled(false);
+    }
     hideHandsPaused();
+    setPauseMenuMessage(reason);
     syncPauseMenuActions();
     showPauseMenu();
   }
   if (ui.dStatus) ui.dStatus.textContent = reason === PAUSE_REASONS.HANDS ? t('game.pauseHands') : t('game.pause');
 }
 
-function resumeGame(now = performance.now()): void {
-  if (state.appState !== S.PAUSED) return;
-  state.appState    = S.PLAYING;
-  state.pauseReason = PAUSE_REASONS.NONE;
-  mapTimeline.resume(now);
-  hideHandsPaused();
-  hidePauseMenu();
-  if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
+async function resumeGame(now = performance.now(), source: ResumeSource = 'ui'): Promise<boolean> {
+  if (state.appState !== S.PAUSED || resumeInFlight) return false;
+  const pausedReason = state.pauseReason;
+  if (
+    pausedReason === PAUSE_REASONS.FOCUS
+    && (source === 'hands' || document.hidden || !document.hasFocus() || now < focusResumeAllowedAt)
+  ) {
+    return false;
+  }
+
+  resumeInFlight = true;
+  try {
+    const audioReady = !hasMapAudio() || await resumeAudioContext();
+    if (!audioReady) {
+      console.warn('Gameplay resume blocked because the audio context is not running.');
+      return false;
+    }
+    if (state.appState !== S.PAUSED || state.pauseReason !== pausedReason) return false;
+
+    const syncNow = performance.now();
+    mapTimeline.resume(syncNow);
+    state.appState    = S.PLAYING;
+    state.pauseReason = PAUSE_REASONS.NONE;
+    focusResumeAllowedAt = 0;
+    window.clearTimeout(focusResumeGuardTimer);
+    focusResumeGuardTimer = 0;
+    setFocusResumeButtonDisabled(false);
+    setPauseMenuMessage(PAUSE_REASONS.NONE);
+    hideHandsPaused();
+    hidePauseMenu();
+    if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
+    return true;
+  } finally {
+    resumeInFlight = false;
+  }
 }
 
 let multiplayerFocusWarningPending = false;
 let multiplayerFocusWarningOpen = false;
+let multiplayerFocusViolationActive = false;
+
+function resetGameplayFocusProtection(): void {
+  focusResumeAllowedAt = 0;
+  window.clearTimeout(focusResumeGuardTimer);
+  focusResumeGuardTimer = 0;
+  setFocusResumeButtonDisabled(false);
+  resumeInFlight = false;
+  multiplayerFocusWarningPending = false;
+  multiplayerFocusWarningOpen = false;
+  multiplayerFocusViolationActive = false;
+  setPauseMenuMessage(PAUSE_REASONS.NONE);
+}
 
 function showMultiplayerFocusWarning(): void {
   if (!multiplayerFocusWarningPending || multiplayerFocusWarningOpen) return;
   if (!multiplayerRoundActive || state.appState !== S.PLAYING) {
     multiplayerFocusWarningPending = false;
+    multiplayerFocusViolationActive = false;
     return;
   }
   if (document.hidden) return;
@@ -510,6 +602,7 @@ function showMultiplayerFocusWarning(): void {
     window.focus();
   } finally {
     multiplayerFocusWarningOpen = false;
+    window.setTimeout(() => { multiplayerFocusViolationActive = false; }, 0);
   }
 }
 
@@ -517,20 +610,29 @@ function handleGameplayFocusLoss(): void {
   if (state.appState !== S.PLAYING) return;
 
   if (!multiplayerRoundActive) {
-    pauseGame(PAUSE_REASONS.MANUAL, performance.now());
+    pauseGame(PAUSE_REASONS.FOCUS, performance.now());
     return;
   }
 
+  if (multiplayerFocusViolationActive) return;
+  multiplayerFocusViolationActive = true;
   multiplayerFocusWarningPending = true;
   window.setTimeout(showMultiplayerFocusWarning, 0);
 }
 
+function handleGameplayFocusReturn(): void {
+  if (!document.hidden && document.hasFocus() && state.pauseReason === PAUSE_REASONS.FOCUS) {
+    armFocusResumeGuard(performance.now());
+  }
+  showMultiplayerFocusWarning();
+}
+
 function bindGameplayFocusProtection(): void {
   window.addEventListener('blur', handleGameplayFocusLoss);
-  window.addEventListener('focus', showMultiplayerFocusWarning);
+  window.addEventListener('focus', handleGameplayFocusReturn);
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) handleGameplayFocusLoss();
-    else showMultiplayerFocusWarning();
+    else handleGameplayFocusReturn();
   });
 }
 
@@ -558,7 +660,7 @@ function updateHandsPauseState(now: number): void {
       const stableMs = now - handsReturnedSince;
       updateHandsResumeProgress(stableMs / HANDS_RESUME_MS);
       if (stableMs >= HANDS_RESUME_MS) {
-        resumeGame(now);
+        void resumeGame(now, 'hands');
         handsReturnedSince = 0;
       }
     } else {
@@ -861,8 +963,11 @@ function handleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     if (state.appState === S.PLAYING) {
       pauseGame(PAUSE_REASONS.MANUAL, performance.now());
-    } else if (state.appState === S.PAUSED && state.pauseReason === PAUSE_REASONS.MANUAL) {
-      resumeGame(performance.now());
+    } else if (
+      state.appState === S.PAUSED
+      && (state.pauseReason === PAUSE_REASONS.MANUAL || state.pauseReason === PAUSE_REASONS.FOCUS)
+    ) {
+      void resumeGame(performance.now(), 'keyboard');
     }
   }
 }
@@ -946,7 +1051,7 @@ ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
 ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', advanceCalib); });
 ui.calibBtnRetry?.addEventListener('click', () => { initAudio(); restartGame(); });
 ui.calibBtnMenu?.addEventListener('click',  returnToMainMenu);
-document.getElementById('pauseResume')?.addEventListener('click',  () => resumeGame(performance.now()));
+document.getElementById('pauseResume')?.addEventListener('click', () => { void resumeGame(performance.now(), 'ui'); });
 document.getElementById('pauseRestart')?.addEventListener('click', () => {
   hidePauseMenu();
   restartWithoutCalib();
@@ -960,6 +1065,7 @@ document.getElementById('pauseMaps')?.addEventListener('click', () => {
 });
 
 function returnToMainMenu(): void {
+  resetGameplayFocusProtection();
   fadeTransition(() => {
     if (multiplayerRoundActive) {
       window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));
@@ -997,8 +1103,11 @@ setGameOverHandler(() => endGame(false));
 // Keyboard navigation — focus traps, arrow keys, escape stack
 initKeyboardNav({
   onEscapePause: () => {
-    if (state.appState === S.PAUSED && state.pauseReason === PAUSE_REASONS.MANUAL) {
-      resumeGame(performance.now());
+    if (
+      state.appState === S.PAUSED
+      && (state.pauseReason === PAUSE_REASONS.MANUAL || state.pauseReason === PAUSE_REASONS.FOCUS)
+    ) {
+      void resumeGame(performance.now(), 'keyboard');
     }
   },
   onEscapeSettings: () => {

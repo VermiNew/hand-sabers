@@ -59,6 +59,16 @@
   letter-spacing:6px; color:var(--main); text-shadow:0 0 20px var(--main);
   margin-bottom:8px;
 }
+.pause-menu-sub {
+  max-width:430px;
+  margin:-2px 0 8px;
+  color:rgba(226,232,240,.78);
+  font-family:'Share Tech Mono',monospace;
+  font-size:13px;
+  line-height:1.55;
+  letter-spacing:1.2px;
+}
+.pause-menu-sub[hidden] { display:none; }
 
 /* ── MAIN MENU ── */
 body {

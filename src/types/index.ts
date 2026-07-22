@@ -13,8 +13,9 @@ export const PAUSE_REASONS = {
   NONE: null,
   HANDS: 'hands',
   MANUAL: 'manual',
+  FOCUS: 'focus',
 } as const;
-export type PauseReason = 'hands' | 'manual' | null;
+export type PauseReason = 'hands' | 'manual' | 'focus' | null;
 
 export type OneHandMode = 'left' | 'right' | null;
 export type SaberSide = 'left' | 'right';

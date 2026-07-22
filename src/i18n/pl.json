@@ -11,6 +11,8 @@
   "pause": {
     "title": "PAUZA",
     "handsLost": "UTRACONO RĘCE — STAŃ PRZED KAMERĄ",
+    "focusLost": "GRA WSTRZYMANA — KARTA STRACIŁA FOCUS",
+    "focusResumeHint": "Wróć do tej karty, odczekaj chwilę i wznów grę, gdy będziesz gotowy.",
     "resume": "WRÓĆ DO GRY",
     "restart": "ZAGRAJ PONOWNIE",
     "maps": "MAPY",

@@ -11,6 +11,8 @@
   "pause": {
     "title": "PAUSE",
     "handsLost": "HANDS LOST — STAND IN FRONT OF CAMERA",
+    "focusLost": "GAME PAUSED — THE TAB LOST FOCUS",
+    "focusResumeHint": "Return to this tab, wait a moment, then resume when you are ready.",
     "resume": "RESUME",
     "restart": "PLAY AGAIN",
     "maps": "MAPS",
