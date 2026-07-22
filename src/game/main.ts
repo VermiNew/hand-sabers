@@ -3,7 +3,7 @@ import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateHa
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
-  animateIdleSabers, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
+  animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
@@ -29,7 +29,7 @@ import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { MapTimeline } from './map-timeline.ts';
-import { getCurrentMusicIntensity, updateMusicVisualizer } from './music-visualizer.ts';
+import { getCurrentBeatPulse, getCurrentMusicEnergy, getCurrentMusicIntensity, updateMusicVisualizer } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
@@ -901,9 +901,13 @@ function renderFrame(timestamp: number): void {
     profile: perfProfile,
     songTimeSec: state.map ? mapTimeline.getTime(now) : t,
   });
-  if (bgMat.uniforms['uMusic']) bgMat.uniforms['uMusic'].value = getCurrentMusicIntensity();
+  const musicEnergy = getCurrentMusicEnergy();
+  const beatPulse = getCurrentBeatPulse();
+  const visualPressure = state.appState === S.PLAYING ? window.__gameplayVisualPressure ?? 0 : 0;
+  if (bgMat.uniforms['uMusic']) bgMat.uniforms['uMusic'].value = musicEnergy;
+  if (bgMat.uniforms['uBeat']) bgMat.uniforms['uBeat'].value = beatPulse;
   if (bgMat.uniforms['uPressure']) {
-    const targetPressure = state.appState === S.PLAYING ? window.__gameplayVisualPressure ?? 0 : 0;
+    const targetPressure = visualPressure;
     bgMat.uniforms['uPressure'].value = THREE.MathUtils.lerp(
       Number(bgMat.uniforms['uPressure'].value) || 0,
       targetPressure,
@@ -915,6 +919,7 @@ function renderFrame(timestamp: number): void {
   const effectsPhaseStart = profiling ? performance.now() : 0;
   lLight.position.set(lSaber.position.x, lSaber.position.y + 0.5, lSaber.position.z);
   rLight.position.set(rSaber.position.x, rSaber.position.y + 0.5, rSaber.position.z);
+  updateArenaPulse(t, musicEnergy, beatPulse, visualPressure);
   updateLightReflections(t);
   updateSaberTrails(state.appState === S.PLAYING || isMainMenuOpen(), state.deltaSec);
   updateSparks(state.deltaScale);

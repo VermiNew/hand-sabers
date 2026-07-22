@@ -212,6 +212,7 @@ export const bgMat = new THREE.ShaderMaterial({
   uniforms: {
     uTime:     { value: 0 },
     uMusic:    { value: 0 },
+    uBeat:     { value: 0 },
     uDetail:   { value: initialPerfProfile.arenaDetail },
     uPressure: { value: 0 },
   },
@@ -226,6 +227,7 @@ export const bgMat = new THREE.ShaderMaterial({
     varying vec2 vUv;
     uniform float uTime;
     uniform float uMusic;
+    uniform float uBeat;
     uniform float uDetail;
     uniform float uPressure;
 
@@ -250,6 +252,7 @@ export const bgMat = new THREE.ShaderMaterial({
       vec2 p = uv * 2.0 - 1.0;
       float motion = uTime * 0.025;
       float music = clamp(uMusic, 0.0, 1.5);
+      float beat = clamp(uBeat, 0.0, 1.5);
       float detail = clamp(uDetail, 0.0, 1.25);
       float pressure = clamp(uPressure, 0.0, 1.0);
 
@@ -264,7 +267,7 @@ export const bgMat = new THREE.ShaderMaterial({
         * smoothstep(0.12, 0.82, uv.y)
         * (0.22 + sideMask * 0.78);
       vec3 nebulaColor = mix(vec3(0.05, 0.22, 0.52), vec3(0.42, 0.035, 0.38), uv.x);
-      color += nebulaColor * nebula * detail * (0.10 + music * 0.04);
+      color += nebulaColor * nebula * detail * (0.10 + music * 0.055 + beat * 0.018);
 
       float cloudBand = sin(p.x * 3.1 - p.y * 5.7 - motion * 3.0)
         * sin(p.x * 7.3 + p.y * 2.2 + motion * 4.0);
@@ -276,13 +279,13 @@ export const bgMat = new THREE.ShaderMaterial({
 
       float horizon = exp(-pow((uv.y - 0.16) * 12.0, 2.0));
       vec3 horizonColor = mix(vec3(0.02, 0.58, 0.72), vec3(0.82, 0.08, 0.48), uv.x);
-      color += horizonColor * horizon * detail * (0.065 + music * 0.032);
+      color += horizonColor * horizon * detail * (0.065 + music * 0.045 + beat * 0.11);
 
       float stars = starLayer(uv + vec2(motion * 0.08, 0.0), vec2(42.0, 17.0), 0.945, 0.090);
       stars += starLayer(uv - vec2(motion * 0.035, 0.0), vec2(71.0, 29.0), 0.978, 0.070) * 0.72;
       stars += starLayer(uv + vec2(0.0, motion * 0.025), vec2(96.0, 38.0), 0.988, 0.055)
         * max(0.0, detail - 0.72) * 0.62;
-      color += vec3(0.58, 0.78, 1.0) * stars * detail * (0.48 + music * 0.14);
+      color += vec3(0.58, 0.78, 1.0) * stars * detail * (0.48 + music * 0.16 + beat * 0.08);
 
       float gameplayLane = exp(-pow(p.x * 1.72, 2.0)) * smoothstep(0.02, 0.66, uv.y);
       color *= 1.0 - gameplayLane * (0.17 + pressure * 0.30);
@@ -553,6 +556,31 @@ export function updateReflection(): void {
   renderer.render(scene, reflectCam);
   renderer.setRenderTarget(previousTarget);
   floorReflect.visible  = reflectVisible;
+}
+
+export function updateArenaPulse(
+  t: number,
+  musicEnergy: number,
+  beatPulse: number,
+  visualPressure = 0,
+): void {
+  const energy = THREE.MathUtils.clamp(musicEnergy, 0, 1.5);
+  const beat = THREE.MathUtils.clamp(beatPulse, 0, 1.5);
+  const pressure = THREE.MathUtils.clamp(visualPressure, 0, 1);
+  const readability = 1 - pressure * 0.48;
+  const detail = THREE.MathUtils.clamp(perfProfile.arenaDetail, 0, 1.25);
+  const idleWave = 0.5 + Math.sin(t * 2.2) * 0.5;
+  const railPulse = (energy * 0.18 + beat * 0.34 + idleWave * 0.025) * detail * readability;
+
+  for (const materials of [leftRailMats, rightRailMats]) {
+    materials[0]!.opacity = THREE.MathUtils.clamp(0.64 + railPulse, 0.42, 1);
+    materials[1]!.opacity = THREE.MathUtils.clamp(0.11 + railPulse * 0.72, 0.06, 0.42);
+  }
+
+  floorMat.opacity = THREE.MathUtils.clamp(0.28 + energy * 0.035 + beat * 0.025, 0.24, 0.42);
+  if (perfProfile.reflections) {
+    floorReflectMat.opacity = THREE.MathUtils.clamp(0.22 + energy * 0.06 + beat * 0.045, 0.18, 0.38);
+  }
 }
 
 export function updateLightReflections(t: number): void {

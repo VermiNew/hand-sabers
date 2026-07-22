@@ -320,7 +320,7 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
       backgroundShader: Boolean(settings.customBackgroundShader),
       fog: Boolean(settings.customFog),
       grid: Boolean(settings.customGrid),
-      musicReactive: Boolean(settings.customFloorGlows),
+      musicReactive: true,
       menuDemo: true,
       hitShards: Math.max(0, Math.min(7, Math.round(settings.customHitShards ?? 2))),
       camera: PROFILES.medium.camera,

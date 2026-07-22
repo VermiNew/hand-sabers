@@ -96,6 +96,8 @@ let beatPulse = 0;
 let runningPeakBass = 0.4;
 let musicVisualsEnabled = false;
 let currentEffectiveMusicIntensity = 0;
+let currentMusicEnergy = 0;
+let currentBeatPulse = 0;
 
 export function getEffectiveMusicIntensity(
   energy: MusicFrequencyLevels,
@@ -115,6 +117,14 @@ export function getEffectiveMusicIntensity(
 
 export function getCurrentMusicIntensity(): number {
   return currentEffectiveMusicIntensity;
+}
+
+export function getCurrentMusicEnergy(): number {
+  return currentMusicEnergy;
+}
+
+export function getCurrentBeatPulse(): number {
+  return currentBeatPulse;
 }
 
 function findNextBeatIndex(songTimeSec: number): number {
@@ -165,6 +175,8 @@ export function resetMusicVisualizer(): void {
   runningPeakBass = 0.4;
   musicVisualsEnabled = false;
   currentEffectiveMusicIntensity = 0;
+  currentMusicEnergy = 0;
+  currentBeatPulse = 0;
   portals.count = 0;
   portals.visible = false;
   portalGlows.count = 0;
@@ -187,6 +199,8 @@ export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
     portalGlowMaterial.opacity = 0;
     musicVisualsEnabled = false;
     currentEffectiveMusicIntensity = 0;
+    currentMusicEnergy = 0;
+    currentBeatPulse = 0;
     return;
   }
   musicVisualsEnabled = true;
@@ -200,6 +214,12 @@ export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
   const levels = getMusicFrequencyLevels();
   const intensity = getEffectiveMusicIntensity(levels, frame.profile);
   currentEffectiveMusicIntensity = intensity;
+  currentMusicEnergy = THREE.MathUtils.clamp(
+    (levels.overall * 0.58 + levels.bass * 0.42) * intensity,
+    0,
+    1.5,
+  );
+  currentBeatPulse = THREE.MathUtils.clamp(beatPulse * intensity, 0, 1.5);
   const portalVisible = portalCount > 0 && intensity > 0.001;
   const readability = 1 - THREE.MathUtils.clamp(window.__gameplayVisualPressure ?? 0, 0, 1) * 0.42;
   portals.count = portalCount;
