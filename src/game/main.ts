@@ -29,7 +29,7 @@ import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { MapTimeline } from './map-timeline.ts';
-import { updateMusicVisualizer } from './music-visualizer.ts';
+import { getCurrentMusicIntensity, updateMusicVisualizer } from './music-visualizer.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
 declare global {
@@ -755,6 +755,7 @@ function renderFrame(timestamp: number): void {
     profile: perfProfile,
     songTimeSec: state.map ? mapTimeline.getTime(now) : t,
   });
+  if (bgMat.uniforms['uMusic']) bgMat.uniforms['uMusic'].value = getCurrentMusicIntensity();
   if (profiling) frameProfile.gameMs = smoothProfileValue(frameProfile.gameMs, performance.now() - gamePhaseStart);
 
   const effectsPhaseStart = profiling ? performance.now() : 0;

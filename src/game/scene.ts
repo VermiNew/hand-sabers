@@ -208,19 +208,73 @@ const rReflection = makeFloorReflectionSprite(THEME.right);
 const bgGeo = new THREE.PlaneGeometry(60, 12);
 export const bgMat = new THREE.ShaderMaterial({
   transparent: true,
-  uniforms: { uTime: { value: 0 } },
+  depthWrite: false,
+  uniforms: {
+    uTime:  { value: 0 },
+    uMusic: { value: 0 },
+  },
   vertexShader: `
     varying vec2 vUv;
-    void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.); }
+    void main(){
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
   `,
   fragmentShader: `
     varying vec2 vUv;
     uniform float uTime;
+    uniform float uMusic;
+
+    float hash21(vec2 p){
+      p = fract(p * vec2(123.34, 345.45));
+      p += dot(p, p + 34.345);
+      return fract(p.x * p.y);
+    }
+
+    float starLayer(vec2 uv, vec2 density, float threshold, float radius){
+      vec2 grid = uv * density;
+      vec2 cell = floor(grid);
+      vec2 local = fract(grid) - 0.5;
+      float seed = hash21(cell);
+      float point = 1.0 - smoothstep(0.0, radius, length(local));
+      float twinkle = 0.62 + 0.38 * sin(uTime * (0.7 + seed * 2.4) + seed * 31.0);
+      return point * step(threshold, seed) * twinkle;
+    }
+
     void main(){
-      vec3 c1=vec3(0.05,0.54,0.32);
-      vec3 c2=vec3(0.08,0.22,0.78);
-      vec3 c=mix(c1,c2,vUv.x+sin(uTime*0.3)*0.1);
-      gl_FragColor=vec4(c,vUv.y*0.18);
+      vec2 uv = vUv;
+      vec2 p = uv * 2.0 - 1.0;
+      float motion = uTime * 0.025;
+      float music = clamp(uMusic, 0.0, 1.5);
+
+      vec3 bottom = vec3(0.004, 0.008, 0.025);
+      vec3 top = vec3(0.018, 0.008, 0.055);
+      vec3 color = mix(bottom, top, smoothstep(0.02, 1.0, uv.y));
+
+      float sideMask = smoothstep(0.08, 0.92, abs(p.x));
+      float nebulaWave = sin(p.x * 5.2 + p.y * 2.1 + motion * 8.0)
+        + 0.55 * sin(p.x * 9.1 - p.y * 3.4 - motion * 5.0);
+      float nebula = smoothstep(0.42, 1.15, nebulaWave)
+        * smoothstep(0.12, 0.82, uv.y)
+        * (0.22 + sideMask * 0.78);
+      vec3 nebulaColor = mix(vec3(0.05, 0.22, 0.52), vec3(0.42, 0.035, 0.38), uv.x);
+      color += nebulaColor * nebula * (0.12 + music * 0.035);
+
+      float horizon = exp(-pow((uv.y - 0.16) * 12.0, 2.0));
+      vec3 horizonColor = mix(vec3(0.02, 0.58, 0.72), vec3(0.82, 0.08, 0.48), uv.x);
+      color += horizonColor * horizon * (0.075 + music * 0.028);
+
+      float stars = starLayer(uv + vec2(motion * 0.08, 0.0), vec2(42.0, 17.0), 0.945, 0.090);
+      stars += starLayer(uv - vec2(motion * 0.035, 0.0), vec2(71.0, 29.0), 0.978, 0.070) * 0.72;
+      color += vec3(0.58, 0.78, 1.0) * stars * (0.55 + music * 0.12);
+
+      float gameplayLane = exp(-pow(p.x * 1.72, 2.0)) * smoothstep(0.02, 0.66, uv.y);
+      color *= 1.0 - gameplayLane * 0.19;
+
+      float vignette = smoothstep(1.28, 0.22, length(p * vec2(0.78, 1.0)));
+      color *= 0.56 + vignette * 0.44;
+
+      gl_FragColor = vec4(color, 0.92);
     }
   `,
 });
