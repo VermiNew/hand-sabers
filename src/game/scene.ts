@@ -584,12 +584,14 @@ export function updateArenaPulse(
 }
 
 export function updateLightReflections(t: number): void {
-  if (!perfProfile.floorGlows && !perfProfile.saberGlints && !perfProfile.saberTrails) return;
-  const pulse = 0.85 + Math.sin(t * 6) * 0.15;
   const lMotion = THREE.MathUtils.clamp(lVel.length() * 12, 0, 1);
   const rMotion = THREE.MathUtils.clamp(rVel.length() * 12, 0, 1);
-  (lSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + lMotion * (perfProfile.saberTrails ? 0.22 : 0.08);
-  (rSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + rMotion * (perfProfile.saberTrails ? 0.22 : 0.08);
+  const trailIntensity = THREE.MathUtils.clamp(perfProfile.saberTrailIntensity || 0, 0, 1.25);
+  const motionGlow = perfProfile.saberTrails ? 0.22 * trailIntensity : 0;
+  (lSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + lMotion * motionGlow;
+  (rSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + rMotion * motionGlow;
+  if (!perfProfile.floorGlows && !perfProfile.saberGlints) return;
+  const pulse = 0.85 + Math.sin(t * 6) * 0.15;
   if (perfProfile.floorGlows) {
     lReflection.position.set(lSaber.position.x, 0.012, lSaber.position.z - 0.12);
     rReflection.position.set(rSaber.position.x, 0.012, rSaber.position.z - 0.12);

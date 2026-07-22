@@ -1207,6 +1207,8 @@ function initMainMenu(): void {
   const customSaberTrailsInput = document.getElementById('menuCustomSaberTrails') as HTMLInputElement | null;
   const customSaberTrailSamplesInput = document.getElementById('menuCustomSaberTrailSamples') as HTMLInputElement | null;
   const customSaberTrailSamplesValue = document.getElementById('menuCustomSaberTrailSamplesValue');
+  const customSaberTrailIntensityInput = document.getElementById('menuCustomSaberTrailIntensity') as HTMLInputElement | null;
+  const customSaberTrailIntensityValue = document.getElementById('menuCustomSaberTrailIntensityValue');
   const customArenaDetailInput = document.getElementById('menuCustomArenaDetail') as HTMLInputElement | null;
   const customArenaDetailValue = document.getElementById('menuCustomArenaDetailValue');
   const customBackgroundShaderInput = document.getElementById('menuCustomBackgroundShader') as HTMLInputElement | null;
@@ -1443,6 +1445,11 @@ function initMainMenu(): void {
       updateRangeProgress(customSaberTrailSamplesInput);
     }
     if (customSaberTrailSamplesValue) customSaberTrailSamplesValue.textContent = String(settings.customSaberTrailSamples);
+    if (customSaberTrailIntensityInput) {
+      customSaberTrailIntensityInput.value = String(settings.customSaberTrailIntensity);
+      updateRangeProgress(customSaberTrailIntensityInput);
+    }
+    if (customSaberTrailIntensityValue) customSaberTrailIntensityValue.textContent = `${Math.round(settings.customSaberTrailIntensity * 100)}%`;
     if (customArenaDetailInput) {
       customArenaDetailInput.value = String(settings.customArenaDetail);
       updateRangeProgress(customArenaDetailInput);
@@ -1706,6 +1713,15 @@ function initMainMenu(): void {
     setSetting('customSaberTrailSamples', value);
     updateRangeProgress(customSaberTrailSamplesInput);
     if (customSaberTrailSamplesValue) customSaberTrailSamplesValue.textContent = String(value);
+    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
+  });
+
+  customSaberTrailIntensityInput?.addEventListener('input', () => {
+    const value = Math.max(0, Math.min(1.25, Number(customSaberTrailIntensityInput.value)));
+    settings.customSaberTrailIntensity = value;
+    setSetting('customSaberTrailIntensity', value);
+    updateRangeProgress(customSaberTrailIntensityInput);
+    if (customSaberTrailIntensityValue) customSaberTrailIntensityValue.textContent = `${Math.round(value * 100)}%`;
     if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
   });
 

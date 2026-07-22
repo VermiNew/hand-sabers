@@ -55,6 +55,7 @@ export const DEFAULTS: Settings = {
   customSaberGlints: true,
   customSaberTrails: true,
   customSaberTrailSamples: 10,
+  customSaberTrailIntensity: 0.85,
   customArenaDetail: 1,
   customBackgroundShader: true,
   customFog: true,
@@ -121,6 +122,7 @@ export function loadSettings(): Settings {
   _settings.hitboxSensitivity = normalizeHitboxSensitivity(_settings.hitboxSensitivity);
   _settings.customHitShards = Math.round(clampNumber(_settings.customHitShards, 0, 7, DEFAULTS.customHitShards));
   _settings.customSaberTrailSamples = Math.round(clampNumber(_settings.customSaberTrailSamples, 0, 16, DEFAULTS.customSaberTrailSamples));
+  _settings.customSaberTrailIntensity = clampNumber(_settings.customSaberTrailIntensity, 0, 1.25, DEFAULTS.customSaberTrailIntensity);
   _settings.customArenaDetail = clampNumber(_settings.customArenaDetail, 0, 1.25, DEFAULTS.customArenaDetail);
   _settings.customRenderScale = clampNumber(_settings.customRenderScale, 0.5, 1.5, DEFAULTS.customRenderScale);
   _settings.musicReactiveIntensityMode = normalizeMusicReactiveIntensityMode(_settings.musicReactiveIntensityMode);

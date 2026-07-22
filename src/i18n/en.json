@@ -236,6 +236,7 @@
       "saberTrails": "Saber trails",
       "saberTrailsDesc": "A lightweight motion ribbon without full-screen motion blur.",
       "saberTrailSamples": "Trail length",
+      "saberTrailIntensity": "Trail and glow strength",
       "arenaDetail": "Arena detail",
       "backgroundShader": "Background shader",
       "fog": "Fog",

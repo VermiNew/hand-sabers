@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Arena detail, portal density, and saber trails now scale with the selected graphics profile.
 - The central gameplay lane darkens subtly when notes approach the player.
 - Existing arena rails, floor sheen, horizon, and stars now pulse from actual music energy and mapped beats without extra draw calls.
+- Custom graphics now include independent saber trail and motion-glow strength control.
 
 ### Fixed
 

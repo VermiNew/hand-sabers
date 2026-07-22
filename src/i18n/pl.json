@@ -236,6 +236,7 @@
       "saberTrails": "Ślady mieczy",
       "saberTrailsDesc": "Lekka wstęga ruchu bez pełnoekranowego motion blur.",
       "saberTrailSamples": "Długość śladu",
+      "saberTrailIntensity": "Siła śladu i poświaty",
       "arenaDetail": "Szczegółowość areny",
       "backgroundShader": "Shader tła",
       "fog": "Mgła",

@@ -12,6 +12,7 @@ const currentTip = new THREE.Vector3();
 interface TrailUniforms {
   uColor: { value: THREE.Color };
   uOpacity: { value: number };
+  uIntensity: { value: number };
 }
 
 interface SaberTrail {
@@ -43,6 +44,7 @@ function createTrail(hex: number): SaberTrail {
     uniforms: {
       uColor: { value: new THREE.Color(hex) },
       uOpacity: { value: 0 },
+      uIntensity: { value: 1 },
     },
     vertexShader: `
       attribute float aAlpha;
@@ -55,11 +57,14 @@ function createTrail(hex: number): SaberTrail {
     fragmentShader: `
       uniform vec3 uColor;
       uniform float uOpacity;
+      uniform float uIntensity;
       varying float vAlpha;
       void main() {
-        float alpha = clamp(vAlpha * uOpacity, 0.0, 0.72);
+        float strength = clamp(uIntensity, 0.0, 1.25);
+        float alpha = clamp(vAlpha * uOpacity, 0.0, 0.78);
         if (alpha < 0.004) discard;
-        vec3 hotCore = mix(uColor, vec3(1.0), 0.22 * vAlpha);
+        float headHeat = pow(vAlpha, 2.2);
+        vec3 hotCore = mix(uColor, vec3(1.0), (0.14 + strength * 0.16) * headHeat);
         gl_FragColor = vec4(hotCore, alpha);
       }
     `,
@@ -120,6 +125,7 @@ function updateTrail(
   saber: THREE.Group,
   colorHex: number,
   sampleCount: number,
+  intensity: number,
   deltaSec: number,
 ): void {
   if (trail.lastSampleCount !== sampleCount) {
@@ -132,6 +138,8 @@ function updateTrail(
   saber.updateMatrixWorld(true);
   currentBase.copy(LOCAL_BASE).applyMatrix4(saber.matrixWorld);
   currentTip.copy(localTip).applyMatrix4(saber.matrixWorld);
+
+  trail.material.uniforms.uIntensity.value = intensity;
 
   if (trail.lastColor !== colorHex) {
     trail.lastColor = colorHex;
@@ -196,20 +204,21 @@ function updateTrail(
   trail.geometry.setDrawRange(0, vertex);
   (trail.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
   (trail.geometry.getAttribute('aAlpha') as THREE.BufferAttribute).needsUpdate = true;
-  trail.material.uniforms.uOpacity.value = 0.12 + movement * 0.42;
+  trail.material.uniforms.uOpacity.value = (0.10 + movement * 0.43) * intensity;
 }
 
 export function updateSaberTrails(active: boolean, deltaSec: number): void {
   const profile = getScenePerformanceProfile();
   const sampleCount = Math.max(0, Math.min(MAX_TRAIL_SAMPLES, Math.round(profile.saberTrailSamples || 0)));
+  const intensity = THREE.MathUtils.clamp(profile.saberTrailIntensity || 0, 0, 1.25);
   if (!active || !profile.saberTrails || sampleCount < 3) {
     resetTrail(leftTrail);
     resetTrail(rightTrail);
     return;
   }
 
-  updateTrail(leftTrail, lSaber, getSaberColor('left'), sampleCount, deltaSec);
-  updateTrail(rightTrail, rSaber, getSaberColor('right'), sampleCount, deltaSec);
+  updateTrail(leftTrail, lSaber, getSaberColor('left'), sampleCount, intensity, deltaSec);
+  updateTrail(rightTrail, rSaber, getSaberColor('right'), sampleCount, intensity, deltaSec);
 }
 
 export function resetSaberTrails(): void {

@@ -15,6 +15,7 @@ interface PerformanceSettingsLike {
   customSaberGlints?: boolean;
   customSaberTrails?: boolean;
   customSaberTrailSamples?: number;
+  customSaberTrailIntensity?: number;
   customArenaDetail?: number;
   customBackgroundShader?: boolean;
   customFog?: boolean;
@@ -62,6 +63,7 @@ const PROFILES = {
     saberGlints: false,
     saberTrails: false,
     saberTrailSamples: 0,
+    saberTrailIntensity: 0,
     arenaDetail: 0,
     backgroundShader: false,
     fog: false,
@@ -87,6 +89,7 @@ const PROFILES = {
     saberGlints: false,
     saberTrails: false,
     saberTrailSamples: 0,
+    saberTrailIntensity: 0,
     arenaDetail: 0.08,
     backgroundShader: false,
     fog: false,
@@ -112,6 +115,7 @@ const PROFILES = {
     saberGlints: false,
     saberTrails: false,
     saberTrailSamples: 0,
+    saberTrailIntensity: 0,
     arenaDetail: 0.22,
     backgroundShader: false,
     fog: false,
@@ -137,6 +141,7 @@ const PROFILES = {
     saberGlints: true,
     saberTrails: true,
     saberTrailSamples: 6,
+    saberTrailIntensity: 0.55,
     arenaDetail: 0.62,
     backgroundShader: true,
     fog: true,
@@ -162,6 +167,7 @@ const PROFILES = {
     saberGlints: true,
     saberTrails: true,
     saberTrailSamples: 9,
+    saberTrailIntensity: 0.75,
     arenaDetail: 0.82,
     backgroundShader: true,
     fog: true,
@@ -187,6 +193,7 @@ const PROFILES = {
     saberGlints: true,
     saberTrails: true,
     saberTrailSamples: 12,
+    saberTrailIntensity: 0.95,
     arenaDetail: 1,
     backgroundShader: true,
     fog: true,
@@ -212,6 +219,7 @@ const PROFILES = {
     saberGlints: true,
     saberTrails: true,
     saberTrailSamples: 16,
+    saberTrailIntensity: 1.15,
     arenaDetail: 1.18,
     backgroundShader: true,
     fog: true,
@@ -316,6 +324,7 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
       saberGlints: Boolean(settings.customSaberGlints),
       saberTrails: Boolean(settings.customSaberTrails),
       saberTrailSamples: Math.max(0, Math.min(16, Math.round(settings.customSaberTrailSamples ?? 10))),
+      saberTrailIntensity: Math.max(0, Math.min(1.25, settings.customSaberTrailIntensity ?? 0.85)),
       arenaDetail: Math.max(0, Math.min(1.25, settings.customArenaDetail ?? 1)),
       backgroundShader: Boolean(settings.customBackgroundShader),
       fog: Boolean(settings.customFog),
