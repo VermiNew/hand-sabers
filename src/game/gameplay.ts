@@ -550,10 +550,13 @@ function publishGameplayStats() {
 
 export function startGameplay(sabers: SaberSide | 'both' = 'both') {
   activeSabers = sabers;
-  state.score  = 0;
-  state.combo  = 0;
-  state.maxCombo = 0;
-  state.maxLives = STARTING_LIVES;
+  state.score       = 0;
+  state.combo       = 0;
+  state.maxCombo    = 0;
+  state.hits        = 0;
+  state.misses      = 0;
+  state.perfectHits = 0;
+  state.maxLives    = STARTING_LIVES;
   state.lives  = STARTING_LIVES;
   hitStreakForRegen = 0;
   lastHitMs = 0;
@@ -758,6 +761,8 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
   releaseBlock(entry.mesh);
 
   state.score += points;
+  state.hits++;
+  if (quality.label === 'PERFECT') state.perfectHits++;
   if (quality.advancesCombo) {
     const next = registerComboHit(state);
     state.combo = next.combo;
@@ -859,6 +864,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
         ({ combo: state.combo, maxCombo: state.maxCombo } = resetCombo(state));
         state.lives = Math.max(0, state.lives - 1);
         hitStreakForRegen = 0;
+        state.misses++;
         updateHUD(state);
         playMiss();
         triggerShake(0.07);
@@ -894,6 +900,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
           swapRemoveActiveBlock(i);
           state.lives = Math.min(state.maxLives, state.lives + 3);
           state.score += 300;
+          state.hits++;
           const next = registerComboHit(state);
           state.combo = next.combo;
           state.maxCombo = next.maxCombo;

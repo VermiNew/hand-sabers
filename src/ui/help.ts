@@ -115,11 +115,15 @@ export function initHelpOverlay(): void {
     if (event.target === overlay) close();
   });
 
-  let tutorialSeen = false;
-  try { tutorialSeen = localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch {}
-  if (!tutorialSeen) {
-    window.setTimeout(() => {
-      if (overlay.hidden && document.body.classList.contains('menu-open')) open(true);
-    }, 500);
-  }
+  const openTutorialIfNeeded = (force = false) => {
+    let tutorialSeen = false;
+    try { tutorialSeen = localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'; } catch {}
+    if ((!force && tutorialSeen) || !overlay.hidden || !document.body.classList.contains('menu-open')) return;
+    open(true);
+  };
+
+  window.addEventListener('hand-sabers:open-tutorial', event => {
+    const force = (event as CustomEvent<{ force?: boolean }>).detail?.force === true;
+    window.setTimeout(() => openTutorialIfNeeded(force), 0);
+  });
 }

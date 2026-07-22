@@ -3,6 +3,13 @@ export const contestTranslations = {
     gameover: {
       victoryTitle: 'VICTORY!',
       defeatTitle: 'GAME OVER',
+      victorySummary: 'Map complete. Here is your run summary.',
+      defeatSummary: 'The run ended early. Adjust the setup or try the map again.',
+      accuracy: 'Hit rate',
+      hits: 'Hits',
+      misses: 'Misses',
+      perfects: 'Perfect cuts',
+      chooseMap: 'CHOOSE MAP',
     },
     narrator: {
       selectMap: 'Choose a map before starting Singleplayer. I will open the map library for you.',
@@ -11,6 +18,7 @@ export const contestTranslations = {
       chooseLanguage: 'I could not determine your language. Choose it in Settings to continue.',
       configureSettings: 'Before the first game, open Settings and adjust tracking, camera, sound and performance to your setup.',
       openSettings: 'OPEN SETTINGS',
+      quickGuide: 'QUICK GUIDE',
       later: 'LATER',
     },
     help: {
@@ -221,6 +229,13 @@ export const contestTranslations = {
     gameover: {
       victoryTitle: 'ZWYCIĘSTWO!',
       defeatTitle: 'GAME OVER',
+      victorySummary: 'Mapa ukończona. Oto podsumowanie rozgrywki.',
+      defeatSummary: 'Rozgrywka zakończyła się wcześniej. Dopasuj ustawienia albo spróbuj ponownie.',
+      accuracy: 'Celność',
+      hits: 'Trafienia',
+      misses: 'Pudła',
+      perfects: 'Perfekcyjne cięcia',
+      chooseMap: 'WYBIERZ MAPĘ',
     },
     narrator: {
       selectMap: 'Przed uruchomieniem trybu jednoosobowego wybierz mapę. Otworzę bibliotekę map.',
@@ -229,6 +244,7 @@ export const contestTranslations = {
       chooseLanguage: 'Nie udało mi się rozpoznać języka. Wybierz go w Ustawieniach, aby kontynuować.',
       configureSettings: 'Przed pierwszą grą wejdź w Ustawienia i dopasuj tracking, kamerę, dźwięk oraz wydajność do swojego stanowiska.',
       openSettings: 'OTWÓRZ USTAWIENIA',
+      quickGuide: 'SZYBKI PRZEWODNIK',
       later: 'PÓŹNIEJ',
     },
     help: {

@@ -15,6 +15,7 @@ interface UiRefs {
   goTitle:         HTMLElement | null;
   goBody:          HTMLElement | null;
   ovBtn:           HTMLElement | null;
+  ovBtnMaps:       HTMLElement | null;
   ovBtnCalib:      HTMLElement | null;
   ovBtnMenu:       HTMLElement | null;
   dFps:            HTMLElement | null;
@@ -71,6 +72,7 @@ export const ui: UiRefs = {
   goTitle:         document.getElementById('goTitle'),
   goBody:          document.getElementById('goBody'),
   ovBtn:           document.getElementById('ovBtn'),
+  ovBtnMaps:       document.getElementById('ovBtnMaps'),
   ovBtnCalib:      document.getElementById('ovBtnCalib'),
   ovBtnMenu:       document.getElementById('ovBtnMenu'),
   dFps:            document.getElementById('dFps'),
@@ -253,24 +255,65 @@ export function showGameOver(state: GameState, victory = false): void {
     ui.overlay.classList.toggle('is-defeat', !victory);
   }
   showModalElement(ui.overlay);
-  if (ui.hud)         ui.hud.style.display        = 'none';
+  if (ui.hud)         ui.hud.style.display          = 'none';
   if (ui.mapProgress) ui.mapProgress.style.display = 'none';
   if (ui.goTitle) ui.goTitle.textContent = t(victory ? 'gameover.victoryTitle' : 'gameover.defeatTitle');
-  const scoreStr = String(state.score).padStart(6, '0');
-  const combo    = Math.max(0, state.maxCombo);
-  if (ui.goBody) ui.goBody.innerHTML = `
-    <div class="go-score-row">
-      <span class="go-label">${t('gameover.score')}</span>
-      <span class="go-value score-highlight">${scoreStr}</span>
-    </div>
-    <div class="go-combo-row">
-      <span class="go-label">${t('gameover.bestCombo')}</span>
-      <span class="go-value go-combo">×${combo}</span>
-    </div>
-    `;
+
+  const scoreStr = String(Math.max(0, Math.round(state.score))).padStart(6, '0');
+  const combo = Math.max(0, Math.round(state.maxCombo));
+  const hits = Math.max(0, Math.round(state.hits));
+  const misses = Math.max(0, Math.round(state.misses));
+  const attempts = hits + misses;
+  const accuracy = attempts > 0 ? Math.round((hits / attempts) * 100) : 0;
+
+  if (ui.goBody) {
+    const mapTitle = document.createElement('div');
+    mapTitle.className = 'go-map-title';
+    mapTitle.textContent = state.map?.meta?.title ?? t('game.unknownTrack');
+
+    const summary = document.createElement('p');
+    summary.className = 'go-summary';
+    summary.textContent = t(victory ? 'gameover.victorySummary' : 'gameover.defeatSummary');
+
+    const scoreCard = document.createElement('div');
+    scoreCard.className = 'go-score-card';
+    const scoreLabel = document.createElement('span');
+    scoreLabel.className = 'go-label';
+    scoreLabel.textContent = t('gameover.score');
+    const scoreValue = document.createElement('span');
+    scoreValue.className = 'go-value score-highlight';
+    scoreValue.textContent = scoreStr;
+    scoreCard.append(scoreLabel, scoreValue);
+
+    const stats = document.createElement('div');
+    stats.className = 'go-stats-grid';
+    const addStat = (label: string, value: string, className = '') => {
+      const card = document.createElement('div');
+      card.className = `go-stat${className ? ` ${className}` : ''}`;
+      const statLabel = document.createElement('span');
+      statLabel.className = 'go-label';
+      statLabel.textContent = label;
+      const statValue = document.createElement('strong');
+      statValue.className = 'go-stat-value';
+      statValue.textContent = value;
+      card.append(statLabel, statValue);
+      stats.append(card);
+    };
+    addStat(t('gameover.accuracy'), `${accuracy}%`, 'go-stat--accent');
+    addStat(t('gameover.bestCombo'), `×${combo}`);
+    addStat(t('gameover.hits'), String(hits));
+    addStat(t('gameover.misses'), String(misses));
+    addStat(t('gameover.perfects'), String(Math.max(0, Math.round(state.perfectHits))));
+
+    ui.goBody.replaceChildren(mapTitle, summary, scoreCard, stats);
+  }
+
   setIconButton(ui.ovBtn,      t('gameover.playAgain'), 'rotate-ccw');
+  setIconButton(ui.ovBtnMaps,  t('gameover.chooseMap'), 'library_music');
   setIconButton(ui.ovBtnCalib, t('gameover.calibration'), 'settings');
   setIconButton(ui.ovBtnMenu,  t('gameover.mainMenu'), 'house');
+  if (ui.ovBtn)      ui.ovBtn.style.display      = 'inline-flex';
+  if (ui.ovBtnMaps)  ui.ovBtnMaps.style.display  = 'inline-flex';
   if (ui.ovBtnCalib) ui.ovBtnCalib.style.display = 'inline-flex';
   if (ui.ovBtnMenu)  ui.ovBtnMenu.style.display  = 'inline-flex';
   if (ui.dStatus)    ui.dStatus.textContent = t(victory ? 'gameover.victoryTitle' : 'gameover.defeatTitle');

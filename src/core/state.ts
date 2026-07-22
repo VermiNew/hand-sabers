@@ -27,6 +27,9 @@ export interface GameState {
   score: number;
   combo: number;
   maxCombo: number;
+  hits: number;
+  misses: number;
+  perfectHits: number;
   lives: number;
   maxLives: number;
   tick: number;
@@ -51,6 +54,9 @@ export const state: GameState = {
   score:            0,
   combo:            0,
   maxCombo:         0,
+  hits:             0,
+  misses:           0,
+  perfectHits:      0,
   lives:            10,
   maxLives:         10,
   tick:             0,

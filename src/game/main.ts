@@ -248,7 +248,7 @@ function showOverlay(): void {
 
 function hideOverlay(): void {
   if (!ui.overlay) return;
-  ui.overlay.classList.remove('show', 'is-gameover');
+  ui.overlay.classList.remove('show', 'is-gameover', 'is-victory', 'is-defeat');
 }
 
 let calibrationReady = false;
@@ -898,6 +898,7 @@ function syncPauseMenuActions(): void {
 }
 
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
+ui.ovBtnMaps?.addEventListener('click',   () => { location.href = withDevQuery('./maps.html'); });
 ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
 ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', advanceCalib); });
 ui.calibBtnRetry?.addEventListener('click', () => { initAudio(); restartGame(); });
@@ -1902,6 +1903,10 @@ initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 initMainMenu();
 
+const requestFirstRunTutorial = (force = false): void => {
+  window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', { detail: { force } }));
+};
+
 if (needsLanguageSelection()) {
   window.dispatchEvent(new CustomEvent('hand-sabers:open-settings', { detail: { tab: 'language' } }));
   window.setTimeout(() => {
@@ -1912,13 +1917,17 @@ if (needsLanguageSelection()) {
   window.setTimeout(() => {
     void narratorShow({
       text: t('narrator.configureSettings'),
-      buttons: [t('narrator.openSettings'), t('narrator.later')],
+      buttons: [t('narrator.openSettings'), t('narrator.quickGuide'), t('narrator.later')],
     }).then(choice => {
       if (choice === 0) {
         window.dispatchEvent(new CustomEvent('hand-sabers:open-settings', { detail: { tab: 'gameplay' } }));
+      } else if (choice === 1) {
+        requestFirstRunTutorial(true);
       }
     });
   }, 900);
+} else {
+  window.setTimeout(() => requestFirstRunTutorial(), 650);
 }
 
 runAsyncTask('application-startup', async () => {
