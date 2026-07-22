@@ -492,6 +492,48 @@ function resumeGame(now = performance.now()): void {
   if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
 }
 
+let multiplayerFocusWarningPending = false;
+let multiplayerFocusWarningOpen = false;
+
+function showMultiplayerFocusWarning(): void {
+  if (!multiplayerFocusWarningPending || multiplayerFocusWarningOpen) return;
+  if (!multiplayerRoundActive || state.appState !== S.PLAYING) {
+    multiplayerFocusWarningPending = false;
+    return;
+  }
+  if (document.hidden) return;
+
+  multiplayerFocusWarningPending = false;
+  multiplayerFocusWarningOpen = true;
+  try {
+    window.alert(t('multiplayer.focusWarning'));
+    window.focus();
+  } finally {
+    multiplayerFocusWarningOpen = false;
+  }
+}
+
+function handleGameplayFocusLoss(): void {
+  if (state.appState !== S.PLAYING) return;
+
+  if (!multiplayerRoundActive) {
+    pauseGame(PAUSE_REASONS.MANUAL, performance.now());
+    return;
+  }
+
+  multiplayerFocusWarningPending = true;
+  window.setTimeout(showMultiplayerFocusWarning, 0);
+}
+
+function bindGameplayFocusProtection(): void {
+  window.addEventListener('blur', handleGameplayFocusLoss);
+  window.addEventListener('focus', showMultiplayerFocusWarning);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) handleGameplayFocusLoss();
+    else showMultiplayerFocusWarning();
+  });
+}
+
 function updateHandsPauseState(now: number): void {
   if (multiplayerRoundActive) {
     handsLostSince = 0;
@@ -1902,6 +1944,7 @@ window.addEventListener('hand-sabers:multiplayer-start', event => {
 });
 initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
+bindGameplayFocusProtection();
 initMainMenu();
 
 const requestFirstRunTutorial = (force = false): void => {
