@@ -322,3 +322,24 @@ body.training-mode #trainingBadge { display:block; }
 @media (prefers-reduced-motion:reduce) {
   .hp-shell::after,.map-prog-shell::after { animation:none; display:none; }
 }
+
+/* Compact pseudo-3D layout for laptop-height viewports. */
+@media (max-height:820px) and (min-width:761px) {
+  #hudTop {
+    margin-top:2px;
+    padding:10px 48px 9px;
+    transform:perspective(900px) rotateX(-3deg) scale(.92);
+  }
+  #score { font-size:36px; }
+  #combo { margin-top:5px; font-size:15px; }
+  #mapTitle { margin-top:5px; font-size:12px; }
+  #hudBottom {
+    bottom:14px;
+    width:min(410px,72vw);
+    gap:9px;
+    padding:10px 20px 12px;
+    transform:translateX(-50%) perspective(900px) rotateX(4deg) scale(.94);
+  }
+  .hp-shell { height:17px; }
+  .map-prog-shell { height:10px; }
+}

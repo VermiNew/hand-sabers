@@ -51,6 +51,7 @@ declare global {
     __prewarmedShardPool?: number;
     __menuDemoTarget?: { side: SaberSide; x: number; y: number; z: number } | null;
     __songTimeSec?: number;
+    __gameplayVisualPressure?: number;
   }
 }
 
@@ -512,6 +513,7 @@ window.__prewarmedBlockPool = 0;
 window.__prewarmedBombPool = 0;
 window.__prewarmedShardPool = 0;
 window.__menuDemoTarget = null;
+window.__gameplayVisualPressure = 0;
 
 const tmpBlade   = new THREE.Vector3();
 const tmpPoint   = new THREE.Vector3();
@@ -543,6 +545,13 @@ export function setGameOverHandler(fn: () => void): void { gameOverHandler = fn;
 function publishGameplayStats() {
   window.__activeBlockCount = activeBlocks.length;
   window.__activeSparkCount = activeShards.length;
+  let nearestZ = -Infinity;
+  for (const entry of activeBlocks) {
+    if (entry.alive && entry.mesh.visible) nearestZ = Math.max(nearestZ, entry.mesh.position.z);
+  }
+  window.__gameplayVisualPressure = Number.isFinite(nearestZ)
+    ? THREE.MathUtils.clamp((nearestZ + 5.5) / 7, 0, 1)
+    : 0;
   window.__prewarmedBlockPool = blockPool.length;
   window.__prewarmedBombPool = bombPool.length;
   window.__prewarmedShardPool = shardPool.length;
@@ -580,6 +589,7 @@ function disposeHeldMesh(entry: ActiveBlock): void {
 export function clearGameplayEntities() {
   for (const b of activeBlocks) { disposeHeldMesh(b); releaseBlock(b.mesh); }
   activeBlocks.length = 0;
+  window.__gameplayVisualPressure = 0;
 
   // Pool zostaje w pamięci między restartami. Dzięki temu restart nie powoduje
   // ponownej alokacji geometrii i nie próbuje użyć już zwolnionych shared geometry.

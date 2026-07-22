@@ -13,6 +13,9 @@ interface PerformanceSettingsLike {
   customReflections?: boolean;
   customFloorGlows?: boolean;
   customSaberGlints?: boolean;
+  customSaberTrails?: boolean;
+  customSaberTrailSamples?: number;
+  customArenaDetail?: number;
   customBackgroundShader?: boolean;
   customFog?: boolean;
   customGrid?: boolean;
@@ -57,6 +60,9 @@ const PROFILES = {
     reflections: false,
     floorGlows: false,
     saberGlints: false,
+    saberTrails: false,
+    saberTrailSamples: 0,
+    arenaDetail: 0,
     backgroundShader: false,
     fog: false,
     grid: false,
@@ -79,6 +85,9 @@ const PROFILES = {
     reflections: false,
     floorGlows: false,
     saberGlints: false,
+    saberTrails: false,
+    saberTrailSamples: 0,
+    arenaDetail: 0.08,
     backgroundShader: false,
     fog: false,
     grid: false,
@@ -101,6 +110,9 @@ const PROFILES = {
     reflections: false,
     floorGlows: false,
     saberGlints: false,
+    saberTrails: false,
+    saberTrailSamples: 0,
+    arenaDetail: 0.22,
     backgroundShader: false,
     fog: false,
     grid: false,
@@ -123,6 +135,9 @@ const PROFILES = {
     reflections: false,
     floorGlows: false,
     saberGlints: true,
+    saberTrails: true,
+    saberTrailSamples: 6,
+    arenaDetail: 0.62,
     backgroundShader: true,
     fog: true,
     grid: true,
@@ -145,6 +160,9 @@ const PROFILES = {
     reflections: false,
     floorGlows: true,
     saberGlints: true,
+    saberTrails: true,
+    saberTrailSamples: 9,
+    arenaDetail: 0.82,
     backgroundShader: true,
     fog: true,
     grid: true,
@@ -167,6 +185,9 @@ const PROFILES = {
     reflections: true,
     floorGlows: true,
     saberGlints: true,
+    saberTrails: true,
+    saberTrailSamples: 12,
+    arenaDetail: 1,
     backgroundShader: true,
     fog: true,
     grid: true,
@@ -189,6 +210,9 @@ const PROFILES = {
     reflections: true,
     floorGlows: true,
     saberGlints: true,
+    saberTrails: true,
+    saberTrailSamples: 16,
+    arenaDetail: 1.18,
     backgroundShader: true,
     fog: true,
     grid: true,
@@ -290,6 +314,9 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
       reflections: Boolean(settings.customReflections),
       floorGlows: Boolean(settings.customFloorGlows),
       saberGlints: Boolean(settings.customSaberGlints),
+      saberTrails: Boolean(settings.customSaberTrails),
+      saberTrailSamples: Math.max(0, Math.min(16, Math.round(settings.customSaberTrailSamples ?? 10))),
+      arenaDetail: Math.max(0, Math.min(1.25, settings.customArenaDetail ?? 1)),
       backgroundShader: Boolean(settings.customBackgroundShader),
       fog: Boolean(settings.customFog),
       grid: Boolean(settings.customGrid),

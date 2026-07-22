@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - A synchronized 3D preview in the map creator.
 - Frame-phase profiling and performance bottleneck documentation.
 - Trusted HTTPS certificate configuration for the server.
+- Lightweight saber motion trails with quality-preset and custom controls.
 
 ### Changed
 
@@ -25,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Effective map duration is cached during gameplay.
 - Asynchronous task and render-loop failures are isolated and reported without stopping the entire application.
 - WebSocket transport failures are isolated to the affected connection instead of the server process.
+- Arena detail, portal density, and saber trails now scale with the selected graphics profile.
+- The central gameplay lane darkens subtly when notes approach the player.
 
 ### Fixed
 

@@ -210,8 +210,10 @@ export const bgMat = new THREE.ShaderMaterial({
   transparent: true,
   depthWrite: false,
   uniforms: {
-    uTime:  { value: 0 },
-    uMusic: { value: 0 },
+    uTime:     { value: 0 },
+    uMusic:    { value: 0 },
+    uDetail:   { value: initialPerfProfile.arenaDetail },
+    uPressure: { value: 0 },
   },
   vertexShader: `
     varying vec2 vUv;
@@ -224,6 +226,8 @@ export const bgMat = new THREE.ShaderMaterial({
     varying vec2 vUv;
     uniform float uTime;
     uniform float uMusic;
+    uniform float uDetail;
+    uniform float uPressure;
 
     float hash21(vec2 p){
       p = fract(p * vec2(123.34, 345.45));
@@ -246,6 +250,8 @@ export const bgMat = new THREE.ShaderMaterial({
       vec2 p = uv * 2.0 - 1.0;
       float motion = uTime * 0.025;
       float music = clamp(uMusic, 0.0, 1.5);
+      float detail = clamp(uDetail, 0.0, 1.25);
+      float pressure = clamp(uPressure, 0.0, 1.0);
 
       vec3 bottom = vec3(0.004, 0.008, 0.025);
       vec3 top = vec3(0.018, 0.008, 0.055);
@@ -258,18 +264,29 @@ export const bgMat = new THREE.ShaderMaterial({
         * smoothstep(0.12, 0.82, uv.y)
         * (0.22 + sideMask * 0.78);
       vec3 nebulaColor = mix(vec3(0.05, 0.22, 0.52), vec3(0.42, 0.035, 0.38), uv.x);
-      color += nebulaColor * nebula * (0.12 + music * 0.035);
+      color += nebulaColor * nebula * detail * (0.10 + music * 0.04);
+
+      float cloudBand = sin(p.x * 3.1 - p.y * 5.7 - motion * 3.0)
+        * sin(p.x * 7.3 + p.y * 2.2 + motion * 4.0);
+      float cloud = smoothstep(0.38, 0.92, cloudBand)
+        * smoothstep(0.18, 0.88, uv.y)
+        * smoothstep(0.12, 0.72, abs(p.x));
+      color += mix(vec3(0.03, 0.18, 0.40), vec3(0.30, 0.025, 0.30), uv.x)
+        * cloud * max(0.0, detail - 0.48) * (0.055 + music * 0.025);
 
       float horizon = exp(-pow((uv.y - 0.16) * 12.0, 2.0));
       vec3 horizonColor = mix(vec3(0.02, 0.58, 0.72), vec3(0.82, 0.08, 0.48), uv.x);
-      color += horizonColor * horizon * (0.075 + music * 0.028);
+      color += horizonColor * horizon * detail * (0.065 + music * 0.032);
 
       float stars = starLayer(uv + vec2(motion * 0.08, 0.0), vec2(42.0, 17.0), 0.945, 0.090);
       stars += starLayer(uv - vec2(motion * 0.035, 0.0), vec2(71.0, 29.0), 0.978, 0.070) * 0.72;
-      color += vec3(0.58, 0.78, 1.0) * stars * (0.55 + music * 0.12);
+      stars += starLayer(uv + vec2(0.0, motion * 0.025), vec2(96.0, 38.0), 0.988, 0.055)
+        * max(0.0, detail - 0.72) * 0.62;
+      color += vec3(0.58, 0.78, 1.0) * stars * detail * (0.48 + music * 0.14);
 
       float gameplayLane = exp(-pow(p.x * 1.72, 2.0)) * smoothstep(0.02, 0.66, uv.y);
-      color *= 1.0 - gameplayLane * 0.19;
+      color *= 1.0 - gameplayLane * (0.17 + pressure * 0.30);
+      color *= 1.0 - pressure * smoothstep(0.12, 0.82, uv.y) * 0.12;
 
       float vignette = smoothstep(1.28, 0.22, length(p * vec2(0.78, 1.0)));
       color *= 0.56 + vignette * 0.44;
@@ -293,6 +310,7 @@ interface SaberUserData {
   color:       number;
   wireMat:     THREE.MeshBasicMaterial;
   wireMesh:    THREE.Mesh;
+  bladeLength: number;
 }
 
 function makeSaber(hex: number): THREE.Group {
@@ -341,12 +359,26 @@ function makeSaber(hex: number): THREE.Group {
   bladeCore.position.y = 0.57;
   g.add(bladeCore);
 
-  const bgMat2 = new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0.75, side: THREE.DoubleSide });
+  const bgMat2 = new THREE.MeshBasicMaterial({
+    color: hex,
+    transparent: true,
+    opacity: 0.75,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+  });
   const bladeGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 1.1, 6), bgMat2);
   bladeGlow.position.y = 0.57;
   g.add(bladeGlow);
 
-  const ogMat = new THREE.MeshBasicMaterial({ color: hex, transparent: true, opacity: 0.22, side: THREE.DoubleSide });
+  const ogMat = new THREE.MeshBasicMaterial({
+    color: hex,
+    transparent: true,
+    opacity: 0.22,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+  });
   const outerGlow = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.042, 1.1, 6), ogMat);
   outerGlow.position.y = 0.57;
   g.add(outerGlow);
@@ -390,7 +422,7 @@ function makeSaber(hex: number): THREE.Group {
     bladeGlow: bgMat2, outerGlow: ogMat,
     shineMat: shMat,   shineMesh: shMesh,
     shine2Mat: sh2Mat, shine2Mesh: sh2Mesh,
-    color: hex, wireMat, wireMesh,
+    color: hex, wireMat, wireMesh, bladeLength: 1.1,
   } satisfies SaberUserData;
   return g;
 }
@@ -494,6 +526,7 @@ export function setSaberModel(side: 'left' | 'right', model: SaberModel): void {
       child.position.y = spec.length / 2 + 0.02;
     }
   });
+  (saber.userData as SaberUserData).bladeLength = spec.length;
 }
 
 export function animateIdleSabers(t: number): void {
@@ -523,8 +556,12 @@ export function updateReflection(): void {
 }
 
 export function updateLightReflections(t: number): void {
-  if (!perfProfile.floorGlows && !perfProfile.saberGlints) return;
+  if (!perfProfile.floorGlows && !perfProfile.saberGlints && !perfProfile.saberTrails) return;
   const pulse = 0.85 + Math.sin(t * 6) * 0.15;
+  const lMotion = THREE.MathUtils.clamp(lVel.length() * 12, 0, 1);
+  const rMotion = THREE.MathUtils.clamp(rVel.length() * 12, 0, 1);
+  (lSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + lMotion * (perfProfile.saberTrails ? 0.22 : 0.08);
+  (rSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + rMotion * (perfProfile.saberTrails ? 0.22 : 0.08);
   if (perfProfile.floorGlows) {
     lReflection.position.set(lSaber.position.x, 0.012, lSaber.position.z - 0.12);
     rReflection.position.set(rSaber.position.x, 0.012, rSaber.position.z - 0.12);
@@ -609,6 +646,7 @@ function applyDecorVisibility(): void {
   lReflection.visible   = floorGlowOn;
   rReflection.visible   = floorGlowOn;
   bgMesh.visible        = Boolean(perfProfile.backgroundShader);
+  if (bgMat.uniforms['uDetail']) bgMat.uniforms['uDetail'].value = perfProfile.arenaDetail;
   gridH.visible         = Boolean(perfProfile.grid);
   scene.fog             = perfProfile.fog ? sceneFog : null;
   for (const s of [lSaber, rSaber]) {

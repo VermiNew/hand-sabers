@@ -173,3 +173,12 @@ body:not(.dev-tools) #camPanel .cam-box {
 @media (max-width:760px) {
   body:not(.dev-tools) #camPanel { left:auto; right:10px; width:min(184px,46vw); transform:none; }
 }
+
+@media (max-height:820px) and (min-width:761px) {
+  body:not(.dev-tools) #camPanel {
+    right:14px;
+    bottom:14px;
+    transform:perspective(850px) rotateY(-6deg) scale(.9);
+    transform-origin:100% 100%;
+  }
+}

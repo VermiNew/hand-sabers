@@ -30,6 +30,7 @@ import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentMusicIntensity, updateMusicVisualizer } from './music-visualizer.ts';
+import { updateSaberTrails } from './saber-trails.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
 declare global {
@@ -42,6 +43,7 @@ declare global {
     __audioOffsetMs?:       number;
     __nearestBeatDeltaMs?:  number | null;
     __nearestBeats?:        Array<{ deltaMs: number; side: string; cut: string }> | null;
+    __gameplayVisualPressure?: number;
   }
 }
 
@@ -900,12 +902,21 @@ function renderFrame(timestamp: number): void {
     songTimeSec: state.map ? mapTimeline.getTime(now) : t,
   });
   if (bgMat.uniforms['uMusic']) bgMat.uniforms['uMusic'].value = getCurrentMusicIntensity();
+  if (bgMat.uniforms['uPressure']) {
+    const targetPressure = state.appState === S.PLAYING ? window.__gameplayVisualPressure ?? 0 : 0;
+    bgMat.uniforms['uPressure'].value = THREE.MathUtils.lerp(
+      Number(bgMat.uniforms['uPressure'].value) || 0,
+      targetPressure,
+      0.12,
+    );
+  }
   if (profiling) frameProfile.gameMs = smoothProfileValue(frameProfile.gameMs, performance.now() - gamePhaseStart);
 
   const effectsPhaseStart = profiling ? performance.now() : 0;
   lLight.position.set(lSaber.position.x, lSaber.position.y + 0.5, lSaber.position.z);
   rLight.position.set(rSaber.position.x, rSaber.position.y + 0.5, rSaber.position.z);
   updateLightReflections(t);
+  updateSaberTrails(state.appState === S.PLAYING || isMainMenuOpen(), state.deltaSec);
   updateSparks(state.deltaScale);
 
   if (state.appState === S.PLAYING) {
@@ -1188,6 +1199,11 @@ function initMainMenu(): void {
   const customReflectionsInput = document.getElementById('menuCustomReflections') as HTMLInputElement | null;
   const customFloorGlowsInput = document.getElementById('menuCustomFloorGlows') as HTMLInputElement | null;
   const customSaberGlintsInput = document.getElementById('menuCustomSaberGlints') as HTMLInputElement | null;
+  const customSaberTrailsInput = document.getElementById('menuCustomSaberTrails') as HTMLInputElement | null;
+  const customSaberTrailSamplesInput = document.getElementById('menuCustomSaberTrailSamples') as HTMLInputElement | null;
+  const customSaberTrailSamplesValue = document.getElementById('menuCustomSaberTrailSamplesValue');
+  const customArenaDetailInput = document.getElementById('menuCustomArenaDetail') as HTMLInputElement | null;
+  const customArenaDetailValue = document.getElementById('menuCustomArenaDetailValue');
   const customBackgroundShaderInput = document.getElementById('menuCustomBackgroundShader') as HTMLInputElement | null;
   const customFogInput = document.getElementById('menuCustomFog') as HTMLInputElement | null;
   const customGridInput = document.getElementById('menuCustomGrid') as HTMLInputElement | null;
@@ -1385,6 +1401,7 @@ function initMainMenu(): void {
     | 'customReflections'
     | 'customFloorGlows'
     | 'customSaberGlints'
+    | 'customSaberTrails'
     | 'customBackgroundShader'
     | 'customFog'
     | 'customGrid';
@@ -1405,6 +1422,7 @@ function initMainMenu(): void {
       [customReflectionsInput, 'customReflections'],
       [customFloorGlowsInput, 'customFloorGlows'],
       [customSaberGlintsInput, 'customSaberGlints'],
+      [customSaberTrailsInput, 'customSaberTrails'],
       [customBackgroundShaderInput, 'customBackgroundShader'],
       [customFogInput, 'customFog'],
       [customGridInput, 'customGrid'],
@@ -1415,6 +1433,16 @@ function initMainMenu(): void {
       updateRangeProgress(customHitShardsInput);
     }
     if (customHitShardsValue) customHitShardsValue.textContent = String(settings.customHitShards);
+    if (customSaberTrailSamplesInput) {
+      customSaberTrailSamplesInput.value = String(settings.customSaberTrailSamples);
+      updateRangeProgress(customSaberTrailSamplesInput);
+    }
+    if (customSaberTrailSamplesValue) customSaberTrailSamplesValue.textContent = String(settings.customSaberTrailSamples);
+    if (customArenaDetailInput) {
+      customArenaDetailInput.value = String(settings.customArenaDetail);
+      updateRangeProgress(customArenaDetailInput);
+    }
+    if (customArenaDetailValue) customArenaDetailValue.textContent = `${Math.round(settings.customArenaDetail * 100)}%`;
     if (customRenderScaleInput) {
       customRenderScaleInput.value = String(settings.customRenderScale);
       updateRangeProgress(customRenderScaleInput);
@@ -1653,6 +1681,7 @@ function initMainMenu(): void {
   bindCustomToggle(customReflectionsInput, 'customReflections');
   bindCustomToggle(customFloorGlowsInput, 'customFloorGlows');
   bindCustomToggle(customSaberGlintsInput, 'customSaberGlints');
+  bindCustomToggle(customSaberTrailsInput, 'customSaberTrails');
   bindCustomToggle(customBackgroundShaderInput, 'customBackgroundShader');
   bindCustomToggle(customFogInput, 'customFog');
   bindCustomToggle(customGridInput, 'customGrid');
@@ -1663,6 +1692,24 @@ function initMainMenu(): void {
     setSetting('customHitShards', value);
     updateRangeProgress(customHitShardsInput);
     if (customHitShardsValue) customHitShardsValue.textContent = String(value);
+    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
+  });
+
+  customSaberTrailSamplesInput?.addEventListener('input', () => {
+    const value = Math.max(0, Math.min(16, Math.round(Number(customSaberTrailSamplesInput.value))));
+    settings.customSaberTrailSamples = value;
+    setSetting('customSaberTrailSamples', value);
+    updateRangeProgress(customSaberTrailSamplesInput);
+    if (customSaberTrailSamplesValue) customSaberTrailSamplesValue.textContent = String(value);
+    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
+  });
+
+  customArenaDetailInput?.addEventListener('input', () => {
+    const value = Math.max(0, Math.min(1.25, Number(customArenaDetailInput.value)));
+    settings.customArenaDetail = value;
+    setSetting('customArenaDetail', value);
+    updateRangeProgress(customArenaDetailInput);
+    if (customArenaDetailValue) customArenaDetailValue.textContent = `${Math.round(value * 100)}%`;
     if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
   });
 

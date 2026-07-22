@@ -107,7 +107,9 @@ export function getEffectiveMusicIntensity(
   }
   runningPeakBass = Math.max(energy.bass, runningPeakBass * 0.999);
   const normalizedBass = runningPeakBass > 0.05 ? Math.min(1.4, 1 / runningPeakBass) : 1;
-  const tierMultiplier = TIER_INTENSITY[profile.qualityMode] ?? 1;
+  const tierMultiplier = profile.qualityMode === 'custom'
+    ? THREE.MathUtils.clamp(profile.arenaDetail, 0, 1.25)
+    : TIER_INTENSITY[profile.qualityMode] ?? 1;
   return Math.max(0, Math.min(1.5, tierMultiplier * normalizedBass));
 }
 
@@ -192,17 +194,20 @@ export function updateMusicVisualizer(frame: MusicVisualizerFrame): void {
   syncBeatTimeline(frame.beats, frame.songTimeSec);
   beatPulse *= Math.exp(-7.5 * Math.max(0, frame.deltaSec));
 
-  const portalCount = PORTAL_COUNTS[frame.profile.qualityMode] ?? 2;
+  const portalCount = frame.profile.qualityMode === 'custom'
+    ? Math.max(0, Math.min(MAX_PORTAL_COUNT, Math.round(frame.profile.arenaDetail * 4.8)))
+    : PORTAL_COUNTS[frame.profile.qualityMode] ?? 2;
   const levels = getMusicFrequencyLevels();
   const intensity = getEffectiveMusicIntensity(levels, frame.profile);
   currentEffectiveMusicIntensity = intensity;
   const portalVisible = portalCount > 0 && intensity > 0.001;
+  const readability = 1 - THREE.MathUtils.clamp(window.__gameplayVisualPressure ?? 0, 0, 1) * 0.42;
   portals.count = portalCount;
   portals.visible = portalVisible;
   portalGlows.count = portalCount;
   portalGlows.visible = portalVisible;
-  portalMaterial.opacity = Math.min(0.5, (0.07 + levels.overall * 0.22 + beatPulse * 0.28) * intensity);
-  portalGlowMaterial.opacity = Math.min(0.18, (0.025 + levels.bass * 0.07 + beatPulse * 0.095) * intensity);
+  portalMaterial.opacity = Math.min(0.5, (0.07 + levels.overall * 0.22 + beatPulse * 0.28) * intensity) * readability;
+  portalGlowMaterial.opacity = Math.min(0.18, (0.025 + levels.bass * 0.07 + beatPulse * 0.095) * intensity) * readability;
 
   for (let index = 0; index < portalCount; index++) {
     const wave = 0.5 + Math.sin(frame.nowSec * 2.4 - index * 0.72) * 0.5;

@@ -101,6 +101,9 @@ export interface Settings {
   customReflections: boolean;
   customFloorGlows: boolean;
   customSaberGlints: boolean;
+  customSaberTrails: boolean;
+  customSaberTrailSamples: number;
+  customArenaDetail: number;
   customBackgroundShader: boolean;
   customFog: boolean;
   customGrid: boolean;
@@ -140,6 +143,9 @@ export interface PerformanceProfile {
   reflections: boolean;
   floorGlows: boolean;
   saberGlints: boolean;
+  saberTrails: boolean;
+  saberTrailSamples: number;
+  arenaDetail: number;
   backgroundShader: boolean;
   fog: boolean;
   grid: boolean;
