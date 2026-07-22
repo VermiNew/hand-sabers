@@ -1,4 +1,19 @@
-const messages = {
+export type CoreLang = 'pl' | 'en';
+export type CoreMessageKey =
+  | 'audioNotSelected'
+  | 'audioUnsupported'
+  | 'audioTooShort'
+  | 'audioTooLong'
+  | 'audioDecodeFailed'
+  | 'fileTooLarge'
+  | 'unsafeZipPath'
+  | 'mapMustBeObject'
+  | 'mapTooLong'
+  | 'tooManyBeats'
+  | 'beatTooLate'
+  | 'mapNeedsBeats';
+
+const messages: Record<CoreLang, Record<CoreMessageKey, string>> = {
   pl: {
     audioNotSelected: 'Nie wybrano pliku audio.',
     audioUnsupported: 'Nieobsługiwany format audio. Użyj MP3, OGG, WAV albo FLAC.',
@@ -29,13 +44,16 @@ const messages = {
   },
 };
 
-let currentLang = 'pl';
+let currentLang: CoreLang = 'pl';
 
-export function setCoreLang(lang) {
+export function setCoreLang(lang: CoreLang): void {
   currentLang = lang === 'en' ? 'en' : 'pl';
 }
 
-export function coreT(key, values = {}) {
+export function coreT(
+  key: CoreMessageKey,
+  values: Record<string, string | number> = {},
+): string {
   return Object.entries(values).reduce(
     (text, [name, value]) => text.replaceAll(`{{${name}}}`, String(value)),
     messages[currentLang][key],

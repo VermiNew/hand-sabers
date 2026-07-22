@@ -3,8 +3,12 @@
     "target": "es2023",
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "lib": ["ES2023"],
-    "types": ["node"],
+    "lib": [
+      "ES2023"
+    ],
+    "types": [
+      "node"
+    ],
     "skipLibCheck": true,
     "strict": true,
     "noUncheckedIndexedAccess": true,
@@ -13,5 +17,13 @@
     "sourceMap": true,
     "outDir": "./dist-server"
   },
-  "include": ["server.ts", "server/**/*.ts", "src/core/map-format.ts", "src/core/settings.ts", "src/core/saber-colors.ts", "src/types/index.ts"]
+  "include": [
+    "server.ts",
+    "server/**/*.ts",
+    "src/core/map-format.ts",
+    "src/core/settings.ts",
+    "src/core/saber-colors.ts",
+    "src/core/translate.ts",
+    "src/types/index.ts"
+  ]
 }
