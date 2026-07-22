@@ -952,3 +952,63 @@ body.menu-open #pauseMenu { display:none !important; }
   0%,100% { opacity:1; }
   50%     { opacity:0; }
 }
+
+
+/* ── Contest polish: distinct victory / defeat result screens ───────────── */
+#overlay.is-gameover #overlayBox {
+  overflow:hidden;
+  clip-path:polygon(7% 0,93% 0,100% 9%,100% 91%,93% 100%,7% 100%,0 91%,0 9%);
+  background:
+    linear-gradient(180deg,rgba(7,16,36,.94),rgba(3,7,18,.97)),
+    repeating-linear-gradient(90deg,transparent 0 49px,rgba(255,255,255,.014) 50px);
+  backdrop-filter:blur(18px) saturate(1.18);
+}
+#overlay.is-gameover #overlayBox::before,
+#overlay.is-gameover #overlayBox::after {
+  content:'';
+  position:absolute;
+  left:9%; right:9%;
+  height:2px;
+  background:linear-gradient(90deg,transparent,currentColor,transparent);
+  box-shadow:0 0 16px currentColor;
+  opacity:.7;
+}
+#overlay.is-gameover #overlayBox::before { top:0; }
+#overlay.is-gameover #overlayBox::after { bottom:0; }
+#overlay.is-victory {
+  background:
+    radial-gradient(circle at 50% 42%,rgba(54,242,161,.16),transparent 34%),
+    radial-gradient(ellipse at 50% 80%,rgba(47,124,255,.16),transparent 64%),
+    rgba(3,7,17,.965);
+}
+#overlay.is-victory #overlayBox {
+  color:var(--accent);
+  border-color:rgba(54,242,161,.48);
+  box-shadow:0 0 90px rgba(54,242,161,.16),0 0 180px rgba(47,124,255,.09);
+}
+#overlay.is-victory .ov-step {
+  color:#effff8;
+  text-shadow:0 0 26px rgba(54,242,161,.95),0 0 72px rgba(54,242,161,.46);
+}
+#overlay.is-defeat {
+  background:
+    radial-gradient(circle at 50% 45%,rgba(255,68,92,.12),transparent 34%),
+    rgba(5,7,13,.97);
+}
+#overlay.is-defeat #overlayBox {
+  color:#ff6177;
+  border-color:rgba(255,76,103,.38);
+  box-shadow:0 0 82px rgba(255,58,88,.12);
+}
+#overlay.is-defeat .ov-step {
+  color:#fff2f4;
+  text-shadow:0 0 24px rgba(255,65,94,.78),0 0 58px rgba(255,65,94,.30);
+}
+#overlay.is-gameover .ov-btn {
+  min-width:150px;
+  clip-path:polygon(8% 0,100% 0,100% 76%,92% 100%,0 100%,0 24%);
+}
+@media (max-width:620px) {
+  #overlay.is-gameover #overlayBox { padding:38px 24px; width:94%; }
+  #overlay.is-gameover .ov-step { letter-spacing:6px; margin-bottom:24px; }
+}

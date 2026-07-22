@@ -247,7 +247,11 @@ export function showCameraError(err: unknown): void {
 
 export function showGameOver(state: GameState, victory = false): void {
   clearDangerPulse();
-  if (ui.overlay) ui.overlay.classList.add('is-gameover');
+  if (ui.overlay) {
+    ui.overlay.classList.add('is-gameover');
+    ui.overlay.classList.toggle('is-victory', victory);
+    ui.overlay.classList.toggle('is-defeat', !victory);
+  }
   showModalElement(ui.overlay);
   if (ui.hud)         ui.hud.style.display        = 'none';
   if (ui.mapProgress) ui.mapProgress.style.display = 'none';

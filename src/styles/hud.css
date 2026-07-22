@@ -229,3 +229,96 @@ body.training-mode #trainingBadge { display:block; }
   box-shadow:0 0 8px 3px rgba(var(--right-rgb),0.9), 0 0 18px 5px rgba(var(--right-rgb),0.5);
   pointer-events:none;
 }
+
+
+/* ── Contest polish: lightweight pseudo-3D HUD ─────────────────────────── */
+#hudTop {
+  position:relative;
+  min-width:min(430px,72vw);
+  padding:14px 54px 12px;
+  border:1px solid rgba(74,174,255,.42);
+  border-bottom-color:rgba(var(--right-rgb),.44);
+  clip-path:polygon(9% 0,91% 0,100% 30%,94% 100%,6% 100%,0 30%);
+  background:
+    linear-gradient(180deg,rgba(10,20,42,.84),rgba(3,7,18,.56)),
+    radial-gradient(circle at 50% 0,rgba(var(--right-rgb),.15),transparent 68%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255,255,255,.025),
+    inset 0 -18px 40px rgba(0,0,0,.26),
+    0 12px 34px rgba(0,0,0,.32),
+    0 0 26px rgba(47,124,255,.13);
+  transform:perspective(900px) rotateX(-4deg);
+  transform-origin:50% 0;
+  backdrop-filter:blur(8px) saturate(1.15);
+}
+#hudTop::before,
+#hudTop::after {
+  content:'';
+  position:absolute;
+  top:7px;
+  width:48px;
+  height:2px;
+  background:linear-gradient(90deg,transparent,var(--left));
+  box-shadow:0 0 10px rgba(var(--left-rgb),.75);
+  opacity:.78;
+}
+#hudTop::before { left:34px; }
+#hudTop::after {
+  right:34px;
+  transform:scaleX(-1);
+  background:linear-gradient(90deg,transparent,var(--right));
+  box-shadow:0 0 10px rgba(var(--right-rgb),.75);
+}
+#score {
+  font-size:clamp(34px,4vw,52px);
+  line-height:1;
+  color:#f7fbff;
+  text-shadow:
+    0 0 12px rgba(255,255,255,.22),
+    0 0 28px rgba(47,124,255,.36),
+    0 0 52px rgba(var(--right-rgb),.12);
+}
+#combo { margin-top:8px; }
+#mapTitle {
+  max-width:340px;
+  margin:8px auto 0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#hudBottom {
+  padding:14px 24px 16px;
+  border:1px solid rgba(74,174,255,.30);
+  clip-path:polygon(5% 0,95% 0,100% 22%,97% 100%,3% 100%,0 22%);
+  background:linear-gradient(180deg,rgba(5,12,28,.38),rgba(3,7,18,.72));
+  box-shadow:0 14px 38px rgba(0,0,0,.36),0 0 28px rgba(47,124,255,.08);
+  transform:translateX(-50%) perspective(900px) rotateX(5deg);
+  transform-origin:50% 100%;
+  backdrop-filter:blur(8px) saturate(1.1);
+}
+.hp-shell,.map-prog-shell { position:relative; isolation:isolate; }
+.hp-shell::after,.map-prog-shell::after {
+  content:'';
+  position:absolute;
+  inset:1px;
+  border-radius:inherit;
+  background:linear-gradient(105deg,transparent 0 43%,rgba(255,255,255,.16) 49%,transparent 55% 100%);
+  transform:translateX(-120%);
+  animation:hudScan 4.5s ease-in-out infinite;
+  pointer-events:none;
+}
+@keyframes hudScan {
+  0%,58% { transform:translateX(-120%); opacity:0; }
+  64% { opacity:.8; }
+  82%,100% { transform:translateX(120%); opacity:0; }
+}
+@media (max-width:760px) {
+  #hud { padding-top:8px; }
+  #hudTop { min-width:min(360px,92vw); padding:11px 34px 9px; transform:none; }
+  #score { font-size:30px; letter-spacing:4px; }
+  #combo { font-size:14px; }
+  #hudBottom { width:min(420px,94vw); padding:11px 16px 13px; transform:translateX(-50%); }
+}
+@media (prefers-reduced-motion:reduce) {
+  .hp-shell::after,.map-prog-shell::after { animation:none; display:none; }
+}
