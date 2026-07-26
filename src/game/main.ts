@@ -7,6 +7,7 @@ import {
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel, setArenaTheme,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
+import { setInterfaceSoundVolume } from '../ui/interface-sounds.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
@@ -1809,6 +1810,18 @@ function initMainMenu(): void {
       settings.audioOffsetMs = value;
       setSetting('audioOffsetMs', value);
       if (audioOffsetValue) audioOffsetValue.textContent = `${value} ms`;
+    });
+  }
+
+  const interfaceSoundInput = document.getElementById('menuInterfaceSoundVolume') as HTMLInputElement | null;
+  if (interfaceSoundInput) {
+    interfaceSoundInput.value = String(settings.interfaceSoundVolume ?? 0.8);
+    bindStyledRange(interfaceSoundInput);
+    interfaceSoundInput.addEventListener('input', () => {
+      const value = Number(interfaceSoundInput.value);
+      settings.interfaceSoundVolume = value;
+      setSetting('interfaceSoundVolume', value);
+      setInterfaceSoundVolume(value);
     });
   }
 

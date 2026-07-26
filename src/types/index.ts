@@ -119,6 +119,7 @@ export interface Settings {
   saberModel: string;
   beatLimitEnabled: boolean;
   maxBeats: number;
+  interfaceSoundVolume: number;
   playerName: string;
   noteSpeed: number;
   hitboxSensitivity: number;

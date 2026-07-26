@@ -189,12 +189,14 @@ export function playInterfaceSound(kind: InterfaceSoundKind = 'activate'): void 
   const minInterval = kind === 'hover' ? 65 : 24;
   if (now - lastInterfaceSoundAt < minInterval) return;
   lastInterfaceSoundAt = now;
+  const settings = getSettings();
+  const vol = clamp01(settings.interfaceSoundVolume, 0.8);
   if (kind === 'hover') {
-    playSoftTone(430, 0.045, 0.012, 'sine', 510);
+    playSoftTone(430, 0.045, 0.06 * vol, 'sine', 510);
   } else if (kind === 'back') {
-    playSoftTone(290, 0.075, 0.022, 'triangle', 205);
+    playSoftTone(290, 0.075, 0.11 * vol, 'triangle', 205);
   } else {
-    playSoftTone(520, 0.075, 0.025, 'triangle', 690);
+    playSoftTone(520, 0.075, 0.12 * vol, 'triangle', 690);
   }
 }
 

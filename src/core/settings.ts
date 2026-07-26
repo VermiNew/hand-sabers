@@ -65,6 +65,7 @@ export const DEFAULTS: Settings = {
   musicReactiveEnabled: true,
   musicReactiveIntensityMode: 'auto',
   musicReactiveIntensity: 1,
+  interfaceSoundVolume: 0.8,
   playerName: 'Gracz',
   noteSpeed: 1,
   hitboxSensitivity: 1,

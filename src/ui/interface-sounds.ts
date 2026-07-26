@@ -2,6 +2,26 @@ let context: AudioContext | null = null;
 let lastSoundAt = -Infinity;
 let bound = false;
 
+function getInterfaceVolume(): number {
+  try {
+    const raw = localStorage.getItem('hs_settings');
+    if (raw) {
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      return typeof parsed['interfaceSoundVolume'] === 'number' ? parsed['interfaceSoundVolume'] : 0.8;
+    }
+  } catch { /* ignore */ }
+  return 0.8;
+}
+
+export function setInterfaceSoundVolume(vol: number): void {
+  try {
+    const raw = localStorage.getItem('hs_settings');
+    const parsed = raw ? JSON.parse(raw) as Record<string, unknown> : {};
+    parsed['interfaceSoundVolume'] = vol;
+    localStorage.setItem('hs_settings', JSON.stringify(parsed));
+  } catch { /* ignore */ }
+}
+
 function ensureContext(): AudioContext | null {
   if (context) {
     if (context.state === 'suspended') void context.resume();
@@ -16,13 +36,14 @@ function ensureContext(): AudioContext | null {
 function tone(frequency: number, duration: number, volume: number, endFrequency: number): void {
   const audio = ensureContext();
   if (!audio) return;
+  const vol = getInterfaceVolume() * volume;
   const now = audio.currentTime;
   const oscillator = audio.createOscillator();
   const gain = audio.createGain();
   oscillator.type = 'triangle';
   oscillator.frequency.setValueAtTime(frequency, now);
   oscillator.frequency.exponentialRampToValueAtTime(endFrequency, now + duration);
-  gain.gain.setValueAtTime(Math.max(0.0001, volume), now);
+  gain.gain.setValueAtTime(Math.max(0.0001, vol), now);
   gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
   oscillator.connect(gain);
   gain.connect(audio.destination);
@@ -41,7 +62,7 @@ export function initPageInterfaceSounds(root: ParentNode = document): void {
     if (!target || target === hovered || performance.now() - lastSoundAt < 70) return;
     hovered = target;
     lastSoundAt = performance.now();
-    if (context) tone(430, 0.04, 0.009, 500);
+    if (context) tone(430, 0.04, 0.045, 500);
   });
   root.addEventListener('pointerout', event => {
     const target = event.target instanceof Element ? event.target.closest(selector) : null;
@@ -51,6 +72,6 @@ export function initPageInterfaceSounds(root: ParentNode = document): void {
     const target = event.target instanceof Element ? event.target.closest(selector) : null;
     if (!target) return;
     lastSoundAt = performance.now();
-    tone(520, 0.07, 0.018, 680);
+    tone(520, 0.07, 0.09, 680);
   });
 }

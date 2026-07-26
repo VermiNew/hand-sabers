@@ -225,6 +225,7 @@
       "noFail": "No Fail"
     },
     "audio": {
+      "interfaceSounds": "Interface",
       "individualSounds": "Individual sounds",
       "music": "Music",
       "sfx": "Effects",
