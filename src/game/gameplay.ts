@@ -6,6 +6,7 @@ import { THEME } from '../core/theme.ts';
 import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.ts';
 import { noteZAtSongTime } from '../core/timing.ts';
 import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
+import { recordBombHit } from '../core/achievements.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import { showHitFeedback } from './hit-feedback.ts';
 import { MapSpawnQueue } from './map-spawn-queue.ts';
@@ -811,6 +812,7 @@ function hitBomb(entry: ActiveBlock): void {
   entry.mesh.userData.alive = false;
   shatterBlock(entry.mesh, THEME.bomb, null, { strong: true });
   releaseBlock(entry.mesh);
+  recordBombHit();
 
   ({ combo: state.combo, maxCombo: state.maxCombo } = resetCombo(state));
   state.lives = Math.max(0, state.lives - 2);

@@ -1,0 +1,296 @@
+/*
+.ach-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(20,20,30,0.96), rgba(30,20,40,0.96));
+  border: 1px solid rgba(255,215,0,0.5);
+  border-radius: 12px;
+  padding: 14px 22px;
+  min-width: 260px;
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.7), 0 0 40px rgba(255,215,0,0.15);
+  transform: translateX(120%);
+  transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.35s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.ach-toast.is-visible {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ach-toast-icon {
+  font-size: 32px;
+  color: #ffd700;
+  filter: drop-shadow(0 0 8px rgba(255,215,0,0.5));
+  flex-shrink: 0;
+}
+
+.ach-toast-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ach-toast-eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: 700;
+  color: #ffd700;
+  opacity: 0.8;
+  text-transform: uppercase;
+}
+
+.ach-toast-title {
+  font-family: 'Oxanium', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ach-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ach-panel-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(6px);
+}
+
+.ach-panel-card {
+  position: relative;
+  width: min(600px, 92vw);
+  max-height: 80vh;
+  background: linear-gradient(180deg, #1a1a2e, #16213e);
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.8);
+}
+
+.ach-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px 12px;
+}
+
+.ach-panel-head h2 {
+  font-family: 'Oxanium', sans-serif;
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: #fff;
+  margin: 0;
+  flex: 1;
+}
+
+.ach-progress-text {
+  font-family: 'Oxanium', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  color: #ffd700;
+  letter-spacing: 1px;
+}
+
+.ach-close {
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s;
+}
+
+.ach-close:hover {
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+}
+
+.ach-progress-bar-wrap {
+  height: 4px;
+  background: rgba(255,255,255,0.1);
+  margin: 0 24px 16px;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ach-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700, #ffaa00);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.ach-grid {
+  padding: 0 24px 24px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.ach-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.ach-card:hover {
+  background: rgba(255,255,255,0.07);
+  border-color: rgba(255,215,0,0.15);
+}
+
+.ach-card.is-locked {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.ach-card.is-locked:hover {
+  opacity: 0.5;
+}
+
+.ach-card-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.ach-card-icon.is-unlocked {
+  color: #ffd700;
+  background: rgba(255,215,0,0.1);
+}
+
+.ach-card-icon.is-locked {
+  color: rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.04);
+}
+
+.ach-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.ach-card-name {
+  font-family: 'Oxanium', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ach-card-name.is-locked {
+  color: rgba(255,255,255,0.5);
+}
+
+.ach-card-desc {
+  font-size: 11px;
+  color: rgba(255,255,255,0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+} */
+
+/* Compact version for settings panel */
+/*
+.ach-compact-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.ach-compact-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.ach-compact-card.is-locked {
+  opacity: 0.3;
+  filter: grayscale(1);
+}
+
+.ach-compact-card .material-symbols-rounded {
+  font-size: 18px;
+  color: #ffd700;
+}
+
+.ach-compact-card.is-locked .material-symbols-rounded {
+  color: rgba(255,255,255,0.15);
+}
+
+.ach-compact-name {
+  font-family: 'Oxanium', sans-serif;
+  font-weight: 600;
+  color: #fff;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ach-compact-card.is-locked .ach-compact-name {
+  color: rgba(255,255,255,0.4);
+}
+
+.ach-settings-body .sp-danger-action {
+  margin-top: 8px;
+  background: rgba(255,60,60,0.1);
+  color: #ff6060;
+  border: 1px solid rgba(255,60,60,0.2);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  letter-spacing: 1px;
+  transition: background 0.2s;
+}
+
+.ach-settings-body .sp-danger-action:hover {
+  background: rgba(255,60,60,0.2);
+}
+/*

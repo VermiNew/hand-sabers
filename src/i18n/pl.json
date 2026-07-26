@@ -200,7 +200,8 @@
       "developer": "Developer",
       "remoteTracking": "Telefon kamera",
       "gameplay": "Rozgrywka",
-      "saberColors": "Kolory mieczy"
+      "saberColors": "Kolory mieczy",
+      "achievements": "Osiągnięcia"
     },
     "labels": {
       "selectLanguage": "Wybierz język",
@@ -638,6 +639,56 @@
       "high": "Na sprzęty średnio-dobre: wyższa ostrość, odbicia światła i pełniejsze efekty.",
       "ultra": "Na dobre sprzęty: odbicia podłogi, wysoka ostrość i komplet efektów.",
       "maximum": "Najlepsze ustawienia graficzne: najwyższa rozdzielczość renderu i najbogatsze efekty."
+    }
+  },
+  "achievements": {
+    "title": "OSIĄGNIĘCIA",
+    "unlocked": "OSIĄGNIĘCIE ODBlOKOWANE",
+    "reset": "RESETUJ OSIĄGNIĘCIA",
+    "settingsHint": "Osiągnięcia odblokowują się automatycznie podczas gry.",
+    "names": {
+      "first_game": "Pierwsze Kroki",
+      "ten_games": "Rozkręcam Się",
+      "fifty_games": "Oddany Gracz",
+      "first_hit": "Pierwszy Kontakt",
+      "hundred_hits": "Coraz Lepiej",
+      "thousand_hits": "Mistrz Miecza",
+      "combo_50": "Uczeń Rytmu",
+      "combo_100": "Początkujący Combo",
+      "combo_250": "Maszyna Combo",
+      "combo_500": "Bóg Combo",
+      "first_win": "Pierwsze Zwycięstwo",
+      "ten_wins": "Dominacja",
+      "perfect_accuracy": "Precyzja",
+      "no_miss_game": "Bez Skazy",
+      "bomb_hitter": "Oddział Bombowy",
+      "five_streak": "W Gazie",
+      "fifteen_streak": "Nie do Zatrzymania",
+      "maps_10": "Odkrywca",
+      "play_1h": "Godzina Gry",
+      "play_10h": "Nałogowiec"
+    },
+    "descriptions": {
+      "first_game": "Ukończ swoją pierwszą grę.",
+      "ten_games": "Ukończ 10 gier.",
+      "fifty_games": "Ukończ 50 gier.",
+      "first_hit": "Wykonaj pierwsze trafienie.",
+      "hundred_hits": "Wykonaj łącznie 100 trafień.",
+      "thousand_hits": "Wykonaj łącznie 1000 trafień.",
+      "combo_50": "Osiągnij combo 50 trafień.",
+      "combo_100": "Osiągnij combo 100 trafień.",
+      "combo_250": "Osiągnij combo 250 trafień.",
+      "combo_500": "Osiągnij combo 500 trafień.",
+      "first_win": "Wygraj swoją pierwszą grę.",
+      "ten_wins": "Wygraj 10 gier.",
+      "perfect_accuracy": "Osiągnij 50% celnych trafień ogółem.",
+      "no_miss_game": "Ukończ grę bez żadnego pudła.",
+      "bomb_hitter": "Traf 10 bomb.",
+      "five_streak": "Osiągnij serię 5 zwycięstw z rzędu.",
+      "fifteen_streak": "Osiągnij serię 15 zwycięstw z rzędu.",
+      "maps_10": "Ukończ 10 różnych map.",
+      "play_1h": "Graj łącznie przez 1 godzinę.",
+      "play_10h": "Graj łącznie przez 10 godzin."
     }
   },
   "validation": {

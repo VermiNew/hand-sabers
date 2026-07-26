@@ -91,6 +91,10 @@
           <span class="material-symbols-rounded">terminal</span>
           <span data-i18n="settings.sections.developer">Developer</span>
         </button>
+        <button class="sp-nav-item" data-tab="achievements" type="button">
+          <span class="material-symbols-rounded">emoji_events</span>
+          <span data-i18n="settings.sections.achievements">Osiągnięcia</span>
+        </button>
         <button class="sp-reset" id="mainSettingsReset" type="button">
           <span class="material-symbols-rounded" aria-hidden="true">restart_alt</span>
           <span data-i18n="settings.reset">Przywróć domyślne</span>
@@ -429,6 +433,16 @@
             </div>
           </div>
           <p class="sp-hint" data-i18n="remoteTracking.settingsHint">Parowanie telefonu jest eksperymentalne. Obraz kamery zostaje na telefonie; komputer dostaje tylko dane śledzenia.</p>
+        </div>
+
+        <!-- TAB: OSIĄGNIĘCIA -->
+        <div class="sp-tab" data-tab="achievements">
+          <h2 class="sp-tab-title" data-i18n="settings.sections.achievements">Osiągnięcia</h2>
+          <div class="ach-settings-body" id="achSettingsBody">
+            <p class="sp-hint" data-i18n="achievements.settingsHint">Osiągnięcia odblokowują się automatycznie podczas gry.</p>
+            <div class="ach-compact-grid" id="achCompactGrid"></div>
+            <button class="sp-inline-action sp-danger-action" id="achResetBtn" type="button" data-i18n="achievements.reset">RESETUJ OSIĄGNIĘCIA</button>
+          </div>
         </div>
 
         <!-- TAB: DEVELOPER -->
@@ -966,6 +980,33 @@
 </div>
 
 <div id="screenFade"></div>
+
+<!-- ACHIEVEMENT TOAST -->
+<div id="achievementToast" class="ach-toast" hidden>
+  <span class="material-symbols-rounded ach-toast-icon" id="achToastIcon" aria-hidden="true">emoji_events</span>
+  <div class="ach-toast-body">
+    <span class="ach-toast-eyebrow" data-i18n="achievements.unlocked">OSIĄGNIĘCIE ODBlOKOWANE</span>
+    <span class="ach-toast-title" id="achToastTitle">—</span>
+  </div>
+</div>
+
+<!-- ACHIEVEMENTS PANEL -->
+<div id="achievementsPanel" class="ach-panel" role="dialog" aria-modal="true" aria-labelledby="achPanelTitle" hidden>
+  <div class="ach-panel-backdrop"></div>
+  <section class="ach-panel-card">
+    <header class="ach-panel-head">
+      <h2 id="achPanelTitle" data-i18n="achievements.title">OSIĄGNIĘCIA</h2>
+      <span class="ach-progress-text" id="achProgressText">0 / 0</span>
+      <button class="ach-close" id="achPanelClose" type="button" aria-label="Zamknij">
+        <span class="material-symbols-rounded" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <div class="ach-progress-bar-wrap">
+      <div class="ach-progress-fill" id="achProgressFill"></div>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+  </section>
+</div>
 
 <!-- NARRATOR -->
 <div id="narratorBox" role="dialog" aria-modal="false" aria-label="Lyra" aria-live="polite">

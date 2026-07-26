@@ -27,9 +27,10 @@ import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/cli
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
+import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { MapTimeline } from './map-timeline.ts';
-import { getCurrentBeatPulse, getCurrentMusicEnergy, getCurrentMusicIntensity, updateMusicVisualizer } from './music-visualizer.ts';
+import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
@@ -78,6 +79,8 @@ applyAudioSettings(settings);
 setScenePerformanceProfile(settings);
 setHitPlaneVisible(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
 prewarmGameplayResources();
+initAchievements();
+initAchievementUI();
 setSaberTargetSetter((side, pos) => {
   if (side === 'left') lTarget.set(pos.x, pos.y, pos.z);
   else                 rTarget.set(pos.x, pos.y, pos.z);
@@ -398,6 +401,8 @@ async function beginPlaying(): Promise<void> {
 }
 
 function endGame(victory = false): void {
+  const playTimeMs = state.map && mapTimeline ? mapTimeline.getTime() * 1000 : 0;
+  recordGameEnd(state, victory, playTimeMs);
   resetGameplayFocusProtection();
   state.appState    = S.GAMEOVER;
   state.pauseReason = PAUSE_REASONS.NONE;
@@ -1061,6 +1066,108 @@ function syncPauseMenuActions(): void {
   if (quit) quit.textContent = t(multiplayerRoundActive ? 'pause.leaveRoomMenu' : 'pause.mainMenu');
 }
 
+function initAchievementUI(): void {
+  window.addEventListener('hand-sabers:achievement', (event) => {
+    const { id } = (event as CustomEvent<{ id: string }>).detail;
+    showAchievementToast(id);
+  });
+
+  const closeBtn = document.getElementById('achPanelClose');
+  closeBtn?.addEventListener('click', () => {
+    const panel = document.getElementById('achievementsPanel');
+    if (panel) panel.hidden = true;
+  });
+  const backdrop = document.querySelector('.ach-panel-backdrop');
+  backdrop?.addEventListener('click', () => {
+    const panel = document.getElementById('achievementsPanel');
+    if (panel) panel.hidden = true;
+  });
+
+  const resetBtn = document.getElementById('achResetBtn');
+  resetBtn?.addEventListener('click', () => {
+    if (confirm(t('settings.resetConfirm'))) {
+      resetAchievements();
+      renderAchievementGrid();
+      renderAchievementCompactGrid();
+    }
+  });
+}
+
+function showAchievementToast(id: string): void {
+  const def = getDefinition(id);
+  if (!def) return;
+  const toast = document.getElementById('achievementToast');
+  const icon = document.getElementById('achToastIcon');
+  const title = document.getElementById('achToastTitle');
+  if (!toast || !icon || !title) return;
+  icon.textContent = def.icon;
+  title.textContent = t(`achievements.names.${id}`);
+  toast.hidden = false;
+  toast.classList.add('is-visible');
+  clearTimeout((toast as unknown as { _timer?: ReturnType<typeof setTimeout> })._timer);
+  (toast as unknown as { _timer?: ReturnType<typeof setTimeout> })._timer = setTimeout(() => {
+    toast.classList.remove('is-visible');
+    setTimeout(() => { toast.hidden = true; }, 350);
+  }, 4000);
+}
+
+function renderAchievementCompactGrid(): void {
+  const grid = document.getElementById('achCompactGrid');
+  if (!grid) return;
+  const defs = getAllAchievements();
+  const unlocked = getUnlockedSet();
+  grid.innerHTML = '';
+  for (const a of defs) {
+    const card = document.createElement('div');
+    card.className = 'ach-compact-card' + (unlocked.has(a.id) ? '' : ' is-locked');
+    card.innerHTML = `<span class="material-symbols-rounded">${a.icon}</span><span class="ach-compact-name">${t(`achievements.names.${a.id}`)}</span>`;
+    grid.appendChild(card);
+  }
+  const progressText = document.getElementById('achProgressText');
+  const progressFill = document.getElementById('achProgressFill');
+  const unlockedCount = getUnlockedCount();
+  const total = getTotalAchievements();
+  if (progressText) progressText.textContent = `${unlockedCount} / ${total}`;
+  if (progressFill) progressFill.style.width = `${total > 0 ? (unlockedCount / total) * 100 : 0}%`;
+}
+
+window.addEventListener('hand-sabers:show-achievements', () => {
+  const panel = document.getElementById('achievementsPanel');
+  if (panel) {
+    renderAchievementGrid();
+    panel.hidden = false;
+  }
+});
+
+function renderAchievementGrid(): void {
+  const grid = document.getElementById('achGrid');
+  if (!grid) return;
+  const defs = getAllAchievements();
+  const unlocked = getUnlockedSet();
+  grid.innerHTML = '';
+  for (const a of defs) {
+    const card = document.createElement('div');
+    const isUnlocked = unlocked.has(a.id);
+    card.className = 'ach-card' + (isUnlocked ? '' : ' is-locked');
+    card.innerHTML = `
+      <div class="ach-card-icon ${isUnlocked ? 'is-unlocked' : 'is-locked'}">
+        <span class="material-symbols-rounded">${a.icon}</span>
+      </div>
+      <div class="ach-card-info">
+        <span class="ach-card-name ${isUnlocked ? '' : 'is-locked'}">${t(`achievements.names.${a.id}`)}</span>
+        <span class="ach-card-desc">${t(`achievements.descriptions.${a.id}`)}</span>
+      </div>
+    `;
+    grid.appendChild(card);
+  }
+  const unlockedCount = getUnlockedCount();
+  const total = getTotalAchievements();
+  const progressText = document.getElementById('achProgressText');
+  const progressFill = document.getElementById('achProgressFill');
+  if (progressText) progressText.textContent = `${unlockedCount} / ${total}`;
+  if (progressFill) progressFill.style.width = `${total > 0 ? (unlockedCount / total) * 100 : 0}%`;
+}
+
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
 ui.ovBtnMaps?.addEventListener('click',   () => { location.href = withDevQuery('./maps.html'); });
 ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
@@ -1277,6 +1384,9 @@ function initMainMenu(): void {
     document.querySelectorAll<HTMLElement>('.sp-tab').forEach(tab => {
       tab.classList.toggle('is-active', tab.dataset['tab'] === tabName);
     });
+    if (tabName === 'achievements') {
+      renderAchievementCompactGrid();
+    }
   }
 
   document.querySelectorAll<HTMLElement>('.sp-nav-item[data-tab]').forEach(btn => {

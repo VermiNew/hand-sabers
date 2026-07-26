@@ -200,7 +200,8 @@
       "developer": "Developer",
       "remoteTracking": "Phone camera",
       "gameplay": "Gameplay",
-      "saberColors": "Saber colors"
+      "saberColors": "Saber colors",
+      "achievements": "Achievements"
     },
     "labels": {
       "selectLanguage": "Select language",
@@ -638,6 +639,56 @@
       "high": "For mid-to-good hardware: higher sharpness, light reflections and fuller effects.",
       "ultra": "For good hardware: floor reflections, high sharpness and all effects.",
       "maximum": "Best graphics settings: highest render resolution and richest effects."
+    }
+  },
+  "achievements": {
+    "title": "ACHIEVEMENTS",
+    "unlocked": "ACHIEVEMENT UNLOCKED",
+    "reset": "RESET ACHIEVEMENTS",
+    "settingsHint": "Achievements unlock automatically during gameplay.",
+    "names": {
+      "first_game": "First Steps",
+      "ten_games": "Getting Started",
+      "fifty_games": "Dedicated Player",
+      "first_hit": "First Contact",
+      "hundred_hits": "Getting the Hang of It",
+      "thousand_hits": "Saber Master",
+      "combo_50": "Rhythm Apprentice",
+      "combo_100": "Combo Beginner",
+      "combo_250": "Combo Machine",
+      "combo_500": "Combo God",
+      "first_win": "First Victory",
+      "ten_wins": "Dominating",
+      "perfect_accuracy": "Precision",
+      "no_miss_game": "Flawless",
+      "bomb_hitter": "Bomb Squad",
+      "five_streak": "On Fire",
+      "fifteen_streak": "Unstoppable",
+      "maps_10": "Explorer",
+      "play_1h": "One Hour In",
+      "play_10h": "No Life"
+    },
+    "descriptions": {
+      "first_game": "Complete your first game.",
+      "ten_games": "Complete 10 games.",
+      "fifty_games": "Complete 50 games.",
+      "first_hit": "Land your first hit.",
+      "hundred_hits": "Land 100 hits total.",
+      "thousand_hits": "Land 1000 hits total.",
+      "combo_50": "Reach a 50-hit combo.",
+      "combo_100": "Reach a 100-hit combo.",
+      "combo_250": "Reach a 250-hit combo.",
+      "combo_500": "Reach a 500-hit combo.",
+      "first_win": "Win your first game.",
+      "ten_wins": "Win 10 games.",
+      "perfect_accuracy": "Achieve 50% perfect hits overall.",
+      "no_miss_game": "Complete a game with zero misses.",
+      "bomb_hitter": "Hit 10 bombs.",
+      "five_streak": "Achieve a 5-game win streak.",
+      "fifteen_streak": "Achieve a 15-game win streak.",
+      "maps_10": "Complete 10 different maps.",
+      "play_1h": "Play for a total of 1 hour.",
+      "play_10h": "Play for a total of 10 hours."
     }
   },
   "validation": {
