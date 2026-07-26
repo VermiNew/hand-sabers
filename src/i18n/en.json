@@ -174,6 +174,14 @@
     "next": "NEXT",
     "finish": "DONE",
     "step": "STEP",
+    "settings": {
+      "title": "Settings",
+      "body": "Use the menu button to open settings. Adjust audio, graphics, and gameplay to fit your preferences and PC power."
+    },
+    "maps": {
+      "title": "Map library",
+      "body": "Open the Maps page to browse built-in maps, import new ones, or export your own creations from the editor."
+    },
     "calibration": {
       "title": "Calibration",
       "body": "Stand about 1–1.5 m from the camera. Complete all four calibration steps to match the play area and hand sides."
@@ -185,6 +193,10 @@
     "hit": {
       "title": "Hit on beat",
       "body": "Cut each block with the matching saber and follow its arrow. Better timing and center accuracy earn more points."
+    },
+    "tracking": {
+      "title": "Camera & lighting",
+      "body": "Place your camera at chest height. Ensure good lighting from the front. Avoid backlight or dark rooms."
     }
   },
   "settings": {
@@ -634,7 +646,10 @@
     "hint": "← → arrows · Enter",
     "combo50": "Nice combo! Keep it going!",
     "combo100": "Incredible! A hundred-hit combo!",
-    "combo200": "UNSTOPPABLE! Two hundred combo!"
+    "combo200": "UNSTOPPABLE! Two hundred combo!",
+    "welcome": "Hey! I'm Lyra, your guide. Step in front of the camera and let's get started. You can play a map right away or learn the basics first.",
+    "letsGo": "LET'S GO",
+    "openTutorial": "SHOW TUTORIAL"
   },
   "player": {
     "defaultName": "Player"

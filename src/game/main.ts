@@ -1072,6 +1072,25 @@ function syncPauseMenuActions(): void {
   if (quit) quit.textContent = t(multiplayerRoundActive ? 'pause.leaveRoomMenu' : 'pause.mainMenu');
 }
 
+function showFirstRunWelcome(): void {
+  const seenRaw = localStorage.getItem('hs_welcome_seen');
+  if (seenRaw === '1') return;
+  try { localStorage.setItem('hs_welcome_seen', '1'); } catch {}
+  setTimeout(() => {
+    if (document.body.classList.contains('menu-open') && state.appState === 'menu') {
+      void narratorShow({
+        text: t('narrator.welcome'),
+        buttons: [t('narrator.letsGo'), t('narrator.openTutorial')],
+        mood: 'happy',
+      }).then(choice => {
+        if (choice === 1) {
+          window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', { detail: { force: true } }));
+        }
+      });
+    }
+  }, 1200);
+}
+
 const COMBO_NARRATOR_MSGS: Record<number, { key: string; mood: 'happy' | 'excited' | 'celebrate' }> = {
   50: { key: 'narrator.combo50', mood: 'happy' },
   100: { key: 'narrator.combo100', mood: 'excited' },
@@ -2325,6 +2344,7 @@ initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 bindGameplayFocusProtection();
 initMainMenu();
+showFirstRunWelcome();
 
 const requestFirstRunTutorial = (force = false): void => {
   window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', { detail: { force } }));
