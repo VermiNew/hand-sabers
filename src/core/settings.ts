@@ -70,6 +70,7 @@ export const DEFAULTS: Settings = {
   hitboxSensitivity: 1,
   trainingMode: false,
   trackingSource: 'auto',
+  gameMode: 'normal',
 };
 
 let _settings: Settings = { ...DEFAULTS };

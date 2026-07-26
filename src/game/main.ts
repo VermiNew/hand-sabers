@@ -75,6 +75,7 @@ state.noFail                 = settings.noFail;
 state.oneHandMode            = settings.oneHandMode || null;
 window.__oneHandMode         = state.oneHandMode || 'both';
 document.body.classList.toggle('training-mode', settings.trainingMode);
+document.body.dataset['gameMode'] = settings.gameMode || 'normal';
 applyAudioSettings(settings);
 setScenePerformanceProfile(settings);
 setHitPlaneVisible(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
@@ -1981,6 +1982,27 @@ function initMainMenu(): void {
     });
   }
   syncHitboxSensitivityButtons();
+
+  const gameModeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-game-mode]')];
+  function syncGameModeButtons(): void {
+    const activeMode = settings.gameMode || 'normal';
+    gameModeButtons.forEach(button => {
+      const selected = (button.dataset['gameMode'] ?? 'normal') === activeMode;
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+  }
+  for (const button of gameModeButtons) {
+    button.addEventListener('click', () => {
+      const mode = button.dataset['gameMode'] as typeof settings.gameMode | undefined;
+      if (!mode) return;
+      settings.gameMode = mode;
+      setSetting('gameMode', mode);
+      document.body.dataset['gameMode'] = mode;
+      syncGameModeButtons();
+    });
+  }
+  syncGameModeButtons();
 
   // ── Kolory mieczy ─────────────────────────────────────────────────────────
   function updateColorPreview(previewBar: HTMLElement | null, previewName: HTMLElement | null, colorDef: { hex: string; labelKey?: string; label?: string }): void {

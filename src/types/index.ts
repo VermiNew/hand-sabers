@@ -20,6 +20,7 @@ export type PauseReason = 'hands' | 'manual' | 'focus' | null;
 export type OneHandMode = 'left' | 'right' | null;
 export type SaberSide = 'left' | 'right';
 export type TrackingSourcePreference = 'auto' | 'camera' | 'phone';
+export type GameMode = 'normal' | 'no-arrows' | 'pro' | 'speed-trials';
 
 // ── Geometry ──────────────────────────────────────────────────────────────────
 export interface Vec3 {
@@ -123,6 +124,7 @@ export interface Settings {
   hitboxSensitivity: number;
   trainingMode: boolean;
   trackingSource: TrackingSourcePreference;
+  gameMode: GameMode;
 }
 
 // ── Performance ───────────────────────────────────────────────────────────────

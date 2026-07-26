@@ -1,4 +1,4 @@
-import type { CutDirection } from '../types/index.js';
+import type { CutDirection, GameMode } from '../types/index.js';
 
 // Numpad layout: 7=up-left 8=up 9=up-right / 4=left 5=any 6=right / 1=down-left 2=down 3=down-right
 export const CUT_DIRECTIONS = ['down-left', 'down', 'down-right', 'left', 'any', 'right', 'up-left', 'up', 'up-right'] as const;
@@ -137,14 +137,18 @@ export function classifyHitQuality({
   centerDistance = Infinity,
   perfectRadius = 0.22,
   cutOk = true,
-}: HitQualityOptions = {}): HitQuality {
+  gameMode = 'normal',
+}: HitQualityOptions & { gameMode?: GameMode } = {}): HitQuality {
   const absDelta = Math.abs(Number(deltaMs));
   const center = Number(centerDistance);
-  if (!cutOk) return { label: 'BAD', basePoints: 25, advancesCombo: false, strong: false, reason: 'cut' };
+  if (!cutOk && gameMode !== 'no-arrows') return { label: 'BAD', basePoints: 25, advancesCombo: false, strong: false, reason: 'cut' };
   if (Number.isFinite(absDelta) && absDelta <= 70 && Number.isFinite(center) && center <= perfectRadius) {
     return { label: 'PERFECT', basePoints: 150, advancesCombo: true, strong: true, reason: 'perfect' };
   }
   if (Number.isFinite(absDelta) && absDelta <= 150) {
+    if (gameMode === 'pro') {
+      return { label: 'BAD', basePoints: 25, advancesCombo: false, strong: false, reason: 'timing' };
+    }
     return { label: 'GOOD', basePoints: 100, advancesCombo: true, strong: false, reason: 'timing' };
   }
   return { label: 'BAD', basePoints: 40, advancesCombo: false, strong: false, reason: 'timing' };

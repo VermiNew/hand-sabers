@@ -87,12 +87,22 @@ function getNoteSpeed(): number {
   return THREE.MathUtils.clamp(Number(getSettings().noteSpeed) || 1, 0.75, 1.75);
 }
 
+function getEffectiveSpeed(mapTimeSec: number): number {
+  const base = getNoteSpeed();
+  const mode = getSettings().gameMode;
+  if (mode === 'speed-trials') {
+    const ramp = 1 + mapTimeSec * 0.008;
+    return base * Math.min(ramp, 3);
+  }
+  return base;
+}
+
 function getTrainingRate(): number {
   return getSettings().trainingMode ? 0.75 : 1;
 }
 
-function getMapApproachTimeSec(): number {
-  return MAP_APPROACH_TIME_SEC / getNoteSpeed();
+function getMapApproachTimeSec(mapTimeSec = 0): number {
+  return MAP_APPROACH_TIME_SEC / getEffectiveSpeed(mapTimeSec);
 }
 
 // ── Geometrie (pre-ładowane) ────────────────────────────────────────────────
@@ -759,11 +769,12 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
   entry.alive = false;
   entry.mesh.userData.alive = false;
 
+  const gameMode = getSettings().gameMode;
   const swingVector = getSwingVector2(cache);
-  const cutOk = isCutDirectionMatch(entry.cut, swingVector);
+  const cutOk = gameMode === 'no-arrows' ? true : isCutDirectionMatch(entry.cut, swingVector);
   const deltaMs = getHitDeltaMs(entry);
   const centerDistance = centerDistanceToBlade(entry.mesh, cache);
-  const quality = classifyHitQuality({ deltaMs, centerDistance, perfectRadius: PERFECT_RADIUS, cutOk });
+  const quality = classifyHitQuality({ deltaMs, centerDistance, perfectRadius: PERFECT_RADIUS, cutOk, gameMode });
   const comboBefore = state.combo;
   const points = scoreForHit(quality.basePoints, comboBefore);
 
@@ -1004,7 +1015,7 @@ const mapSpawnQueue = new MapSpawnQueue();
 
 export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: number): void {
   if (!beats) return;
-  const approachSec = getMapApproachTimeSec();
+  const approachSec = getMapApproachTimeSec(currentTimeSec);
   for (const { beat: b, index, hitTime } of mapSpawnQueue.takeDue(beats, currentTimeSec, approachSec)) {
     const deterministicSide = ((index * 0x9e37_79b1) >>> 0) % 2 === 0 ? 'left' : 'right';
     const side = effectiveOneHandMode() || (b.side === 'random' ? deterministicSide : b.side);
@@ -1047,7 +1058,7 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
     }
   }
 
-  const spd = BLOCK_SPEED_PER_MS * getNoteSpeed() * getTrainingRate() * elapsed;
+  const spd = BLOCK_SPEED_PER_MS * getEffectiveSpeed(mapTimeSec) * getTrainingRate() * elapsed;
   const deltaSec = elapsed / 1000;
   for (const entry of activeBlocks) {
     if (!entry.alive) continue;
