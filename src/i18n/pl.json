@@ -641,11 +641,26 @@
       "maximum": "Najlepsze ustawienia graficzne: najwyższa rozdzielczość renderu i najbogatsze efekty."
     }
   },
+  "stats": {
+    "title": "Statystyki gracza",
+    "totalGames": "Rozegrane gry",
+    "gamesWon": "Wygrane",
+    "gamesLost": "Przegrane",
+    "totalHits": "Trafienia",
+    "totalMisses": "Pudła",
+    "accuracy": "Celność",
+    "bestCombo": "Najlepsze combo",
+    "totalScore": "Łączny wynik",
+    "perfectHits": "Celne trafienia",
+    "mapsCompleted": "Ukończone mapy",
+    "totalPlayTime": "Czas gry"
+  },
   "achievements": {
     "title": "OSIĄGNIĘCIA",
-    "unlocked": "OSIĄGNIĘCIE ODBlOKOWANE",
-    "reset": "RESETUJ OSIĄGNIĘCIA",
+    "unlocked": "OSIAGNIECIE ODBLOKOWANE",
+    "reset": "RESETUJ OSIAGNIECIA",
     "settingsHint": "Osiągnięcia odblokowują się automatycznie podczas gry.",
+    "allAchievements": "Wszystkie osiągnięcia",
     "names": {
       "first_game": "Pierwsze Kroki",
       "ten_games": "Rozkręcam Się",

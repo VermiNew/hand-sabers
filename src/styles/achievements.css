@@ -277,6 +277,41 @@
   color: rgba(255,255,255,0.4);
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.stat-value {
+  font-family: 'Oxanium', sans-serif;
+  font-weight: 800;
+  font-size: clamp(16px, 3vw, 22px);
+  color: #fff;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 9px;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.4);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 .ach-settings-body .sp-danger-action {
   margin-top: 8px;
   background: rgba(255,60,60,0.1);

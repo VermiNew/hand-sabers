@@ -641,11 +641,26 @@
       "maximum": "Best graphics settings: highest render resolution and richest effects."
     }
   },
+  "stats": {
+    "title": "Player Stats",
+    "totalGames": "Games Played",
+    "gamesWon": "Games Won",
+    "gamesLost": "Games Lost",
+    "totalHits": "Total Hits",
+    "totalMisses": "Total Misses",
+    "accuracy": "Accuracy",
+    "bestCombo": "Best Combo",
+    "totalScore": "Total Score",
+    "perfectHits": "Perfect Hits",
+    "mapsCompleted": "Maps Completed",
+    "totalPlayTime": "Time Played"
+  },
   "achievements": {
     "title": "ACHIEVEMENTS",
     "unlocked": "ACHIEVEMENT UNLOCKED",
     "reset": "RESET ACHIEVEMENTS",
     "settingsHint": "Achievements unlock automatically during gameplay.",
+    "allAchievements": "All Achievements",
     "names": {
       "first_game": "First Steps",
       "ten_games": "Getting Started",

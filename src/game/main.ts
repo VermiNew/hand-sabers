@@ -27,7 +27,7 @@ import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/cli
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
-import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
+import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
@@ -1111,6 +1111,42 @@ function showAchievementToast(id: string): void {
   }, 4000);
 }
 
+function renderStatsGrid(): void {
+  const grid = document.getElementById('statsGrid');
+  if (!grid) return;
+  const stats = getStats();
+  const accuracy = (stats.totalHits + stats.totalMisses) > 0
+    ? Math.round((stats.totalHits / (stats.totalHits + stats.totalMisses)) * 100)
+    : 0;
+  const hours = Math.floor(stats.totalPlayTimeMs / 3600000);
+  const minutes = Math.floor((stats.totalPlayTimeMs % 3600000) / 60000);
+
+  const items = [
+    { key: 'totalGames', value: String(stats.totalGames) },
+    { key: 'gamesWon', value: String(stats.gamesWon) },
+    { key: 'gamesLost', value: String(stats.gamesLost) },
+    { key: 'totalHits', value: String(stats.totalHits) },
+    { key: 'totalMisses', value: String(stats.totalMisses) },
+    { key: 'accuracy', value: `${accuracy}%` },
+    { key: 'bestCombo', value: `×${stats.maxCombo}` },
+    { key: 'totalScore', value: String(stats.totalScore).padStart(6, '0') },
+    { key: 'perfectHits', value: String(stats.perfectHits) },
+    { key: 'mapsCompleted', value: String(stats.mapsCompleted) },
+    { key: 'totalPlayTime', value: `${hours}h ${minutes}m` },
+  ];
+
+  grid.innerHTML = '';
+  for (const item of items) {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.innerHTML = `
+      <span class="stat-value">${item.value}</span>
+      <span class="stat-label">${t(`stats.${item.key}`)}</span>
+    `;
+    grid.appendChild(card);
+  }
+}
+
 function renderAchievementCompactGrid(): void {
   const grid = document.getElementById('achCompactGrid');
   if (!grid) return;
@@ -1385,6 +1421,7 @@ function initMainMenu(): void {
       tab.classList.toggle('is-active', tab.dataset['tab'] === tabName);
     });
     if (tabName === 'achievements') {
+      renderStatsGrid();
       renderAchievementCompactGrid();
     }
   }
