@@ -625,7 +625,10 @@
     "notOk": "NO"
   },
   "narrator": {
-    "hint": "← → arrows · Enter"
+    "hint": "← → arrows · Enter",
+    "combo50": "Nice combo! Keep it going!",
+    "combo100": "Incredible! A hundred-hit combo!",
+    "combo200": "UNSTOPPABLE! Two hundred combo!"
   },
   "player": {
     "defaultName": "Player"

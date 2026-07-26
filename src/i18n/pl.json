@@ -625,7 +625,10 @@
     "notOk": "NIE"
   },
   "narrator": {
-    "hint": "← → strzałki · Enter"
+    "hint": "← → strzałki · Enter",
+    "combo50": "Niezle combo! Tak trzymaj!",
+    "combo100": "Niesamowite! Setne combo!",
+    "combo200": "NIE DO ZATRZYMANIA! Dwieście combo!"
   },
   "player": {
     "defaultName": "Gracz"

@@ -1,6 +1,4 @@
-// Narrator — Lyra dialog system
 import { playInterfaceSound, playTypingTick } from './audio.ts';
-// narratorShow() returns a Promise resolving to the index of the button clicked.
 
 const CHAR_MS_BASE = 28;
 
@@ -10,6 +8,18 @@ export const NARRATOR_SPEEDS: Record<string, number> = {
   default:    28,
   fast:       14,
   ultrafast:   5,
+};
+
+export type NarratorMood = 'neutral' | 'happy' | 'excited' | 'sad' | 'surprised' | 'celebrate' | 'encourage';
+
+const MOOD_ICONS: Record<NarratorMood, string> = {
+  neutral: 'sentiment_neutral',
+  happy: 'sentiment_satisfied',
+  excited: 'sentiment_excited',
+  sad: 'sentiment_dissatisfied',
+  surprised: 'sentiment_surprised',
+  celebrate: 'celebration',
+  encourage: 'favorite',
 };
 
 const PAUSE_MAP: Record<string, number> = {
@@ -33,8 +43,9 @@ function charDelay(ch: string, next: string | undefined, charMs: number): number
 
 interface NarratorOptions {
   text: string;
-  buttons?: string[];   // 1–3 labels; defaults to ['OK']
-  charMs?: number;      // ms per character; use NARRATOR_SPEEDS for presets
+  buttons?: string[];
+  charMs?: number;
+  mood?: NarratorMood;
 }
 
 let activeResolve: ((index: number) => void) | null = null;
@@ -49,7 +60,20 @@ function getEls() {
     cursor:  document.getElementById('narratorCursor'),
     btnsRow: document.getElementById('narratorButtons'),
     hint:    document.getElementById('narratorHint'),
+    avatar:  document.getElementById('narratorAvatar'),
   };
+}
+
+function setMood(mood: NarratorMood): void {
+  const { avatar } = getEls();
+  if (!avatar) return;
+  const icon = MOOD_ICONS[mood] || MOOD_ICONS.neutral;
+  avatar.dataset['mood'] = mood;
+  avatar.textContent = ''; // Clear any text content, use CSS background
+  // Use a pseudo-element or inner styled content for the icon
+  avatar.style.setProperty('--mood-icon', `"${icon}"`);
+  // As a simpler approach, set the avatar content using a material symbols approach
+  avatar.innerHTML = `<span class="material-symbols-rounded narrator-mood-icon">${icon}</span>`;
 }
 
 function clearTyping(): void {
@@ -94,6 +118,11 @@ export function narratorHide(): void {
   }, { once: true });
 }
 
+export function isNarratorVisible(): boolean {
+  const { box } = getEls();
+  return box?.classList.contains('is-visible') ?? false;
+}
+
 export function narratorShow(opts: NarratorOptions): Promise<number> {
   narratorHide();
 
@@ -107,12 +136,11 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
     const cursor = els.cursor;
     const hint   = els.hint;
 
+    setMood(opts.mood || 'neutral');
+
     const labels = opts.buttons && opts.buttons.length ? opts.buttons.slice(0, 3) : ['OK'];
     const btns = buildButtons(labels);
 
-    // Buttons start hidden via CSS (opacity:0), fade in after typing
-
-    // Wire button clicks
     btns.forEach((btn, i) => {
       btn.addEventListener('click', () => {
         playInterfaceSound('activate');
@@ -126,7 +154,6 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
       });
     });
 
-    // Keyboard navigation (arrow keys + enter)
     keyHandler = (e: KeyboardEvent) => {
       if (!btns.length) return;
       if (e.key === 'ArrowRight') {
@@ -139,13 +166,11 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
     };
     document.addEventListener('keydown', keyHandler);
 
-    // Reset and show
     speech.textContent = '';
     cursor.className = '';
     hint.classList.remove('is-visible');
     box.classList.add('is-visible');
 
-    // Type out text
     const text = opts.text;
     const charMs = opts.charMs ?? CHAR_MS_BASE;
     let i = 0;
@@ -168,5 +193,11 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
     }
 
     typeNext();
+  });
+}
+
+export function narratorQuick(text: string, mood: NarratorMood = 'neutral', durationMs = 3000): void {
+  void narratorShow({ text, buttons: [], mood }).then(() => {
+    setTimeout(() => narratorHide(), durationMs);
   });
 }

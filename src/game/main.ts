@@ -26,7 +26,7 @@ import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
-import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
+import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from './narrator.ts';
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { MapTimeline } from './map-timeline.ts';
@@ -36,6 +36,7 @@ import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourc
 
 declare global {
   interface Window {
+    __narratorCombo?: (combo: number) => void;
     __trackingSensitivity?: number;
     __trackingFlip?:        boolean;
     __oneHandMode?:         string;
@@ -1066,6 +1067,19 @@ function syncPauseMenuActions(): void {
   if (maps) maps.hidden = multiplayerRoundActive;
   if (quit) quit.textContent = t(multiplayerRoundActive ? 'pause.leaveRoomMenu' : 'pause.mainMenu');
 }
+
+const COMBO_NARRATOR_MSGS: Record<number, { key: string; mood: 'happy' | 'excited' | 'celebrate' }> = {
+  50: { key: 'narrator.combo50', mood: 'happy' },
+  100: { key: 'narrator.combo100', mood: 'excited' },
+  200: { key: 'narrator.combo200', mood: 'celebrate' },
+};
+
+window.__narratorCombo = (combo: number) => {
+  if (isNarratorVisible()) return;
+  const msg = COMBO_NARRATOR_MSGS[combo];
+  if (!msg) return;
+  narratorQuick(t(msg.key), msg.mood, 3500);
+};
 
 function initAchievementUI(): void {
   window.addEventListener('hand-sabers:achievement', (event) => {

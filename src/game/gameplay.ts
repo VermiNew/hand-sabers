@@ -808,6 +808,9 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
   if (quality.advancesCombo && COMBO_MILESTONES.has(state.combo)) {
     playMilestone(state.combo);
     showComboMilestone(state.combo);
+    if (state.combo >= 50 && typeof window.__narratorCombo === 'function') {
+      window.__narratorCombo(state.combo);
+    }
   }
 
   light.intensity = quality.strong ? 12 : 9;
