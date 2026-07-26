@@ -51,7 +51,8 @@ export const cam3d = new THREE.PerspectiveCamera(68, window.innerWidth / window.
 cam3d.position.set(0, 1.55, 3.2);
 cam3d.lookAt(0, 1.1, -5);
 
-scene.add(new THREE.AmbientLight(THEME.darkAlt, 2));
+export const ambientLight = new THREE.AmbientLight(THEME.darkAlt, 2);
+scene.add(ambientLight);
 
 const dirL = new THREE.DirectionalLight(THEME.main, 0.6);
 dirL.position.set(0, 8, 4);
@@ -788,6 +789,18 @@ export function adaptRenderQuality(frameMs: number, fps = 0): void {
 
 applyDecorVisibility();
 publishGraphicsStatus();
+
+export function setArenaTheme(
+  bgColor: string,
+  fogColor: string,
+  ambientColor: string,
+  floorColor: string,
+): void {
+  scene.background = new THREE.Color(bgColor);
+  sceneFog.color.set(fogColor);
+  ambientLight.color.set(ambientColor);
+  floorMat.color.set(floorColor);
+}
 
 function disposeObject3D(obj: THREE.Object3D): void {
   obj.traverse(child => {

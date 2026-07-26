@@ -4,7 +4,7 @@ import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
-  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel,
+  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel, setArenaTheme,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
@@ -28,6 +28,7 @@ import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from './narrator.ts';
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
+import { ARENA_THEMES, getArenaTheme } from '../core/arena-themes.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
@@ -78,6 +79,9 @@ window.__oneHandMode         = state.oneHandMode || 'both';
 document.body.classList.toggle('training-mode', settings.trainingMode);
 document.body.dataset['gameMode'] = settings.gameMode || 'normal';
 applyAudioSettings(settings);
+const themeId = settings.arenaTheme || 'cosmic';
+const theme = getArenaTheme(themeId);
+setArenaTheme(theme.sceneBg, theme.fog, theme.ambient, theme.floor);
 setScenePerformanceProfile(settings);
 setHitPlaneVisible(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
 prewarmGameplayResources();
@@ -1945,6 +1949,21 @@ function initMainMenu(): void {
     devAccentInput.value = settings.devAccent || 'green';
     devAccentInput.addEventListener('change', () => {
       applyDevAccent(devAccentInput.value);
+    });
+  }
+
+  const arenaThemeInput = document.getElementById('menuArenaTheme') as HTMLSelectElement | null;
+  if (arenaThemeInput) {
+    arenaThemeInput.innerHTML = ARENA_THEMES.map(th =>
+      `<option value="${th.id}">${t(`arena.${th.id}`)}</option>`
+    ).join('');
+    arenaThemeInput.value = settings.arenaTheme || 'cosmic';
+    arenaThemeInput.addEventListener('change', () => {
+      const value = arenaThemeInput.value;
+      settings.arenaTheme = value;
+      setSetting('arenaTheme', value);
+      const theme = getArenaTheme(value);
+      setArenaTheme(theme.sceneBg, theme.fog, theme.ambient, theme.floor);
     });
   }
 

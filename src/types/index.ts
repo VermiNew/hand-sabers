@@ -125,6 +125,7 @@ export interface Settings {
   trainingMode: boolean;
   trackingSource: TrackingSourcePreference;
   gameMode: GameMode;
+  arenaTheme: string;
 }
 
 // ── Performance ───────────────────────────────────────────────────────────────

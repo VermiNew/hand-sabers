@@ -228,6 +228,10 @@
       "currentModeAuto": "Current mode: Auto → {{active}} ({{details}})",
       "currentModeActive": "Current mode: {{active}} ({{details}})"
     },
+    "visuals": {
+      "arenaTheme": "Arena theme",
+      "arenaThemeLabel": "Arena appearance"
+    },
     "customGraphics": {
       "title": "Graphics (advanced)",
       "antialias": "Antialiasing",
@@ -242,6 +246,8 @@
       "backgroundShader": "Background shader",
       "fog": "Fog",
       "grid": "Floor grid",
+      "arenaTheme": "Arena theme",
+      "arenaThemeLabel": "Arena appearance",
       "hitShards": "Hit shard count",
       "renderScale": "Render scale"
     },
@@ -663,6 +669,13 @@
     "perfectHits": "Perfect Hits",
     "mapsCompleted": "Maps Completed",
     "totalPlayTime": "Time Played"
+  },
+  "arena": {
+    "cosmic": "Cosmic",
+    "sunset": "Sunset",
+    "neon": "Neon",
+    "forest": "Forest",
+    "arctic": "Arctic"
   },
   "achievements": {
     "title": "ACHIEVEMENTS",

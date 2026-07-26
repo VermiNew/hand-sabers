@@ -71,6 +71,7 @@ export const DEFAULTS: Settings = {
   trainingMode: false,
   trackingSource: 'auto',
   gameMode: 'normal',
+  arenaTheme: 'cosmic',
 };
 
 let _settings: Settings = { ...DEFAULTS };

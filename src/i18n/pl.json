@@ -228,6 +228,10 @@
       "currentModeAuto": "Obecny tryb: Auto → {{active}} ({{details}})",
       "currentModeActive": "Obecny tryb: {{active}} ({{details}})"
     },
+    "visuals": {
+      "arenaTheme": "Motyw areny",
+      "arenaThemeLabel": "Wygląd areny"
+    },
     "customGraphics": {
       "title": "Grafika (zaawansowane)",
       "antialias": "Antyaliasing",
@@ -663,6 +667,13 @@
     "perfectHits": "Celne trafienia",
     "mapsCompleted": "Ukończone mapy",
     "totalPlayTime": "Czas gry"
+  },
+  "arena": {
+    "cosmic": "Kosmos",
+    "sunset": "Zachód",
+    "neon": "Neon",
+    "forest": "Las",
+    "arctic": "Arktyka"
   },
   "achievements": {
     "title": "OSIĄGNIĘCIA",
