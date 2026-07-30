@@ -41,6 +41,60 @@
 .rt-hint,.rt-error { margin:16px 0 0; font-size:10px; line-height:1.6; }
 .rt-hint { color:var(--muted); }
 .rt-error { color:#ff9aa5; }
+
+/* ── Disconnect / confirm / new code ── */
+.rt-disconnect {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  width:100%; min-height:44px; margin-top:14px;
+  border:1px solid rgba(255,68,92,0.32); border-radius:9px;
+  background:rgba(255,68,92,0.08); color:#ff7a8a;
+  font:800 12px 'Oxanium',sans-serif; letter-spacing:1.4px;
+  cursor:pointer; transition:background .18s ease, border-color .18s ease;
+}
+.rt-disconnect:hover {
+  background:rgba(255,68,92,0.16); border-color:rgba(255,68,92,0.5);
+}
+.rt-disconnect:active { transform:scale(0.98); }
+.rt-disconnect[hidden] { display:none!important; }
+.rt-disconnect .material-symbols-rounded { font-size:18px; }
+
+.rt-confirm {
+  margin-top:14px; padding:16px 18px;
+  border:1px solid rgba(255,68,92,0.22); border-radius:10px;
+  background:rgba(255,68,92,0.05);
+}
+.rt-confirm[hidden] { display:none!important; }
+.rt-confirm-text {
+  margin:0 0 14px; font-size:12px; line-height:1.5; color:var(--text);
+}
+.rt-confirm-actions { display:flex; gap:10px; }
+.rt-confirm-yes {
+  flex:1; min-height:40px; border:1px solid rgba(255,68,92,0.4); border-radius:8px;
+  background:rgba(255,68,92,0.14); color:#ff7a8a;
+  font:800 11px 'Oxanium',sans-serif; letter-spacing:1.2px; cursor:pointer;
+  transition:background .18s ease;
+}
+.rt-confirm-yes:hover { background:rgba(255,68,92,0.24); }
+.rt-confirm-no {
+  flex:1; min-height:40px; border:1px solid rgba(148,163,184,0.2); border-radius:8px;
+  background:rgba(148,163,184,0.06); color:var(--muted);
+  font:800 11px 'Oxanium',sans-serif; letter-spacing:1.2px; cursor:pointer;
+  transition:background .18s ease;
+}
+.rt-confirm-no:hover { background:rgba(148,163,184,0.12); }
+
+.rt-secondary {
+  width:100%; min-height:44px; margin-top:14px;
+  border:1px solid rgba(126,184,255,0.28); border-radius:9px;
+  background:rgba(47,124,255,0.08); color:var(--main-light);
+  font:800 12px 'Oxanium',sans-serif; letter-spacing:1.4px; cursor:pointer;
+  transition:background .18s ease, border-color .18s ease;
+}
+.rt-secondary:hover {
+  background:rgba(47,124,255,0.16); border-color:rgba(126,184,255,0.46);
+}
+.rt-secondary:active { transform:scale(0.98); }
+.rt-secondary[hidden] { display:none!important; }
 @media (max-width:560px) {
   .rt-session { grid-template-columns:1fr; justify-items:center; text-align:center; }
 }

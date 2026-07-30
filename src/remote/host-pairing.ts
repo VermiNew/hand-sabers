@@ -64,6 +64,11 @@ export function initRemoteTrackingPairing(): void {
   const status = element<HTMLElement>('remoteTrackingStatus');
   const statusText = element<HTMLElement>('remoteTrackingStatusText');
   const errorMessage = element<HTMLElement>('remoteTrackingError');
+  const disconnectButton = element<HTMLButtonElement>('remoteTrackingDisconnect');
+  const confirmPanel = element<HTMLElement>('remoteTrackingConfirm');
+  const confirmYesButton = element<HTMLButtonElement>('remoteTrackingConfirmYes');
+  const confirmNoButton = element<HTMLButtonElement>('remoteTrackingConfirmNo');
+  const newCodeButton = element<HTMLButtonElement>('remoteTrackingNewCode');
   if (!openButton || !overlay || !closeButton || !createButton || !sessionPanel || !qr || !code || !phoneLink || !status || !statusText || !errorMessage) return;
 
   const badgeTargets = [
@@ -110,7 +115,21 @@ export function initRemoteTrackingPairing(): void {
     code.textContent = '------';
     phoneLink.href = './remote-camera.html';
     createButton.disabled = false;
+    createButton.hidden = false;
     setStatus('idle', 'remoteTracking.hostIdle');
+    // Hide disconnect/confirm/new-code UI
+    if (disconnectButton) disconnectButton.hidden = true;
+    if (confirmPanel) confirmPanel.hidden = true;
+    if (newCodeButton) newCodeButton.hidden = true;
+  };
+
+  /** Show disconnect button when phone connects, hide when disconnected */
+  const updateActionButtons = (connected: boolean) => {
+    if (disconnectButton) disconnectButton.hidden = !connected;
+    if (confirmPanel) confirmPanel.hidden = true;
+    // Show "new code" button when session was active but phone is now disconnected
+    // (not on initial idle state — only after a disconnection)
+    if (newCodeButton) newCodeButton.hidden = connected || !activeSession;
   };
 
   const revokeActiveSession = async () => {
@@ -173,10 +192,12 @@ export function initRemoteTrackingPairing(): void {
           setRemoteTrackingConnected(true);
           setStatus('connected', 'remoteTracking.phoneConnected');
           clearPoll();
+          updateActionButtons(true);
         } else if (event.type === 'peer-disconnected') {
           setRemoteTrackingConnected(false);
           setStatus('ready', 'remoteTracking.phoneClaimed');
           startPolling(session);
+          updateActionButtons(false);
         } else if (event.type === 'error') {
           authenticationRejected = true;
         }
@@ -263,7 +284,20 @@ export function initRemoteTrackingPairing(): void {
   const open = () => {
     overlay.hidden = false;
     showError();
-    createButton.focus({ preventScroll: true });
+    // Restore UI based on current session state
+    if (activeSession) {
+      if (isRemoteTrackingConnected()) {
+        setStatus('connected', 'remoteTracking.phoneConnected');
+        if (disconnectButton) disconnectButton.hidden = false;
+        if (newCodeButton) newCodeButton.hidden = true;
+      } else {
+        // Session exists but phone not connected — show waiting state
+        if (disconnectButton) disconnectButton.hidden = true;
+        if (newCodeButton) newCodeButton.hidden = false;
+      }
+    } else {
+      createButton.focus({ preventScroll: true });
+    }
   };
 
   const close = () => {
@@ -281,4 +315,33 @@ export function initRemoteTrackingPairing(): void {
     if (event.key === 'Escape' && !overlay.hidden) close();
   });
   window.addEventListener('pagehide', () => void revokeActiveSession(), { once: true });
+
+  // ── Disconnect / confirm / new code ──────────────────────────────────────
+  disconnectButton?.addEventListener('click', () => {
+    if (confirmPanel) confirmPanel.hidden = false;
+    if (disconnectButton) disconnectButton.hidden = true;
+  });
+
+  confirmNoButton?.addEventListener('click', () => {
+    if (confirmPanel) confirmPanel.hidden = true;
+    // Restore disconnect button visibility based on current connection state
+    if (disconnectButton) disconnectButton.hidden = !isRemoteTrackingConnected();
+  });
+
+  confirmYesButton?.addEventListener('click', () => {
+    if (confirmPanel) confirmPanel.hidden = true;
+    void revokeActiveSession().then(() => {
+      // After disconnection, show "new code" button and hide the original create button
+      if (newCodeButton) newCodeButton.hidden = false;
+      if (createButton) createButton.hidden = true;
+      setStatus('idle', 'remoteTracking.hostIdle');
+    });
+  });
+
+  newCodeButton?.addEventListener('click', () => {
+    if (newCodeButton) newCodeButton.hidden = true;
+    // Restore the original create button for future idle states
+    if (createButton) createButton.hidden = false;
+    void createSession();
+  });
 }

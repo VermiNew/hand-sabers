@@ -601,7 +601,12 @@
     "rateLimited": "Za dużo prób. Odczekaj chwilę.",
     "sessionNotFound": "Nie znaleziono aktywnej sesji. Utwórz nową na komputerze.",
     "createFailed": "Nie udało się utworzyć sesji parowania.",
-    "statusFailed": "Nie udało się odświeżyć statusu sesji."
+    "statusFailed": "Nie udało się odświeżyć statusu sesji.",
+    "disconnect": "ROZŁĄCZ TELEFON",
+    "confirmDisconnect": "Czy na pewno chcesz rozłączyć telefon? Będzie trzeba utworzyć nowy kod parowania.",
+    "confirmYes": "TAK, ROZŁĄCZ",
+    "confirmNo": "ANULUJ",
+    "newCode": "UTWÓRZ NOWY KOD"
   },
   "hud": {
     "progress": "POSTĘP",

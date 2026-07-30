@@ -542,7 +542,22 @@
           <a id="remoteTrackingPhoneLink" href="./remote-camera.html" target="_blank" rel="noopener" data-i18n="remoteTracking.openPhonePage">Otwórz stronę telefonu</a>
         </div>
       </div>
-      <p class="rt-hint" id="remoteTrackingHint" data-i18n="remoteTracking.hostPrivacy">Tokeny sesji nie są zapisywane. Po zamknięciu tego okna sesja zostanie unieważniona.</p>
+      <!-- Disconnect button — shown when phone is connected -->
+      <button class="rt-disconnect" id="remoteTrackingDisconnect" type="button" hidden>
+        <span class="material-symbols-rounded" aria-hidden="true">link_off</span>
+        <span data-i18n="remoteTracking.disconnect">ROZŁĄCZ TELEFON</span>
+      </button>
+      <!-- Disconnect confirmation — shown after clicking disconnect -->
+      <div class="rt-confirm" id="remoteTrackingConfirm" hidden>
+        <p class="rt-confirm-text" data-i18n="remoteTracking.confirmDisconnect">Czy na pewno chcesz rozłączyć telefon? Będzie trzeba utworzyć nowy kod parowania.</p>
+        <div class="rt-confirm-actions">
+          <button class="rt-confirm-yes" id="remoteTrackingConfirmYes" type="button" data-i18n="remoteTracking.confirmYes">TAK, ROZŁĄCZ</button>
+          <button class="rt-confirm-no" id="remoteTrackingConfirmNo" type="button" data-i18n="remoteTracking.confirmNo">ANULUJ</button>
+        </div>
+      </div>
+      <!-- New code button — shown after disconnection -->
+      <button class="rt-secondary" id="remoteTrackingNewCode" type="button" hidden data-i18n="remoteTracking.newCode">UTWÓRZ NOWY KOD</button>
+      <p class="rt-hint" id="remoteTrackingHint" data-i18n="remoteTracking.hostPrivacy">Tokeny sesji nie są zapisywane. Możesz zamknąć to okno — połączenie pozostanie aktywne podczas gry.</p>
       <p class="rt-error" id="remoteTrackingError" role="alert" hidden></p>
     </div>
   </section>

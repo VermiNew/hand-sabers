@@ -603,7 +603,12 @@
     "rateLimited": "Too many attempts. Wait a moment.",
     "sessionNotFound": "No active session was found. Create a new one on the computer.",
     "createFailed": "Failed to create a pairing session.",
-    "statusFailed": "Failed to refresh the session status."
+    "statusFailed": "Failed to refresh the session status.",
+    "disconnect": "DISCONNECT PHONE",
+    "confirmDisconnect": "Are you sure you want to disconnect the phone? You will need to generate a new pairing code.",
+    "confirmYes": "YES, DISCONNECT",
+    "confirmNo": "CANCEL",
+    "newCode": "GENERATE NEW CODE"
   },
   "hud": {
     "progress": "PROGRESS",

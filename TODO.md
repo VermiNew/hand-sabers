@@ -105,6 +105,9 @@
 - [x] Architektura: telefon jako klient kamery + WebRTC lub WebSocket — [projekt](docs/remote-tracking.md)
 - [x] Parowanie QR code lub kod z ekranu – zrealizowane (QR oraz pole ręcznego wpisania kodu w `remote-camera.html`)
 - [x] Przekazywanie danych śledzenia rąk z telefonu do przeglądarki PC
+- [x] Potwierdzenie rozłączenia telefonu — przycisk „Rozłącz" z panelem potwierdzenia (TAK/ANULUJ)
+- [x] Zapamiętany stan połączenia — zamknięcie modala nie rozłącza telefonu; UI odtwarza stan po ponownym otwarciu
+- [x] Przycisk „Utwórz nowy kod" widoczny po rozłączeniu (zamiast natychmiastowego generowania)
 
 ## 16. Lepsza rozgrywka
 
