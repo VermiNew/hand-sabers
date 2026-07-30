@@ -677,6 +677,20 @@ body.menu-open #pauseMenu { display:none !important; }
   font-size:11px; letter-spacing:3px; color:var(--dim); text-transform:uppercase;
   margin-top:8px;
 }
+.ov-load-abort {
+  display:inline-flex; align-items:center; gap:6px;
+  margin-top:18px; padding:8px 22px;
+  background:rgba(255,68,92,0.08); border:1px solid rgba(255,68,92,0.28);
+  border-radius:6px; color:#ff6177;
+  font-family:'Oxanium',sans-serif; font-size:11px; font-weight:700;
+  letter-spacing:3px; text-transform:uppercase;
+  cursor:pointer; transition:background .18s ease, border-color .18s ease, color .18s ease;
+}
+.ov-load-abort:hover {
+  background:rgba(255,68,92,0.16); border-color:rgba(255,68,92,0.5); color:#ff8394;
+}
+.ov-load-abort:active { transform:scale(0.97); }
+.ov-load-abort .material-symbols-rounded { font-size:16px; }
 
 /* ── Loading screen entrance animations ── */
 @keyframes ovTopbarIn {

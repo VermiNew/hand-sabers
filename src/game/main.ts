@@ -275,6 +275,8 @@ function hideCalibPanel(): void {
 }
 
 function startCalib(): void {
+  // Guard: if the user aborted during loading, don't enter calibration
+  if (state.appState !== S.LOADING) return;
   state.calibIdx = 0;
   showCalibPanel();
   resetCalibration();
@@ -1293,6 +1295,18 @@ function returnToMainMenu(): void {
 document.getElementById('pauseQuit')?.addEventListener('click', returnToMainMenu);
 ui.ovBtnMenu?.addEventListener('click', returnToMainMenu);
 ui.calibAbortBtn?.addEventListener('click', returnToMainMenu);
+
+// Abort button on loading screen — cancels tracking init and returns to menu
+function abortLoading(): void {
+  if (trackingStarting || (trackingStarted && state.appState === S.LOADING)) {
+    stopTracking();
+    trackingStarted = false;
+    trackingStarting = false;
+  }
+  calibrationReady = false;
+  returnToMainMenu();
+}
+document.getElementById('ovAbortBtn')?.addEventListener('click', abortLoading);
 
 window.addEventListener('resize',  resizeRenderer);
 window.addEventListener('keydown', handleKeydown);

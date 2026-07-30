@@ -17,7 +17,9 @@
     "restart": "ZAGRAJ PONOWNIE",
     "maps": "MAPY",
     "mainMenu": "MENU GŁÓWNE",
-    "leaveRoomMenu": "OPUŚĆ POKÓJ I WRÓĆ DO MENU"
+    "leaveRoomMenu": "OPUŚĆ POKÓJ I WRÓĆ DO MENU",
+    "titleMP": "PAUZA MULTIPLAYER",
+    "handsLostManual": "RĘCE UTRACONE — WZNÓW RĘCZNIE LUB WRÓĆ DO MENU"
   },
   "hands": {
     "bothMissing": "BRAK OBU RĄK — STAŃ PRZED KAMERĄ",
@@ -628,7 +630,8 @@
     "initializingWorker": "Inicjalizacja wątku roboczego…",
     "initializingWorkerDetail": "Uruchamianie przetwarzania w tle",
     "allReady": "Wszystko gotowe!",
-    "allReadyDetail": "Przejście do kalibracji…"
+    "allReadyDetail": "Przejście do kalibracji…",
+    "abort": "ANULUJ"
   },
   "calib": {
     "abort": "ANULUJ",

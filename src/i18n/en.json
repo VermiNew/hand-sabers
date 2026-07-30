@@ -17,7 +17,9 @@
     "restart": "PLAY AGAIN",
     "maps": "MAPS",
     "mainMenu": "MAIN MENU",
-    "leaveRoomMenu": "LEAVE ROOM AND RETURN TO MENU"
+    "leaveRoomMenu": "LEAVE ROOM AND RETURN TO MENU",
+    "titleMP": "MULTIPLAYER PAUSE",
+    "handsLostManual": "HANDS LOST — RESUME MANUALLY OR RETURN TO MENU"
   },
   "hands": {
     "bothMissing": "BOTH HANDS MISSING — STAND IN FRONT OF CAMERA",
@@ -630,7 +632,8 @@
     "initializingWorker": "Initializing worker thread…",
     "initializingWorkerDetail": "Starting background processing",
     "allReady": "All ready!",
-    "allReadyDetail": "Proceeding to calibration…"
+    "allReadyDetail": "Proceeding to calibration…",
+    "abort": "ABORT"
   },
   "calib": {
     "abort": "CANCEL",
