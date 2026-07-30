@@ -642,7 +642,13 @@
     "sourcePhoneDisconnected": "TELEFON ROZŁĄCZONY",
     "holdStill": "Trzymaj pozycję…",
     "ok": "OK",
-    "notOk": "NIE"
+    "notOk": "NIE",
+    "modeTitle": "WYBIERZ TRYB KALIBRACJI",
+    "modeAuto": "Automatyczna",
+    "modeAutoDesc": "Kroki przechodzą automatycznie z opóźnieniem 2s",
+    "modeManual": "Ręczna",
+    "modeManualDesc": "Klikaj przycisk DALEJ aby przejść przez kroki",
+    "remember": "Zapamiętaj kalibrację"
   },
   "narrator": {
     "hint": "← → strzałki · Enter",

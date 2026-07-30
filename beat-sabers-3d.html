@@ -934,6 +934,26 @@
 
     <!-- Right: instructions -->
     <div class="calib-info-col">
+
+      <!-- Calibration mode selector (shown before step 1) -->
+      <div class="calib-mode-selector" id="calibModeSelector" hidden>
+        <div class="calib-mode-title" data-i18n="calib.modeTitle">WYBIERZ TRYB KALIBRACJI</div>
+        <button class="calib-mode-btn" id="calibModeAuto" type="button">
+          <span class="material-symbols-rounded calib-mode-icon">auto_awesome</span>
+          <span class="calib-mode-name" data-i18n="calib.modeAuto">Automatyczna</span>
+          <span class="calib-mode-desc" data-i18n="calib.modeAutoDesc">Kroki przechodzą automatycznie z opóźnieniem 2s</span>
+        </button>
+        <button class="calib-mode-btn" id="calibModeManual" type="button">
+          <span class="material-symbols-rounded calib-mode-icon">touch_app</span>
+          <span class="calib-mode-name" data-i18n="calib.modeManual">Ręczna</span>
+          <span class="calib-mode-desc" data-i18n="calib.modeManualDesc">Klikaj przycisk DALEJ aby przejść przez kroki</span>
+        </button>
+        <label class="calib-remember-toggle">
+          <input type="checkbox" id="calibRememberCheckbox">
+          <span data-i18n="calib.remember">Zapamiętaj kalibrację</span>
+        </label>
+      </div>
+
       <div class="calib-step-badge" id="calibStepBadge">1 / 4</div>
       <div class="calib-step-title" id="calibStep"></div>
       <div class="calib-step-desc"  id="calibInstr"></div>

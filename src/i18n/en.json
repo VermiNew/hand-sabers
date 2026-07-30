@@ -644,7 +644,13 @@
     "sourcePhoneDisconnected": "PHONE DISCONNECTED",
     "holdStill": "Hold position…",
     "ok": "OK",
-    "notOk": "NO"
+    "notOk": "NO",
+    "modeTitle": "CHOOSE CALIBRATION MODE",
+    "modeAuto": "Automatic",
+    "modeAutoDesc": "Steps advance automatically with 2s delay",
+    "modeManual": "Manual",
+    "modeManualDesc": "Click the NEXT button to advance through steps",
+    "remember": "Remember calibration"
   },
   "narrator": {
     "hint": "← → arrows · Enter",

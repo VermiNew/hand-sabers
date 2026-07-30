@@ -8,7 +8,7 @@ import {
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { setInterfaceSoundVolume } from '../ui/interface-sounds.ts';
-import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking } from '../tracking/tracking.ts';
+import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent } from '../ui/devpanel.ts';
@@ -277,11 +277,67 @@ function hideCalibPanel(): void {
 function startCalib(): void {
   // Guard: if the user aborted during loading, don't enter calibration
   if (state.appState !== S.LOADING) return;
-  state.calibIdx = 0;
   showCalibPanel();
   resetCalibration();
   state.appState = S.CALIB;
   if (ui.dStatus) ui.dStatus.textContent = 'CALIB';
+  // Show mode selector first; actual calibration starts when user picks a mode
+  showCalibModeSelector();
+}
+
+function showCalibModeSelector(): void {
+  const selector = document.getElementById('calibModeSelector');
+  if (selector) selector.hidden = false;
+  // Hide step content while selector is visible
+  const badge = document.getElementById('calibStepBadge');
+  const stepTitle = document.getElementById('calibStep');
+  const stepDesc = document.getElementById('calibInstr');
+  const progressWrap = document.querySelector('.calib-progress-wrap');
+  const progressLabel = document.getElementById('calibProgressLabel');
+  const actions = document.querySelector('.calib-actions');
+  if (badge) badge.hidden = true;
+  if (stepTitle) stepTitle.hidden = true;
+  if (stepDesc) stepDesc.hidden = true;
+  if (progressWrap) (progressWrap as HTMLElement).hidden = true;
+  if (progressLabel) progressLabel.hidden = true;
+  if (actions) (actions as HTMLElement).hidden = true;
+
+  // Restore checkbox state from settings
+  const checkbox = document.getElementById('calibRememberCheckbox') as HTMLInputElement | null;
+  if (checkbox) checkbox.checked = settings.rememberCalibration;
+}
+
+function hideCalibModeSelector(): void {
+  const selector = document.getElementById('calibModeSelector');
+  if (selector) selector.hidden = true;
+  // Show step content
+  const badge = document.getElementById('calibStepBadge');
+  const stepTitle = document.getElementById('calibStep');
+  const stepDesc = document.getElementById('calibInstr');
+  const progressWrap = document.querySelector('.calib-progress-wrap');
+  const progressLabel = document.getElementById('calibProgressLabel');
+  const actions = document.querySelector('.calib-actions');
+  if (badge) badge.hidden = false;
+  if (stepTitle) stepTitle.hidden = false;
+  if (stepDesc) stepDesc.hidden = false;
+  if (progressWrap) (progressWrap as HTMLElement).hidden = false;
+  if (progressLabel) progressLabel.hidden = false;
+  if (actions) (actions as HTMLElement).hidden = false;
+}
+
+function beginCalibrationSteps(mode: 'manual' | 'auto'): void {
+  setSetting('calibrationMode', mode);
+  const isManual = mode === 'manual';
+  setManualCalibrationMode(isManual);
+  const nextBtn = document.getElementById('calibBtnNext');
+  if (nextBtn) nextBtn.style.display = isManual ? '' : 'none';
+
+  // Save "remember calibration" checkbox state
+  const checkbox = document.getElementById('calibRememberCheckbox') as HTMLInputElement | null;
+  if (checkbox) setSetting('rememberCalibration', checkbox.checked);
+
+  hideCalibModeSelector();
+  state.calibIdx = 0;
   renderCalibStep();
 }
 
@@ -293,6 +349,15 @@ async function advanceCalib(): Promise<void> {
     return;
   }
   calibrationReady = true;
+  // Save calibration data if "remember calibration" is enabled
+  if (settings.rememberCalibration) {
+    const data = getCalibrationData();
+    setSetting('savedCalibration', {
+      minX: data.minX, maxX: data.maxX,
+      minY: data.minY, maxY: data.maxY,
+      rangeX: data.rangeX, rangeY: data.rangeY,
+    });
+  }
   if (multiplayerPreparationMapId) {
     completeMultiplayerPreparation();
     return;
@@ -1263,6 +1328,8 @@ ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
 ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', advanceCalib); });
 ui.calibBtnRetry?.addEventListener('click', () => { initAudio(); restartGame(); });
 ui.calibBtnMenu?.addEventListener('click',  returnToMainMenu);
+document.getElementById('calibModeAuto')?.addEventListener('click',   () => { initAudio(); beginCalibrationSteps('auto'); });
+document.getElementById('calibModeManual')?.addEventListener('click', () => { initAudio(); beginCalibrationSteps('manual'); });
 document.getElementById('pauseResume')?.addEventListener('click', () => { void resumeGame(performance.now(), 'ui'); });
 document.getElementById('pauseRestart')?.addEventListener('click', () => {
   hidePauseMenu();
@@ -1372,9 +1439,30 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
     return;
   }
 
+  // If "remember calibration" is enabled and we have saved data, skip calibration
+  if (!calibrate && settings.rememberCalibration && settings.savedCalibration) {
+    calibrationReady = true;
+  } else if (calibrate) {
+    // Explicit recalibration — invalidate saved calibration
+    calibrationReady = false;
+    if (settings.savedCalibration) setSetting('savedCalibration', null);
+  }
+
   if (trackingStarting) return;
   trackingStarting = true;
-  trackingStarted = await initMP(startCalib);
+  trackingStarted = await initMP(() => {
+    // After tracking init, if we have saved calibration, restore it and skip calibration steps
+    if (calibrationReady && settings.savedCalibration) {
+      restoreCalibrationData(settings.savedCalibration);
+      if (multiplayerPreparationMapId) {
+        completeMultiplayerPreparation();
+        return;
+      }
+      runAsyncTask('game-start-skip-calib', beginPlaying);
+    } else {
+      startCalib();
+    }
+  });
   trackingStarting = false;
 }
 

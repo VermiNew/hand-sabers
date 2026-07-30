@@ -204,12 +204,12 @@
 
 ## 28. Kalibracja — dwa tryby i zapamiętywanie
 
-- [ ] Dodać wybór trybu kalibracji przy wejściu:
+- [x] Dodać wybór trybu kalibracji przy wejściu:
   - **Manual Calibration** — gracz klika przyciski ręcznie aby przejść przez kroki
   - **Automatic Calibration** — automatyczne przejście przez kroki z opóźnieniem 2s między nimi (wolniej, z tekstem Lyry)
-- [ ] Wydłużyć czas trwania kalibracji (obecnie zbyt krótka)
-- [ ] Dodać opcję "Zapamiętaj kalibrację" — pomija kalibrację przy kolejnych uruchomieniach jeśli ustawienia kamery się nie zmieniły
-- [ ] Dodać przycisk "Ponów kalibrację" w menu głównym i w ustawieniach gdy kalibracja jest zapamiętana
+- [x] Wydłużyć czas trwania kalibracji (obecnie zbyt krótka)
+- [x] Dodać opcję "Zapamiętaj kalibrację" — pomija kalibrację przy kolejnych uruchomieniach jeśli ustawienia kamery się nie zmieniły
+- [x] Dodać przycisk "Ponów kalibrację" w menu głównym i w ustawieniach gdy kalibracja jest zapamiętana
 
 ## 29. Telefon jako wyjście audio
 

@@ -44,7 +44,7 @@ declare global {
   }
 }
 
-interface CalibData {
+export interface CalibData {
   minX: number; maxX: number;
   minY: number; maxY: number;
   rangeX: number; rangeY: number;
@@ -122,6 +122,19 @@ export function resetCalibration(): void {
   autoFlipSamples          = [];
   autoFlipAppliedThisCalib = false;
   clearCalibAutoTimer();
+}
+
+/** Returns a snapshot of the current calibration data. */
+export function getCalibrationData(): CalibData {
+  return { ...calibData };
+}
+
+/** Restores previously saved calibration data and sends it to the worker. */
+export function restoreCalibrationData(data: CalibData): void {
+  Object.assign(calibData, data);
+  if (worker) {
+    worker.postMessage({ type: 'setCalibration', payload: { ...calibData } });
+  }
 }
 
 export function finishCalibStep(idx: number): void {
@@ -593,12 +606,23 @@ function hasRequiredCalibrationHands(): boolean {
   return state.handsLeftActive && state.handsRightActive;
 }
 
+/** When true, the manual "DALEJ" button is shown and auto-advance is disabled. */
+let manualCalibrationMode = false;
+
+export function setManualCalibrationMode(enabled: boolean): void {
+  manualCalibrationMode = enabled;
+  if (enabled) clearCalibAutoTimer();
+}
+
 function scheduleCalibAuto(): void {
   if (state.appState !== S.CALIB) return;
   if (calibAutoScheduled) return;
+  if (manualCalibrationMode) return;
   const step = CALIB_STEPS[state.calibIdx];
   if (!step) return;
   if (calibAutoTimer) { clearTimeout(calibAutoTimer); calibAutoTimer = null; }
+  // Automatic mode: uniform 2-second hold for every step (slower, with Lyra's text)
+  const holdMs = 2000;
   calibAutoScheduled = true;
   calibAutoTimer = setTimeout(() => {
     calibAutoScheduled = false;
@@ -610,7 +634,7 @@ function scheduleCalibAuto(): void {
       updateCalibFeedback(false, t(state.oneHandMode ? 'calib.showOne' : 'calib.showBoth'));
       scheduleCalibAuto();
     }
-  }, step.autoMs);
+  }, holdMs);
 }
 
 export function stopTracking(): void {

@@ -73,6 +73,9 @@ export const DEFAULTS: Settings = {
   trackingSource: 'auto',
   gameMode: 'normal',
   arenaTheme: 'cosmic',
+  calibrationMode: 'auto',
+  rememberCalibration: false,
+  savedCalibration: null,
 };
 
 let _settings: Settings = { ...DEFAULTS };

@@ -127,6 +127,15 @@ export interface Settings {
   trackingSource: TrackingSourcePreference;
   gameMode: GameMode;
   arenaTheme: string;
+  calibrationMode: 'manual' | 'auto';
+  rememberCalibration: boolean;
+  savedCalibration: SavedCalibrationData | null;
+}
+
+export interface SavedCalibrationData {
+  minX: number; maxX: number;
+  minY: number; maxY: number;
+  rangeX: number; rangeY: number;
 }
 
 // ── Performance ───────────────────────────────────────────────────────────────
