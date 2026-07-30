@@ -134,11 +134,11 @@
 
 ## 19. Menu w trakcie gry (pauza)
 
-- [ ] Naprawić przycisk `ESC` — panel pauzy nie wyświetla się poprawnie w trakcie gry (Singleplayer i Multiplayer) — obecnie niedziałające
-- [ ] Singleplayer: Wznów, Restart, Wybierz mapę, Wróć do menu głównego
-- [ ] Multiplayer: Wróć do gry, Opuść pokój i wróć do menu głównego
-- [ ] Dodać przycisk "Przerwij" / "Anuluj" podczas wykrywania kamery i inicjalizacji śledzenia — gdy wystąpi problem, gracz nie ma jak przerwać
-- [ ] Menu pauzy musi pojawić się również gdy wystąpi błąd śledzenia (np. utrata rąk) z opcją ręcznego powrotu
+- [x] Naprawić przycisk `ESC` — panel pauzy nie wyświetla się poprawnie w trakcie gry (Singleplayer i Multiplayer) — obecnie niedziałające
+- [x] Singleplayer: Wznów, Restart, Wybierz mapę, Wróć do menu głównego
+- [x] Multiplayer: Wróć do gry, Opuść pokój i wróć do menu głównego
+- [x] Dodać przycisk "Przerwij" / "Anuluj" podczas wykrywania kamery i inicjalizacji śledzenia — gdy wystąpi problem, gracz nie ma jak przerwać
+- [x] Menu pauzy musi pojawić się również gdy wystąpi błąd śledzenia (np. utrata rąk) z opcją ręcznego powrotu
 
 ## 20. Czat i komunikacja (backlog)
 
