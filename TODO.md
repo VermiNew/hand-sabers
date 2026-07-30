@@ -3,7 +3,7 @@
 ## 1. Migracja JS → TS
 
 - [x] Przenieść wszystkie `.js` na `.ts` (zostaje tylko `src/vendor/jszip.min.js`)
-- [ ] Usunąć katalog `src/vendor/` i zastąpić go pakietem npm `jszip` (już jest w `dependencies`) — usunąć `src/jszip-loader.ts`, `scripts/sync-vendor.mjs`, `postinstall` z `package.json`, importować `jszip` bezpośrednio przez ESM
+- [x] Usunąć katalog `src/vendor/` i zastąpić go pakietem npm `jszip` (już jest w `dependencies`) — usunąć `src/jszip-loader.ts`, `scripts/sync-vendor.mjs`, `postinstall` z `package.json`, importować `jszip` bezpośrednio przez ESM
 
 ## 2. UX całości gry
 
@@ -190,10 +190,10 @@
 
 ## 26. Usunięcie vendor i zastąpienie pakietem npm
 
-- [ ] Usunąć `src/vendor/jszip.min.js` i cały katalog `src/vendor/`
-- [ ] Usunąć `src/jszip-loader.ts` — zastąpić bezpośrednim `import JSZip from 'jszip'` w miejscach użycia
-- [ ] Usunąć `scripts/sync-vendor.mjs` i wpis `postinstall` z `package.json`
-- [ ] Zaktualizować wszystkie pliki importujące `getJSZip` aby używały bezpośredniego importu ESM
+- [x] Usunąć `src/vendor/jszip.min.js` i cały katalog `src/vendor/`
+- [x] Usunąć `src/jszip-loader.ts` — zastąpić bezpośrednim `import JSZip from 'jszip'` w miejscach użycia
+- [x] Usunąć `scripts/sync-vendor.mjs` i wpis `postinstall` z `package.json`
+- [x] Zaktualizować wszystkie pliki importujące `getJSZip` aby używały bezpośredniego importu ESM
 
 ## 27. Wybór map jako modal (nie osobna strona)
 
