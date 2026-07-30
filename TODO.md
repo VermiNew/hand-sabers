@@ -130,7 +130,7 @@
 - [x] Wybór mapy przez hosta przez picker wzorowany na `maps.html`, bez opuszczania i rozłączania lobby
 - [x] Ustawienie nazwy użytkownika (w ustawieniach lub na ekranie dołączania do Multiplayer)
 - [x] Widok rąk/pozycji przeciwników i partnerów z drużyny widoczny na ekranie (poza trybem dev, w dyskretnym miejscu, aby nie zasłaniać obszaru gry)
-- [ ] Przenieść podgląd rąk ML innych graczy na lewą stronę ekranu (~50px od krawędzi), aby nie przeszkadzał w rozgrywce
+- [x] Przenieść podgląd rąk ML innych graczy na lewą stronę ekranu (~50px od krawędzi), aby nie przeszkadzał w rozgrywce
 
 ## 19. Menu w trakcie gry (pauza)
 

@@ -195,8 +195,8 @@
 /* ── Multiplayer — player hand previews (always visible during gameplay) ──── */
 #multiplayerCameras {
   position: fixed;
-  top: 16px;
-  left: 16px;
+  top: 50px;
+  left: 50px;
   z-index: 210; /* above HUD (200) but below overlays */
   display: flex;
   flex-direction: column;
@@ -223,7 +223,7 @@
     flex-direction: row;
     top: auto;
     bottom: 80px;
-    left: 8px;
+    left: 50px;
   }
 
   #multiplayerCameras .cam-box {
