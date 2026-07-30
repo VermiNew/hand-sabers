@@ -1,7 +1,7 @@
 import type { Beat, GameMap, MapMeta } from '../types/index.js';
 import { loadMapAudio } from './audio.ts';
 import { getSettings } from '../core/settings.ts';
-import { getJSZip } from '../jszip-loader.ts';
+import JSZip from 'jszip';
 import {
   AUDIO_EXT_RE,
   findPreferredAudioEntry,
@@ -67,7 +67,6 @@ export async function loadMapFromFile(file: File): Promise<LoadedMap> {
 }
 
 async function loadMapFromZip(file: File): Promise<GameMap & Record<string, unknown>> {
-  const JSZip = await getJSZip();
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
   validateZipEntryNames(Object.values(zip.files));
 

@@ -1,4 +1,4 @@
-import { getJSZip } from '../jszip-loader.ts';
+import JSZip from 'jszip';
 import { assertFileSize, normalizeMap, validateZipEntryNames, findPreferredAudioEntry } from '../core/map-format.ts';
 import { sortBeatsByTime } from '../core/creator-rules.ts';
 import { saveLocalMap, saveLocalMapAudio } from '../core/localstore.ts';
@@ -90,7 +90,6 @@ export async function saveMap(): Promise<void> {
 
 export async function exportZip(callbacks: { onDecoded: () => void }): Promise<void> {
   try {
-    const JSZip = await getJSZip();
     state.map = normalizeMap(state.map, { fallbackId: state.map.id, requireBeats: false }) as unknown as CreatorMap;
     const zip = new JSZip();
     zip.file('map.json', JSON.stringify(state.map, null, 2));
@@ -120,7 +119,6 @@ export async function loadZipFile(
   file: File,
   callbacks: { onDecoded: () => void },
 ): Promise<void> {
-  const JSZip = await getJSZip();
   assertFileSize(file);
   const zip       = await JSZip.loadAsync(await file.arrayBuffer());
   validateZipEntryNames(Object.values(zip.files));

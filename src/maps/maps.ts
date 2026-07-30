@@ -1,6 +1,6 @@
 import Fuse from 'fuse.js';
 import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, saveLocalMap, saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.ts';
-import { getJSZip } from '../jszip-loader.ts';
+import JSZip from 'jszip';
 import { assertFileSize, findPreferredAudioEntry, normalizeMap, validateZipEntryNames } from '../core/map-format.ts';
 import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
@@ -196,7 +196,6 @@ async function importLocally(file: File): Promise<{ id: string; beats: number; a
   if (name.endsWith('.json')) {
     map = normalizeMap(JSON.parse(await file.text()), { fallbackId: file.name.replace(/\.[^.]+$/, '') }) as unknown as MapEntry;
   } else if (name.endsWith('.zip')) {
-    const JSZip   = await getJSZip();
     const zip     = await JSZip.loadAsync(await file.arrayBuffer());
     const entries = Object.values(zip.files);
     validateZipEntryNames(entries);
@@ -604,7 +603,6 @@ async function exportMap(id: string): Promise<void> {
     }
 
     try {
-      const JSZip = await getJSZip();
       const zip = new JSZip();
       const mapJson: Record<string, unknown> = { ...map };
       for (const key of ['source', 'localOnly', 'updatedAt', '_serverAudioPending', '_localAudioPending', '_audioReady']) {

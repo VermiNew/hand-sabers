@@ -36,7 +36,6 @@
     "smoke": "node scripts/smoke-server.mjs",
     "test": "npm run check && npm run unit && npm run server:build && npm run smoke",
     "verify": "npm run lint && npm run build && npm run typecheck:server && npm run server:build && npm run unit && npm run smoke",
-    "postinstall": "node scripts/sync-vendor.mjs",
     "unit": "node --experimental-strip-types --import ./scripts/register-ts-loader.mjs --test tests/*.test.mjs"
   },
   "dependencies": {
