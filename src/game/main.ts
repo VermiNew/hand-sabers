@@ -499,6 +499,9 @@ function setPauseMenuMessage(reason: PauseReason): void {
   if (reason === PAUSE_REASONS.FOCUS) {
     message.textContent = `${t('pause.focusLost')} ${t('pause.focusResumeHint')}`;
     message.hidden = false;
+  } else if (reason === PAUSE_REASONS.HANDS) {
+    message.textContent = t('pause.handsLostManual');
+    message.hidden = false;
   } else {
     message.textContent = '';
     message.hidden = true;
@@ -532,8 +535,13 @@ function pauseGame(reason: PauseReason, now = performance.now()): void {
   state.pauseReason = reason;
   mapTimeline.pause(now);
   if (reason === PAUSE_REASONS.HANDS) {
-    setPauseMenuMessage(PAUSE_REASONS.NONE);
+    // Show hands banner (camera preview + resume progress) AND full pause menu
+    // so the player can manually resume, restart, or quit
     showHandsPaused(missingHandsText());
+    setFocusResumeButtonDisabled(false);
+    setPauseMenuMessage(reason);
+    syncPauseMenuActions();
+    showPauseMenu();
   } else {
     if (reason === PAUSE_REASONS.FOCUS) {
       focusResumeAllowedAt = Number.POSITIVE_INFINITY;
@@ -992,11 +1000,13 @@ function handleCalibButton(): void {
 function handleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     if (state.appState === S.PLAYING) {
+      e.preventDefault();
       pauseGame(PAUSE_REASONS.MANUAL, performance.now());
     } else if (
       state.appState === S.PAUSED
       && (state.pauseReason === PAUSE_REASONS.MANUAL || state.pauseReason === PAUSE_REASONS.FOCUS)
     ) {
+      e.preventDefault();
       void resumeGame(performance.now(), 'keyboard');
     }
   }
@@ -1070,9 +1080,11 @@ function syncPauseMenuActions(): void {
   const restart = document.getElementById('pauseRestart') as HTMLButtonElement | null;
   const maps = document.getElementById('pauseMaps') as HTMLButtonElement | null;
   const quit = document.getElementById('pauseQuit') as HTMLButtonElement | null;
+  const title = document.querySelector('.pause-menu-title');
   if (restart) restart.hidden = multiplayerRoundActive;
   if (maps) maps.hidden = multiplayerRoundActive;
   if (quit) quit.textContent = t(multiplayerRoundActive ? 'pause.leaveRoomMenu' : 'pause.mainMenu');
+  if (title) title.textContent = t(multiplayerRoundActive ? 'pause.titleMP' : 'pause.title');
 }
 
 function showFirstRunWelcome(): void {
