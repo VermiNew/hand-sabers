@@ -265,15 +265,18 @@ async function loadMaps(): Promise<void> {
     // Load server maps
     let serverMaps: MapEntry[] = [];
     try {
-      const ids = await fetchJson<string[]>('/api/maps');
-      if (Array.isArray(ids)) {
-        serverMaps = await Promise.all(ids.map(async id => {
+      const list = await fetchJson<{ id: string }[]>('/api/maps');
+      if (Array.isArray(list)) {
+        const entries = await Promise.all(list.map(async entry => {
+          const id = entry?.id ?? '';
+          if (!id) return null;
           try {
             return await fetchJson<MapEntry>(`/api/maps/${encodeURIComponent(id)}`);
           } catch {
             return { id, beats: [] } as MapEntry;
           }
         }));
+        serverMaps = entries.filter((m): m is MapEntry => m !== null);
       }
     } catch { /* server unavailable */ }
     allMaps = mergeMaps(serverMaps, normalized);
