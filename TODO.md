@@ -223,10 +223,10 @@
 
 ## 30. Osiągnięcia — pełna przebudowa
 
-- [ ] Całkowicie przebudować system osiągnięć — bardziej satysfakcjonujące, z lepszymi nagrodami wizualnymi
-- [ ] Dodać więcej osiągnięć z różnymi poziomami trudności
-- [ ] Poprawić prezentację odblokowania osiągnięć (toast, animacje, dźwięki)
-- [ ] Dodać kategorie osiągnięć (rozgrywka, multiplayer, kreator map, społeczność)
+- [x] Całkowicie przebudować system osiągnięć — bardziej satysfakcjonujące, z lepszymi nagrodami wizualnymi
+- [x] Dodać więcej osiągnięć z różnymi poziomami trudności (kategorie: rozgrywka, multiplayer, kreator, społeczność; tiery: bronze/silver/gold/diamond)
+- [x] Poprawić prezentację odblokowania osiągnięć (toast z tier-kolorami, animacje, kategorie w gridzie)
+- [x] Dodać kategorie osiągnięć (rozgrywka, multiplayer, kreator map, społeczność)
 
 ## 31. Renderowanie wyników gry
 
