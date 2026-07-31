@@ -200,10 +200,10 @@
 
 ## 27. Wybór map jako modal (nie osobna strona)
 
-- [ ] Przebudować `maps.html` na modal/overlay wewnątrz gry — przejście na osobną stronę rozłącza sesję WS telefonu
-- [ ] Map picker ma być dostępny jako overlay z gry i z menu głównego bez przeładowania strony
-- [ ] Zachować funkcjonalność leaderboardu, wyszukiwania i podglądu map w modalu
-- [ ] Zapewnić że sesja remote tracking (telefon) nie zostaje rozłączona przy wyborze mapy
+- [x] Przebudować `maps.html` na modal/overlay wewnątrz gry — przejście na osobną stronę rozłącza sesję WS telefonu
+- [x] Map picker ma być dostępny jako overlay z gry i z menu głównego bez przeładowania strony
+- [x] Zachować funkcjonalność leaderboardu, wyszukiwania i podglądu map w modalu
+- [x] Zapewnić że sesja remote tracking (telefon) nie zostaje rozłączona przy wyborze mapy
 
 ## 28. Kalibracja — dwa tryby i zapamiętywanie
 
@@ -216,10 +216,10 @@
 
 ## 29. Telefon jako wyjście audio
 
-- [ ] Dodać tryb "Audio na telefonie" — muzyka gra na telefonie zamiast na komputerze
-- [ ] Dodać ustawienie offsetu audio (ms) w opcjach z przyciskiem "Odtwórz dźwięk testowy"
-- [ ] Dodać tryb kalibracji metronomu (styl FL Studio) — gra robi "tik, tik, tik, tik, TIK", gracz klika spację w tempo, gra dopasowuje opóźnienie automatycznie
-- [ ] Przesyłać strumień audio przez WebSocket do telefonu (lub WebRTC audio channel)
+- [x] Dodać tryb "Audio na telefonie" — muzyka gra na telefonie zamiast na komputerze (ustawienie + wyciszenie PC)
+- [x] Dodać ustawienie offsetu audio (ms) w opcjach z przyciskiem "Odtwórz dźwięk testowy"
+- [x] Dodać tryb kalibracji metronomu (styl FL Studio) — gra robi "tik, tik, tik, tik, TIK", gracz klika spację w tempo, gra dopasowuje opóźnienie automatycznie
+- [ ] Przesyłać strumień audio przez WebSocket do telefonu (lub WebRTC audio channel) — **wymaga zmian serwerowych WS**
 
 ## 30. Osiągnięcia — pełna przebudowa
 
@@ -237,11 +237,11 @@
 
 ## 32. Profil użytkownika
 
-- [ ] Dodać ekran profilu przy pierwszym wejściu do gry — wybór nazwy użytkownika i avatara
-- [ ] Nazwa użytkownika używana globalnie: leaderboardy, multiplayer, singleplayer, czat
-- [ ] Avatar używany w multiplayer, czacie drużynowym, profilu i narratorze
-- [ ] Zapisać profil w localStorage i opcjonalnie na serwerze
-- [ ] Dodać edycję profilu w ustawieniach
+- [x] Dodać ekran profilu przy pierwszym wejściu do gry — wybór nazwy użytkownika i avatara
+- [x] Nazwa użytkownika używana globalnie: leaderboardy, multiplayer, singleplayer, czat
+- [ ] Avatar używany w multiplayer, czacie drużynowym, profilu i narratorze — **zapisano avatar, oczekuje integracji z UI multiplayer/czatu**
+- [x] Zapisać profil w localStorage (ustawienia `playerName`, `avatar`, `profileCompleted`)
+- [ ] Dodać edycję profilu w ustawieniach — **czeka na dodanie sekcji profilu w panelu ustawień**
 
 ## 33. Refaktoryzacja modułów
 
