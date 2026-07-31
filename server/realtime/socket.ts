@@ -96,7 +96,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
 
   function broadcastChat(
     roomCode: string,
-    message: { playerId: string; playerName: string; text: string; sentAt: number },
+    message: { playerId: string; playerName: string; avatar: string; text: string; sentAt: number },
   ): void {
     for (const [socket, client] of clients) {
       if (client.roomCode === roomCode) send(socket, { type: 'chat', message });
@@ -185,6 +185,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
             String(message.code || ''),
             String(message.token || ''),
             String(message.name || ''),
+            message.avatar,
           );
           client.roomCode = joined.snapshot.code;
           client.playerId = joined.player.id;
@@ -215,6 +216,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
           broadcastChat(client.roomCode, {
             playerId: player.id,
             playerName: player.name,
+            avatar: player.avatar,
             text,
             sentAt: now,
           });
@@ -223,6 +225,15 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
 
         if (type === 'ready') {
           broadcast(client.roomCode, rooms.setReady(client.roomCode, client.playerId, message.ready === true));
+          return;
+        }
+        if (type === 'set-profile') {
+          broadcast(client.roomCode, rooms.setProfile(
+            client.roomCode,
+            client.playerId,
+            String(message.name || ''),
+            message.avatar,
+          ));
           return;
         }
         if (type === 'set-map') {

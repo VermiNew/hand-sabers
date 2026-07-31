@@ -1,8 +1,10 @@
 import type { RemoteLandmarkPacket, RemoteRealtimePacket } from './realtime.ts';
+import { avatarIcon } from './avatars.ts';
 
 interface RoomStatePlayer {
   streamId: number;
   name: string;
+  avatar: string;
 }
 
 interface RoomStateDetail {
@@ -18,7 +20,12 @@ const HAND_CONNECTIONS: readonly [number, number][] = [
   [5, 9], [9, 13], [13, 17],
 ];
 
-const playerNames = new Map<number, string>();
+interface PlayerInfo {
+  name: string;
+  avatar: string;
+}
+
+const playerInfo = new Map<number, PlayerInfo>();
 const previews = new Map<number, HTMLElement>();
 
 function updateOverlayVisibility(): void {
@@ -61,8 +68,8 @@ function getContainer(): HTMLElement | null {
 
 function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanvasElement } | null {
   const container = getContainer();
-  const name = playerNames.get(streamId);
-  if (!container || !name) return null;
+  const info = playerInfo.get(streamId);
+  if (!container || !info) return null;
   let element = previews.get(streamId);
   if (!element) {
     element = document.createElement('div');
@@ -79,7 +86,10 @@ function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanva
   }
   if (element.parentElement !== container) container.append(element);
   const label = element.querySelector<HTMLElement>('.cam-tag');
-  if (label) label.textContent = document.body.classList.contains('dev-tools') ? `ML · ${name}` : name;
+  if (label) {
+    const icon = avatarIcon(info.avatar);
+    label.innerHTML = `<span class="material-symbols-rounded" style="font-size:12px;vertical-align:middle;margin-right:2px">${icon}</span>${document.body.classList.contains('dev-tools') ? `ML · ${info.name}` : info.name}`;
+  }
   updateOverlayVisibility();
   const canvas = element.querySelector<HTMLCanvasElement>('canvas');
   return canvas ? { element, canvas } : null;
@@ -98,22 +108,26 @@ function renderLandmarks(packet: RemoteLandmarkPacket): void {
 }
 
 function updatePlayers(detail: RoomStateDetail | null): void {
-  playerNames.clear();
+  playerInfo.clear();
   for (const player of detail?.players ?? []) {
     if (Number.isSafeInteger(player.streamId) && player.streamId > 0) {
-      playerNames.set(player.streamId, player.name.slice(0, 32));
+      playerInfo.set(player.streamId, {
+        name: player.name.slice(0, 32),
+        avatar: player.avatar ?? 'default',
+      });
     }
   }
   for (const [streamId, preview] of previews) {
-    const name = playerNames.get(streamId);
-    if (!name) {
+    const info = playerInfo.get(streamId);
+    if (!info) {
       preview.remove();
       previews.delete(streamId);
       continue;
     }
     const label = preview.querySelector<HTMLElement>('.cam-tag');
     if (label) {
-      label.textContent = document.body.classList.contains('dev-tools') ? `ML · ${name}` : name;
+      const icon = avatarIcon(info.avatar);
+      label.innerHTML = `<span class="material-symbols-rounded" style="font-size:12px;vertical-align:middle;margin-right:2px">${icon}</span>${document.body.classList.contains('dev-tools') ? `ML · ${info.name}` : info.name}`;
     }
   }
   // Show the gameplay overlay only when there are remote players and not in dev mode

@@ -11,6 +11,7 @@ export interface ClientMessage {
   code?: unknown;
   token?: unknown;
   name?: unknown;
+  avatar?: unknown;
   ready?: unknown;
   mapId?: unknown;
   mode?: unknown;

@@ -1,3 +1,5 @@
+import { sanitizeAvatar } from './avatars.ts';
+
 export const PROTOCOL_VERSION = 1;
 
 export interface CreateRoomResponse {
@@ -28,6 +30,7 @@ export interface ServerMessage {
 export interface ChatMessage {
   playerId: string;
   playerName: string;
+  avatar: string;
   text: string;
   sentAt: number;
 }
@@ -36,6 +39,7 @@ export interface RoomPlayer {
   id: string;
   streamId: number;
   name: string;
+  avatar: string;
   role: 'host' | 'guest';
   saber: 'left' | 'right' | 'both';
   ready: boolean;
@@ -92,6 +96,7 @@ export function parseRoomPlayer(value: unknown): RoomPlayer | null {
     id: player['id'],
     streamId: player['streamId'] as number,
     name: player['name'],
+    avatar: sanitizeAvatar(player['avatar']),
     role: player['role'],
     saber: player['saber'],
     ready: player['ready'],
@@ -123,6 +128,7 @@ export function parseChatMessage(value: unknown): ChatMessage | null {
   return {
     playerId: message['playerId'],
     playerName: message['playerName'],
+    avatar: sanitizeAvatar(message['avatar']),
     text: message['text'],
     sentAt: message['sentAt'],
   };

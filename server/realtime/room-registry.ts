@@ -5,6 +5,12 @@ const ROOM_CODE_LENGTH = 6;
 const ROOM_TTL_MS = 30 * 60 * 1000;
 const SCORE_ATTACK_MAX_PLAYERS = 8;
 const COOP_PLAYERS = 2;
+const AVATAR_IDS = ['default', 'cat', 'rocket', 'star', 'music', 'bolt', 'diamond', 'forest'];
+const DEFAULT_AVATAR = 'default';
+
+function sanitizeAvatar(value: unknown): string {
+  return typeof value === 'string' && AVATAR_IDS.includes(value) ? value : DEFAULT_AVATAR;
+}
 
 export type RoomErrorCode =
   | 'ROOM_NOT_FOUND'
@@ -36,6 +42,7 @@ export interface RoomPlayer {
   id: string;
   streamId: number;
   name: string;
+  avatar: string;
   role: 'host' | 'guest';
   saber: 'left' | 'right' | 'both';
   ready: boolean;
@@ -179,7 +186,7 @@ export class RoomRegistry {
     };
   }
 
-  join(code: string, token: string, requestedName: string): { player: RoomPlayer; snapshot: RoomSnapshot } {
+  join(code: string, token: string, requestedName: string, requestedAvatar: unknown): { player: RoomPlayer; snapshot: RoomSnapshot } {
     this.deleteExpired();
     const room = this.rooms.get(normalizeRoomCode(code));
     if (!room) throw new RoomError('ROOM_NOT_FOUND');
@@ -202,6 +209,7 @@ export class RoomRegistry {
       id: createToken(),
       streamId,
       name,
+      avatar: sanitizeAvatar(requestedAvatar),
       role,
       saber: saberForPlayer(room.mode, role),
       ready: false,
@@ -240,6 +248,18 @@ export class RoomRegistry {
     if (!player) throw new RoomError('PLAYER_NOT_FOUND');
     if (ready && !room.mapId) throw new RoomError('MAP_REQUIRED');
     player.ready = ready;
+    room.revision++;
+    return this.snapshot(room);
+  }
+
+  setProfile(code: string, playerId: string, name: string, avatar: unknown): RoomSnapshot {
+    const room = this.requireRoom(code);
+    const player = room.players.find(candidate => candidate.id === playerId);
+    if (!player) throw new RoomError('PLAYER_NOT_FOUND');
+    if (room.round?.finishedAt === null) throw new RoomError('ROUND_ALREADY_STARTED');
+    const sanitized = sanitizePlayerName(name);
+    if (sanitized) player.name = sanitized;
+    player.avatar = sanitizeAvatar(avatar);
     room.revision++;
     return this.snapshot(room);
   }

@@ -1,8 +1,9 @@
 import { t } from '../i18n/index.ts';
-import { setSetting } from '../core/settings.ts';
+import { setSetting, getSettings } from '../core/settings.ts';
 import { decodeRealtimePacket } from './realtime.ts';
 import { remoteTracking } from './remote-state.ts';
 import { initMultiplayerMapPicker } from './map-picker.ts';
+import { createAvatarBadge } from './avatars.ts';
 import { PROTOCOL_VERSION, parseChatMessage, parseRoomPlayer, parseRoomSnapshot } from './protocol.ts';
 import type { ChatMessage, CreateRoomResponse, JoinCodeResponse, RoomSnapshot, ServerMessage } from './protocol.ts';
 
@@ -166,15 +167,19 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     chatMessages.querySelector('.mp-chat-empty')?.remove();
     const row = document.createElement('article');
     row.className = `mp-chat-message${chatMessage.playerId === currentPlayerId ? ' is-own' : ''}`;
+    const header = document.createElement('div');
+    header.className = 'mp-chat-header';
+    header.append(createAvatarBadge(chatMessage.avatar, 20));
     const playerName = document.createElement('strong');
     playerName.textContent = chatMessage.playerName;
+    header.append(playerName);
     const text = document.createElement('p');
     text.textContent = chatMessage.text;
     const time = document.createElement('time');
     const timestamp = new Date(chatMessage.sentAt);
     time.dateTime = timestamp.toISOString();
     time.textContent = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    row.append(playerName, text, time);
+    row.append(header, text, time);
     chatMessages.append(row);
     while (chatMessages.childElementCount > 50) chatMessages.firstElementChild?.remove();
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -323,7 +328,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       row.className = `mp-player-row${player.ready ? ' is-ready' : ''}`;
       const identity = document.createElement('span');
       identity.className = 'mp-player-name';
-      identity.textContent = player.name;
+      identity.append(createAvatarBadge(player.avatar, 18));
+      const nameText = document.createElement('span');
+      nameText.textContent = player.name;
+      identity.append(nameText);
       if (player.role === 'host') {
         const role = document.createElement('span');
         role.className = 'mp-player-role';
@@ -407,12 +415,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     };
 
     nextSocket.addEventListener('open', () => {
+      const settings = getSettings();
       const joined = trySocketSend(nextSocket, JSON.stringify({
         v: PROTOCOL_VERSION,
         type: 'join',
         code,
         token,
         name,
+        avatar: settings.avatar,
       }), 'join');
       if (!joined) {
         showMessage(t('multiplayer.connectionError'));
@@ -621,6 +631,16 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     showMessage(t('multiplayer.prepareFailed'));
   });
   window.addEventListener('hand-sabers:multiplayer-leave', disconnectRoom);
+
+  // Live profile updates — propagate to server when in a room
+  window.addEventListener('hand-sabers:profile-updated', event => {
+    const detail = (event as CustomEvent<{ playerName: string; avatar: string }>).detail;
+    if (!detail) return;
+    nameInput.value = normalizePlayerName(detail.playerName);
+    if (currentPlayerId && socket?.readyState === WebSocket.OPEN) {
+      sendControl({ type: 'set-profile', name: detail.playerName, avatar: detail.avatar });
+    }
+  });
 
   const fragment = new URLSearchParams(location.hash.slice(1));
   const linkedCode = fragment.get('room');
