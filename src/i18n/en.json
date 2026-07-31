@@ -664,7 +664,17 @@
     "combo200": "UNSTOPPABLE! Two hundred combo!",
     "welcome": "Hey! I'm Lyra, your guide. Step in front of the camera and let's get started. You can play a map right away or learn the basics first.",
     "letsGo": "LET'S GO",
-    "openTutorial": "SHOW TUTORIAL"
+    "openTutorial": "SHOW TUTORIAL",
+    "selectMap": "You haven't selected a map. Want to choose one now?",
+    "openMaps": "OPEN MAPS",
+    "cancel": "CANCEL",
+    "mapLoaded": "Map loaded! Ready to go?",
+    "mapLoadFailed": "Failed to load the map. Try another one.",
+    "configureSettings": "Adjust settings before playing — calibration, saber colors and more. Want to do it now?",
+    "openSettings": "OPEN SETTINGS",
+    "quickGuide": "QUICK GUIDE",
+    "later": "LATER",
+    "chooseLanguage": "Choose your interface language."
   },
   "player": {
     "defaultName": "Player"
@@ -771,5 +781,26 @@
     "tooManyBeats": "The map contains too many beats ({{count}}). Limit: {{limit}}.",
     "beatTooLate": "Beat {{index}} exceeds the allowed map length of 24 hours.",
     "mapNeedsBeats": "The map must contain a beats array."
+  },
+  "mapPicker": {
+    "searchPlaceholder": "Search maps...",
+    "allDiff": "All",
+    "sortNewest": "Newest",
+    "sortAlpha": "Alphabetical",
+    "sortBeats": "Beat count",
+    "sortScore": "Best score",
+    "selectMap": "Select a map from the list",
+    "loading": "Loading maps...",
+    "noMaps": "No maps found",
+    "beats": "beats",
+    "play": "PLAY",
+    "duration": "Duration",
+    "beatsCount": "Beats",
+    "source": "Source",
+    "local": "Local",
+    "server": "Server",
+    "unknown": "Unknown",
+    "bestScore": "Best score",
+    "tries": "tries"
   }
 }

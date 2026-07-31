@@ -43,9 +43,9 @@
       <button class="main-nav-item" id="mainHelp" data-menu-action="help" type="button" aria-haspopup="dialog" style="--i:4">
         <span class="main-nav-label" data-i18n="menu.help">Jak grać</span>
       </button>
-      <a class="main-nav-item" id="mainMaps" href="./maps.html" style="--i:5">
+      <button class="main-nav-item" id="mainMaps" type="button" style="--i:5">
         <span class="main-nav-label" data-i18n="menu.maps">Mapy</span>
-      </a>
+      </button>
       <a class="main-nav-item" id="mainCreator" href="./map-creator.html" style="--i:6">
         <span class="main-nav-label" data-i18n="menu.creator">Kreator</span>
       </a>
@@ -1082,6 +1082,42 @@
     </div>
     <div class="ach-grid" id="achGrid"></div>
   </section>
+</div>
+
+<!-- MAP PICKER OVERLAY (in-game, no page reload) -->
+<div id="mapPickerOverlay" class="mp-overlay" hidden>
+  <div class="mp-overlay-panel">
+    <header class="mp-overlay-header">
+      <h2 data-i18n="menu.maps">Mapy</h2>
+      <div class="mp-overlay-tools">
+        <input type="search" id="mpSearch" class="mp-search" data-i18n-placeholder="mapPicker.searchPlaceholder" placeholder="Szukaj map..." autocomplete="off">
+        <button class="mp-overlay-close" id="mpClose" type="button" aria-label="Zamknij">
+          <span class="material-symbols-rounded" aria-hidden="true">close</span>
+        </button>
+      </div>
+    </header>
+    <div class="mp-overlay-filters">
+      <div class="mp-diff-filters" role="group">
+        <button class="mp-diff-chip is-active" data-diff="all" type="button" data-i18n="mapPicker.allDiff">Wszystkie</button>
+        <button class="mp-diff-chip" data-diff="easy" type="button" data-i18n="difficulty.easy">Łatwy</button>
+        <button class="mp-diff-chip" data-diff="medium" type="button" data-i18n="difficulty.medium">Średni</button>
+        <button class="mp-diff-chip" data-diff="hard" type="button" data-i18n="difficulty.hard">Trudny</button>
+        <button class="mp-diff-chip" data-diff="expert" type="button" data-i18n="difficulty.expert">Expert</button>
+      </div>
+      <select id="mpSort" class="mp-sort">
+        <option value="newest" data-i18n="mapPicker.sortNewest">Najnowsze</option>
+        <option value="alpha" data-i18n="mapPicker.sortAlpha">Alfabetycznie</option>
+        <option value="beats" data-i18n="mapPicker.sortBeats">Liczba beatów</option>
+        <option value="score" data-i18n="mapPicker.sortScore">Najlepszy wynik</option>
+      </select>
+    </div>
+    <div class="mp-overlay-body">
+      <div class="mp-map-list" id="mpMapList" role="listbox"></div>
+      <div class="mp-detail-pane" id="mpDetailPane">
+        <div class="mp-detail-empty" data-i18n="mapPicker.selectMap">Wybierz mapę z listy</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- NARRATOR -->

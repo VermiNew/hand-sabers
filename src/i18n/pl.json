@@ -662,7 +662,17 @@
     "combo200": "NIE DO ZATRZYMANIA! Dwieście combo!",
     "welcome": "Hej! Jestem Lyra, twoja przewodniczka. Stan przed kamera i zaczynajmy! Mozesz od razu zagrac w mape albo najpierw poznac podstawy.",
     "letsGo": "ZACZYNAMY",
-    "openTutorial": "POKAZ TUTORIAL"
+    "openTutorial": "POKAZ TUTORIAL",
+    "selectMap": "Nie wybrales zadnej mapy. Chcesz wybrac mape teraz?",
+    "openMaps": "OTWORZ MAPY",
+    "cancel": "ANULUJ",
+    "mapLoaded": "Mapa zaladowana! Jestes gotowy?",
+    "mapLoadFailed": "Nie udalo sie zaladowac mapy. Sprobuj innej.",
+    "configureSettings": "Dostosuj ustawienia przed gra — kalibracje, kolory mieczy i wiecej. Chcesz to zrobic teraz?",
+    "openSettings": "OTWORZ USTAWIENIA",
+    "quickGuide": "SZYBKI PRZEWODNIK",
+    "later": "POZNIE",
+    "chooseLanguage": "Wybierz jezyk interfejsu."
   },
   "player": {
     "defaultName": "Gracz"
@@ -769,5 +779,26 @@
     "tooManyBeats": "Mapa zawiera zbyt wiele beatów ({{count}}). Limit: {{limit}}.",
     "beatTooLate": "Beat {{index}} przekracza dozwoloną długość mapy wynoszącą 24 godziny.",
     "mapNeedsBeats": "Mapa musi zawierać tablicę beats."
+  },
+  "mapPicker": {
+    "searchPlaceholder": "Szukaj map...",
+    "allDiff": "Wszystkie",
+    "sortNewest": "Najnowsze",
+    "sortAlpha": "Alfabetycznie",
+    "sortBeats": "Liczba beatów",
+    "sortScore": "Najlepszy wynik",
+    "selectMap": "Wybierz mapę z listy",
+    "loading": "Ładowanie map...",
+    "noMaps": "Brak map",
+    "beats": "beatów",
+    "play": "GRAJ",
+    "duration": "Czas",
+    "beatsCount": "Beaty",
+    "source": "Źródło",
+    "local": "Lokalna",
+    "server": "Serwer",
+    "unknown": "Nieznana",
+    "bestScore": "Najlepszy wynik",
+    "tries": "prób"
   }
 }

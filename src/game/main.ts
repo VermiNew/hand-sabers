@@ -31,6 +31,7 @@ import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from 
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { ARENA_THEMES, getArenaTheme } from '../core/arena-themes.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
+import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -1323,7 +1324,7 @@ function renderAchievementGrid(): void {
 }
 
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
-ui.ovBtnMaps?.addEventListener('click',   () => { location.href = withDevQuery('./maps.html'); });
+ui.ovBtnMaps?.addEventListener('click',   () => { openMapPicker(); });
 ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
 ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', advanceCalib); });
 ui.calibBtnRetry?.addEventListener('click', () => { initAudio(); restartGame(); });
@@ -1336,11 +1337,8 @@ document.getElementById('pauseRestart')?.addEventListener('click', () => {
   restartWithoutCalib();
 });
 document.getElementById('pauseMaps')?.addEventListener('click', () => {
-  const params = new URLSearchParams(location.search);
-  const keep   = new URLSearchParams();
-  for (const key of ['dev', 'testing']) if (params.has(key)) keep.set(key, params.get(key) ?? '');
-  const qs = keep.toString();
-  location.href = './maps.html' + (qs ? `?${qs}` : '');
+  hidePauseMenu();
+  openMapPicker();
 });
 
 function returnToMainMenu(): void {
@@ -1811,7 +1809,7 @@ function initMainMenu(): void {
           text: t('narrator.selectMap'),
           buttons: [t('narrator.openMaps'), t('narrator.cancel')],
         });
-        if (choice === 0) location.href = withDevQuery('./maps.html');
+        if (choice === 0) openMapPicker();
       });
       return;
     }
@@ -1833,6 +1831,9 @@ function initMainMenu(): void {
     }
     setSettingsPanelVisible(false);
     runAsyncTask('calibration-start', () => startFromMainMenu({ calibrate: true }));
+  });
+  dispatchMenuAction('mainMaps', () => {
+    openMapPicker();
   });
   settingsButton?.addEventListener('click', () => {
     selectItem(settingsButton);
@@ -2469,9 +2470,23 @@ window.addEventListener('hand-sabers:multiplayer-start', event => {
 });
 initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
+initMapPickerOverlay();
 bindGameplayFocusProtection();
 initMainMenu();
 showFirstRunWelcome();
+
+// Handle map selection from the in-game map picker overlay
+window.addEventListener('hand-sabers:map-selected', (event) => {
+  const detail = (event as CustomEvent).detail as { mapId: string } | undefined;
+  if (!detail?.mapId) return;
+  void loadMapById(detail.mapId).then(success => {
+    if (success) {
+      void narratorQuick(t('narrator.mapLoaded'));
+    } else {
+      void narratorQuick(t('narrator.mapLoadFailed'));
+    }
+  });
+});
 
 const requestFirstRunTutorial = (force = false): void => {
   window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', { detail: { force } }));

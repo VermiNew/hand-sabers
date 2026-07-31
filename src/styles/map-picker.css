@@ -1,0 +1,69 @@
+/* -- Map picker overlay (in-game) -- */
+
+.mp-overlay{position:fixed;inset:0;z-index:9000;display:flex;align-items:stretch;justify-content:center;background:rgba(3,5,10,0.82);backdrop-filter:blur(10px);animation:mp-fade-in .22s ease}
+.mp-overlay[hidden]{display:none!important}
+@keyframes mp-fade-in{from{opacity:0}to{opacity:1}}
+
+.mp-overlay-panel{width:min(100%,920px);height:min(100%,720px);margin:auto;display:flex;flex-direction:column;background:var(--panel,rgba(7,17,29,0.96));border:1px solid var(--border,rgba(148,163,184,0.14));border-radius:14px;overflow:hidden}
+
+/* Header */
+.mp-overlay-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;border-bottom:1px solid var(--border);flex-shrink:0}
+.mp-overlay-header h2{font:800 18px Oxanium,sans-serif;letter-spacing:1.5px;text-transform:uppercase;color:var(--text,#e2e8f0)}
+.mp-overlay-tools{display:flex;align-items:center;gap:10px}
+.mp-search{width:220px;padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:rgba(0,0,0,0.3);color:var(--text,#e2e8f0);font:400 13px JetBrains Mono,monospace}
+.mp-search:focus{outline:none;border-color:var(--main,#2f7cff)}
+.mp-overlay-close{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;transition:background .15s ease,color .15s ease}
+.mp-overlay-close:hover{background:rgba(255,255,255,0.06);color:var(--text)}
+
+/* Filters */
+.mp-overlay-filters{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 22px;border-bottom:1px solid var(--border);flex-shrink:0}
+.mp-diff-filters{display:flex;gap:6px;flex-wrap:wrap}
+.mp-diff-chip{padding:5px 14px;border:1px solid var(--border);border-radius:999px;background:transparent;color:var(--muted);font:700 10px Oxanium,sans-serif;letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .15s ease}
+.mp-diff-chip:hover{color:var(--text);border-color:rgba(148,163,184,0.3)}
+.mp-diff-chip.is-active{background:var(--main-soft,rgba(47,124,255,0.22));border-color:var(--main,#2f7cff);color:var(--text)}
+.mp-sort{padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(0,0,0,0.3);color:var(--text);font:400 12px JetBrains Mono,monospace;cursor:pointer}
+
+/* Body */
+.mp-overlay-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);flex:1;min-height:0;overflow:hidden}
+@media(max-width:700px){.mp-overlay-body{grid-template-columns:1fr}.mp-detail-pane{display:none}.mp-overlay-panel{height:100%;border-radius:0}}
+
+/* Map list */
+.mp-map-list{overflow-y:auto;padding:8px;border-right:1px solid var(--border)}
+.mp-map-list::-webkit-scrollbar{width:6px}
+.mp-map-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.mp-map-card{display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;margin-bottom:4px;border:1px solid transparent;border-radius:10px;background:transparent;color:var(--text);text-align:left;cursor:pointer;transition:background .12s ease,border-color .12s ease}
+.mp-map-card:hover{background:rgba(255,255,255,0.04)}
+.mp-map-card.is-selected{background:var(--main-soft,rgba(47,124,255,0.14));border-color:var(--main,#2f7cff)}
+.mp-map-card-icon{font-size:20px;color:var(--main,#2f7cff);flex-shrink:0}
+.mp-map-card-content{flex:1;min-width:0}
+.mp-map-card-content strong{display:block;font:700 13px Oxanium,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-map-card-content span{display:block;font:400 10px JetBrains Mono,monospace;color:var(--muted);margin-top:2px}
+.mp-map-card-stats{display:block!important;margin-top:3px!important;font-size:9px!important;color:var(--dim,rgba(226,232,240,0.28))!important}
+.mp-map-card-check{font-size:18px;color:var(--muted);flex-shrink:0}
+.mp-map-card.is-selected .mp-map-card-check{color:var(--accent,#36f2a1)}
+.mp-map-empty{padding:40px 20px;text-align:center;color:var(--muted);font:400 12px JetBrains Mono,monospace}
+
+/* Detail pane */
+.mp-detail-pane{padding:20px 24px;overflow-y:auto}
+.mp-detail-pane::-webkit-scrollbar{width:6px}
+.mp-detail-pane::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.mp-detail-empty{display:flex;align-items:center;justify-content:center;height:100%;color:var(--muted);font:600 14px Oxanium,sans-serif;text-transform:uppercase;letter-spacing:1.5px}
+.mp-detail-title{font:800 22px Oxanium,sans-serif;color:var(--text);margin-bottom:4px}
+.mp-detail-subtitle{font:400 12px JetBrains Mono,monospace;color:var(--muted);margin-bottom:16px}
+.mp-detail-diff-badge{display:inline-block;padding:3px 12px;border-radius:999px;font:700 10px Oxanium,sans-serif;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px}
+.mp-detail-diff-badge.easy{background:rgba(54,242,161,0.14);color:#36f2a1}
+.mp-detail-diff-badge.medium{background:rgba(255,196,0,0.14);color:#ffc400}
+.mp-detail-diff-badge.hard{background:rgba(255,107,74,0.14);color:#ff6b4a}
+.mp-detail-diff-badge.expert{background:rgba(255,68,92,0.14);color:#ff445c}
+.mp-detail-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.mp-detail-stat{padding:10px 14px;border:1px solid var(--border);border-radius:8px;background:rgba(0,0,0,0.2)}
+.mp-detail-stat-label{font:600 9px Oxanium,sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.mp-detail-stat-value{font:700 16px JetBrains Mono,monospace;color:var(--text);margin-top:2px}
+.mp-detail-score{padding:12px 16px;border:1px solid var(--border);border-radius:8px;background:var(--main-soft,rgba(47,124,255,0.08));margin-bottom:20px}
+.mp-detail-score-label{font:600 9px Oxanium,sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+.mp-detail-score-value{font:800 24px Oxanium,sans-serif;color:var(--accent,#36f2a1)}
+.mp-detail-actions{display:flex;gap:10px}
+.mp-detail-play{flex:1;min-height:44px;border:none;border-radius:10px;background:var(--main,#2f7cff);color:#fff;font:800 14px Oxanium,sans-serif;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:transform .1s ease,box-shadow .15s ease}
+.mp-detail-play:hover{box-shadow:0 0 20px rgba(47,124,255,0.4)}
+.mp-detail-play:active{transform:scale(0.97)}
+.mp-detail-play:disabled{opacity:0.4;cursor:not-allowed}
