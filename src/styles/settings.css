@@ -274,3 +274,14 @@
 
 /* ── lang-active fallback on seg-btn (legacy) ── */
 .seg-btn.lang-active { color:#00d4ff; border-color:rgba(0,212,255,0.45); background:rgba(0,212,255,0.08); }
+
+/* ── Action buttons in settings (test sound, metronome, etc.) ── */
+.sp-action-btn {
+  flex: 1; min-height: 36px; padding: 6px 14px;
+  border: 1px solid var(--border, rgba(148,163,184,0.14)); border-radius: 8px;
+  background: rgba(47,124,255,0.08); color: var(--main-light, #7eb8ff);
+  font: 700 11px 'Oxanium', sans-serif; letter-spacing: 0.8px;
+  cursor: pointer; transition: background 0.15s ease, border-color 0.15s ease;
+}
+.sp-action-btn:hover { background: rgba(47,124,255,0.16); border-color: rgba(126,184,255,0.3); }
+.sp-action-btn:active { transform: scale(0.97); }

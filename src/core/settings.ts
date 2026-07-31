@@ -78,6 +78,8 @@ export const DEFAULTS: Settings = {
   savedCalibration: null,
   avatar: 'default',
   profileCompleted: false,
+  phoneAudioOutput: false,
+  phoneAudioLatencyMs: 0,
 };
 
 let _settings: Settings = { ...DEFAULTS };

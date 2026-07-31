@@ -132,6 +132,8 @@ export interface Settings {
   savedCalibration: SavedCalibrationData | null;
   avatar: string;
   profileCompleted: boolean;
+  phoneAudioOutput: boolean;
+  phoneAudioLatencyMs: number;
 }
 
 export interface SavedCalibrationData {

@@ -33,6 +33,7 @@ import { ARENA_THEMES, getArenaTheme } from '../core/arena-themes.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, showProfileOnboardingIfNeeded } from './profile.ts';
+import { playTestSound, startMetronomeCalibration, stopMetronome, isMetronomeActive } from './audio-calibration.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -1926,6 +1927,60 @@ function initMainMenu(): void {
       settings.audioOffsetMs = value;
       setSetting('audioOffsetMs', value);
       if (audioOffsetValue) audioOffsetValue.textContent = `${value} ms`;
+    });
+  }
+
+  // Test sound button
+  const testSoundBtn = document.getElementById('menuAudioTestSound') as HTMLButtonElement | null;
+  testSoundBtn?.addEventListener('click', () => {
+    playTestSound();
+  });
+
+  // Metronome calibration button
+  const metronomeBtn = document.getElementById('menuAudioMetronome') as HTMLButtonElement | null;
+  metronomeBtn?.addEventListener('click', () => {
+    if (isMetronomeActive()) {
+      stopMetronome();
+      metronomeBtn.textContent = t('settings.audio.metronomeCalibration');
+    } else {
+      void narratorQuick(t('narrator.metronomeStart'));
+      startMetronomeCalibration((offsetMs) => {
+        metronomeBtn.textContent = t('settings.audio.metronomeCalibration');
+        if (audioOffsetInput) {
+          audioOffsetInput.value = String(offsetMs);
+          settings.audioOffsetMs = offsetMs;
+        }
+        if (audioOffsetValue) audioOffsetValue.textContent = `${offsetMs} ms`;
+        void narratorQuick(t('narrator.metronomeDone').replace('{{ms}}', String(offsetMs)));
+      });
+      metronomeBtn.textContent = t('settings.audio.metronomeStop');
+    }
+  });
+
+  // Phone audio output toggle
+  const phoneAudioToggle = document.getElementById('menuPhoneAudioOutput') as HTMLInputElement | null;
+  if (phoneAudioToggle) {
+    phoneAudioToggle.checked = settings.phoneAudioOutput ?? false;
+    phoneAudioToggle.addEventListener('change', () => {
+      settings.phoneAudioOutput = phoneAudioToggle.checked;
+      setSetting('phoneAudioOutput', phoneAudioToggle.checked);
+      // Mute PC music when phone audio output is enabled
+      setMusicVolume(phoneAudioToggle.checked ? 0 : settings.musicVolume);
+    });
+  }
+
+  // Phone audio latency
+  const phoneLatencyInput = document.getElementById('menuPhoneAudioLatency') as HTMLInputElement | null;
+  const phoneLatencyValue = document.getElementById('menuPhoneAudioLatencyValue');
+  if (phoneLatencyInput) {
+    phoneLatencyInput.value = String(settings.phoneAudioLatencyMs ?? 0);
+    bindStyledRange(phoneLatencyInput);
+    if (phoneLatencyValue) phoneLatencyValue.textContent = `${settings.phoneAudioLatencyMs ?? 0} ms`;
+    phoneLatencyInput.addEventListener('input', () => {
+      const value = Number(phoneLatencyInput.value);
+      settings.phoneAudioLatencyMs = value;
+      setSetting('phoneAudioLatencyMs', value);
+      if (phoneLatencyValue) phoneLatencyValue.textContent = `${value} ms`;
     });
   }
 

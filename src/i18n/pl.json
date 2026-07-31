@@ -233,7 +233,13 @@
       "sfx": "Efekty",
       "hit": "Trafienie",
       "miss": "Pudło",
-      "bomb": "Bomba"
+      "bomb": "Bomba",
+      "testSound": "Odtworz dzwiek testowy",
+      "metronomeCalibration": "Kalibracja metronomem",
+      "metronomeStop": "Zatrzymaj metronom",
+      "phoneOutput": "Audio na telefonie",
+      "phoneOutputDesc": "Muzyka gra na telefonie zamiast na komputerze",
+      "phoneLatency": "Opoznienie telefonu (ms)"
     },
     "performance": {
       "title": "Wydajność",
@@ -672,7 +678,9 @@
     "openSettings": "OTWORZ USTAWIENIA",
     "quickGuide": "SZYBKI PRZEWODNIK",
     "later": "POZNIE",
-    "chooseLanguage": "Wybierz jezyk interfejsu."
+    "chooseLanguage": "Wybierz jezyk interfejsu.",
+    "metronomeStart": "Metronom wlaczony! Naciskaj spacje w rytm. Po 4 tapach gra dopasuje opoznienie.",
+    "metronomeDone": "Gotowe! Ustawiono offset na {{ms}} ms."
   },
   "player": {
     "defaultName": "Gracz"

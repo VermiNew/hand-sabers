@@ -233,7 +233,13 @@
       "sfx": "Effects",
       "hit": "Hit",
       "miss": "Miss",
-      "bomb": "Bomb"
+      "bomb": "Bomb",
+      "testSound": "Play test sound",
+      "metronomeCalibration": "Metronome calibration",
+      "metronomeStop": "Stop metronome",
+      "phoneOutput": "Phone audio output",
+      "phoneOutputDesc": "Music plays on the phone instead of the computer",
+      "phoneLatency": "Phone latency (ms)"
     },
     "performance": {
       "title": "Performance",
@@ -674,7 +680,9 @@
     "openSettings": "OPEN SETTINGS",
     "quickGuide": "QUICK GUIDE",
     "later": "LATER",
-    "chooseLanguage": "Choose your interface language."
+    "chooseLanguage": "Choose your interface language.",
+    "metronomeStart": "Metronome on! Tap space to the beat. After 4 taps the game will calibrate the offset.",
+    "metronomeDone": "Done! Offset set to {{ms}} ms."
   },
   "player": {
     "defaultName": "Player"

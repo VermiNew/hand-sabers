@@ -180,6 +180,26 @@
               <div class="sp-slider-wrap sp-slider-accent"><input id="menuAudioOffset" type="range" min="-500" max="500" step="10"></div>
               <span class="sp-value" id="menuAudioOffsetValue">0 ms</span>
             </div>
+            <div class="sp-row">
+              <button class="sp-action-btn" id="menuAudioTestSound" type="button" data-i18n="settings.audio.testSound">Odtworz dzwiek testowy</button>
+              <button class="sp-action-btn" id="menuAudioMetronome" type="button" data-i18n="settings.audio.metronomeCalibration">Kalibracja metronomem</button>
+            </div>
+          </div>
+
+          <div class="sp-group-title" data-i18n="settings.audio.phoneOutput">Audio na telefonie</div>
+          <div class="sp-group">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.audio.phoneOutputDesc">Muzyka gra na telefonie zamiast na komputerze</span>
+              <label class="sp-toggle">
+                <input type="checkbox" id="menuPhoneAudioOutput">
+                <span class="sp-toggle-slider"></span>
+              </label>
+            </div>
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="settings.audio.phoneLatency">Opoznienie telefonu (ms)</span>
+              <div class="sp-slider-wrap sp-slider-accent"><input id="menuPhoneAudioLatency" type="range" min="0" max="500" step="10"></div>
+              <span class="sp-value" id="menuPhoneAudioLatencyValue">0 ms</span>
+            </div>
           </div>
         </div>
 
