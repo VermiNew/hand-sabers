@@ -1,11 +1,24 @@
 import { setSetting } from '../core/settings.ts';
 import { initAudio, resumeAudioContext, getAudioContext } from './audio.ts';
+import { t } from '../i18n/index.ts';
+import {
+  BEAT_INTERVAL,
+  MIN_TAPS,
+  WARMUP_TAPS,
+  computeCalibration,
+} from './calibration-math.ts';
 
 let metronomeActive = false;
-let metronomeTimer: ReturnType<typeof setInterval> | null = null;
+let metronomeTimer: ReturnType<typeof setTimeout> | null = null;
 let metronomeBeat = 0;
 let tapTimes: number[] = [];
+let startTime = 0;
 let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
+let visualEl: HTMLElement | null = null;
+let statusEl: HTMLElement | null = null;
+let counterEl: HTMLElement | null = null;
+let onCompleteCb: ((offsetMs: number) => void) | null = null;
+let reducedMotion = false;
 
 /** Play a short test sound using the current audio offset */
 export function playTestSound(): void {
@@ -14,7 +27,6 @@ export function playTestSound(): void {
   const ctx = getAudioContext();
   if (!ctx) return;
   const now = ctx.currentTime;
-  // Play a short beep similar to a hit sound
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = 'sine';
@@ -28,6 +40,112 @@ export function playTestSound(): void {
   osc.stop(now + 0.2);
 }
 
+function createVisualOverlay(): { visual: HTMLElement; status: HTMLElement; counter: HTMLElement } {
+  document.getElementById('metronomeOverlay')?.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'metronomeOverlay';
+  overlay.className = 'metronome-overlay';
+
+  const title = document.createElement('div');
+  title.className = 'metronome-title';
+  title.textContent = t('metronome.title');
+  overlay.append(title);
+
+  const visualWrap = document.createElement('div');
+  visualWrap.className = 'metronome-visual-wrap';
+
+  const visual = document.createElement('div');
+  visual.id = 'metronomeVisual';
+  visual.className = 'metronome-visual';
+  visualWrap.append(visual);
+
+  const dotsRow = document.createElement('div');
+  dotsRow.className = 'metronome-dots';
+  for (let i = 0; i < 5; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'metronome-dot' + (i === 0 ? ' is-accent-pos' : '');
+    dot.dataset['beat'] = String(i);
+    dotsRow.append(dot);
+  }
+  visualWrap.append(dotsRow);
+  overlay.append(visualWrap);
+
+  const status = document.createElement('div');
+  status.id = 'metronomeStatus';
+  status.className = 'metronome-status';
+  status.textContent = t('metronome.tapHint');
+  overlay.append(status);
+
+  const counter = document.createElement('div');
+  counter.id = 'metronomeCounter';
+  counter.className = 'metronome-counter';
+  counter.textContent = `0 / ${MIN_TAPS}`;
+  overlay.append(counter);
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.type = 'button';
+  cancelBtn.className = 'metronome-cancel';
+  cancelBtn.textContent = t('metronome.cancel');
+  cancelBtn.addEventListener('click', () => stopMetronome());
+  overlay.append(cancelBtn);
+
+  document.body.append(overlay);
+  return { visual, status, counter };
+}
+
+function removeVisualOverlay(): void {
+  document.getElementById('metronomeOverlay')?.remove();
+}
+
+function pulseVisual(accent: boolean, beatInPattern: number): void {
+  if (!visualEl) return;
+
+  const overlay = document.getElementById('metronomeOverlay');
+  if (overlay) {
+    const dots = overlay.querySelectorAll<HTMLElement>('.metronome-dot');
+    dots.forEach(dot => {
+      const isCurrent = Number(dot.dataset['beat']) === beatInPattern;
+      dot.classList.toggle('is-active', isCurrent);
+    });
+  }
+
+  if (reducedMotion) return;
+
+  const color = accent ? '#36f2a1' : '#2f7cff';
+  const shadow = accent ? '0 0 40px rgba(54,242,161,0.6)' : '0 0 24px rgba(47,124,255,0.4)';
+  visualEl.style.transform = accent ? 'scale(1.2)' : 'scale(1.08)';
+  visualEl.style.borderColor = color;
+  visualEl.style.boxShadow = shadow;
+  visualEl.style.background = accent ? 'rgba(54,242,161,0.15)' : 'rgba(47,124,255,0.12)';
+  setTimeout(() => {
+    if (visualEl) {
+      visualEl.style.transform = 'scale(1)';
+      visualEl.style.borderColor = '';
+      visualEl.style.boxShadow = '';
+      visualEl.style.background = '';
+    }
+  }, 100);
+}
+
+function updateStatus(key: string, replacements?: Record<string, string>): void {
+  if (!statusEl) return;
+  let text = t(key);
+  if (replacements) {
+    for (const [k, v] of Object.entries(replacements)) {
+      text = text.replace(`{{${k}}}`, v);
+    }
+  }
+  statusEl.textContent = text;
+}
+
+function updateCounter(): void {
+  if (counterEl) {
+    const collected = Math.max(0, tapTimes.length - WARMUP_TAPS);
+    counterEl.textContent = `${collected} / ${MIN_TAPS}`;
+  }
+}
+
 /** Start the FL Studio-style metronome calibration */
 export function startMetronomeCalibration(onComplete?: (offsetMs: number) => void): void {
   if (metronomeActive) return;
@@ -36,60 +154,107 @@ export function startMetronomeCalibration(onComplete?: (offsetMs: number) => voi
   const ctx = getAudioContext();
   if (!ctx) return;
 
+  reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   metronomeActive = true;
   metronomeBeat = 0;
   tapTimes = [];
+  startTime = performance.now();
+  onCompleteCb = onComplete ?? null;
 
-  // 120 BPM = 500ms per beat
-  const beatInterval = 500;
-  const playClick = (accent: boolean) => {
-    const now = ctx.currentTime;
+  const { visual, status, counter } = createVisualOverlay();
+  visualEl = visual;
+  statusEl = status;
+  counterEl = counter;
+
+  const playClick = (accent: boolean, audioTime: number, beatInPattern: number) => {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = 'square';
     osc.frequency.value = accent ? 1500 : 1000;
-    gain.gain.setValueAtTime(0, now);
-    gain.gain.linearRampToValueAtTime(accent ? 0.25 : 0.15, now + 0.005);
-    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+    gain.gain.setValueAtTime(0, audioTime);
+    gain.gain.linearRampToValueAtTime(accent ? 0.25 : 0.15, audioTime + 0.005);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioTime + 0.05);
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start(now);
-    osc.stop(now + 0.05);
+    osc.start(audioTime);
+    osc.stop(audioTime + 0.05);
+
+    // Sync visual pulse with audio click
+    const delayMs = (audioTime - ctx.currentTime) * 1000;
+    if (delayMs <= 0) {
+      pulseVisual(accent, beatInPattern);
+    } else {
+      setTimeout(() => pulseVisual(accent, beatInPattern), delayMs);
+    }
   };
 
-  // Pattern: tik, tik, tik, tik, TIK (4 soft + 1 accent)
-  metronomeTimer = setInterval(() => {
-    const isAccent = metronomeBeat % 5 === 4;
-    playClick(isAccent);
-    metronomeBeat++;
-  }, beatInterval);
+  function scheduleNextBeat(): void {
+    if (!metronomeActive || !ctx) return;
 
-  // First click immediately
-  playClick(true);
+    const beatTimePerf = startTime + metronomeBeat * BEAT_INTERVAL;
+    const delay = beatTimePerf - performance.now();
 
-  // Listen for spacebar taps
+    if (delay > 200) {
+      metronomeTimer = setTimeout(scheduleNextBeat, delay - 100);
+      return;
+    }
+
+    if (delay > 0) {
+      metronomeTimer = setTimeout(() => {
+        if (!metronomeActive) return;
+        const beatInPattern = metronomeBeat % 5;
+        const isAccent = beatInPattern === 0;
+        const audioTime = ctx.currentTime + 0.001;
+        playClick(isAccent, audioTime, beatInPattern);
+        metronomeBeat++;
+        scheduleNextBeat();
+      }, delay);
+    } else {
+      metronomeBeat++;
+      scheduleNextBeat();
+    }
+  }
+
+  // First beat immediately (accent)
+  playClick(true, ctx.currentTime + 0.001, 0);
+  metronomeBeat = 1;
+  scheduleNextBeat();
+
   keydownHandler = (e: KeyboardEvent) => {
     if (e.code !== 'Space' || !metronomeActive) return;
+    const target = e.target as HTMLElement | null;
+    if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.tagName === 'BUTTON')) {
+      return;
+    }
     e.preventDefault();
-    tapTimes.push(performance.now());
-    // Need at least 4 taps to calculate
-    if (tapTimes.length >= 4) {
-      stopMetronome();
-      // Calculate average offset from tap times relative to beat times
-      // The accent beat happens every 5 beats (2500ms), starting at t=0
-      const offsets: number[] = [];
-      for (const tapTime of tapTimes) {
-        // Find nearest accent beat time
-        const accentPeriod = 2500;
-        const nearestAccent = Math.round(tapTime / accentPeriod) * accentPeriod;
-        const offset = tapTime - nearestAccent;
-        offsets.push(offset);
+    const tapTime = performance.now();
+    tapTimes.push(tapTime);
+    updateCounter();
+
+    if (visualEl && !reducedMotion) {
+      visualEl.style.transform = 'scale(1.35)';
+      setTimeout(() => { if (visualEl) visualEl.style.transform = 'scale(1)'; }, 80);
+    }
+
+    const collected = tapTimes.length - WARMUP_TAPS;
+
+    if (collected < MIN_TAPS) {
+      if (collected <= 0) {
+        updateStatus('metronome.warmup');
+      } else {
+        updateStatus('metronome.collecting', { collected: String(collected), needed: String(MIN_TAPS) });
       }
-      // Average offset, clamped to ±500ms
-      const avgOffset = offsets.reduce((a, b) => a + b, 0) / offsets.length;
-      const clampedOffset = Math.max(-500, Math.min(500, Math.round(avgOffset)));
-      setSetting('audioOffsetMs', clampedOffset);
-      onComplete?.(clampedOffset);
+    } else {
+      const result = computeCalibration(tapTimes, startTime);
+      stopMetronome();
+      setSetting('audioOffsetMs', result.offsetMs);
+      if (result.stable) {
+        updateStatus('metronome.done', { ms: String(result.offsetMs) });
+      } else {
+        updateStatus('metronome.unstable', { ms: String(result.offsetMs) });
+      }
+      onCompleteCb?.(result.offsetMs);
+      onCompleteCb = null;
     }
   };
   window.addEventListener('keydown', keydownHandler);
@@ -98,7 +263,7 @@ export function startMetronomeCalibration(onComplete?: (offsetMs: number) => voi
 /** Stop the metronome calibration */
 export function stopMetronome(): void {
   if (metronomeTimer) {
-    clearInterval(metronomeTimer);
+    clearTimeout(metronomeTimer);
     metronomeTimer = null;
   }
   if (keydownHandler) {
@@ -106,6 +271,20 @@ export function stopMetronome(): void {
     keydownHandler = null;
   }
   metronomeActive = false;
+
+  const overlay = document.getElementById('metronomeOverlay');
+  if (overlay) {
+    const status = document.getElementById('metronomeStatus');
+    if (status && status.textContent && !status.textContent.includes(t('metronome.tapHint'))) {
+      setTimeout(() => removeVisualOverlay(), 2000);
+    } else {
+      removeVisualOverlay();
+    }
+  }
+
+  visualEl = null;
+  statusEl = null;
+  counterEl = null;
 }
 
 /** Check if metronome calibration is running */
