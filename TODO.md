@@ -230,9 +230,9 @@
 
 ## 31. Renderowanie wyników gry
 
-- [ ] Przebudować ekran wyników gry (singleplayer) — czytelny, gamingowy, z animacjami
-- [ ] Dodać renderowanie wyników drużyny w Multiplayer (co-op i score-attack)
-- [ ] Pokazywać statystyki graczy: trafienia, pudła, combo, accuracy, pełny breakdown
+- [x] Przebudować ekran wyników gry (singleplayer) — czytelny, gamingowy, z animacjami — logika renderowania wyekstrahowana do `src/game/results.ts`
+- [x] Dodać renderowanie wyników drużyny w Multiplayer (co-op i score-attack) — coop: wynik zespołu + karty graczy; score-attack: ranking z pozycjami, avatarami, medalami
+- [x] Pokazywać statystyki graczy: trafienia, pudła, combo, accuracy, pełny breakdown — SP: accuracy, combo, hits, misses, perfects; MP: score, combo, progress, pozycja, DNF
 - [ ] Animowane liczenie punktów i progresja wyniku na ekranie game over
 
 ## 32. Profil użytkownika
