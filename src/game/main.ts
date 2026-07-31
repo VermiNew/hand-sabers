@@ -1984,6 +1984,59 @@ function initMainMenu(): void {
     });
   }
 
+  // Profile tab — name and avatar editing
+  const profileNameInput = document.getElementById('menuProfileName') as HTMLInputElement | null;
+  const profileAvatarGrid = document.getElementById('menuProfileAvatarGrid');
+  const profileSaveBtn = document.getElementById('menuProfileSave') as HTMLButtonElement | null;
+  const profileSavedLabel = document.getElementById('menuProfileSaved');
+
+  // Track pending avatar selection (saved on "Save" click)
+  let pendingAvatar = settings.avatar ?? 'default';
+
+  if (profileNameInput) {
+    profileNameInput.value = settings.playerName ?? '';
+  }
+
+  if (profileAvatarGrid) {
+    profileAvatarGrid.querySelectorAll<HTMLElement>('.profile-avatar-option').forEach(btn => {
+      btn.classList.toggle('is-selected', btn.dataset['avatar'] === settings.avatar);
+      btn.addEventListener('click', () => {
+        profileAvatarGrid.querySelectorAll('.profile-avatar-option').forEach(b => b.classList.remove('is-selected'));
+        btn.classList.add('is-selected');
+        pendingAvatar = btn.dataset['avatar'] ?? 'default';
+      });
+    });
+  }
+
+  /** Dispatch profile-updated event so multiplayer / UI can react live. */
+  function dispatchProfileUpdate(name: string, avatar: string): void {
+    window.dispatchEvent(new CustomEvent('hand-sabers:profile-updated', {
+      detail: { playerName: name, avatar },
+    }));
+  }
+
+  /** Show "Saved!" feedback briefly. */
+  function showProfileSaved(): void {
+    if (!profileSavedLabel) return;
+    profileSavedLabel.style.opacity = '1';
+    setTimeout(() => { profileSavedLabel.style.opacity = '0'; }, 2000);
+  }
+
+  if (profileSaveBtn) {
+    profileSaveBtn.addEventListener('click', () => {
+      const name = (profileNameInput?.value ?? '').trim().slice(0, 32) || t('player.defaultName');
+      settings.playerName = name;
+      settings.avatar = pendingAvatar;
+      settings.profileCompleted = true;
+      setSetting('playerName', name);
+      setSetting('avatar', pendingAvatar);
+      setSetting('profileCompleted', true);
+      if (profileNameInput) profileNameInput.value = name;
+      dispatchProfileUpdate(name, pendingAvatar);
+      showProfileSaved();
+    });
+  }
+
   const interfaceSoundInput = document.getElementById('menuInterfaceSoundVolume') as HTMLInputElement | null;
   if (interfaceSoundInput) {
     interfaceSoundInput.value = String(settings.interfaceSoundVolume ?? 0.8);

@@ -215,7 +215,8 @@
       "remoteTracking": "Phone camera",
       "gameplay": "Gameplay",
       "saberColors": "Saber colors",
-      "achievements": "Achievements"
+      "achievements": "Achievements",
+      "profile": "Profile"
     },
     "labels": {
       "selectLanguage": "Select language",
@@ -816,6 +817,8 @@
     "welcomeIntro": "Before you start, choose your player name and avatar. They'll be used in the game, multiplayer, and leaderboards.",
     "playerName": "Player name",
     "chooseAvatar": "Choose your avatar",
-    "confirm": "START PLAYING"
-  }
+    "confirm": "START PLAYING",
+    "save": "Save",
+    "saved": "Saved!"
+    }
 }

@@ -91,6 +91,10 @@
           <span class="material-symbols-rounded">terminal</span>
           <span data-i18n="settings.sections.developer">Developer</span>
         </button>
+        <button class="sp-nav-item" data-tab="profile" type="button">
+          <span class="material-symbols-rounded">person</span>
+          <span data-i18n="settings.sections.profile">Profil</span>
+        </button>
         <button class="sp-nav-item" data-tab="achievements" type="button">
           <span class="material-symbols-rounded">emoji_events</span>
           <span data-i18n="settings.sections.achievements">Osiągnięcia</span>
@@ -484,6 +488,34 @@
             </div>
           </div>
           <p class="sp-hint" data-i18n="remoteTracking.settingsHint">Parowanie telefonu jest eksperymentalne. Obraz kamery zostaje na telefonie; komputer dostaje tylko dane śledzenia.</p>
+        </div>
+
+        <!-- TAB: PROFILE -->
+        <div class="sp-tab" data-tab="profile">
+          <h2 class="sp-tab-title" data-i18n="settings.sections.profile">Profil</h2>
+          <div class="sp-group-title" data-i18n="profile.playerName">Nazwa gracza</div>
+          <div class="sp-group">
+            <div class="sp-row">
+              <input type="text" id="menuProfileName" class="sp-profile-input" maxlength="32" autocomplete="nickname">
+            </div>
+          </div>
+          <div class="sp-group-title" data-i18n="profile.chooseAvatar">Wybierz avatara</div>
+          <div class="sp-group">
+            <div class="profile-avatar-grid" id="menuProfileAvatarGrid">
+              <button class="profile-avatar-option" data-avatar="default" type="button"><span class="material-symbols-rounded">person</span></button>
+              <button class="profile-avatar-option" data-avatar="cat" type="button"><span class="material-symbols-rounded">pets</span></button>
+              <button class="profile-avatar-option" data-avatar="rocket" type="button"><span class="material-symbols-rounded">rocket_launch</span></button>
+              <button class="profile-avatar-option" data-avatar="star" type="button"><span class="material-symbols-rounded">star</span></button>
+              <button class="profile-avatar-option" data-avatar="music" type="button"><span class="material-symbols-rounded">music_note</span></button>
+              <button class="profile-avatar-option" data-avatar="bolt" type="button"><span class="material-symbols-rounded">bolt</span></button>
+              <button class="profile-avatar-option" data-avatar="diamond" type="button"><span class="material-symbols-rounded">diamond</span></button>
+              <button class="profile-avatar-option" data-avatar="forest" type="button"><span class="material-symbols-rounded">forest</span></button>
+            </div>
+          </div>
+          <div class="sp-row" style="margin-top:16px;align-items:center;gap:12px">
+            <button class="sp-action-btn" id="menuProfileSave" type="button" data-i18n="profile.save">Zapisz</button>
+            <span id="menuProfileSaved" class="sp-hint" style="opacity:0;transition:opacity .3s ease;color:var(--main,#2f7cff)" data-i18n="profile.saved">Zapisano!</span>
+          </div>
         </div>
 
         <!-- TAB: OSIĄGNIĘCIA -->

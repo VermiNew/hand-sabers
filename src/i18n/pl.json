@@ -215,7 +215,8 @@
       "remoteTracking": "Telefon kamera",
       "gameplay": "Rozgrywka",
       "saberColors": "Kolory mieczy",
-      "achievements": "Osiągnięcia"
+      "achievements": "Osiągnięcia",
+      "profile": "Profil"
     },
     "labels": {
       "selectLanguage": "Wybierz język",
@@ -814,6 +815,8 @@
     "welcomeIntro": "Przed startem wybierz nazwe gracza i avatara. Beda uzywane w grze, multiplayer i na rankingach.",
     "playerName": "Nazwa gracza",
     "chooseAvatar": "Wybierz avatara",
-    "confirm": "ZACZNIJ GRAC"
-  }
+    "confirm": "ZACZNIJ GRAC",
+    "save": "Zapisz",
+    "saved": "Zapisano!"
+    }
 }
