@@ -29,6 +29,9 @@ export class MapTimeline {
   }
 
   reset(): void {
+    if (this.audioStarted) {
+      window.dispatchEvent(new CustomEvent('hand-sabers:map-audio-stop'));
+    }
     this.zeroAtMs = 0;
     this.audioStarted = false;
     this.pausedAtSec = null;
@@ -79,12 +82,18 @@ export class MapTimeline {
     }
     startMapAudio(elapsedSec, 0, this.playbackRate);
     this.audioStarted = true;
+    window.dispatchEvent(new CustomEvent('hand-sabers:map-audio-start', {
+      detail: { offsetSec: elapsedSec, playbackRate: this.playbackRate },
+    }));
   }
 
   pause(now = performance.now()): void {
     if (!state.map) return;
     this.pausedAtSec = this.getTime(now);
-    if (hasMapAudio() && this.audioStarted) pauseMapAudio();
+    if (hasMapAudio() && this.audioStarted) {
+      pauseMapAudio();
+      window.dispatchEvent(new CustomEvent('hand-sabers:map-audio-pause'));
+    }
   }
 
   resume(now = performance.now()): void {
@@ -96,6 +105,9 @@ export class MapTimeline {
       if (rawElapsedSec >= 0) {
         startMapAudio(rawElapsedSec, 0, this.playbackRate);
         this.audioStarted = true;
+        window.dispatchEvent(new CustomEvent('hand-sabers:map-audio-start', {
+          detail: { offsetSec: rawElapsedSec, playbackRate: this.playbackRate },
+        }));
       } else {
         this.audioStarted = false;
       }

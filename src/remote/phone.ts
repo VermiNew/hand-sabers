@@ -1,6 +1,7 @@
 import { getCurrentLang, t } from '../i18n/index.ts';
 import { openRemoteTrackingChannel } from './channel.ts';
 import { initPhoneTracking } from './phone-tracking.ts';
+import { initPhoneAudio, setupPhoneAudioUI } from './phone-audio.ts';
 
 interface PhoneCredential {
   id: string;
@@ -34,6 +35,31 @@ const phoneTracking = initPhoneTracking(packet => {
   if (trackingSocket?.readyState !== WebSocket.OPEN || trackingSocket.bufferedAmount > 64 * 1024) return false;
   trackingSocket.send(packet);
   return true;
+});
+
+// Phone audio player — receives commands from host via tracking channel
+const phoneAudio = initPhoneAudio(
+  () => {
+    // Phone is ready — send audio-ready confirmation back to host
+    if (trackingSocket?.readyState === WebSocket.OPEN) {
+      try {
+        trackingSocket.send(JSON.stringify({ v: 1, type: 'audio-ready' }));
+      } catch { /* ignore */ }
+    }
+  },
+  (code) => {
+    if (trackingSocket?.readyState === WebSocket.OPEN) {
+      try {
+        trackingSocket.send(JSON.stringify({ v: 1, type: 'audio-error', code }));
+      } catch { /* ignore */ }
+    }
+  },
+);
+
+// Add "Enable audio" button to the phone page
+setupPhoneAudioUI(() => {
+  // User tapped enable — this satisfies mobile autoplay policy
+  // The actual audio commands will come from the host
 });
 
 function applyTranslations(): void {
@@ -85,6 +111,10 @@ function connectTrackingChannel(next: PhoneCredential): void {
       }
       if (event.type === 'error') {
         authenticationRejected = true;
+      }
+      // Forward audio commands to the phone audio player
+      if (event.type && event.type.startsWith('audio-') && event.type !== 'audio-ready' && event.type !== 'audio-error') {
+        phoneAudio.handleCommand(event);
       }
     },
     onClose: () => {

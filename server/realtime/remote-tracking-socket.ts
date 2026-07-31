@@ -129,7 +129,21 @@ export function registerRemoteTrackingServer(
         return;
       }
       if (peers.has(socket)) {
-        socket.close(1008, 'Unexpected message');
+        // Relay text messages (audio commands) between host and phone
+        try {
+          const value = JSON.parse(data.toString()) as Record<string, unknown>;
+          if (value['v'] !== PROTOCOL_VERSION || typeof value['type'] !== 'string') {
+            socket.close(1008, 'Invalid message');
+            return;
+          }
+          const peer = peers.get(socket)!;
+          const counterpart = peerFor(peer.sessionId, peer.role === 'host' ? 'phone' : 'host');
+          if (counterpart && counterpart.readyState === WebSocket.OPEN) {
+            counterpart.send(data.toString());
+          }
+        } catch {
+          socket.close(1008, 'Invalid message');
+        }
         return;
       }
       try {

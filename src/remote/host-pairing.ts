@@ -1,5 +1,7 @@
 import { t } from '../i18n/index.ts';
 import { openRemoteTrackingChannel } from './channel.ts';
+import { setHostAudioSocket, onPhoneAudioReady, onPhoneAudioError } from './host-audio.ts';
+import { isAudioEvent } from './audio-protocol.ts';
 
 interface TrackingSessionResponse {
   session?: {
@@ -109,6 +111,7 @@ export function initRemoteTrackingPairing(): void {
     clearReconnect();
     activeSession?.socket?.close();
     activeSession = null;
+    setHostAudioSocket(null);
     setRemoteTrackingConnected(false);
     sessionPanel.hidden = true;
     qr.removeAttribute('src');
@@ -193,13 +196,18 @@ export function initRemoteTrackingPairing(): void {
           setStatus('connected', 'remoteTracking.phoneConnected');
           clearPoll();
           updateActionButtons(true);
+          setHostAudioSocket(session.socket);
         } else if (event.type === 'peer-disconnected') {
           setRemoteTrackingConnected(false);
           setStatus('ready', 'remoteTracking.phoneClaimed');
           startPolling(session);
           updateActionButtons(false);
+          setHostAudioSocket(null);
         } else if (event.type === 'error') {
           authenticationRejected = true;
+        } else if (isAudioEvent(event)) {
+          if (event.type === 'audio-ready') onPhoneAudioReady();
+          else if (event.type === 'audio-error') onPhoneAudioError();
         }
       },
       onBinary: packet => {
@@ -210,6 +218,7 @@ export function initRemoteTrackingPairing(): void {
       onClose: () => {
         if (activeSession === session) {
           session.socket = null;
+          setHostAudioSocket(null);
           setRemoteTrackingConnected(false);
           if (Date.now() >= session.expiresAt) {
             resetSessionUi();

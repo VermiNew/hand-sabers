@@ -613,7 +613,11 @@
     "confirmDisconnect": "Czy na pewno chcesz rozłączyć telefon? Będzie trzeba utworzyć nowy kod parowania.",
     "confirmYes": "TAK, ROZŁĄCZ",
     "confirmNo": "ANULUJ",
-    "newCode": "UTWÓRZ NOWY KOD"
+    "newCode": "UTWÓRZ NOWY KOD",
+    "phoneAudioTitle": "WYJŚCIE AUDIO",
+    "phoneAudioDesc": "Włącz odtwarzanie muzyki na telefonie. Wymaga interakcji użytkownika.",
+    "phoneAudioEnable": "Włącz audio",
+    "phoneAudioEnabled": "Audio włączone"
   },
   "hud": {
     "progress": "POSTĘP",

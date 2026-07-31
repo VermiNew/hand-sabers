@@ -27,6 +27,7 @@ import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
+import { isPhoneAudioActive, preparePhoneAudio, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
 import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from './narrator.ts';
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { ARENA_THEMES, getArenaTheme } from '../core/arena-themes.ts';
@@ -225,6 +226,10 @@ async function ensureCurrentMapAudio(): Promise<void> {
         state.map._audioReady = true;
         const dur = getMapDuration();
         if (dur && !state.map.meta?.duration) state.map.meta = { ...(state.map.meta ?? {}), duration: dur };
+        // Tell the phone to prepare audio if phone audio output is enabled
+        if (settings.phoneAudioOutput && state.map.id) {
+          preparePhoneAudio(audioUrl, state.map.id);
+        }
         return;
       }
     } catch (err) {
@@ -2585,6 +2590,29 @@ bindGameplayFocusProtection();
 initMainMenu();
 showFirstRunWelcome();
 showProfileOnboardingIfNeeded();
+
+// ── Phone audio remote playback ──────────────────────────────────────────
+// Forward map audio events to the phone when phone audio output is active
+window.addEventListener('hand-sabers:map-audio-start', event => {
+  if (!isPhoneAudioActive()) return;
+  const detail = (event as CustomEvent<{ offsetSec: number; playbackRate: number }>).detail;
+  if (!detail) return;
+  playPhoneAudio(detail.offsetSec, Date.now(), detail.playbackRate);
+});
+window.addEventListener('hand-sabers:map-audio-pause', () => {
+  if (isPhoneAudioActive()) pausePhoneAudio();
+});
+window.addEventListener('hand-sabers:map-audio-stop', () => {
+  if (isPhoneAudioActive()) stopPhoneAudio();
+});
+// Mute/restore PC music when phone takes over audio
+window.addEventListener('hand-sabers:phone-audio-mute', () => {
+  setMusicVolume(0);
+});
+window.addEventListener('hand-sabers:phone-audio-restore', (event) => {
+  const detail = (event as CustomEvent<{ volume: number }>).detail;
+  setMusicVolume(detail?.volume ?? settings.musicVolume);
+});
 
 // Handle map selection from the in-game map picker overlay
 window.addEventListener('hand-sabers:map-selected', (event) => {

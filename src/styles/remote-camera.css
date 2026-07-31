@@ -51,3 +51,11 @@ button:disabled { opacity:.45; }
 .remote-title-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 .remote-title-row h1 { margin:0; }
 .remote-experimental { display:inline-flex; align-items:center; min-height:24px; padding:4px 8px; border:1px solid rgba(255,184,77,.42); border-radius:999px; color:#ffc66d; background:rgba(255,151,47,.08); font:700 10px/1 JetBrains Mono,monospace; letter-spacing:.9px; text-transform:uppercase; }
+
+/* Phone audio output section */
+.remote-audio-section { margin-top:16px; padding:14px; border:1px solid rgba(47,124,255,.2); border-radius:10px; background:rgba(6,13,23,.6); }
+.remote-audio-section strong { display:block; margin-bottom:6px; color:var(--main-light,#7ec0ff); font:800 10px 'Oxanium',sans-serif; letter-spacing:1.2px; }
+.remote-audio-section p { margin:0 0 10px; color:var(--dim,#8b9bb4); font:400 11px 'JetBrains Mono',monospace; line-height:1.4; }
+.remote-audio-enable { width:100%; padding:10px; border:1px solid rgba(47,124,255,.5); border-radius:8px; background:rgba(47,124,255,.12); color:var(--main-light,#7ec0ff); font:800 11px 'Oxanium',sans-serif; letter-spacing:1px; cursor:pointer; transition:background .15s ease; }
+.remote-audio-enable:hover:not(:disabled) { background:rgba(47,124,255,.2); }
+.remote-audio-enable:disabled { opacity:.5; cursor:default; }

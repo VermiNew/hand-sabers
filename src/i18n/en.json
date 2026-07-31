@@ -615,7 +615,11 @@
     "confirmDisconnect": "Are you sure you want to disconnect the phone? You will need to generate a new pairing code.",
     "confirmYes": "YES, DISCONNECT",
     "confirmNo": "CANCEL",
-    "newCode": "GENERATE NEW CODE"
+    "newCode": "GENERATE NEW CODE",
+    "phoneAudioTitle": "AUDIO OUTPUT",
+    "phoneAudioDesc": "Enable music playback on your phone. Requires user interaction.",
+    "phoneAudioEnable": "Enable audio",
+    "phoneAudioEnabled": "Audio enabled"
   },
   "hud": {
     "progress": "PROGRESS",
