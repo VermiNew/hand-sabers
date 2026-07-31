@@ -1,4 +1,23 @@
-/*
+.ach-tier-bronze { color: #cd7f32; }
+.ach-tier-silver { color: #c0c0c0; }
+.ach-tier-gold { color: #ffd700; }
+.ach-tier-diamond { color: #b9f2ff; }
+
+.ach-category-header {
+  grid-column: 1 / -1;
+  margin: 14px 0 2px;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Oxanium', sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.ach-toast-tier {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
 .ach-toast {
   position: fixed;
   top: 24px;

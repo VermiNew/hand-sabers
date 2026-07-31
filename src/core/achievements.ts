@@ -2,9 +2,14 @@ import type { GameState } from './state.ts';
 
 const STORAGE_KEY = 'hs_achievements';
 
+export type AchievementCategory = 'gameplay' | 'multiplayer' | 'creator' | 'social';
+export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'diamond';
+
 export interface AchievementDef {
   id: string;
   icon: string;
+  category: AchievementCategory;
+  tier: AchievementTier;
   check: (stats: AchievementStats) => boolean;
 }
 
@@ -21,109 +26,48 @@ export interface AchievementStats {
   milestonesReached: number;
   gamesWon: number;
   gamesLost: number;
+  multiplayerGamesPlayed: number;
+  multiplayerWins: number;
+  mapsCreated: number;
+  bestScoreAttackScore: number;
+  perfectGames: number;
+  phoneConnected: number;
 }
 
 const ACHIEVEMENTS: AchievementDef[] = [
-  {
-    id: 'first_game',
-    icon: 'play_circle',
-    check: s => s.totalGames >= 1,
-  },
-  {
-    id: 'ten_games',
-    icon: 'repeat',
-    check: s => s.totalGames >= 10,
-  },
-  {
-    id: 'fifty_games',
-    icon: 'stars',
-    check: s => s.totalGames >= 50,
-  },
-  {
-    id: 'first_hit',
-    icon: 'check_circle',
-    check: s => s.totalHits >= 1,
-  },
-  {
-    id: 'hundred_hits',
-    icon: 'trackpad',
-    check: s => s.totalHits >= 100,
-  },
-  {
-    id: 'thousand_hits',
-    icon: 'flash_on',
-    check: s => s.totalHits >= 1000,
-  },
-  {
-    id: 'combo_50',
-    icon: 'social_leaderboard',
-    check: s => s.maxCombo >= 50,
-  },
-  {
-    id: 'combo_100',
-    icon: 'emoji_events',
-    check: s => s.maxCombo >= 100,
-  },
-  {
-    id: 'combo_250',
-    icon: 'military_tech',
-    check: s => s.maxCombo >= 250,
-  },
-  {
-    id: 'combo_500',
-    icon: 'workspace_premium',
-    check: s => s.maxCombo >= 500,
-  },
-  {
-    id: 'first_win',
-    icon: 'celebration',
-    check: s => s.gamesWon >= 1,
-  },
-  {
-    id: 'ten_wins',
-    icon: 'trophy',
-    check: s => s.gamesWon >= 10,
-  },
-  {
-    id: 'perfect_accuracy',
-    icon: 'target',
-    check: s => s.totalHits > 0 && s.perfectHits / s.totalHits >= 0.5,
-  },
-  {
-    id: 'no_miss_game',
-    icon: 'verified',
-    check: s => s.totalGames >= 1 && s.totalMisses === 0 && s.totalHits > 0,
-  },
-  {
-    id: 'bomb_hitter',
-    icon: 'report',
-    check: s => s.bombHits >= 10,
-  },
-  {
-    id: 'five_streak',
-    icon: 'whatshot',
-    check: s => s.maxCombo >= 30,
-  },
-  {
-    id: 'fifteen_streak',
-    icon: 'local_fire_department',
-    check: s => s.maxCombo >= 75,
-  },
-  {
-    id: 'maps_10',
-    icon: 'library_music',
-    check: s => s.mapsCompleted >= 10,
-  },
-  {
-    id: 'play_1h',
-    icon: 'schedule',
-    check: s => s.totalPlayTimeMs >= 3600000,
-  },
-  {
-    id: 'play_10h',
-    icon: 'nightlight',
-    check: s => s.totalPlayTimeMs >= 36000000,
-  },
+  { id: 'first_game', icon: 'play_circle', category: 'gameplay', tier: 'bronze', check: s => s.totalGames >= 1 },
+  { id: 'ten_games', icon: 'repeat', category: 'gameplay', tier: 'bronze', check: s => s.totalGames >= 10 },
+  { id: 'fifty_games', icon: 'stars', category: 'gameplay', tier: 'silver', check: s => s.totalGames >= 50 },
+  { id: 'first_hit', icon: 'check_circle', category: 'gameplay', tier: 'bronze', check: s => s.totalHits >= 1 },
+  { id: 'hundred_hits', icon: 'trackpad', category: 'gameplay', tier: 'bronze', check: s => s.totalHits >= 100 },
+  { id: 'thousand_hits', icon: 'flash_on', category: 'gameplay', tier: 'silver', check: s => s.totalHits >= 1000 },
+  { id: 'combo_50', icon: 'social_leaderboard', category: 'gameplay', tier: 'silver', check: s => s.maxCombo >= 50 },
+  { id: 'combo_100', icon: 'emoji_events', category: 'gameplay', tier: 'gold', check: s => s.maxCombo >= 100 },
+  { id: 'combo_250', icon: 'military_tech', category: 'gameplay', tier: 'gold', check: s => s.maxCombo >= 250 },
+  { id: 'combo_500', icon: 'workspace_premium', category: 'gameplay', tier: 'diamond', check: s => s.maxCombo >= 500 },
+  { id: 'first_win', icon: 'celebration', category: 'gameplay', tier: 'bronze', check: s => s.gamesWon >= 1 },
+  { id: 'ten_wins', icon: 'trophy', category: 'gameplay', tier: 'silver', check: s => s.gamesWon >= 10 },
+  { id: 'perfect_accuracy', icon: 'target', category: 'gameplay', tier: 'gold', check: s => s.totalHits > 0 && s.perfectHits / s.totalHits >= 0.5 },
+  { id: 'no_miss_game', icon: 'verified', category: 'gameplay', tier: 'gold', check: s => s.totalGames >= 1 && s.totalMisses === 0 && s.totalHits > 0 },
+  { id: 'bomb_hitter', icon: 'report', category: 'gameplay', tier: 'bronze', check: s => s.bombHits >= 10 },
+  { id: 'five_streak', icon: 'whatshot', category: 'gameplay', tier: 'bronze', check: s => s.maxCombo >= 30 },
+  { id: 'fifteen_streak', icon: 'local_fire_department', category: 'gameplay', tier: 'silver', check: s => s.maxCombo >= 75 },
+  { id: 'maps_10', icon: 'library_music', category: 'gameplay', tier: 'silver', check: s => s.mapsCompleted >= 10 },
+  { id: 'play_1h', icon: 'schedule', category: 'gameplay', tier: 'silver', check: s => s.totalPlayTimeMs >= 3600000 },
+  { id: 'play_10h', icon: 'nightlight', category: 'gameplay', tier: 'diamond', check: s => s.totalPlayTimeMs >= 36000000 },
+  { id: 'score_100k', icon: 'score', category: 'gameplay', tier: 'silver', check: s => s.totalScore >= 100000 },
+  { id: 'score_500k', icon: 'leaderboard', category: 'gameplay', tier: 'gold', check: s => s.totalScore >= 500000 },
+  { id: 'score_1m', icon: 'diamond', category: 'gameplay', tier: 'diamond', check: s => s.totalScore >= 1000000 },
+  { id: 'mp_first_game', icon: 'groups', category: 'multiplayer', tier: 'bronze', check: s => s.multiplayerGamesPlayed >= 1 },
+  { id: 'mp_ten_games', icon: 'group_add', category: 'multiplayer', tier: 'silver', check: s => s.multiplayerGamesPlayed >= 10 },
+  { id: 'mp_first_win', icon: 'emoji_events', category: 'multiplayer', tier: 'silver', check: s => s.multiplayerWins >= 1 },
+  { id: 'mp_coop_master', icon: 'handshake', category: 'multiplayer', tier: 'gold', check: s => s.multiplayerWins >= 5 },
+  { id: 'mp_high_scorer', icon: 'military_tech', category: 'multiplayer', tier: 'gold', check: s => s.bestScoreAttackScore >= 100000 },
+  { id: 'creator_first', icon: 'edit_note', category: 'creator', tier: 'bronze', check: s => s.mapsCreated >= 1 },
+  { id: 'creator_five', icon: 'map', category: 'creator', tier: 'silver', check: s => s.mapsCreated >= 5 },
+  { id: 'creator_prolific', icon: 'collections_bookmark', category: 'creator', tier: 'gold', check: s => s.mapsCreated >= 20 },
+  { id: 'social_connected', icon: 'phone_iphone', category: 'social', tier: 'bronze', check: s => s.phoneConnected >= 1 },
+  { id: 'social_perfect_run', icon: 'verified', category: 'social', tier: 'diamond', check: s => s.perfectGames >= 1 && s.totalHits >= 50 },
 ];
 
 let unlocked = new Set<string>();
@@ -148,7 +92,7 @@ function saveUnlocked(): void {
 function loadStats(): AchievementStats {
   try {
     const raw = localStorage.getItem('hs_stats');
-    if (raw) return JSON.parse(raw) as AchievementStats;
+    if (raw) return { ...createEmptyStats(), ...(JSON.parse(raw) as Partial<AchievementStats>) };
   } catch { /* ignore */ }
   return createEmptyStats();
 }
@@ -173,6 +117,12 @@ function createEmptyStats(): AchievementStats {
     milestonesReached: 0,
     gamesWon: 0,
     gamesLost: 0,
+    multiplayerGamesPlayed: 0,
+    multiplayerWins: 0,
+    mapsCreated: 0,
+    bestScoreAttackScore: 0,
+    perfectGames: 0,
+    phoneConnected: 0,
   };
 }
 
@@ -239,7 +189,28 @@ export function recordGameEnd(state: GameState, won: boolean, playTimeMs: number
   _stats.totalPlayTimeMs += playTimeMs;
   if (won) _stats.gamesWon++;
   else _stats.gamesLost++;
+  if (won && state.misses === 0 && state.hits >= 50) _stats.perfectGames++;
   if (state.map?.id) _stats.mapsCompleted++;
+  saveStats(_stats);
+  checkAchievements();
+}
+
+export function recordMultiplayerGame(won: boolean, score: number): void {
+  _stats.multiplayerGamesPlayed++;
+  if (won) _stats.multiplayerWins++;
+  _stats.bestScoreAttackScore = Math.max(_stats.bestScoreAttackScore, score);
+  saveStats(_stats);
+  checkAchievements();
+}
+
+export function recordMapCreated(): void {
+  _stats.mapsCreated++;
+  saveStats(_stats);
+  checkAchievements();
+}
+
+export function recordPhoneConnected(): void {
+  _stats.phoneConnected++;
   saveStats(_stats);
   checkAchievements();
 }

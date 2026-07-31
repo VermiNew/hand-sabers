@@ -754,7 +754,20 @@
       "fifteen_streak": "Nie do Zatrzymania",
       "maps_10": "Odkrywca",
       "play_1h": "Godzina Gry",
-      "play_10h": "Nałogowiec"
+      "play_10h": "Nałogowiec",
+      "mp_first_game": "Pierwsza gra MP",
+      "mp_ten_games": "Weteran MP",
+      "mp_first_win": "Pierwsze zwycięstwo MP",
+      "mp_coop_master": "Mistrz współpracy",
+      "mp_high_scorer": "Snajper punktowy",
+      "creator_first": "Pierwsza mapa",
+      "creator_five": "Kartograf",
+      "creator_prolific": "Prolific",
+      "social_connected": "Połączony",
+      "social_perfect_run": "Perfekcyjna runda",
+      "score_100k": "Zdobywca",
+      "score_500k": "Pół miliona",
+      "score_1m": "Milioner"
     },
     "descriptions": {
       "first_game": "Ukończ swoją pierwszą grę.",
@@ -776,7 +789,32 @@
       "fifteen_streak": "Osiągnij serię 15 zwycięstw z rzędu.",
       "maps_10": "Ukończ 10 różnych map.",
       "play_1h": "Graj łącznie przez 1 godzinę.",
-      "play_10h": "Graj łącznie przez 10 godzin."
+      "play_10h": "Graj łącznie przez 10 godzin.",
+      "mp_first_game": "Rozegraj swoją pierwszą grę multiplayer",
+      "mp_ten_games": "Rozegraj 10 gier multiplayer",
+      "mp_first_win": "Wygraj swoją pierwszą grę multiplayer",
+      "mp_coop_master": "Wygraj 5 gier multiplayer",
+      "mp_high_scorer": "Zdobądź 100 000 punktów w score-attack",
+      "creator_first": "Utwórz swoją pierwszą mapę",
+      "creator_five": "Utwórz 5 map",
+      "creator_prolific": "Utwórz 20 map",
+      "social_connected": "Połącz telefon jako kontroler",
+      "social_perfect_run": "Ukończ grę z 50+ trafieniami i zero pudeł",
+      "score_100k": "Zdobądź 100 000 punktów łącznie",
+      "score_500k": "Zdobądź 500 000 punktów łącznie",
+      "score_1m": "Zdobądź 1 000 000 punktów łącznie"
+    },
+    "categories": {
+      "gameplay": "Rozgrywka",
+      "multiplayer": "Multiplayer",
+      "creator": "Kreator",
+      "social": "Społeczność"
+    },
+    "tiers": {
+      "bronze": "Brąz",
+      "silver": "Srebro",
+      "gold": "Złoto",
+      "diamond": "Diament"
     }
   },
   "validation": {

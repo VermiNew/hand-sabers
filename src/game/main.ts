@@ -1227,7 +1227,17 @@ function showAchievementToast(id: string): void {
   const title = document.getElementById('achToastTitle');
   if (!toast || !icon || !title) return;
   icon.textContent = def.icon;
+  icon.className = `material-symbols-rounded ach-toast-icon ach-tier-${def.tier}`;
   title.textContent = t(`achievements.names.${id}`);
+  let tier = document.getElementById('achToastTier');
+  if (!tier) {
+    tier = document.createElement('span');
+    tier.id = 'achToastTier';
+    tier.className = 'ach-toast-tier';
+    title.insertAdjacentElement('afterend', tier);
+  }
+  tier.className = `ach-toast-tier ach-tier-${def.tier}`;
+  tier.textContent = t(`achievements.tiers.${def.tier}`);
   toast.hidden = false;
   toast.classList.add('is-visible');
   clearTimeout((toast as unknown as { _timer?: ReturnType<typeof setTimeout> })._timer);
@@ -1307,20 +1317,26 @@ function renderAchievementGrid(): void {
   const defs = getAllAchievements();
   const unlocked = getUnlockedSet();
   grid.innerHTML = '';
-  for (const a of defs) {
-    const card = document.createElement('div');
-    const isUnlocked = unlocked.has(a.id);
-    card.className = 'ach-card' + (isUnlocked ? '' : ' is-locked');
-    card.innerHTML = `
-      <div class="ach-card-icon ${isUnlocked ? 'is-unlocked' : 'is-locked'}">
-        <span class="material-symbols-rounded">${a.icon}</span>
-      </div>
-      <div class="ach-card-info">
-        <span class="ach-card-name ${isUnlocked ? '' : 'is-locked'}">${t(`achievements.names.${a.id}`)}</span>
-        <span class="ach-card-desc">${t(`achievements.descriptions.${a.id}`)}</span>
-      </div>
-    `;
-    grid.appendChild(card);
+  for (const category of ['gameplay', 'multiplayer', 'creator', 'social'] as const) {
+    const header = document.createElement('h3');
+    header.className = 'ach-category-header';
+    header.textContent = t(`achievements.categories.${category}`);
+    grid.appendChild(header);
+    for (const a of defs.filter(def => def.category === category)) {
+      const card = document.createElement('div');
+      const isUnlocked = unlocked.has(a.id);
+      card.className = 'ach-card' + (isUnlocked ? '' : ' is-locked');
+      card.innerHTML = `
+        <div class="ach-card-icon ${isUnlocked ? 'is-unlocked' : 'is-locked'} ach-tier-${a.tier}">
+          <span class="material-symbols-rounded">${a.icon}</span>
+        </div>
+        <div class="ach-card-info">
+          <span class="ach-card-name ${isUnlocked ? '' : 'is-locked'}">${t(`achievements.names.${a.id}`)}</span>
+          <span class="ach-card-desc">${t(`achievements.descriptions.${a.id}`)}</span>
+        </div>
+      `;
+      grid.appendChild(card);
+    }
   }
   const unlockedCount = getUnlockedCount();
   const total = getTotalAchievements();

@@ -756,7 +756,20 @@
       "fifteen_streak": "Unstoppable",
       "maps_10": "Explorer",
       "play_1h": "One Hour In",
-      "play_10h": "No Life"
+      "play_10h": "No Life",
+      "mp_first_game": "First MP Game",
+      "mp_ten_games": "MP Veteran",
+      "mp_first_win": "First MP Win",
+      "mp_coop_master": "Co-op Master",
+      "mp_high_scorer": "Score Sniper",
+      "creator_first": "First Map",
+      "creator_five": "Cartographer",
+      "creator_prolific": "Prolific",
+      "social_connected": "Connected",
+      "social_perfect_run": "Perfect Run",
+      "score_100k": "Centurion",
+      "score_500k": "Half Million",
+      "score_1m": "Millionaire"
     },
     "descriptions": {
       "first_game": "Complete your first game.",
@@ -778,7 +791,32 @@
       "fifteen_streak": "Achieve a 15-game win streak.",
       "maps_10": "Complete 10 different maps.",
       "play_1h": "Play for a total of 1 hour.",
-      "play_10h": "Play for a total of 10 hours."
+      "play_10h": "Play for a total of 10 hours.",
+      "mp_first_game": "Play your first multiplayer game",
+      "mp_ten_games": "Play 10 multiplayer games",
+      "mp_first_win": "Win your first multiplayer game",
+      "mp_coop_master": "Win 5 multiplayer games",
+      "mp_high_scorer": "Score 100,000 in score-attack",
+      "creator_first": "Create your first map",
+      "creator_five": "Create 5 maps",
+      "creator_prolific": "Create 20 maps",
+      "social_connected": "Connect your phone as a controller",
+      "social_perfect_run": "Complete a game with 50+ hits and zero misses",
+      "score_100k": "Score 100,000 total points",
+      "score_500k": "Score 500,000 total points",
+      "score_1m": "Score 1,000,000 total points"
+    },
+    "categories": {
+      "gameplay": "Gameplay",
+      "multiplayer": "Multiplayer",
+      "creator": "Creator",
+      "social": "Social"
+    },
+    "tiers": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "diamond": "Diamond"
     }
   },
   "validation": {
