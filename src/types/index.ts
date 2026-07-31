@@ -130,6 +130,8 @@ export interface Settings {
   calibrationMode: 'manual' | 'auto';
   rememberCalibration: boolean;
   savedCalibration: SavedCalibrationData | null;
+  avatar: string;
+  profileCompleted: boolean;
 }
 
 export interface SavedCalibrationData {

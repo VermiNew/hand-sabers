@@ -802,5 +802,12 @@
     "unknown": "Unknown",
     "bestScore": "Best score",
     "tries": "tries"
+  },
+  "profile": {
+    "welcomeTitle": "Welcome to Hand Sabers!",
+    "welcomeIntro": "Before you start, choose your player name and avatar. They'll be used in the game, multiplayer, and leaderboards.",
+    "playerName": "Player name",
+    "chooseAvatar": "Choose your avatar",
+    "confirm": "START PLAYING"
   }
 }

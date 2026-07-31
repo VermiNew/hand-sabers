@@ -1,0 +1,18 @@
+/* -- Profile onboarding overlay -- */
+.profile-onboarding{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;background:rgba(3,5,10,0.88);backdrop-filter:blur(14px);animation:mp-fade-in .25s ease}
+.profile-onboarding[hidden]{display:none!important}
+.profile-onboarding-card{width:min(100%,440px);padding:32px 36px;background:var(--panel,rgba(7,17,29,0.96));border:1px solid var(--border,rgba(148,163,184,0.14));border-radius:16px;text-align:center}
+.profile-onboarding-card h2{font:800 22px Oxanium,sans-serif;letter-spacing:1px;color:var(--text,#e2e8f0);margin-bottom:8px}
+.profile-onboarding-intro{font:400 13px JetBrains Mono,monospace;color:var(--muted,rgba(226,232,240,0.62));line-height:1.6;margin-bottom:24px}
+.profile-onboarding-field{margin-bottom:20px;text-align:left}
+.profile-onboarding-field label{display:block;font:700 10px Oxanium,sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.profile-onboarding-field input{width:100%;padding:10px 16px;border:1px solid var(--border,rgba(148,163,184,0.14));border-radius:8px;background:rgba(0,0,0,0.3);color:var(--text,#e2e8f0);font:400 14px JetBrains Mono,monospace}
+.profile-onboarding-field input:focus{outline:none;border-color:var(--main,#2f7cff)}
+.profile-avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
+.profile-avatar-option{display:flex;align-items:center;justify-content:center;height:56px;border:2px solid var(--border,rgba(148,163,184,0.14));border-radius:10px;background:rgba(0,0,0,0.2);color:var(--muted);cursor:pointer;transition:all .15s ease}
+.profile-avatar-option:hover{border-color:rgba(148,163,184,0.3);color:var(--text)}
+.profile-avatar-option.is-selected{border-color:var(--main,#2f7cff);background:var(--main-soft,rgba(47,124,255,0.14));color:var(--main,#2f7cff)}
+.profile-avatar-option .material-symbols-rounded{font-size:24px}
+.profile-onboarding-confirm{width:100%;min-height:48px;margin-top:12px;border:none;border-radius:10px;background:var(--main,#2f7cff);color:#fff;font:800 14px Oxanium,sans-serif;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;transition:transform .1s ease,box-shadow .15s ease}
+.profile-onboarding-confirm:hover{box-shadow:0 0 24px rgba(47,124,255,0.4)}
+.profile-onboarding-confirm:active{transform:scale(0.97)}

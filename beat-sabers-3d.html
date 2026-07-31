@@ -1120,6 +1120,48 @@
   </div>
 </div>
 
+<!-- PROFILE ONBOARDING (first-time user) -->
+<div id="profileOnboarding" class="profile-onboarding" hidden>
+  <div class="profile-onboarding-card">
+    <h2 data-i18n="profile.welcomeTitle">Witaj w Hand Sabers!</h2>
+    <p class="profile-onboarding-intro" data-i18n="profile.welcomeIntro">Przed startem wybierz nazwe gracza i avatara. Beda uzywane w grze, multiplayer i na rankingach.</p>
+    <div class="profile-onboarding-field">
+      <label for="profileNameInput" data-i18n="profile.playerName">Nazwa gracza</label>
+      <input type="text" id="profileNameInput" maxlength="32" autocomplete="nickname" placeholder="Gracz">
+    </div>
+    <div class="profile-onboarding-field">
+      <label data-i18n="profile.chooseAvatar">Wybierz avatara</label>
+      <div class="profile-avatar-grid" id="profileAvatarGrid">
+        <button class="profile-avatar-option is-selected" data-avatar="default" type="button">
+          <span class="material-symbols-rounded">person</span>
+        </button>
+        <button class="profile-avatar-option" data-avatar="cat" type="button">
+          <span class="material-symbols-rounded">pets</span>
+        </button>
+        <button class="profile-avatar-option" data-avatar="rocket" type="button">
+          <span class="material-symbols-rounded">rocket_launch</span>
+        </button>
+        <button class="profile-avatar-option" data-avatar="star" type="button">
+          <span class="material-symbols-rounded">star</span>
+        </button>
+        <button class="profile-avatar-option" data-avatar="music" type="button">
+          <span class="material-symbols-rounded">music_note</span>
+        </button>
+        <button class="profile-avatar-option" data-avatar="bolt" type="button">
+          <span class="material-symbols-rounded">bolt</span>
+        </button>
+        <button class="profile-avatar-option" data-avatar="diamond" type="button">
+          <span class="material-symbols-rounded">diamond</span>
+        </button>
+        <button class="profile-avatar-option" data-avatar="forest" type="button">
+          <span class="material-symbols-rounded">forest</span>
+        </button>
+      </div>
+    </div>
+    <button class="profile-onboarding-confirm" id="profileConfirm" type="button" data-i18n="profile.confirm">ZACZNIJ GRAC</button>
+  </div>
+</div>
+
 <!-- NARRATOR -->
 <div id="narratorBox" role="dialog" aria-modal="false" aria-label="Lyra" aria-live="polite">
   <div id="narratorAvatarCol" aria-hidden="true">

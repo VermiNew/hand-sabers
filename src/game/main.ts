@@ -32,6 +32,7 @@ import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchieve
 import { ARENA_THEMES, getArenaTheme } from '../core/arena-themes.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
+import { initProfileOnboarding, showProfileOnboardingIfNeeded } from './profile.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -2471,9 +2472,11 @@ window.addEventListener('hand-sabers:multiplayer-start', event => {
 initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 initMapPickerOverlay();
+initProfileOnboarding();
 bindGameplayFocusProtection();
 initMainMenu();
 showFirstRunWelcome();
+showProfileOnboardingIfNeeded();
 
 // Handle map selection from the in-game map picker overlay
 window.addEventListener('hand-sabers:map-selected', (event) => {

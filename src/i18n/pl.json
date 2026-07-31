@@ -800,5 +800,12 @@
     "unknown": "Nieznana",
     "bestScore": "Najlepszy wynik",
     "tries": "prób"
+  },
+  "profile": {
+    "welcomeTitle": "Witaj w Hand Sabers!",
+    "welcomeIntro": "Przed startem wybierz nazwe gracza i avatara. Beda uzywane w grze, multiplayer i na rankingach.",
+    "playerName": "Nazwa gracza",
+    "chooseAvatar": "Wybierz avatara",
+    "confirm": "ZACZNIJ GRAC"
   }
 }

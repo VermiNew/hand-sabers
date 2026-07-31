@@ -76,6 +76,8 @@ export const DEFAULTS: Settings = {
   calibrationMode: 'auto',
   rememberCalibration: false,
   savedCalibration: null,
+  avatar: 'default',
+  profileCompleted: false,
 };
 
 let _settings: Settings = { ...DEFAULTS };
