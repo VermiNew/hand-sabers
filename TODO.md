@@ -219,7 +219,7 @@
 - [x] Dodać tryb "Audio na telefonie" — muzyka gra na telefonie zamiast na komputerze (ustawienie + wyciszenie PC)
 - [x] Dodać ustawienie offsetu audio (ms) w opcjach z przyciskiem "Odtwórz dźwięk testowy"
 - [x] Dodać tryb kalibracji metronomu (styl FL Studio) — gra robi "tik, tik, tik, tik, TIK", gracz klika spację w tempo, gra dopasowuje opóźnienie automatycznie
-- [ ] Przesyłać strumień audio przez WebSocket do telefonu (lub WebRTC audio channel) — **wymaga zmian serwerowych WS**
+- [x] Przesyłać sterowanie audio przez WebSocket do telefonu — host wysyła komendy `audio-prepare`/`audio-play`/`audio-pause`/`audio-stop`/`audio-volume`/`audio-seek`, telefon odtwarza z URL, wyciszenie PC po `audio-ready`, fallback na PC przy rozłączeniu
 
 ## 30. Osiągnięcia — pełna przebudowa
 
@@ -239,9 +239,9 @@
 
 - [x] Dodać ekran profilu przy pierwszym wejściu do gry — wybór nazwy użytkownika i avatara
 - [x] Nazwa użytkownika używana globalnie: leaderboardy, multiplayer, singleplayer, czat
-- [ ] Avatar używany w multiplayer, czacie drużynowym, profilu i narratorze — **zapisano avatar, oczekuje integracji z UI multiplayer/czatu**
+- [x] Avatar używany w multiplayer, czacie drużynowym, profilu i narratorze — avatar zintegrowany z protokołem (lobby, czat, podgląd rąk), walidacja allowlistą, aktualizacja na żywo przez `set-profile`
 - [x] Zapisać profil w localStorage (ustawienia `playerName`, `avatar`, `profileCompleted`)
-- [ ] Dodać edycję profilu w ustawieniach — **czeka na dodanie sekcji profilu w panelu ustawień**
+- [x] Dodać edycję profilu w ustawieniach — sekcja profilu z nazwą i avatarem, zapis z feedbackiem, event `profile-updated` do aktualizacji multiplayera na żywo
 
 ## 33. Refaktoryzacja modułów
 
