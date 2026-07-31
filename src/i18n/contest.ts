@@ -52,6 +52,11 @@ export const contestTranslations = {
     multiplayer: {
       secureHostingWarning: 'Sharing a plain LAN IP is not enough for camera and phone tracking. Browsers require HTTPS outside localhost. Use a trusted HTTPS tunnel, reverse proxy or hosted server, and make sure WebSocket upgrades are enabled.',
       focusWarning: 'Do not leave the game tab during a multiplayer round. The match cannot pause because every player must stay synchronized.',
+      resultsTitle: 'ROUND RESULTS',
+      coopVictory: 'Team completed the map together. Great synergy!',
+      coopPartialFinish: 'The round ended early, but the team gave it everything.',
+      coopIncomplete: 'A teammate disconnected. The round could not be completed.',
+      dnf: 'DNF',
     },
     remoteTracking: {
       experimentalBadge: 'EXPERIMENTAL BUT WORKING',
@@ -279,6 +284,11 @@ export const contestTranslations = {
     multiplayer: {
       secureHostingWarning: 'Samo udostępnienie adresu IP w sieci LAN nie wystarczy dla kamery i trackingu z telefonu. Poza localhostem przeglądarki wymagają HTTPS. Użyj zaufanego tunelu HTTPS, reverse proxy lub hostowanego serwera i włącz obsługę WebSocket.',
       focusWarning: 'Nie opuszczaj karty gry podczas rundy multiplayer. Meczu nie można zatrzymać, ponieważ wszyscy gracze muszą pozostać zsynchronizowani.',
+      resultsTitle: 'WYNIKI RUNDY',
+      coopVictory: 'Zespół ukończył mapę wspólnie. Świetna współpraca!',
+      coopPartialFinish: 'Runda zakończyła się wcześniej, ale zespół dał z siebie wszystko.',
+      coopIncomplete: 'Członek zespołu się rozłączył. Nie udało się ukończyć rundy.',
+      dnf: 'DNF',
     },
     remoteTracking: {
       experimentalBadge: 'EKSPERYMENTALNE, ALE DZIAŁA',

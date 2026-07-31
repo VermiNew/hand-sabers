@@ -18,6 +18,7 @@ let serverClockOffsetMs = 0;
 const clockSamples: Array<{ offset: number; rtt: number }> = [];
 let pendingPreparationMapId = '';
 let announcedRoundId = 0;
+let lastFinishedRoundId = 0;
 
 function trySocketSend(target: WebSocket | null, payload: string | ArrayBuffer, context: string): boolean {
   if (target?.readyState !== WebSocket.OPEN) return false;
@@ -32,6 +33,10 @@ function trySocketSend(target: WebSocket | null, payload: string | ArrayBuffer, 
 
 export function canSendRealtime(): boolean {
   return Boolean(currentPlayerId) && socket?.readyState === WebSocket.OPEN;
+}
+
+export function getCurrentPlayerId(): string {
+  return currentPlayerId;
 }
 
 export function sendRealtimePacket(packet: ArrayBuffer): boolean {
@@ -219,6 +224,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     currentRoom = null;
     pendingPreparationMapId = '';
     announcedRoundId = 0;
+    lastFinishedRoundId = 0;
     activeJoinUrl = '';
     setup.hidden = false;
     room.hidden = true;
@@ -314,6 +320,15 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     }));
   };
 
+  const announceRoundFinished = (snapshot: RoomSnapshot) => {
+    if (!snapshot.round || snapshot.round.finishedAt === null) return;
+    if (snapshot.round.id <= lastFinishedRoundId) return;
+    lastFinishedRoundId = snapshot.round.id;
+    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-results', {
+      detail: { snapshot },
+    }));
+  };
+
   const renderRoom = (snapshot: RoomSnapshot) => {
     if (currentRoom && snapshot.revision < currentRoom.revision) return;
     currentRoom = snapshot;
@@ -379,6 +394,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       || snapshot.players.some(player => !player.ready)
       || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     renderScores(snapshot);
+    announceRoundFinished(snapshot);
   };
 
   async function loadMaps(): Promise<void> {
@@ -398,6 +414,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     currentRoom = null;
     pendingPreparationMapId = '';
     announcedRoundId = 0;
+    lastFinishedRoundId = 0;
     lobby.hidden = true;
     resetChat();
     showRoom();

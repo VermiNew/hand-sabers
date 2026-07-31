@@ -1,5 +1,5 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, showGameOver, showHandsPaused, hideHandsPaused, updateHandsResumeProgress, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition, showCameraError } from '../ui/ui.ts';
+import { ui, updateHUD, showGameOver, showMultiplayerResults, showHandsPaused, hideHandsPaused, updateHandsResumeProgress, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition, showCameraError } from '../ui/ui.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
@@ -24,7 +24,8 @@ import { t, setLang, getCurrentLang, needsLanguageSelection, translateDom } from
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
-import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
+import { initMultiplayerOverlay, sendMultiplayerScore, getCurrentPlayerId } from '../multiplayer/client.ts';
+import { parseRoomSnapshot } from '../multiplayer/protocol.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { isPhoneAudioActive, preparePhoneAudio, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
@@ -2598,6 +2599,21 @@ window.addEventListener('hand-sabers:multiplayer-start', event => {
     );
   }
 });
+
+// ── Multiplayer round results — show ranking when server confirms round end
+window.addEventListener('hand-sabers:multiplayer-results', event => {
+  const detail = (event as CustomEvent<{ snapshot?: unknown }>).detail;
+  const snapshot = detail?.snapshot;
+  if (!snapshot || typeof snapshot !== 'object') return;
+  if (state.appState !== S.GAMEOVER) return;
+  const localPlayerId = getCurrentPlayerId();
+  if (!localPlayerId) return;
+  const s = snapshot as Record<string, unknown>;
+  if (!Array.isArray(s['players']) || !s['round']) return;
+  const parsed = parseRoomSnapshot(snapshot);
+  if (parsed) showMultiplayerResults(parsed, localPlayerId);
+});
+
 initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 initMapPickerOverlay();

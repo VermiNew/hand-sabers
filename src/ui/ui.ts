@@ -1,6 +1,8 @@
 import { iconMarkup, refreshIcons, setIconButton } from '../core/icons.ts';
 import type { GameState } from '../core/state.ts';
 import { t } from '../i18n/index.ts';
+import { renderSingleplayerResults, renderMultiplayerResults } from '../game/results.ts';
+import type { RoomSnapshot } from '../multiplayer/protocol.ts';
 
 interface UiRefs {
   overlay:         HTMLElement | null;
@@ -258,55 +260,7 @@ export function showGameOver(state: GameState, victory = false): void {
   if (ui.hud)         ui.hud.style.display          = 'none';
   if (ui.mapProgress) ui.mapProgress.style.display = 'none';
   if (ui.goTitle) ui.goTitle.textContent = t(victory ? 'gameover.victoryTitle' : 'gameover.defeatTitle');
-
-  const scoreStr = String(Math.max(0, Math.round(state.score))).padStart(6, '0');
-  const combo = Math.max(0, Math.round(state.maxCombo));
-  const hits = Math.max(0, Math.round(state.hits));
-  const misses = Math.max(0, Math.round(state.misses));
-  const attempts = hits + misses;
-  const accuracy = attempts > 0 ? Math.round((hits / attempts) * 100) : 0;
-
-  if (ui.goBody) {
-    const mapTitle = document.createElement('div');
-    mapTitle.className = 'go-map-title';
-    mapTitle.textContent = state.map?.meta?.title ?? t('game.unknownTrack');
-
-    const summary = document.createElement('p');
-    summary.className = 'go-summary';
-    summary.textContent = t(victory ? 'gameover.victorySummary' : 'gameover.defeatSummary');
-
-    const scoreCard = document.createElement('div');
-    scoreCard.className = 'go-score-card';
-    const scoreLabel = document.createElement('span');
-    scoreLabel.className = 'go-label';
-    scoreLabel.textContent = t('gameover.score');
-    const scoreValue = document.createElement('span');
-    scoreValue.className = 'go-value score-highlight';
-    scoreValue.textContent = scoreStr;
-    scoreCard.append(scoreLabel, scoreValue);
-
-    const stats = document.createElement('div');
-    stats.className = 'go-stats-grid';
-    const addStat = (label: string, value: string, className = '') => {
-      const card = document.createElement('div');
-      card.className = `go-stat${className ? ` ${className}` : ''}`;
-      const statLabel = document.createElement('span');
-      statLabel.className = 'go-label';
-      statLabel.textContent = label;
-      const statValue = document.createElement('strong');
-      statValue.className = 'go-stat-value';
-      statValue.textContent = value;
-      card.append(statLabel, statValue);
-      stats.append(card);
-    };
-    addStat(t('gameover.accuracy'), `${accuracy}%`, 'go-stat--accent');
-    addStat(t('gameover.bestCombo'), `×${combo}`);
-    addStat(t('gameover.hits'), String(hits));
-    addStat(t('gameover.misses'), String(misses));
-    addStat(t('gameover.perfects'), String(Math.max(0, Math.round(state.perfectHits))));
-
-    ui.goBody.replaceChildren(mapTitle, summary, scoreCard, stats);
-  }
+  if (ui.goBody) renderSingleplayerResults(ui.goBody, state, victory);
 
   setIconButton(ui.ovBtn,      t('gameover.playAgain'), 'rotate-ccw');
   setIconButton(ui.ovBtnMaps,  t('gameover.chooseMap'), 'library_music');
@@ -317,6 +271,33 @@ export function showGameOver(state: GameState, victory = false): void {
   if (ui.ovBtnCalib) ui.ovBtnCalib.style.display = 'inline-flex';
   if (ui.ovBtnMenu)  ui.ovBtnMenu.style.display  = 'inline-flex';
   if (ui.dStatus)    ui.dStatus.textContent = t(victory ? 'gameover.victoryTitle' : 'gameover.defeatTitle');
+}
+
+export function showMultiplayerResults(snapshot: RoomSnapshot, localPlayerId: string): void {
+  clearDangerPulse();
+  const victory = snapshot.mode === 'coop'
+    ? snapshot.players.filter(p => p.playing).every(p => p.finished)
+    : snapshot.players.some(p => p.id === localPlayerId && p.playing && p.finished);
+  if (ui.overlay) {
+    ui.overlay.classList.add('is-gameover');
+    ui.overlay.classList.toggle('is-victory', victory);
+    ui.overlay.classList.toggle('is-defeat', !victory);
+  }
+  showModalElement(ui.overlay);
+  if (ui.hud)         ui.hud.style.display          = 'none';
+  if (ui.mapProgress) ui.mapProgress.style.display = 'none';
+  if (ui.goTitle) ui.goTitle.textContent = t('multiplayer.resultsTitle');
+  if (ui.goBody) renderMultiplayerResults(ui.goBody, snapshot, localPlayerId);
+
+  setIconButton(ui.ovBtn,      t('gameover.playAgain'), 'rotate-ccw');
+  setIconButton(ui.ovBtnMaps,  t('gameover.chooseMap'), 'library_music');
+  setIconButton(ui.ovBtnCalib, t('gameover.calibration'), 'settings');
+  setIconButton(ui.ovBtnMenu,  t('gameover.mainMenu'), 'house');
+  if (ui.ovBtn)      ui.ovBtn.style.display      = 'inline-flex';
+  if (ui.ovBtnMaps)  ui.ovBtnMaps.style.display  = 'inline-flex';
+  if (ui.ovBtnCalib) ui.ovBtnCalib.style.display = 'none';
+  if (ui.ovBtnMenu)  ui.ovBtnMenu.style.display  = 'inline-flex';
+  if (ui.dStatus)    ui.dStatus.textContent = t('multiplayer.resultsTitle');
 }
 
 export function showPauseMenu(): void {
