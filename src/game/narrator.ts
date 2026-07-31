@@ -1,4 +1,9 @@
 import { playInterfaceSound, playTypingTick } from './audio.ts';
+import neutralImg from '../assets/lora/01_neutral.png';
+import smirkImg from '../assets/lora/03_smirk.png';
+import smileImg from '../assets/lora/04_smile.png';
+import laughImg from '../assets/lora/05_laugh.png';
+import sadImg from '../assets/lora/06_sad.png';
 
 const CHAR_MS_BASE = 28;
 
@@ -12,15 +17,6 @@ export const NARRATOR_SPEEDS: Record<string, number> = {
 
 export type NarratorMood = 'neutral' | 'happy' | 'excited' | 'sad' | 'surprised' | 'celebrate' | 'encourage';
 
-const MOOD_ICONS: Record<NarratorMood, string> = {
-  neutral: 'sentiment_neutral',
-  happy: 'sentiment_satisfied',
-  excited: 'sentiment_excited',
-  sad: 'sentiment_dissatisfied',
-  surprised: 'sentiment_surprised',
-  celebrate: 'celebration',
-  encourage: 'favorite',
-};
 
 const PAUSE_MAP: Record<string, number> = {
   ',': 150,
@@ -46,6 +42,7 @@ interface NarratorOptions {
   buttons?: string[];
   charMs?: number;
   mood?: NarratorMood;
+  autoAdvanceMs?: number;
 }
 
 let activeResolve: ((index: number) => void) | null = null;
@@ -64,16 +61,22 @@ function getEls() {
   };
 }
 
+const MOOD_IMAGES: Record<NarratorMood, string> = {
+  neutral: neutralImg,
+  happy: smileImg,
+  excited: smirkImg,
+  sad: sadImg,
+  surprised: laughImg,
+  celebrate: laughImg,
+  encourage: smileImg,
+};
+
 function setMood(mood: NarratorMood): void {
   const { avatar } = getEls();
   if (!avatar) return;
-  const icon = MOOD_ICONS[mood] || MOOD_ICONS.neutral;
   avatar.dataset['mood'] = mood;
-  avatar.textContent = ''; // Clear any text content, use CSS background
-  // Use a pseudo-element or inner styled content for the icon
-  avatar.style.setProperty('--mood-icon', `"${icon}"`);
-  // As a simpler approach, set the avatar content using a material symbols approach
-  avatar.innerHTML = `<span class="material-symbols-rounded narrator-mood-icon">${icon}</span>`;
+  const img = MOOD_IMAGES[mood] || MOOD_IMAGES.neutral;
+  avatar.innerHTML = `<img class="narrator-avatar-img" src="${img}" alt="Lyra" />`;
 }
 
 function clearTyping(): void {
@@ -118,6 +121,18 @@ export function narratorHide(): void {
   }, { once: true });
 }
 
+/** Hide narrator without resolving the active promise (used by click/keyboard handlers that resolve manually). */
+function hideWithoutResolve(): void {
+  clearTyping();
+  clearKeyHandler();
+  const { box } = getEls();
+  if (!box || !box.classList.contains('is-visible')) return;
+  box.classList.add('is-hiding');
+  box.addEventListener('animationend', () => {
+    box.classList.remove('is-visible', 'is-hiding');
+  }, { once: true });
+}
+
 export function isNarratorVisible(): boolean {
   const { box } = getEls();
   return box?.classList.contains('is-visible') ?? false;
@@ -138,7 +153,9 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
 
     setMood(opts.mood || 'neutral');
 
-    const labels = opts.buttons && opts.buttons.length ? opts.buttons.slice(0, 3) : ['OK'];
+    const hasButtons = opts.buttons && opts.buttons.length > 0;
+    const isAutoAdvance = !hasButtons && opts.autoAdvanceMs && opts.autoAdvanceMs > 0;
+    const labels = hasButtons ? opts.buttons!.slice(0, 3) : (isAutoAdvance ? [] : ['OK']);
     const btns = buildButtons(labels);
 
     btns.forEach((btn, i) => {
@@ -146,27 +163,39 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
         playInterfaceSound('activate');
         btn.classList.add('is-pressed');
         clearKeyHandler();
+        const resolveClick = activeResolve;
+        activeResolve = null;
+        if (hasButtons) window.dispatchEvent(new CustomEvent('hand-sabers:narrator-resume'));
         setTimeout(() => {
-          narratorHide();
-          activeResolve = null;
-          resolve(i);
+          hideWithoutResolve();
+          if (resolveClick) resolveClick(i);
         }, 90);
       });
     });
 
-    keyHandler = (e: KeyboardEvent) => {
-      if (!btns.length) return;
-      if (e.key === 'ArrowRight') {
-        e.preventDefault(); setFocus(btns, focusedBtn + 1);
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault(); setFocus(btns, focusedBtn - 1);
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault(); btns[focusedBtn]?.click();
-      }
-    };
-    document.addEventListener('keydown', keyHandler);
+    // Only register keyboard navigation when there are actual buttons
+    if (btns.length > 0) {
+      keyHandler = (e: KeyboardEvent) => {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault(); setFocus(btns, focusedBtn + 1);
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault(); setFocus(btns, focusedBtn - 1);
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault(); btns[focusedBtn]?.click();
+        }
+      };
+      document.addEventListener('keydown', keyHandler);
+    }
 
+    // Pre-calculate container height to prevent layout jumps
+    speech.style.minHeight = '';
+    speech.textContent = opts.text;
+    speech.style.visibility = 'hidden';
+    const measuredHeight = speech.offsetHeight;
+    speech.style.minHeight = `${measuredHeight}px`;
+    speech.style.visibility = '';
     speech.textContent = '';
+
     cursor.className = '';
     hint.classList.remove('is-visible');
     box.classList.add('is-visible');
@@ -178,15 +207,38 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
     function typeNext(): void {
       if (i >= text.length) {
         cursor.className = 'is-done';
-        btns.forEach((b, idx) => {
-          setTimeout(() => b.classList.add('is-visible'), idx * 60);
-        });
-        setTimeout(() => hint.classList.add('is-visible'), btns.length * 60 + 40);
-        setFocus(btns, 0);
+        if (hasButtons) {
+          // Pause game while buttons are visible
+          window.dispatchEvent(new CustomEvent('hand-sabers:narrator-pause'));
+          btns.forEach((b, idx) => {
+            setTimeout(() => b.classList.add('is-visible'), idx * 60);
+          });
+          setTimeout(() => hint.classList.add('is-visible'), btns.length * 60 + 40);
+          setFocus(btns, 0);
+        } else if (opts.autoAdvanceMs && opts.autoAdvanceMs > 0) {
+          // Auto-advance mode — no buttons, auto-hide after delay
+          const resolveAuto = activeResolve;
+          activeResolve = null;
+          setTimeout(() => {
+            hideWithoutResolve();
+            if (resolveAuto) resolveAuto(0);
+          }, opts.autoAdvanceMs);
+        } else {
+          // Default: show OK button
+          btns.forEach((b, idx) => {
+            setTimeout(() => b.classList.add('is-visible'), idx * 60);
+          });
+          setTimeout(() => hint.classList.add('is-visible'), btns.length * 60 + 40);
+          setFocus(btns, 0);
+        }
         return;
       }
       const ch = text[i]!;
-      speech.textContent = text.slice(0, i + 1);
+      // Per-character fade-in: append each char as a span with animation
+      const span = document.createElement('span');
+      span.className = 'narrator-char';
+      span.textContent = ch;
+      speech.appendChild(span);
       playTypingTick(ch);
       i++;
       typingTimer = setTimeout(typeNext, charDelay(ch, text[i], charMs));
@@ -197,7 +249,5 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
 }
 
 export function narratorQuick(text: string, mood: NarratorMood = 'neutral', durationMs = 3000): void {
-  void narratorShow({ text, buttons: [], mood }).then(() => {
-    setTimeout(() => narratorHide(), durationMs);
-  });
+  void narratorShow({ text, buttons: [], mood, autoAdvanceMs: durationMs });
 }

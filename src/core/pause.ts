@@ -5,6 +5,7 @@ export const PAUSE_REASONS = Object.freeze({
   MANUAL: 'manual',
   HANDS: 'hands',
   FOCUS: 'focus',
+  NARRATOR: 'narrator',
 });
 
 export function canAutoResumeFromHands(pauseReason: PauseReason): boolean {

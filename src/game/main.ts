@@ -2614,6 +2614,21 @@ window.addEventListener('hand-sabers:multiplayer-results', event => {
   if (parsed) showMultiplayerResults(parsed, localPlayerId);
 });
 
+// ── Narrator pause/resume — pause gameplay while narrator buttons are visible
+window.addEventListener('hand-sabers:narrator-pause', () => {
+  if (state.appState === S.PLAYING) {
+    state.appState = S.PAUSED;
+    state.pauseReason = PAUSE_REASONS.NARRATOR;
+    mapTimeline.pause(performance.now());
+    hidePauseMenu();
+  }
+});
+window.addEventListener('hand-sabers:narrator-resume', () => {
+  if (state.appState === S.PAUSED && state.pauseReason === PAUSE_REASONS.NARRATOR) {
+    void resumeGame(performance.now(), 'ui');
+  }
+});
+
 initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 initMapPickerOverlay();
