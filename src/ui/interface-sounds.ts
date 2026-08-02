@@ -33,22 +33,29 @@ function ensureContext(): AudioContext | null {
   return context;
 }
 
-function tone(frequency: number, duration: number, volume: number, endFrequency: number): void {
+function tone(
+  frequency: number,
+  duration: number,
+  volume: number,
+  endFrequency: number,
+  delay = 0,
+): void {
   const audio = ensureContext();
   if (!audio) return;
   const vol = getInterfaceVolume() * volume;
-  const now = audio.currentTime;
+  const start = audio.currentTime + delay;
   const oscillator = audio.createOscillator();
   const gain = audio.createGain();
-  oscillator.type = 'triangle';
-  oscillator.frequency.setValueAtTime(frequency, now);
-  oscillator.frequency.exponentialRampToValueAtTime(endFrequency, now + duration);
-  gain.gain.setValueAtTime(Math.max(0.0001, vol), now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  oscillator.type = 'sine';
+  oscillator.frequency.setValueAtTime(frequency, start);
+  oscillator.frequency.exponentialRampToValueAtTime(endFrequency, start + duration);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.linearRampToValueAtTime(Math.max(0.0001, vol), start + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
   oscillator.connect(gain);
   gain.connect(audio.destination);
-  oscillator.start(now);
-  oscillator.stop(now + duration);
+  oscillator.start(start);
+  oscillator.stop(start + duration);
 }
 
 export function initPageInterfaceSounds(root: ParentNode = document): void {
@@ -62,7 +69,7 @@ export function initPageInterfaceSounds(root: ParentNode = document): void {
     if (!target || target === hovered || performance.now() - lastSoundAt < 70) return;
     hovered = target;
     lastSoundAt = performance.now();
-    if (context) tone(430, 0.04, 0.045, 500);
+    if (context) tone(360, 0.055, 0.022, 420);
   });
   root.addEventListener('pointerout', event => {
     const target = event.target instanceof Element ? event.target.closest(selector) : null;
@@ -72,6 +79,11 @@ export function initPageInterfaceSounds(root: ParentNode = document): void {
     const target = event.target instanceof Element ? event.target.closest(selector) : null;
     if (!target) return;
     lastSoundAt = performance.now();
-    tone(520, 0.07, 0.09, 680);
+    if (target.matches('[data-sound="back"]')) {
+      tone(340, 0.1, 0.05, 240);
+      return;
+    }
+    tone(440, 0.11, 0.055, 520);
+    tone(660, 0.1, 0.025, 780, 0.025);
   });
 }
