@@ -154,6 +154,12 @@ function connectSfx(gain: GainNode): void {
   gain.connect(sfxGain ?? masterGain ?? ctx.destination);
 }
 
+function connectInterface(gain: GainNode): void {
+  ensureAudioGraph();
+  if (!ctx) return;
+  gain.connect(masterGain ?? ctx.destination);
+}
+
 export type InterfaceSoundKind = 'hover' | 'activate' | 'back';
 
 let lastInterfaceSoundAt = -Infinity;
@@ -183,7 +189,7 @@ function playSoftTone(
   gain.gain.linearRampToValueAtTime(Math.max(0.0001, outputVolume), start + 0.008);
   gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
   oscillator.connect(gain);
-  connectSfx(gain);
+  connectInterface(gain);
   oscillator.start(start);
   oscillator.stop(start + duration);
 }
