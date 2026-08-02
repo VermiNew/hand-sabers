@@ -166,21 +166,23 @@ function playSoftTone(
   volume: number,
   type: OscillatorType = 'sine',
   endFrequency = frequency,
+  delay = 0,
 ): void {
   if (!ctx) return;
   ensureAudioGraph();
-  const now = ctx.currentTime;
+  const start = ctx.currentTime + delay;
   const oscillator = ctx.createOscillator();
   const gain = ctx.createGain();
   oscillator.type = type;
-  oscillator.frequency.setValueAtTime(frequency, now);
-  oscillator.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), now + duration);
-  gain.gain.setValueAtTime(Math.max(0.0001, volume), now);
-  gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+  oscillator.frequency.setValueAtTime(frequency, start);
+  oscillator.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), start + duration);
+  gain.gain.setValueAtTime(0.0001, start);
+  gain.gain.linearRampToValueAtTime(Math.max(0.0001, volume), start + 0.008);
+  gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
   oscillator.connect(gain);
   connectSfx(gain);
-  oscillator.start(now);
-  oscillator.stop(now + duration);
+  oscillator.start(start);
+  oscillator.stop(start + duration);
 }
 
 export function playInterfaceSound(kind: InterfaceSoundKind = 'activate'): void {
@@ -192,11 +194,12 @@ export function playInterfaceSound(kind: InterfaceSoundKind = 'activate'): void 
   const settings = getSettings();
   const vol = clamp01(settings.interfaceSoundVolume, 0.8);
   if (kind === 'hover') {
-    playSoftTone(430, 0.045, 0.06 * vol, 'sine', 510);
+    playSoftTone(360, 0.055, 0.03 * vol, 'sine', 420);
   } else if (kind === 'back') {
-    playSoftTone(290, 0.075, 0.11 * vol, 'triangle', 205);
+    playSoftTone(340, 0.1, 0.065 * vol, 'sine', 240);
   } else {
-    playSoftTone(520, 0.075, 0.12 * vol, 'triangle', 690);
+    playSoftTone(440, 0.11, 0.07 * vol, 'sine', 520);
+    playSoftTone(660, 0.1, 0.032 * vol, 'sine', 780, 0.025);
   }
 }
 
@@ -206,7 +209,7 @@ export function playTypingTick(character: string): void {
   if (now - lastTypingSoundAt < 22) return;
   lastTypingSoundAt = now;
   const variation = character.charCodeAt(0) % 5;
-  playSoftTone(610 + variation * 18, 0.025, 0.008, 'triangle', 540 + variation * 12);
+  playSoftTone(520 + variation * 14, 0.035, 0.006, 'sine', 470 + variation * 10);
 }
 
 export function initInterfaceSounds(root: ParentNode = document): void {
