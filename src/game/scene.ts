@@ -310,7 +310,6 @@ interface SaberUserData {
   bladeCoreMesh:  THREE.Mesh;
   bladeGlowMesh:  THREE.Mesh;
   outerGlowMesh:  THREE.Mesh;
-  tipMesh:        THREE.Mesh;
   shineMat:    THREE.MeshBasicMaterial;
   shineMesh:   THREE.Mesh;
   shine2Mat:   THREE.MeshBasicMaterial;
@@ -401,13 +400,6 @@ function makeSaber(hex: number): THREE.Group {
   sh2Mesh.position.set(0.013, 0.8, 0.012);
   g.add(sh2Mesh);
 
-  const tip = new THREE.Mesh(
-    new THREE.ConeGeometry(0.013, 0.07, 6),
-    new THREE.MeshBasicMaterial({ color: 0xffffff })
-  );
-  tip.position.y = 1.155;
-  g.add(tip);
-
   const wireGeo = new THREE.CylinderGeometry(0.5, 0.5, 1.18, 8);
   const wireMat = new THREE.MeshBasicMaterial({
     color:       0xffffff,
@@ -428,7 +420,7 @@ function makeSaber(hex: number): THREE.Group {
   g.frustumCulled = false;
   g.userData = {
     bladeGlow: bgMat2, outerGlow: ogMat,
-    bladeCoreMesh: bladeCore, bladeGlowMesh: bladeGlow, outerGlowMesh: outerGlow, tipMesh: tip,
+    bladeCoreMesh: bladeCore, bladeGlowMesh: bladeGlow, outerGlowMesh: outerGlow,
     shineMat: shMat,   shineMesh: shMesh,
     shine2Mat: sh2Mat, shine2Mesh: sh2Mesh,
     color: hex, wireMat, wireMesh, bladeLength: 1.1,
@@ -541,11 +533,6 @@ export function setSaberModel(side: 'left' | 'right', model: SaberModel): void {
   replaceBladeGeometry(ud.bladeCoreMesh, spec.coreR, spec.coreR * 1.35);
   replaceBladeGeometry(ud.bladeGlowMesh, spec.glowR, spec.glowR * 1.18);
   replaceBladeGeometry(ud.outerGlowMesh, spec.outerR, spec.outerR * 1.1);
-
-  ud.tipMesh.geometry.dispose();
-  ud.tipMesh.geometry = new THREE.ConeGeometry(spec.coreR * 1.85, 0.07, spec.segments);
-  ud.tipMesh.position.y = spec.length + 0.055;
-  ud.tipMesh.scale.set(1, 1, spec.depth);
   ud.bladeLength = spec.length;
 }
 
