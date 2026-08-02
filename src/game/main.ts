@@ -1955,12 +1955,24 @@ function initMainMenu(): void {
   const profileAvatarGrid = document.getElementById('menuProfileAvatarGrid');
   const profileSaveBtn = document.getElementById('menuProfileSave') as HTMLButtonElement | null;
   const profileSavedLabel = document.getElementById('menuProfileSaved');
+  const profileAvatarPreview = document.querySelector<HTMLElement>('#menuProfileAvatarPreview .material-symbols-rounded');
+  const profileNamePreview = document.getElementById('menuProfileNamePreview');
+  const profileNameCount = document.getElementById('menuProfileNameCount');
 
   // Track pending avatar selection (saved on "Save" click)
   let pendingAvatar = settings.avatar ?? 'default';
 
+  function updateProfilePreview(): void {
+    const name = (profileNameInput?.value ?? '').trim() || t('player.defaultName');
+    if (profileNamePreview) profileNamePreview.textContent = name;
+    if (profileNameCount) profileNameCount.textContent = `${profileNameInput?.value.length ?? 0} / 32`;
+    const selectedAvatar = profileAvatarGrid?.querySelector<HTMLElement>(`[data-avatar="${pendingAvatar}"] .material-symbols-rounded`);
+    if (profileAvatarPreview) profileAvatarPreview.textContent = selectedAvatar?.textContent ?? 'person';
+  }
+
   if (profileNameInput) {
     profileNameInput.value = settings.playerName ?? '';
+    profileNameInput.addEventListener('input', updateProfilePreview);
   }
 
   if (profileAvatarGrid) {
@@ -1970,9 +1982,11 @@ function initMainMenu(): void {
         profileAvatarGrid.querySelectorAll('.profile-avatar-option').forEach(b => b.classList.remove('is-selected'));
         btn.classList.add('is-selected');
         pendingAvatar = btn.dataset['avatar'] ?? 'default';
+        updateProfilePreview();
       });
     });
   }
+  updateProfilePreview();
 
   /** Dispatch profile-updated event so multiplayer / UI can react live. */
   function dispatchProfileUpdate(name: string, avatar: string): void {
@@ -1984,8 +1998,8 @@ function initMainMenu(): void {
   /** Show "Saved!" feedback briefly. */
   function showProfileSaved(): void {
     if (!profileSavedLabel) return;
-    profileSavedLabel.style.opacity = '1';
-    setTimeout(() => { profileSavedLabel.style.opacity = '0'; }, 2000);
+    profileSavedLabel.classList.add('is-visible');
+    setTimeout(() => { profileSavedLabel.classList.remove('is-visible'); }, 2000);
   }
 
   if (profileSaveBtn) {

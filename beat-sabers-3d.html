@@ -493,14 +493,28 @@
         <!-- TAB: PROFILE -->
         <div class="sp-tab" data-tab="profile">
           <h2 class="sp-tab-title" data-i18n="settings.sections.profile">Profil</h2>
-          <div class="sp-group-title" data-i18n="profile.playerName">Nazwa gracza</div>
-          <div class="sp-group">
-            <div class="sp-row">
-              <input type="text" id="menuProfileName" class="sp-profile-input" maxlength="32" autocomplete="nickname">
+          <div class="profile-settings-hero">
+            <div class="profile-settings-avatar" id="menuProfileAvatarPreview" aria-hidden="true">
+              <span class="material-symbols-rounded">person</span>
+            </div>
+            <div class="profile-settings-summary">
+              <span class="profile-settings-eyebrow" data-i18n="profile.yourIdentity">Twoja tożsamość</span>
+              <strong id="menuProfileNamePreview">Gracz</strong>
+              <p data-i18n="profile.settingsIntro">Nazwa i avatar będą widoczne w grze, rankingach oraz trybie multiplayer.</p>
             </div>
           </div>
-          <div class="sp-group-title" data-i18n="profile.chooseAvatar">Wybierz avatara</div>
-          <div class="sp-group">
+
+          <div class="profile-settings-section">
+            <div class="sp-group-title" data-i18n="profile.playerName">Nazwa gracza</div>
+            <label class="profile-settings-field" for="menuProfileName">
+              <span class="material-symbols-rounded" aria-hidden="true">badge</span>
+              <input type="text" id="menuProfileName" class="sp-profile-input" maxlength="32" autocomplete="nickname">
+              <span class="profile-name-count" id="menuProfileNameCount">0 / 32</span>
+            </label>
+          </div>
+
+          <div class="profile-settings-section profile-avatar-section">
+            <div class="sp-group-title" data-i18n="profile.chooseAvatar">Wybierz awatar</div>
             <div class="profile-avatar-grid" id="menuProfileAvatarGrid">
               <button class="profile-avatar-option" data-avatar="default" type="button"><span class="material-symbols-rounded">person</span></button>
               <button class="profile-avatar-option" data-avatar="cat" type="button"><span class="material-symbols-rounded">pets</span></button>
@@ -512,9 +526,10 @@
               <button class="profile-avatar-option" data-avatar="forest" type="button"><span class="material-symbols-rounded">forest</span></button>
             </div>
           </div>
-          <div class="sp-row" style="margin-top:16px;align-items:center;gap:12px">
+
+          <div class="profile-settings-actions">
             <button class="sp-action-btn" id="menuProfileSave" type="button" data-i18n="profile.save">Zapisz</button>
-            <span id="menuProfileSaved" class="sp-hint" style="opacity:0;transition:opacity .3s ease;color:var(--main,#2f7cff)" data-i18n="profile.saved">Zapisano!</span>
+            <span id="menuProfileSaved" class="profile-saved-status" role="status" data-i18n="profile.saved">Zapisano!</span>
           </div>
         </div>
 

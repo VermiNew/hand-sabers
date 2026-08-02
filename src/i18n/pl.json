@@ -854,12 +854,14 @@
   },
   "profile": {
     "welcomeTitle": "Witaj w Hand Sabers!",
-    "welcomeIntro": "Przed startem wybierz nazwe gracza i avatara. Beda uzywane w grze, multiplayer i na rankingach.",
+    "welcomeIntro": "Przed startem wybierz nazwę gracza i awatar. Będą używane w grze, trybie multiplayer i rankingach.",
     "playerName": "Nazwa gracza",
-    "chooseAvatar": "Wybierz avatara",
-    "confirm": "ZACZNIJ GRAC",
+    "chooseAvatar": "Wybierz awatar",
+    "confirm": "ZACZNIJ GRAĆ",
     "save": "Zapisz",
-    "saved": "Zapisano!"
+    "saved": "Zapisano!",
+    "yourIdentity": "Twoja tożsamość",
+    "settingsIntro": "Nazwa i awatar będą widoczne w grze, rankingach oraz trybie multiplayer."
   },
   "metronome": {
     "title": "KALIBRACJA METRONOMU",

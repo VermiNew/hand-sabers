@@ -861,7 +861,9 @@
     "chooseAvatar": "Choose your avatar",
     "confirm": "START PLAYING",
     "save": "Save",
-    "saved": "Saved!"
+    "saved": "Saved!",
+    "yourIdentity": "Your identity",
+    "settingsIntro": "Your name and avatar appear in the game, leaderboards, and multiplayer."
   },
   "metronome": {
     "title": "METRONOME CALIBRATION",
