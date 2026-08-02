@@ -247,10 +247,9 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-} */
+}
 
 /* Compact version for settings panel */
-/*
 .ach-compact-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -347,4 +346,3 @@
 .ach-settings-body .sp-danger-action:hover {
   background: rgba(255,60,60,0.2);
 }
-/*
