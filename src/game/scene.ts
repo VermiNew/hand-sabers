@@ -307,6 +307,10 @@ scene.add(bgMesh);
 interface SaberUserData {
   bladeGlow:   THREE.MeshBasicMaterial;
   outerGlow:   THREE.MeshBasicMaterial;
+  bladeCoreMesh:  THREE.Mesh;
+  bladeGlowMesh:  THREE.Mesh;
+  outerGlowMesh:  THREE.Mesh;
+  tipMesh:        THREE.Mesh;
   shineMat:    THREE.MeshBasicMaterial;
   shineMesh:   THREE.Mesh;
   shine2Mat:   THREE.MeshBasicMaterial;
@@ -424,6 +428,7 @@ function makeSaber(hex: number): THREE.Group {
   g.frustumCulled = false;
   g.userData = {
     bladeGlow: bgMat2, outerGlow: ogMat,
+    bladeCoreMesh: bladeCore, bladeGlowMesh: bladeGlow, outerGlowMesh: outerGlow, tipMesh: tip,
     shineMat: shMat,   shineMesh: shMesh,
     shine2Mat: sh2Mat, shine2Mesh: sh2Mesh,
     color: hex, wireMat, wireMesh, bladeLength: 1.1,
@@ -500,37 +505,48 @@ export function setSaberColor(side: 'left' | 'right', hex: string): void {
   publishSaberColorCss(side, color);
 }
 
-export type SaberModel = 'classic' | 'wide' | 'thin';
+export type SaberModel = 'classic' | 'wide' | 'thin' | 'prism' | 'edge' | 'pulse';
 
-const SABER_MODELS: Record<SaberModel, { coreR: number; glowR: number; outerR: number; length: number }> = {
-  classic: { coreR: 0.007, glowR: 0.022, outerR: 0.038, length: 1.1 },
-  wide:    { coreR: 0.013, glowR: 0.038, outerR: 0.060, length: 1.0 },
-  thin:    { coreR: 0.004, glowR: 0.013, outerR: 0.024, length: 1.2 },
+interface SaberModelSpec {
+  coreR: number;
+  glowR: number;
+  outerR: number;
+  length: number;
+  segments: number;
+  depth: number;
+}
+
+const SABER_MODELS: Record<SaberModel, SaberModelSpec> = {
+  classic: { coreR: 0.007, glowR: 0.022, outerR: 0.038, length: 1.10, segments: 6,  depth: 1.00 },
+  wide:    { coreR: 0.013, glowR: 0.038, outerR: 0.060, length: 1.00, segments: 8,  depth: 1.00 },
+  thin:    { coreR: 0.004, glowR: 0.013, outerR: 0.024, length: 1.20, segments: 6,  depth: 1.00 },
+  prism:   { coreR: 0.008, glowR: 0.025, outerR: 0.042, length: 1.14, segments: 4,  depth: 1.00 },
+  edge:    { coreR: 0.010, glowR: 0.026, outerR: 0.043, length: 1.08, segments: 4,  depth: 0.42 },
+  pulse:   { coreR: 0.009, glowR: 0.032, outerR: 0.054, length: 1.04, segments: 12, depth: 1.00 },
 };
 
 export function setSaberModel(side: 'left' | 'right', model: SaberModel): void {
   const saber = side === 'left' ? lSaber : rSaber;
   const spec  = SABER_MODELS[model] ?? SABER_MODELS.classic;
+  const ud = saber.userData as SaberUserData;
+  const bladeCenter = spec.length / 2 + 0.02;
 
-  saber.children.forEach(child => {
-    if (!(child instanceof THREE.Mesh)) return;
-    const geo = child.geometry as THREE.CylinderGeometry | undefined;
-    if (!geo?.parameters) return;
-    const p = geo.parameters;
-    const len = p.height ?? 0;
-    if (Math.abs(len - 1.1) < 0.15 || Math.abs(len - 1.0) < 0.01 || Math.abs(len - 1.2) < 0.01) {
-      const newGeo = new THREE.CylinderGeometry(
-        spec.coreR * (p.radiusTop / 0.007),
-        spec.coreR * (p.radiusBottom / 0.007),
-        spec.length,
-        p.radialSegments,
-      );
-      child.geometry.dispose();
-      child.geometry = newGeo;
-      child.position.y = spec.length / 2 + 0.02;
-    }
-  });
-  (saber.userData as SaberUserData).bladeLength = spec.length;
+  const replaceBladeGeometry = (mesh: THREE.Mesh, topRadius: number, bottomRadius: number): void => {
+    mesh.geometry.dispose();
+    mesh.geometry = new THREE.CylinderGeometry(topRadius, bottomRadius, spec.length, spec.segments);
+    mesh.position.y = bladeCenter;
+    mesh.scale.set(1, 1, spec.depth);
+  };
+
+  replaceBladeGeometry(ud.bladeCoreMesh, spec.coreR, spec.coreR * 1.35);
+  replaceBladeGeometry(ud.bladeGlowMesh, spec.glowR, spec.glowR * 1.18);
+  replaceBladeGeometry(ud.outerGlowMesh, spec.outerR, spec.outerR * 1.1);
+
+  ud.tipMesh.geometry.dispose();
+  ud.tipMesh.geometry = new THREE.ConeGeometry(spec.coreR * 1.85, 0.07, spec.segments);
+  ud.tipMesh.position.y = spec.length + 0.055;
+  ud.tipMesh.scale.set(1, 1, spec.depth);
+  ud.bladeLength = spec.length;
 }
 
 export function animateIdleSabers(t: number): void {

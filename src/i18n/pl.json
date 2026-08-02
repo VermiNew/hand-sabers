@@ -347,6 +347,9 @@
       "modelClassic": "Klasyczny",
       "modelWide": "Szeroki",
       "modelThin": "Cienki",
+      "modelPrism": "Prism",
+      "modelEdge": "Edge",
+      "modelPulse": "Pulse",
       "colorNames": {
         "green": "Zielony",
         "blue": "Niebieski",

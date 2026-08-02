@@ -226,6 +226,14 @@
   color:#00d4ff;
 }
 
+.sp-saber-model-row { grid-template-columns:110px minmax(0,1fr); }
+#saberModelPicker {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:6px;
+}
+#saberModelPicker .sp-seg { min-width:0; padding:7px 8px; }
+
 @media (max-width: 560px) {
   .sp-choice-row { gap:10px; }
   .sp-choice-row .sp-toggle-info {
