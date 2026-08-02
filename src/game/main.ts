@@ -1199,22 +1199,10 @@ function initAchievementUI(): void {
     showAchievementToast(id);
   });
 
-  const closeBtn = document.getElementById('achPanelClose');
-  closeBtn?.addEventListener('click', () => {
-    const panel = document.getElementById('achievementsPanel');
-    if (panel) panel.hidden = true;
-  });
-  const backdrop = document.querySelector('.ach-panel-backdrop');
-  backdrop?.addEventListener('click', () => {
-    const panel = document.getElementById('achievementsPanel');
-    if (panel) panel.hidden = true;
-  });
-
   const resetBtn = document.getElementById('achResetBtn');
   resetBtn?.addEventListener('click', () => {
     if (confirm(t('settings.resetConfirm'))) {
       resetAchievements();
-      renderAchievementGrid();
       renderAchievementCompactGrid();
     }
   });
@@ -1300,49 +1288,6 @@ function renderAchievementCompactGrid(): void {
   const progressFill = document.getElementById('achProgressFill');
   const unlockedCount = getUnlockedCount();
   const total = getTotalAchievements();
-  if (progressText) progressText.textContent = `${unlockedCount} / ${total}`;
-  if (progressFill) progressFill.style.width = `${total > 0 ? (unlockedCount / total) * 100 : 0}%`;
-}
-
-window.addEventListener('hand-sabers:show-achievements', () => {
-  const panel = document.getElementById('achievementsPanel');
-  if (panel) {
-    renderAchievementGrid();
-    panel.hidden = false;
-  }
-});
-
-function renderAchievementGrid(): void {
-  const grid = document.getElementById('achGrid');
-  if (!grid) return;
-  const defs = getAllAchievements();
-  const unlocked = getUnlockedSet();
-  grid.innerHTML = '';
-  for (const category of ['gameplay', 'multiplayer', 'creator', 'social'] as const) {
-    const header = document.createElement('h3');
-    header.className = 'ach-category-header';
-    header.textContent = t(`achievements.categories.${category}`);
-    grid.appendChild(header);
-    for (const a of defs.filter(def => def.category === category)) {
-      const card = document.createElement('div');
-      const isUnlocked = unlocked.has(a.id);
-      card.className = 'ach-card' + (isUnlocked ? '' : ' is-locked');
-      card.innerHTML = `
-        <div class="ach-card-icon ${isUnlocked ? 'is-unlocked' : 'is-locked'} ach-tier-${a.tier}">
-          <span class="material-symbols-rounded">${a.icon}</span>
-        </div>
-        <div class="ach-card-info">
-          <span class="ach-card-name ${isUnlocked ? '' : 'is-locked'}">${t(`achievements.names.${a.id}`)}</span>
-          <span class="ach-card-desc">${t(`achievements.descriptions.${a.id}`)}</span>
-        </div>
-      `;
-      grid.appendChild(card);
-    }
-  }
-  const unlockedCount = getUnlockedCount();
-  const total = getTotalAchievements();
-  const progressText = document.getElementById('achProgressText');
-  const progressFill = document.getElementById('achProgressFill');
   if (progressText) progressText.textContent = `${unlockedCount} / ${total}`;
   if (progressFill) progressFill.style.width = `${total > 0 ? (unlockedCount / total) * 100 : 0}%`;
 }
