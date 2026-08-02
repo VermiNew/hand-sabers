@@ -19,8 +19,3 @@ export const SABER_COLORS: readonly SaberColor[] = [
   { id: 'lime',   hex: '#7dff2e', labelKey: 'settings.gameplay.colorNames.lime' },
   { id: 'indigo', hex: '#6d3bff', labelKey: 'settings.gameplay.colorNames.indigo' },
 ];
-
-export function findClosestSaberColor(hex: unknown): SaberColor {
-  return SABER_COLORS.find(c => c.hex.toLowerCase() === String(hex).toLowerCase())
-    || SABER_COLORS[0]!;
-}

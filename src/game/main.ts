@@ -14,7 +14,7 @@ import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDe
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
-import { SABER_COLORS, findClosestSaberColor } from '../core/saber-colors.ts';
+import { SABER_COLORS } from '../core/saber-colors.ts';
 import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
@@ -2269,11 +2269,11 @@ function initMainMenu(): void {
 
   function buildColorGrid(gridEl: HTMLElement | null, previewBar: HTMLElement | null, previewName: HTMLElement | null, side: 'left' | 'right', currentHex: string): void {
     if (!gridEl) return;
-    const selectedColor = findClosestSaberColor(currentHex);
+    const selectedColor = SABER_COLORS.find(color => color.hex.toLowerCase() === currentHex.toLowerCase());
     gridEl.innerHTML    = '';
 
     for (const colorDef of SABER_COLORS) {
-      const selected = colorDef.hex.toLowerCase() === selectedColor.hex.toLowerCase();
+      const selected = colorDef === selectedColor;
       const btn      = document.createElement('button');
       btn.type       = 'button';
       btn.className  = 'saber-color-swatch' + (selected ? ' is-selected' : '');
@@ -2303,7 +2303,11 @@ function initMainMenu(): void {
       gridEl.appendChild(btn);
     }
 
-    updateColorPreview(previewBar, previewName, selectedColor);
+    updateColorPreview(
+      previewBar,
+      previewName,
+      selectedColor ?? { hex: currentHex, label: t('settings.gameplay.custom') },
+    );
   }
 
   const leftHex  = settings.saberColorLeft  || '#36f2a1';
