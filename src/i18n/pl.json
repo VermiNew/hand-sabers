@@ -576,7 +576,7 @@
     "createSession": "UTWÓRZ SESJĘ",
     "configure": "KONFIGURUJ",
     "openPhonePage": "Otwórz stronę telefonu",
-    "hostPrivacy": "Tokeny sesji nie są zapisywane. Możesz zamknąć to okno — połączenie pozostanie aktywne podczas gry.",
+    "hostPrivacy": "Sesja jest zapisana tylko w tej karcie. Możesz przechodzić między stronami bez rozłączania telefonu.",
     "settingsHint": "Parowanie telefonu jest eksperymentalne. Obraz kamery zostaje na telefonie; komputer dostaje tylko dane śledzenia.",
     "sourceLabel": "Źródło śledzenia",
     "sourceAuto": "Automatycznie",

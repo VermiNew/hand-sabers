@@ -4,6 +4,7 @@ import JSZip from 'jszip';
 import { assertFileSize, findPreferredAudioEntry, normalizeMap, validateZipEntryNames } from '../core/map-format.ts';
 import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
+import { initRemoteTrackingHost } from '../remote/host-session.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
 import { createMapPreviewController } from './preview.ts';
@@ -11,6 +12,7 @@ import { createMapPreviewController } from './preview.ts';
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
 initPageInterfaceSounds();
+initRemoteTrackingHost();
 
 export function applyTranslations(): void {
   translateDom();

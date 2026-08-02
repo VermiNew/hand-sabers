@@ -578,7 +578,7 @@
     "createSession": "CREATE SESSION",
     "configure": "CONFIGURE",
     "openPhonePage": "Open phone page",
-    "hostPrivacy": "Session tokens are not saved. You can close this window — the connection remains active during play.",
+    "hostPrivacy": "The session is saved only in this tab. You can move between pages without disconnecting the phone.",
     "settingsHint": "Phone pairing is experimental. Camera images stay on the phone; the computer receives tracking data only.",
     "sourceLabel": "Tracking source",
     "sourceAuto": "Automatic",

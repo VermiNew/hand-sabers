@@ -1,8 +1,10 @@
 import { t, translateDom } from './i18n/index.ts';
+import { initRemoteTrackingHost } from './remote/host-session.ts';
 import { initPageInterfaceSounds } from './ui/interface-sounds.ts';
 
 translateDom();
 initPageInterfaceSounds();
+initRemoteTrackingHost();
 document.title = t('cameraDiagnostics.pageTitle');
 
 const video = document.getElementById('cameraVideo') as HTMLVideoElement;

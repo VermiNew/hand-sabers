@@ -4,6 +4,7 @@ import { sortBeatsByTime } from '../core/creator-rules.ts';
 import { getLocalMapById, saveLocalMap } from '../core/localstore.ts';
 import { showAlert, showToast } from './dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
+import { initRemoteTrackingHost } from '../remote/host-session.ts';
 import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
 
 import { state, MAP_ID } from './state.ts';
@@ -68,6 +69,7 @@ function runCreatorTask(context: string, task: () => Promise<unknown>): void {
 }
 
 initPageInterfaceSounds();
+initRemoteTrackingHost();
 
 // ── i18n ──────────────────────────────────────────────────────────
 function applyCreatorTranslations(): void {
