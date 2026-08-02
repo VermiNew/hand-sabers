@@ -71,7 +71,9 @@ h1 {
 .preview-frame {
   position:relative; aspect-ratio:16/9; overflow:hidden; background:#02040a;
 }
-.preview-frame video { width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+.preview-frame video,.preview-frame canvas { width:100%; height:100%; object-fit:cover; }
+.preview-frame video { transform:scaleX(-1); }
+.preview-frame canvas { position:absolute; inset:0; }
 .preview-grid {
   position:absolute; inset:0; pointer-events:none;
   background:
@@ -88,6 +90,7 @@ h1 {
 .preview-empty .material-symbols-rounded { font-size:44px; color:rgba(142,200,255,.34); }
 
 .control-card { padding:20px; }
+.control-section + .control-section { margin-top:16px; }
 .control-section label,.metric-label {
   display:block; color:var(--dim); font-size:9px; font-weight:700; letter-spacing:1.8px;
 }
@@ -96,6 +99,7 @@ select {
   border:1px solid rgba(142,200,255,.22); border-radius:7px;
   background:#08111d; color:var(--text); font:500 12px 'JetBrains Mono',monospace;
 }
+.control-hint { display:block; margin-top:8px; color:var(--dim); font-size:9px; line-height:1.45; }
 .metric-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:18px; }
 .metric {
   min-height:112px; padding:14px;

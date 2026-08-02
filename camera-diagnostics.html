@@ -36,10 +36,11 @@
         </div>
         <div class="preview-frame">
           <video id="cameraVideo" autoplay playsinline muted></video>
+          <canvas id="remoteTrackingCanvas" width="960" height="540" hidden></canvas>
           <div class="preview-grid" aria-hidden="true"></div>
           <div class="preview-empty" id="previewEmpty">
-            <span class="material-symbols-rounded" aria-hidden="true">videocam_off</span>
-            <span data-i18n="cameraDiagnostics.startHint">Start the test to see the camera image.</span>
+            <span class="material-symbols-rounded" id="previewEmptyIcon" aria-hidden="true">videocam_off</span>
+            <span id="previewEmptyText" data-i18n="cameraDiagnostics.startHint">Start the test to see the camera image.</span>
           </div>
         </div>
         <canvas id="sampleCanvas" width="64" height="36" hidden></canvas>
@@ -47,6 +48,16 @@
 
       <aside class="control-card">
         <div class="control-section">
+          <label for="trackingSource" data-i18n="cameraDiagnostics.source">TRACKING SOURCE</label>
+          <select id="trackingSource">
+            <option value="auto" data-i18n="cameraDiagnostics.sourceAuto">AUTO</option>
+            <option value="camera" data-i18n="cameraDiagnostics.sourcePc">PC</option>
+            <option id="trackingSourcePhone" value="phone" data-i18n="cameraDiagnostics.sourcePhone" disabled>PHONE</option>
+          </select>
+          <small class="control-hint" id="trackingSourceHint" data-i18n="cameraDiagnostics.sourceAutoPc">Auto currently uses the PC camera.</small>
+        </div>
+
+        <div class="control-section" id="cameraDeviceSection">
           <label for="cameraSelect" data-i18n="cameraDiagnostics.device">DEVICE</label>
           <select id="cameraSelect">
             <option value="" data-i18n="cameraDiagnostics.defaultCamera">DEFAULT CAMERA</option>
@@ -83,7 +94,7 @@
         <div class="control-actions">
           <button class="primary-action" id="startCamera" type="button">
             <span class="material-symbols-rounded" aria-hidden="true">videocam</span>
-            <span data-i18n="cameraDiagnostics.start">START CAMERA TEST</span>
+            <span id="startCameraText" data-i18n="cameraDiagnostics.start">START CAMERA TEST</span>
           </button>
           <button class="secondary-action" id="stopCamera" type="button" disabled data-i18n="cameraDiagnostics.stop">STOP TEST</button>
         </div>
