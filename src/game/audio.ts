@@ -159,6 +159,7 @@ export type InterfaceSoundKind = 'hover' | 'activate' | 'back';
 let lastInterfaceSoundAt = -Infinity;
 let lastTypingSoundAt = -Infinity;
 let interfaceSoundsBound = false;
+const INTERFACE_VOLUME_BOOST = 2;
 
 function playSoftTone(
   frequency: number,
@@ -173,11 +174,13 @@ function playSoftTone(
   const start = ctx.currentTime + delay;
   const oscillator = ctx.createOscillator();
   const gain = ctx.createGain();
+  const interfaceVolume = clamp01(getSettings().interfaceSoundVolume, 0.8);
+  const outputVolume = volume * interfaceVolume * INTERFACE_VOLUME_BOOST;
   oscillator.type = type;
   oscillator.frequency.setValueAtTime(frequency, start);
   oscillator.frequency.exponentialRampToValueAtTime(Math.max(20, endFrequency), start + duration);
   gain.gain.setValueAtTime(0.0001, start);
-  gain.gain.linearRampToValueAtTime(Math.max(0.0001, volume), start + 0.008);
+  gain.gain.linearRampToValueAtTime(Math.max(0.0001, outputVolume), start + 0.008);
   gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
   oscillator.connect(gain);
   connectSfx(gain);
@@ -191,15 +194,13 @@ export function playInterfaceSound(kind: InterfaceSoundKind = 'activate'): void 
   const minInterval = kind === 'hover' ? 65 : 24;
   if (now - lastInterfaceSoundAt < minInterval) return;
   lastInterfaceSoundAt = now;
-  const settings = getSettings();
-  const vol = clamp01(settings.interfaceSoundVolume, 0.8);
   if (kind === 'hover') {
-    playSoftTone(360, 0.055, 0.03 * vol, 'sine', 420);
+    playSoftTone(360, 0.055, 0.03, 'sine', 420);
   } else if (kind === 'back') {
-    playSoftTone(340, 0.1, 0.065 * vol, 'sine', 240);
+    playSoftTone(340, 0.1, 0.065, 'sine', 240);
   } else {
-    playSoftTone(440, 0.11, 0.07 * vol, 'sine', 520);
-    playSoftTone(660, 0.1, 0.032 * vol, 'sine', 780, 0.025);
+    playSoftTone(440, 0.11, 0.07, 'sine', 520);
+    playSoftTone(660, 0.1, 0.032, 'sine', 780, 0.025);
   }
 }
 

@@ -7,7 +7,6 @@ import {
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel, setArenaTheme,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
-import { setInterfaceSoundVolume } from '../ui/interface-sounds.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
@@ -2012,7 +2011,6 @@ function initMainMenu(): void {
       const value = Number(interfaceSoundInput.value);
       settings.interfaceSoundVolume = value;
       setSetting('interfaceSoundVolume', value);
-      setInterfaceSoundVolume(value);
     });
   }
 

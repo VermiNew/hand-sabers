@@ -1,6 +1,7 @@
 let context: AudioContext | null = null;
 let lastSoundAt = -Infinity;
 let bound = false;
+const INTERFACE_VOLUME_BOOST = 2;
 
 function getInterfaceVolume(): number {
   try {
@@ -11,15 +12,6 @@ function getInterfaceVolume(): number {
     }
   } catch { /* ignore */ }
   return 0.8;
-}
-
-export function setInterfaceSoundVolume(vol: number): void {
-  try {
-    const raw = localStorage.getItem('hs_settings');
-    const parsed = raw ? JSON.parse(raw) as Record<string, unknown> : {};
-    parsed['interfaceSoundVolume'] = vol;
-    localStorage.setItem('hs_settings', JSON.stringify(parsed));
-  } catch { /* ignore */ }
 }
 
 function ensureContext(): AudioContext | null {
@@ -42,7 +34,7 @@ function tone(
 ): void {
   const audio = ensureContext();
   if (!audio) return;
-  const vol = getInterfaceVolume() * volume;
+  const vol = getInterfaceVolume() * volume * INTERFACE_VOLUME_BOOST;
   const start = audio.currentTime + delay;
   const oscillator = audio.createOscillator();
   const gain = audio.createGain();
