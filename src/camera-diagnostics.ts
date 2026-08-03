@@ -1,5 +1,8 @@
 import { t, translateDom } from './i18n/index.ts';
-import { initRemoteTrackingHost } from './remote/host-session.ts';
+import { loadSettings, setSetting } from './core/settings.ts';
+import { initRemoteTrackingHost, isRemoteTrackingConnected } from './remote/host-session.ts';
+import { decodeRemoteLandmarks } from './tracking/realtime.ts';
+import type { TrackingSourcePreference } from './types/index.ts';
 import { initPageInterfaceSounds } from './ui/interface-sounds.ts';
 
 translateDom();
@@ -9,12 +12,22 @@ document.title = t('cameraDiagnostics.pageTitle');
 
 const video = document.getElementById('cameraVideo') as HTMLVideoElement;
 const previewFrame = video.closest('.preview-frame') as HTMLElement;
+const previewTitle = document.getElementById('previewTitle') as HTMLElement;
+const remoteTrackingCanvas = document.getElementById('remoteTrackingCanvas') as HTMLCanvasElement;
+const remoteTrackingContext = remoteTrackingCanvas.getContext('2d');
 const sampleCanvas = document.getElementById('sampleCanvas') as HTMLCanvasElement;
 const sampleContext = sampleCanvas.getContext('2d', { willReadFrequently: true });
+const trackingSource = document.getElementById('trackingSource') as HTMLSelectElement;
+const trackingSourcePhone = document.getElementById('trackingSourcePhone') as HTMLOptionElement;
+const trackingSourceHint = document.getElementById('trackingSourceHint') as HTMLElement;
+const cameraDeviceSection = document.getElementById('cameraDeviceSection') as HTMLElement;
 const cameraSelect = document.getElementById('cameraSelect') as HTMLSelectElement;
 const startButton = document.getElementById('startCamera') as HTMLButtonElement;
+const startButtonText = document.getElementById('startCameraText') as HTMLElement;
 const stopButton = document.getElementById('stopCamera') as HTMLButtonElement;
 const previewEmpty = document.getElementById('previewEmpty') as HTMLElement;
+const previewEmptyIcon = document.getElementById('previewEmptyIcon') as HTMLElement;
+const previewEmptyText = document.getElementById('previewEmptyText') as HTMLElement;
 const cameraStatus = document.getElementById('cameraStatus') as HTMLElement;
 const cameraStatusText = document.getElementById('cameraStatusText') as HTMLElement;
 const previewResolution = document.getElementById('previewResolution') as HTMLElement;
@@ -26,12 +39,25 @@ const lightMetric = document.getElementById('lightMetric') as HTMLElement;
 const lightHint = document.getElementById('lightHint') as HTMLElement;
 const permissionMetric = document.getElementById('permissionMetric') as HTMLElement;
 const diagnosticMessage = document.getElementById('diagnosticMessage') as HTMLElement;
+const settings = loadSettings();
 
 let stream: MediaStream | null = null;
 let frameRequest = 0;
 let lastFrameCountAt = 0;
 let frameCount = 0;
 let lastLightSampleAt = 0;
+let testRequested = false;
+let activeSource: 'camera' | 'phone' | null = null;
+let remoteFrameCount = 0;
+let remoteFrameCountAt = 0;
+
+const HAND_CONNECTIONS = [
+  [0, 1], [1, 2], [2, 3], [3, 4],
+  [0, 5], [5, 6], [6, 7], [7, 8],
+  [5, 9], [9, 10], [10, 11], [11, 12],
+  [9, 13], [13, 14], [14, 15], [15, 16],
+  [13, 17], [17, 18], [18, 19], [19, 20], [0, 17],
+] as const;
 
 function setStatus(state: 'idle' | 'loading' | 'ready' | 'error', key: string): void {
   cameraStatus.dataset['state'] = state;
@@ -154,20 +180,110 @@ function resetMetrics(): void {
   [resolutionMetric, fpsMetric, lightMetric].forEach(metric => setMetricState(metric, null));
 }
 
-function stopCamera(): void {
+function usesPhone(source = trackingSource.value as TrackingSourcePreference): boolean {
+  return isRemoteTrackingConnected() && (source === 'phone' || source === 'auto');
+}
+
+function stopActiveMedia(): void {
   if (frameRequest) video.cancelVideoFrameCallback(frameRequest);
   frameRequest = 0;
   stream?.getTracks().forEach(track => track.stop());
   stream = null;
   video.srcObject = null;
+  remoteTrackingContext?.clearRect(0, 0, remoteTrackingCanvas.width, remoteTrackingCanvas.height);
+  remoteTrackingCanvas.hidden = true;
+  activeSource = null;
+}
+
+function stopTest(): void {
+  testRequested = false;
+  stopActiveMedia();
   previewFrame.classList.remove('is-active');
   previewEmpty.hidden = false;
+  previewEmptyIcon.textContent = 'videocam_off';
+  previewEmptyText.textContent = t('cameraDiagnostics.startHint');
+  previewTitle.textContent = t('cameraDiagnostics.rawImage');
   startButton.disabled = false;
   stopButton.disabled = true;
   cameraSelect.disabled = false;
   setStatus('idle', 'cameraDiagnostics.stopped');
   diagnosticMessage.textContent = t('cameraDiagnostics.privacy');
   resetMetrics();
+}
+
+function drawRemoteHands(packet: ArrayBuffer): void {
+  if (activeSource !== 'phone' || !testRequested || !remoteTrackingContext) return;
+  const result = decodeRemoteLandmarks(packet);
+  if (!result) return;
+
+  const context = remoteTrackingContext;
+  const { width, height } = remoteTrackingCanvas;
+  context.clearRect(0, 0, width, height);
+  context.fillStyle = '#020712';
+  context.fillRect(0, 0, width, height);
+  context.lineWidth = 4;
+  context.lineCap = 'round';
+
+  for (const [handIndex, landmarks] of (result.landmarks ?? []).entries()) {
+    const color = handIndex === 0 ? '#36f2a1' : '#2f7cff';
+    context.strokeStyle = color;
+    context.fillStyle = color;
+    for (const [from, to] of HAND_CONNECTIONS) {
+      const start = landmarks[from];
+      const end = landmarks[to];
+      if (!start || !end) continue;
+      context.beginPath();
+      context.moveTo(start.x * width, start.y * height);
+      context.lineTo(end.x * width, end.y * height);
+      context.stroke();
+    }
+    for (const landmark of landmarks) {
+      context.beginPath();
+      context.arc(landmark.x * width, landmark.y * height, 6, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+
+  const handCount = result.landmarks?.length ?? 0;
+  previewResolution.textContent = t('cameraDiagnostics.phoneHands', { count: handCount });
+  resolutionMetric.textContent = t('cameraDiagnostics.phonePoints', { count: handCount * 21 });
+  remoteFrameCount++;
+  const now = performance.now();
+  if (now - remoteFrameCountAt >= 1000) {
+    const fps = Math.round(remoteFrameCount * 1000 / Math.max(1, now - remoteFrameCountAt));
+    fpsMetric.textContent = t('cameraDiagnostics.fpsValue', { value: fps });
+    fpsHint.textContent = t(fps >= 24 ? 'cameraDiagnostics.fpsGood' : 'cameraDiagnostics.phoneFpsBad');
+    setMetricState(fpsMetric, fps >= 24 ? 'good' : fps >= 18 ? 'warn' : 'bad');
+    remoteFrameCount = 0;
+    remoteFrameCountAt = now;
+  }
+}
+
+function startPhoneTest(): void {
+  stopActiveMedia();
+  activeSource = 'phone';
+  remoteFrameCount = 0;
+  remoteFrameCountAt = performance.now();
+  remoteTrackingCanvas.hidden = false;
+  previewFrame.classList.add('is-active');
+  previewEmpty.hidden = true;
+  previewTitle.textContent = t('cameraDiagnostics.phonePreview');
+  previewResolution.textContent = t('cameraDiagnostics.phoneWaiting');
+  resolutionMetric.textContent = '—';
+  resolutionHint.textContent = t('cameraDiagnostics.phoneProcessed');
+  fpsMetric.textContent = '—';
+  fpsHint.textContent = t('cameraDiagnostics.phoneFpsWaiting');
+  lightMetric.textContent = t('cameraDiagnostics.notApplicable');
+  lightHint.textContent = t('cameraDiagnostics.phoneProcessed');
+  permissionMetric.textContent = t('cameraDiagnostics.phonePermission');
+  [resolutionMetric, fpsMetric].forEach(metric => setMetricState(metric, null));
+  setMetricState(lightMetric, null);
+  setMetricState(permissionMetric, 'good');
+  startButton.disabled = true;
+  stopButton.disabled = false;
+  cameraSelect.disabled = true;
+  setStatus('ready', 'cameraDiagnostics.phoneActive');
+  diagnosticMessage.textContent = t('cameraDiagnostics.phoneMovingHint');
 }
 
 async function startCamera(): Promise<void> {
@@ -177,7 +293,11 @@ async function startCamera(): Promise<void> {
     return;
   }
 
-  stopCamera();
+  stopActiveMedia();
+  activeSource = 'camera';
+  previewTitle.textContent = t('cameraDiagnostics.rawImage');
+  resetMetrics();
+  void updatePermission();
   startButton.disabled = true;
   cameraSelect.disabled = true;
   setStatus('loading', 'cameraDiagnostics.requesting');
@@ -222,6 +342,8 @@ async function startCamera(): Promise<void> {
   } catch (error) {
     stream?.getTracks().forEach(track => track.stop());
     stream = null;
+    activeSource = null;
+    testRequested = false;
     startButton.disabled = false;
     cameraSelect.disabled = false;
     setStatus('error', 'cameraDiagnostics.denied');
@@ -230,13 +352,65 @@ async function startCamera(): Promise<void> {
   }
 }
 
-startButton.addEventListener('click', () => void startCamera());
-stopButton.addEventListener('click', stopCamera);
+function updateSourceUi(): void {
+  const connected = isRemoteTrackingConnected();
+  trackingSourcePhone.disabled = !connected;
+  if (!connected && trackingSource.value === 'phone') {
+    trackingSource.value = 'auto';
+    setSetting('trackingSource', 'auto');
+  }
+
+  const source = trackingSource.value as TrackingSourcePreference;
+  const phoneActive = usesPhone(source);
+  const hintKey = source === 'camera'
+    ? 'cameraDiagnostics.sourcePcHint'
+    : source === 'phone'
+      ? 'cameraDiagnostics.sourcePhoneReady'
+      : connected ? 'cameraDiagnostics.sourceAutoPhone' : 'cameraDiagnostics.sourceAutoPc';
+  trackingSourceHint.textContent = t(hintKey);
+  cameraDeviceSection.hidden = phoneActive;
+  startButtonText.textContent = t(phoneActive ? 'cameraDiagnostics.startPhone' : 'cameraDiagnostics.start');
+}
+
+function startSelectedTest(): void {
+  if (usesPhone()) startPhoneTest();
+  else void startCamera();
+}
+
+function handleRemoteState(): void {
+  const wasPhoneActive = activeSource === 'phone';
+  updateSourceUi();
+  if (!testRequested) return;
+  const shouldUsePhone = usesPhone();
+  if (shouldUsePhone && !wasPhoneActive) startPhoneTest();
+  else if (!shouldUsePhone && wasPhoneActive) void startCamera();
+}
+
+startButton.addEventListener('click', () => {
+  testRequested = true;
+  startSelectedTest();
+});
+stopButton.addEventListener('click', stopTest);
+trackingSource.addEventListener('change', () => {
+  const source = trackingSource.value as TrackingSourcePreference;
+  if (source === 'phone' && !isRemoteTrackingConnected()) {
+    trackingSource.value = 'auto';
+  }
+  setSetting('trackingSource', trackingSource.value as TrackingSourcePreference);
+  updateSourceUi();
+  if (testRequested) startSelectedTest();
+});
 cameraSelect.addEventListener('change', () => {
-  if (stream) void startCamera();
+  if (activeSource === 'camera' && stream) void startCamera();
 });
 navigator.mediaDevices?.addEventListener('devicechange', () => void populateCameraList(cameraSelect.value));
-window.addEventListener('pagehide', stopCamera);
+window.addEventListener('hand-sabers:remote-tracking-state', handleRemoteState);
+window.addEventListener('hand-sabers:remote-tracking-packet', event => {
+  drawRemoteHands((event as CustomEvent<ArrayBuffer>).detail);
+});
+window.addEventListener('pagehide', stopActiveMedia);
 
+trackingSource.value = settings.trackingSource;
+updateSourceUi();
 void updatePermission();
 void populateCameraList();
