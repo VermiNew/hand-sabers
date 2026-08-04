@@ -107,14 +107,15 @@
 
 /* ── Slider rows ── */
 .sp-row {
-  display:grid; grid-template-columns:110px 1fr 54px;
+  display:grid; grid-template-columns:minmax(0,140px) minmax(90px,1fr) minmax(54px,max-content);
   align-items:center; gap:12px; padding:10px 16px;
   border-bottom:1px solid rgba(255,255,255,0.04);
 }
 .sp-row:last-child { border-bottom:none; }
 .sp-label {
   font-family:'JetBrains Mono',monospace; font-size:11px;
-  color:rgba(226,232,240,0.65); letter-spacing:0.5px; white-space:nowrap;
+  min-width:0; color:rgba(226,232,240,0.65); letter-spacing:0.5px;
+  line-height:1.4; white-space:normal; overflow-wrap:break-word;
 }
 .sp-value {
   font-family:'JetBrains Mono',monospace; font-size:11px;

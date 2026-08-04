@@ -240,7 +240,7 @@
       "metronomeStop": "Zatrzymaj metronom",
       "phoneOutput": "Audio na telefonie",
       "phoneOutputDesc": "Muzyka gra na telefonie zamiast na komputerze",
-      "phoneLatency": "Opoznienie telefonu (ms)"
+      "phoneLatency": "Opóźnienie telefonu (ms)"
     },
     "performance": {
       "title": "Wydajność",
