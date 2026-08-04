@@ -66,6 +66,7 @@ declare global {
 
 interface TweakpaneInstance {
   element: HTMLElement;
+  hidden: boolean;
   addTab(opts: { pages: Array<{ title: string }> }): { pages: TweakpaneFolder[] };
   refresh(): void;
   dispose(): void;
@@ -89,6 +90,25 @@ interface StatsInstance {
 let pane:         TweakpaneInstance | null = null;
 let statsJS:      StatsInstance | null = null;
 let isDev         = false;
+
+// localStorage keys
+const DEV_PANEL_EXPANDED_KEY = 'hs_devpanel_expanded';
+
+function loadDevPanelExpanded(): boolean {
+  try {
+    const raw = localStorage.getItem(DEV_PANEL_EXPANDED_KEY);
+    if (raw === null) return true; // first run → expanded
+    return raw === 'true';
+  } catch {
+    return true;
+  }
+}
+
+function saveDevPanelExpanded(expanded: boolean): void {
+  try {
+    localStorage.setItem(DEV_PANEL_EXPANDED_KEY, String(expanded));
+  } catch {}
+}
 let initStarted   = false;
 let lastRenderer: THREE.WebGLRenderer | null = null;
 
@@ -245,7 +265,22 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
 
   void loadTweakpane().then(Pane => {
     if (!Pane || !isDev) return;
-    pane = new Pane({ title: 'HAND SABERS DEV', expanded: true });
+    const initialExpanded = loadDevPanelExpanded();
+    pane = new Pane({ title: 'HAND SABERS DEV', expanded: initialExpanded });
+
+    // Persist expanded/collapsed state
+    pane.element.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      // Tweakpane fold button has class 'tp-btnv_b' or similar
+      if (target.closest('.tp-btnv_b')) {
+        // The fold state changes after the click, so use a microtask
+        queueMicrotask(() => {
+          if (pane) {
+            saveDevPanelExpanded(!pane.hidden);
+          }
+        });
+      }
+    });
 
     const tabs = pane.addTab({ pages: [
       { title: 'PERF' },
