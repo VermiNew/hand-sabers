@@ -5,6 +5,7 @@
     "bestCombo": "Najlepsze combo",
     "resetCalibration": "Resetowanie kalibracji...",
     "playAgain": "ZAGRAJ PONOWNIE",
+    "chooseMap": "WYBIERZ MAPĘ",
     "calibration": "KALIBRACJA",
     "mainMenu": "MENU GŁÓWNE"
   },
@@ -833,6 +834,13 @@
     "tooManyBeats": "Mapa zawiera zbyt wiele beatów ({{count}}). Limit: {{limit}}.",
     "beatTooLate": "Beat {{index}} przekracza dozwoloną długość mapy wynoszącą 24 godziny.",
     "mapNeedsBeats": "Mapa musi zawierać tablicę beats."
+  },
+  "difficulty": {
+    "easy": "Łatwy",
+    "medium": "Średni",
+    "hard": "Trudny",
+    "expert": "Expert",
+    "all": "Wszystkie"
   },
   "mapPicker": {
     "searchPlaceholder": "Szukaj map...",

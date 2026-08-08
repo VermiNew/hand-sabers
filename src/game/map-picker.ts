@@ -259,9 +259,17 @@ async function loadMaps(): Promise<void> {
   const list = element<HTMLElement>('mpMapList');
   if (list) renderMapList(list);
   try {
-    // Load local maps
+    // Load local maps. Maps without beats (e.g. saved by the creator before any beat was placed)
+    // are silently skipped here instead of crashing the whole picker — see localstore save path
+    // which allows empty beat arrays.
     const localMaps = readLocalMaps() as unknown as MapEntry[];
-    const normalized = localMaps.map(m => normalizeMap(m) as unknown as MapEntry);
+    const normalized = localMaps.flatMap(m => {
+      try {
+        return [normalizeMap(m, { requireBeats: false }) as unknown as MapEntry];
+      } catch {
+        return [];
+      }
+    });
     // Load server maps
     let serverMaps: MapEntry[] = [];
     try {

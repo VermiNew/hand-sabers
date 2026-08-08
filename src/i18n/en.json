@@ -5,6 +5,7 @@
     "bestCombo": "Best combo",
     "resetCalibration": "Resetting calibration...",
     "playAgain": "PLAY AGAIN",
+    "chooseMap": "CHOOSE MAP",
     "calibration": "CALIBRATION",
     "mainMenu": "MAIN MENU"
   },
@@ -835,6 +836,13 @@
     "tooManyBeats": "The map contains too many beats ({{count}}). Limit: {{limit}}.",
     "beatTooLate": "Beat {{index}} exceeds the allowed map length of 24 hours.",
     "mapNeedsBeats": "The map must contain a beats array."
+  },
+  "difficulty": {
+    "easy": "Easy",
+    "medium": "Medium",
+    "hard": "Hard",
+    "expert": "Expert",
+    "all": "All"
   },
   "mapPicker": {
     "searchPlaceholder": "Search maps...",
