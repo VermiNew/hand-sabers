@@ -93,6 +93,7 @@ let isDev         = false;
 
 // localStorage keys
 const DEV_PANEL_EXPANDED_KEY = 'hs_devpanel_expanded';
+const CAM_PANEL_MINIMIZED_KEY = 'hs_campanel_minimized';
 
 function loadDevPanelExpanded(): boolean {
   try {
@@ -108,6 +109,45 @@ function saveDevPanelExpanded(expanded: boolean): void {
   try {
     localStorage.setItem(DEV_PANEL_EXPANDED_KEY, String(expanded));
   } catch {}
+}
+
+function loadCamPanelMinimized(): boolean {
+  try {
+    const raw = localStorage.getItem(CAM_PANEL_MINIMIZED_KEY);
+    if (raw === null) return false; // first run → visible
+    return raw === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function saveCamPanelMinimized(minimized: boolean): void {
+  try {
+    localStorage.setItem(CAM_PANEL_MINIMIZED_KEY, String(minimized));
+  } catch {}
+}
+
+export function initCameraPanelToggle(): void {
+  const camPanel = document.getElementById('camPanel');
+  const toggleBtn = camPanel?.querySelector<HTMLButtonElement>('.cam-panel-toggle');
+  if (!camPanel || !toggleBtn) return;
+
+  const minimized = loadCamPanelMinimized();
+  camPanel.classList.toggle('minimized', minimized);
+  toggleBtn.setAttribute('aria-expanded', minimized ? 'false' : 'true');
+  toggleBtn.setAttribute('aria-label', minimized ? 'Rozwiń podgląd' : 'Minimalizuj podgląd');
+  toggleBtn.setAttribute('title', minimized ? 'Rozwiń' : 'Minimalizuj');
+
+  toggleBtn.addEventListener('click', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const next = !camPanel.classList.contains('minimized');
+    camPanel.classList.toggle('minimized', next);
+    toggleBtn.setAttribute('aria-expanded', next ? 'false' : 'true');
+    toggleBtn.setAttribute('aria-label', next ? 'Rozwiń podgląd' : 'Minimalizuj podgląd');
+    toggleBtn.setAttribute('title', next ? 'Rozwiń' : 'Minimalizuj');
+    saveCamPanelMinimized(next);
+  });
 }
 let initStarted   = false;
 let lastRenderer: THREE.WebGLRenderer | null = null;
@@ -268,19 +308,21 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     const initialExpanded = loadDevPanelExpanded();
     pane = new Pane({ title: 'HAND SABERS DEV', expanded: initialExpanded });
 
-    // Persist expanded/collapsed state
+    // Persist expanded/collapsed state. Tweakpane v4 exposes the fold toggle as the root view
+    // button (.tp-rotv_b); clicking it flips pane.hidden. Watch both the button click and root
+    // view class changes so we capture folds triggered by any input method.
     pane.element.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      // Tweakpane fold button has class 'tp-btnv_b' or similar
-      if (target.closest('.tp-btnv_b')) {
-        // The fold state changes after the click, so use a microtask
+      if (target.closest('.tp-rotv_b') || target.closest('.tp-btnv_b')) {
+        // The fold state changes after the click, so use a microtask.
         queueMicrotask(() => {
-          if (pane) {
-            saveDevPanelExpanded(!pane.hidden);
-          }
+          if (pane) saveDevPanelExpanded(!pane.hidden);
         });
       }
     });
+    // Belt-and-suspenders: observe root view class mutations (covers keyboard toggle etc.).
+    const foldObserver = new MutationObserver(() => saveDevPanelExpanded(!pane?.hidden));
+    foldObserver.observe(pane.element, { attributes: true, attributeFilter: ['class'] });
 
     const tabs = pane.addTab({ pages: [
       { title: 'PERF' },
