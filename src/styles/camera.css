@@ -50,6 +50,11 @@ body.dev-tools #camPanel {
   padding: 8px;
 }
 
+#camPanel.minimized .cam-feeds { display: none; }
+#camPanel.minimized .cam-panel-toggle { transform: rotate(180deg); }
+#camPanel.minimized { width: auto; min-width: 148px; }
+#camPanel.minimized .cam-panel-head { border-bottom-color: transparent; }
+
 /* ── Camera / canvas box ─────────────────────────────────────────────────── */
 .cam-box {
   position: relative;

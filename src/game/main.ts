@@ -4,13 +4,13 @@ import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
-  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel, setArenaTheme,
+  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel, setArenaTheme, applyBackgroundTheme,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
-import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent } from '../ui/devpanel.ts';
+import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
@@ -36,7 +36,7 @@ import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, showProfileOnboardingIfNeeded } from './profile.ts';
 import { playTestSound, startMetronomeCalibration, stopMetronome, isMetronomeActive } from './audio-calibration.ts';
 import { MapTimeline } from './map-timeline.ts';
-import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
+import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
@@ -87,6 +87,7 @@ applyAudioSettings(settings);
 const themeId = settings.arenaTheme || 'cosmic';
 const theme = getArenaTheme(themeId);
 setArenaTheme(theme.sceneBg, theme.fog, theme.ambient, theme.floor);
+applyBackgroundTheme(theme.shader);
 setScenePerformanceProfile(settings);
 setHitPlaneVisible(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
 prewarmGameplayResources();
@@ -1009,6 +1010,26 @@ function renderFrame(timestamp: number): void {
       0.12,
     );
   }
+  // Music bands feed layered shader effects.
+  if (bgMat.uniforms['uBass']) bgMat.uniforms['uBass'].value = getCurrentBassLevel();
+  if (bgMat.uniforms['uMid'])  bgMat.uniforms['uMid'].value  = getCurrentMidLevel();
+  if (bgMat.uniforms['uHigh']) bgMat.uniforms['uHigh'].value = getCurrentHighLevel();
+  // Beat flash — sharp decay from the current beat pulse.
+  if (bgMat.uniforms['uBeatFlash']) {
+    const flashTarget = Math.min(1, beatPulse);
+    bgMat.uniforms['uBeatFlash'].value = THREE.MathUtils.lerp(
+      Number(bgMat.uniforms['uBeatFlash'].value) || 0,
+      flashTarget,
+      0.35,
+    ) * Math.exp(-6.0 * Math.max(0, state.deltaSec));
+  }
+  // Subtle parallax from camera position (head bob) — keep small for readability.
+  if (bgMat.uniforms['uCamOffset'] && bgMat.uniforms['uCamOffset'].value instanceof THREE.Vector2) {
+    (bgMat.uniforms['uCamOffset'].value as THREE.Vector2).set(
+      THREE.MathUtils.clamp((cam3d.position.x) * 0.05, -0.5, 0.5),
+      THREE.MathUtils.clamp((cam3d.position.y - 1.55) * 0.08, -0.5, 0.5),
+    );
+  }
   if (profiling) frameProfile.gameMs = smoothProfileValue(frameProfile.gameMs, performance.now() - gamePhaseStart);
 
   const effectsPhaseStart = profiling ? performance.now() : 0;
@@ -1376,6 +1397,7 @@ setCalibAutoAdvanceHandler(() => {
   if (state.appState === S.CALIB) runAsyncTask('calibration-auto-advance', advanceCalib);
 });
 initDevPanel(renderer, null);
+initCameraPanelToggle();
 initMapDrop();
 updateHUD(state);
 
@@ -2199,6 +2221,7 @@ function initMainMenu(): void {
       setSetting('arenaTheme', value);
       const theme = getArenaTheme(value);
       setArenaTheme(theme.sceneBg, theme.fog, theme.ambient, theme.floor);
+      applyBackgroundTheme(theme.shader);
     });
   }
 
