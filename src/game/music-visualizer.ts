@@ -127,6 +127,18 @@ export function getCurrentBeatPulse(): number {
   return currentBeatPulse;
 }
 
+export function getCurrentBassLevel(): number {
+  return getMusicFrequencyLevels().bass;
+}
+
+export function getCurrentMidLevel(): number {
+  return getMusicFrequencyLevels().mid;
+}
+
+export function getCurrentHighLevel(): number {
+  return getMusicFrequencyLevels().treble;
+}
+
 function findNextBeatIndex(songTimeSec: number): number {
   let low = 0;
   let high = beatTimes.length;
