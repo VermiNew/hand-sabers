@@ -37,6 +37,8 @@ const MAPS_DIR = path.resolve(process.env.HAND_SABERS_MAPS_DIR || process.env.MA
 const MAP_BEATDATA_DIR = path.join(MAPS_DIR, 'beatdata');
 const MAP_AUDIO_DIR = path.join(MAPS_DIR, 'audio');
 const LEGACY_MAP_AUDIO_DIR = path.join(MAPS_DIR, '_audio');
+const MAX_MAP_JSON_BYTES = 25 * 1024 * 1024;
+const MAX_SCORE_JSON_BYTES = 4 * 1024;
 
 for (const dir of [MAPS_DIR, MAP_BEATDATA_DIR, MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_DIR]) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
@@ -72,8 +74,6 @@ const rooms = new RoomRegistry();
 const trackingSessions = new TrackingSessionRegistry();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
   limiter.check(ip, key, maxPerMinute);
-
-app.use(express.json({ limit: '100mb' }));
 
 app.use((req, res, next) => {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
@@ -115,13 +115,19 @@ registerMapWriteRoutes({
   audioStorage,
   uploadAudio: upload.single('audio'),
   uploadFile: upload.single('file'),
+  parseJson: express.json({ limit: MAX_MAP_JSON_BYTES }),
   rateLimit,
 });
 
 // ── Leaderboard ───────────────────────────────────────────────────────────────
 const SCORES_FILE = path.join(MAPS_DIR, '_scores.json');
 const scoreStorage = createScoreStorage(SCORES_FILE);
-registerScoreRoutes({ app, storage: scoreStorage, rateLimit });
+registerScoreRoutes({
+  app,
+  storage: scoreStorage,
+  parseJson: express.json({ limit: MAX_SCORE_JSON_BYTES }),
+  rateLimit,
+});
 registerRoomRoutes({ app, rooms, rateLimit });
 registerTrackingSessionRoutes({ app, sessions: trackingSessions, rateLimit });
 
@@ -129,6 +135,9 @@ const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   if (err?.code === 'LIMIT_FILE_SIZE') {
     const limitMb = Math.round(MAX_IMPORT_BYTES / 1024 / 1024);
     return res.status(413).json({ error: `Plik jest za duży. Limit: ${limitMb} MB.` });
+  }
+  if (err?.type === 'entity.too.large' || err?.status === 413) {
+    return res.status(413).json({ error: 'Dane żądania są za duże.' });
   }
   res.status(400).json({ error: err?.message || 'Błędne żądanie.' });
 };

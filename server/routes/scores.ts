@@ -1,4 +1,4 @@
-import type { Express } from 'express';
+import type { Express, RequestHandler } from 'express';
 import { isPlainObject, sanitizeMapId } from '../../src/core/map-format.js';
 import type { ScoreStorage } from '../storage/scores.js';
 import { errorMessage, getIp } from '../utils.js';
@@ -13,10 +13,11 @@ const MAX_COMBO = 1_000_000;
 interface ScoreRoutesOptions {
   app: Express;
   storage: ScoreStorage;
+  parseJson: RequestHandler;
   rateLimit: RateLimiter;
 }
 
-export function registerScoreRoutes({ app, storage, rateLimit }: ScoreRoutesOptions): void {
+export function registerScoreRoutes({ app, storage, parseJson, rateLimit }: ScoreRoutesOptions): void {
   app.get('/api/scores', async (req, res) => {
     try {
       let scores = await storage.read();
@@ -33,13 +34,17 @@ export function registerScoreRoutes({ app, storage, rateLimit }: ScoreRoutesOpti
     }
   });
 
-  app.post('/api/scores', async (req, res) => {
-    try {
-      const ip = getIp(req);
-      if (rateLimit(ip, 'scores', 20)) {
-        return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
-      }
+  const limitScoreSubmission: RequestHandler = (req, res, next) => {
+    const ip = getIp(req);
+    if (rateLimit(ip, 'scores', 20)) {
+      res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
+      return;
+    }
+    next();
+  };
 
+  app.post('/api/scores', limitScoreSubmission, parseJson, async (req, res) => {
+    try {
       if (!isPlainObject(req.body)) {
         return res.status(400).json({ error: 'Nieprawidłowe dane wyniku.' });
       }

@@ -21,6 +21,7 @@ interface MapWriteRoutesOptions {
   audioStorage: AudioStorage;
   uploadAudio: RequestHandler;
   uploadFile: RequestHandler;
+  parseJson: RequestHandler;
   rateLimit: RateLimiter;
 }
 
@@ -28,7 +29,7 @@ const ZIP_TIMEOUT_MS = 15_000;
 
 type SizedZipEntry = ZipAudioEntry & { _data?: { uncompressedSize?: number } };
 
-function createUploadRateLimit(
+function createWriteRateLimit(
   rateLimit: RateLimiter,
   key: string,
   maxPerMinute: number,
@@ -70,27 +71,24 @@ export function registerMapWriteRoutes({
   audioStorage,
   uploadAudio,
   uploadFile,
+  parseJson,
   rateLimit,
 }: MapWriteRoutesOptions): void {
-  const limitMapUpload = createUploadRateLimit(
+  const limitMapSave = createWriteRateLimit(
     rateLimit,
     'maps-save',
     30,
     'Za dużo żądań. Spróbuj ponownie za chwilę.',
   );
-  const limitMapImport = createUploadRateLimit(
+  const limitMapImport = createWriteRateLimit(
     rateLimit,
     'import',
     10,
     'Za dużo importów. Spróbuj ponownie za chwilę.',
   );
 
-  app.post('/api/maps', async (req, res) => {
+  app.post('/api/maps', limitMapSave, parseJson, async (req, res) => {
     try {
-      const ip = getIp(req);
-      if (rateLimit(ip, 'maps-save', 30)) {
-        return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
-      }
       const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
       await mapStorage.write(map);
       res.json({ ok: true, id: map.id, beats: map.beats.length, storage: 'beatdata' });
@@ -99,7 +97,7 @@ export function registerMapWriteRoutes({
     }
   });
 
-  app.post('/api/maps/save', limitMapUpload, uploadAudio, async (req, res) => {
+  app.post('/api/maps/save', limitMapSave, parseJson, uploadAudio, async (req, res) => {
     try {
       const rawBody = req.body?.map ? parseJsonSafe(req.body.map) : req.body;
       const map = normalizeMap(rawBody, { requireBeats: false, maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
