@@ -66,6 +66,19 @@ function getContainer(): HTMLElement | null {
   return document.getElementById('multiplayerCameras');
 }
 
+function renderPlayerLabel(label: HTMLElement, info: PlayerInfo): void {
+  const icon = document.createElement('span');
+  icon.className = 'material-symbols-rounded';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.style.fontSize = '12px';
+  icon.style.verticalAlign = 'middle';
+  icon.style.marginRight = '2px';
+  icon.textContent = avatarIcon(info.avatar);
+
+  const name = document.body.classList.contains('dev-tools') ? `ML · ${info.name}` : info.name;
+  label.replaceChildren(icon, document.createTextNode(name));
+}
+
 function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanvasElement } | null {
   const container = getContainer();
   const info = playerInfo.get(streamId);
@@ -86,10 +99,7 @@ function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanva
   }
   if (element.parentElement !== container) container.append(element);
   const label = element.querySelector<HTMLElement>('.cam-tag');
-  if (label) {
-    const icon = avatarIcon(info.avatar);
-    label.innerHTML = `<span class="material-symbols-rounded" style="font-size:12px;vertical-align:middle;margin-right:2px">${icon}</span>${document.body.classList.contains('dev-tools') ? `ML · ${info.name}` : info.name}`;
-  }
+  if (label) renderPlayerLabel(label, info);
   updateOverlayVisibility();
   const canvas = element.querySelector<HTMLCanvasElement>('canvas');
   return canvas ? { element, canvas } : null;
@@ -125,10 +135,7 @@ function updatePlayers(detail: RoomStateDetail | null): void {
       continue;
     }
     const label = preview.querySelector<HTMLElement>('.cam-tag');
-    if (label) {
-      const icon = avatarIcon(info.avatar);
-      label.innerHTML = `<span class="material-symbols-rounded" style="font-size:12px;vertical-align:middle;margin-right:2px">${icon}</span>${document.body.classList.contains('dev-tools') ? `ML · ${info.name}` : info.name}`;
-    }
+    if (label) renderPlayerLabel(label, info);
   }
   // Show the gameplay overlay only when there are remote players and not in dev mode
   updateOverlayVisibility();
