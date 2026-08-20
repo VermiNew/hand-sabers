@@ -28,6 +28,21 @@ const ZIP_TIMEOUT_MS = 15_000;
 
 type SizedZipEntry = ZipAudioEntry & { _data?: { uncompressedSize?: number } };
 
+function createUploadRateLimit(
+  rateLimit: RateLimiter,
+  key: string,
+  maxPerMinute: number,
+  message: string,
+): RequestHandler {
+  return (req, res, next) => {
+    if (rateLimit(getIp(req), key, maxPerMinute)) {
+      res.status(429).json({ error: message });
+      return;
+    }
+    next();
+  };
+}
+
 function zipUncompressedSize(entry: SizedZipEntry): number {
   const size = Number(entry._data?.uncompressedSize ?? 0);
   return Number.isFinite(size) && size > 0 ? size : 0;
@@ -57,6 +72,19 @@ export function registerMapWriteRoutes({
   uploadFile,
   rateLimit,
 }: MapWriteRoutesOptions): void {
+  const limitMapUpload = createUploadRateLimit(
+    rateLimit,
+    'maps-save',
+    30,
+    'Za dużo żądań. Spróbuj ponownie za chwilę.',
+  );
+  const limitMapImport = createUploadRateLimit(
+    rateLimit,
+    'import',
+    10,
+    'Za dużo importów. Spróbuj ponownie za chwilę.',
+  );
+
   app.post('/api/maps', async (req, res) => {
     try {
       const ip = getIp(req);
@@ -71,13 +99,8 @@ export function registerMapWriteRoutes({
     }
   });
 
-  app.post('/api/maps/save', uploadAudio, async (req, res) => {
+  app.post('/api/maps/save', limitMapUpload, uploadAudio, async (req, res) => {
     try {
-      const ip = getIp(req);
-      if (rateLimit(ip, 'maps-save', 30)) {
-        return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
-      }
-
       const rawBody = req.body?.map ? parseJsonSafe(req.body.map) : req.body;
       const map = normalizeMap(rawBody, { requireBeats: false, maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
       let audio = null;
@@ -103,12 +126,8 @@ export function registerMapWriteRoutes({
     }
   });
 
-  app.post('/api/maps/import', uploadFile, async (req, res) => {
+  app.post('/api/maps/import', limitMapImport, uploadFile, async (req, res) => {
     try {
-      const ip = getIp(req);
-      if (rateLimit(ip, 'import', 10)) {
-        return res.status(429).json({ error: 'Za dużo importów. Spróbuj ponownie za chwilę.' });
-      }
       if (!req.file) return res.status(400).json({ error: 'Brak pliku.' });
       assertFileSize(req.file);
 
