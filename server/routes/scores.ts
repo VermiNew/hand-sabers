@@ -1,9 +1,14 @@
 import type { Express } from 'express';
-import { sanitizeMapId } from '../../src/core/map-format.js';
+import { isPlainObject, sanitizeMapId } from '../../src/core/map-format.js';
 import type { ScoreStorage } from '../storage/scores.js';
 import { errorMessage, getIp } from '../utils.js';
 
 type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
+
+const MAX_PLAYER_NAME_LENGTH = 40;
+const MAX_MAP_ID_LENGTH = 64;
+const MAX_SCORE = 1_000_000_000;
+const MAX_COMBO = 1_000_000;
 
 interface ScoreRoutesOptions {
   app: Express;
@@ -35,24 +40,40 @@ export function registerScoreRoutes({ app, storage, rateLimit }: ScoreRoutesOpti
         return res.status(429).json({ error: 'Za dużo żądań. Spróbuj ponownie za chwilę.' });
       }
 
-      const { mapId, player, score, combo, date, progress } = req.body as Record<string, unknown>;
-      const numericScore = Number(score);
-      if (!Number.isFinite(numericScore) || numericScore < 0) {
-        return res.status(400).json({ error: 'Nieprawidłowy wynik.' });
+      if (!isPlainObject(req.body)) {
+        return res.status(400).json({ error: 'Nieprawidłowe dane wyniku.' });
       }
 
-      const numericProgress = progress !== undefined ? Number(progress) : undefined;
-      const validProgress = numericProgress !== undefined && Number.isFinite(numericProgress)
-        ? Math.max(0, Math.min(1, numericProgress))
-        : undefined;
+      const { mapId, player, score, combo, progress } = req.body;
+      if (typeof mapId !== 'string' || mapId.length > MAX_MAP_ID_LENGTH) {
+        return res.status(400).json({ error: 'Nieprawidłowy identyfikator mapy.' });
+      }
+      if (typeof player !== 'string' || player.length > MAX_PLAYER_NAME_LENGTH) {
+        return res.status(400).json({ error: 'Nieprawidłowa nazwa gracza.' });
+      }
+      if (typeof score !== 'number' || !Number.isSafeInteger(score) || score < 0 || score > MAX_SCORE) {
+        return res.status(400).json({ error: 'Nieprawidłowy wynik.' });
+      }
+      if (typeof combo !== 'number' || !Number.isSafeInteger(combo) || combo < 0 || combo > MAX_COMBO) {
+        return res.status(400).json({ error: 'Nieprawidłowe combo.' });
+      }
+
+      if (progress !== undefined && (
+        typeof progress !== 'number'
+        || !Number.isFinite(progress)
+        || progress < 0
+        || progress > 1
+      )) {
+        return res.status(400).json({ error: 'Nieprawidłowy postęp.' });
+      }
 
       await storage.append({
-        mapId: sanitizeMapId(mapId ?? 'random', 'random'),
-        player: String(player ?? 'Gracz').slice(0, 40),
-        score: Math.floor(numericScore),
-        combo: Math.floor(Number(combo) || 0),
-        date: String(date ?? new Date().toISOString()),
-        ...(validProgress !== undefined ? { progress: validProgress } : {}),
+        mapId: sanitizeMapId(mapId, 'random'),
+        player: player.trim() || 'Gracz',
+        score,
+        combo,
+        date: new Date().toISOString(),
+        ...(progress !== undefined ? { progress } : {}),
       });
       res.json({ ok: true });
     } catch (error) {
