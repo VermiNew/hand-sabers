@@ -206,7 +206,7 @@ async function stopServer() {
 
 try {
   const health = await waitForServer();
-  if (!health.ok || health.maxImportBytes !== 200 * 1024 * 1024) throw new Error('health check payload is wrong');
+  if (!health.ok || health.maxImportBytes !== 64 * 1024 * 1024) throw new Error('health check payload is wrong');
 
   const home = await smokeRequest('/');
   if (!home.ok || !home.text().includes('Hand Sabers')) {

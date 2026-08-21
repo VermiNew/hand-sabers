@@ -1,4 +1,4 @@
-import { readdir, rename, unlink, writeFile } from 'fs/promises';
+import { readdir, rename, stat, unlink, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 import { AUDIO_EXT_RE, MAX_IMPORT_BYTES, findPreferredAudioEntry, sanitizeMapId } from '../../src/core/map-format.js';
@@ -27,6 +27,7 @@ export interface AudioStorage {
   find(id: string, map?: StoredMap | null): Promise<StoredAudio | null>;
   remove(id: string, keepFullPath?: string | null): Promise<number>;
   persistBuffer(map: StoredMap, buffer: Uint8Array, originalName?: string): Promise<PersistedAudio>;
+  persistFile(map: StoredMap, sourcePath: string, originalName?: string): Promise<PersistedAudio>;
   persistZip(entries: ZipAudioEntry[], map: StoredMap): Promise<PersistedAudio | null>;
 }
 
@@ -126,9 +127,9 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
       const storedFile = `${map.id}${ext}`;
       const storedPath = path.join(audioDir, storedFile);
       const tmpPath = `${storedPath}.${process.pid}.${Date.now()}.tmp`;
-      await storage.remove(map.id, storedPath);
       await writeFile(tmpPath, Buffer.from(buffer));
       await rename(tmpPath, storedPath);
+      await storage.remove(map.id, storedPath);
 
       map.meta = {
         ...(map.meta || {}),
@@ -138,6 +139,33 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
       };
 
       return { originalName: cleanName, storedFile, size: buffer.byteLength };
+    },
+
+    async persistFile(map: StoredMap, sourcePath: string, originalName = 'audio.ogg'): Promise<PersistedAudio> {
+      const cleanName = path.basename(String(originalName || 'audio.ogg'));
+      const ext = path.extname(cleanName).toLowerCase();
+      if (!AUDIO_EXT_RE.test(cleanName)) {
+        throw new Error('Nieobsługiwany format audio. Dozwolone: mp3, ogg, wav, flac.');
+      }
+
+      const size = (await stat(sourcePath)).size;
+      if (size > MAX_IMPORT_BYTES) {
+        throw new Error(`Audio jest za duże. Limit: ${Math.round(MAX_IMPORT_BYTES / 1024 / 1024)} MB.`);
+      }
+
+      const storedFile = `${map.id}${ext}`;
+      const storedPath = path.join(audioDir, storedFile);
+      await rename(sourcePath, storedPath);
+      await storage.remove(map.id, storedPath);
+
+      map.meta = {
+        ...(map.meta || {}),
+        audioFile: cleanName,
+        serverAudioFile: storedFile,
+        audioUrl: `/api/maps/${encodeURIComponent(map.id)}/audio`,
+      };
+
+      return { originalName: cleanName, storedFile, size };
     },
 
     async persistZip(entries: ZipAudioEntry[], map: StoredMap): Promise<PersistedAudio | null> {

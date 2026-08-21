@@ -4,6 +4,7 @@ import multer from 'multer';
 import { createServer as createHttpServer } from 'http';
 import { createServer as createHttpsServer } from 'https';
 import { existsSync, mkdirSync, readFileSync } from 'fs';
+import { randomUUID } from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
@@ -37,10 +38,11 @@ const MAPS_DIR = path.resolve(process.env.HAND_SABERS_MAPS_DIR || process.env.MA
 const MAP_BEATDATA_DIR = path.join(MAPS_DIR, 'beatdata');
 const MAP_AUDIO_DIR = path.join(MAPS_DIR, 'audio');
 const LEGACY_MAP_AUDIO_DIR = path.join(MAPS_DIR, '_audio');
+const MAP_UPLOAD_DIR = path.join(MAPS_DIR, '.uploads');
 const MAX_MAP_JSON_BYTES = 25 * 1024 * 1024;
 const MAX_SCORE_JSON_BYTES = 4 * 1024;
 
-for (const dir of [MAPS_DIR, MAP_BEATDATA_DIR, MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_DIR]) {
+for (const dir of [MAPS_DIR, MAP_BEATDATA_DIR, MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_DIR, MAP_UPLOAD_DIR]) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
 }
 
@@ -56,7 +58,10 @@ const audioStorage = createAudioStorage({
 });
 
 const upload = multer({
-  storage: multer.memoryStorage(),
+  storage: multer.diskStorage({
+    destination: MAP_UPLOAD_DIR,
+    filename: (_req, _file, callback) => callback(null, randomUUID()),
+  }),
   limits: { fileSize: MAX_IMPORT_BYTES },
   fileFilter(_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) {
     const name = String(file.originalname || '').toLowerCase();

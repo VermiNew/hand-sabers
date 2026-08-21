@@ -1,4 +1,5 @@
 import path from 'path';
+import { readFile, unlink } from 'fs/promises';
 import type { Express, RequestHandler } from 'express';
 import JSZip from 'jszip';
 import {
@@ -65,6 +66,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
+async function removeUploadedFile(file: Express.Multer.File | undefined): Promise<void> {
+  if (!file?.path) return;
+  try {
+    await unlink(file.path);
+  } catch {}
+}
+
 export function registerMapWriteRoutes({
   app,
   mapStorage,
@@ -105,7 +113,7 @@ export function registerMapWriteRoutes({
 
       if (req.file) {
         assertFileSize(req.file);
-        audio = await audioStorage.persistBuffer(map, req.file.buffer, req.file.originalname);
+        audio = await audioStorage.persistFile(map, req.file.path, req.file.originalname);
       } else {
         const existingAudio = await audioStorage.find(map.id, map);
         if (existingAudio) {
@@ -121,6 +129,8 @@ export function registerMapWriteRoutes({
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio?.originalName ?? null, storage: 'beatdata', map });
     } catch (error) {
       res.status(400).json({ error: errorMessage(error) });
+    } finally {
+      await removeUploadedFile(req.file);
     }
   });
 
@@ -130,10 +140,11 @@ export function registerMapWriteRoutes({
       assertFileSize(req.file);
 
       const originalName = String(req.file.originalname ?? 'map');
+      const uploadedBytes = await readFile(req.file.path);
 
       if (originalName.toLowerCase().endsWith('.zip')) {
         const zip = await withTimeout(
-          JSZip.loadAsync(req.file.buffer),
+          JSZip.loadAsync(uploadedBytes),
           ZIP_TIMEOUT_MS,
           'Parsowanie ZIP'
         );
@@ -157,12 +168,14 @@ export function registerMapWriteRoutes({
         return res.status(400).json({ error: 'Endpoint importuje tylko mapy .json lub .zip.' });
       }
 
-      const rawMap = parseJsonSafe(req.file.buffer.toString('utf8'));
+      const rawMap = parseJsonSafe(uploadedBytes.toString('utf8'));
       const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
       await mapStorage.write(map);
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: null, storage: 'beatdata', map });
     } catch (error) {
       res.status(400).json({ error: errorMessage(error) });
+    } finally {
+      await removeUploadedFile(req.file);
     }
   });
 
