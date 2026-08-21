@@ -115,22 +115,49 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
   const context = canvas.getContext('2d');
   let peerConnected = false;
   let started = false;
+  let starting = false;
+  let activeStream: MediaStream | null = null;
+  let animationFrame: number | null = null;
+  let startAttempt = 0;
   let sequence = 0;
   let lastDetectionAt = -Infinity;
 
+  function stopCamera(): void {
+    starting = false;
+    started = false;
+    startAttempt++;
+    if (animationFrame !== null) {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = null;
+    }
+    activeStream?.getTracks().forEach(track => track.stop());
+    activeStream = null;
+    video.srcObject = null;
+    preview.hidden = true;
+    context?.clearRect(0, 0, canvas.width, canvas.height);
+    startButton.disabled = !peerConnected;
+  }
+
   startButton.addEventListener('click', () => void (async () => {
     if (started || !peerConnected || !context) return;
+    const attempt = ++startAttempt;
+    starting = true;
     startButton.disabled = true;
     trackingStatus.textContent = t('remoteTracking.loadingTracker');
     preview.hidden = false;
-    let stream: MediaStream | null = null;
     try {
-      stream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30, max: 30 } },
       });
+      if (attempt !== startAttempt || !peerConnected) {
+        stream.getTracks().forEach(track => track.stop());
+        return;
+      }
+      activeStream = stream;
       video.srcObject = stream;
       await video.play();
+      if (attempt !== startAttempt || !peerConnected) return;
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
       const visionModule = await import(
@@ -145,10 +172,12 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
         minHandPresenceConfidence: 0.42,
         minTrackingConfidence: 0.42,
       }) as HandLandmarker;
+      if (attempt !== startAttempt || !peerConnected) return;
+      starting = false;
       started = true;
       trackingStatus.textContent = t('remoteTracking.trackingActive');
       const detect = (now: number): void => {
-        if (!started) return;
+        if (!started || attempt !== startAttempt) return;
         try {
           if (peerConnected && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && now - lastDetectionAt >= 33) {
             lastDetectionAt = now;
@@ -156,26 +185,20 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
             drawHands(context, result);
             sendPacket(encodeLandmarks(result, sequence++, now));
           }
-          requestAnimationFrame(detect);
+          animationFrame = requestAnimationFrame(detect);
         } catch (error) {
           console.error('Phone hand tracking failed:', error);
-          started = false;
-          stream?.getTracks().forEach(track => track.stop());
-          video.srcObject = null;
-          preview.hidden = true;
-          startButton.disabled = !peerConnected;
+          stopCamera();
           trackingStatus.textContent = t('remoteTracking.cameraFailed');
           window.dispatchEvent(new CustomEvent('hand-sabers:phone-tracking-error', {
             detail: t('remoteTracking.cameraFailed'),
           }));
         }
       };
-      requestAnimationFrame(detect);
+      animationFrame = requestAnimationFrame(detect);
     } catch {
-      stream?.getTracks().forEach(track => track.stop());
-      video.srcObject = null;
-      preview.hidden = true;
-      startButton.disabled = !peerConnected;
+      if (attempt !== startAttempt) return;
+      stopCamera();
       trackingStatus.textContent = t('remoteTracking.cameraFailed');
       window.dispatchEvent(new CustomEvent('hand-sabers:phone-tracking-error', {
         detail: t('remoteTracking.cameraFailed'),
@@ -186,10 +209,14 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
   return {
     setPeerConnected(connected: boolean): void {
       peerConnected = connected;
-      startButton.disabled = started || !connected;
-      if (started) trackingStatus.textContent = t(connected
-        ? 'remoteTracking.trackingActive'
-        : 'remoteTracking.trackingPaused');
+      if (!connected) {
+        const wasTracking = starting || started || activeStream !== null;
+        stopCamera();
+        if (wasTracking) trackingStatus.textContent = t('remoteTracking.trackingPaused');
+        return;
+      }
+      startButton.disabled = started;
+      if (started) trackingStatus.textContent = t('remoteTracking.trackingActive');
     },
   };
 }

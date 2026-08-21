@@ -706,8 +706,8 @@ export async function initMP(onReady: () => void): Promise<boolean> {
     onReady();
     return true;
   } catch (err) {
-    trackingSource = null;
     console.error('initMP error:', err);
+    stopTracking();
     showCameraError(err);
     return false;
   }
