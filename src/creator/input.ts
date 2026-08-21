@@ -401,9 +401,7 @@ export function bindTimelineEvents(callbacks: {
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
-    if (e.repeat && !['heldLeft', 'heldRight'].includes(matchAction(e) ?? '')) {
-      // allow auto-repeat through for held actions; block everything else
-    }
+    if (e.repeat) return;
 
     // ── Escape — always handled, not rebindable ──
     if (e.key === 'Escape') {
