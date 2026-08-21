@@ -420,8 +420,9 @@ export function bindTimelineEvents(callbacks: {
       return;
     }
 
-    // ── Delete / Backspace — not rebindable ──
-    if (e.key === 'Delete' || e.key === 'Backspace') {
+    const action = matchAction(e);
+
+    if (action === 'deleteSelected') {
       e.preventDefault();
       if (state.selectedBeats.size) {
         pushUndo();
@@ -445,7 +446,6 @@ export function bindTimelineEvents(callbacks: {
       return;
     }
 
-    const action = matchAction(e);
     if (!action) return;
 
     e.preventDefault();
@@ -537,10 +537,6 @@ export function bindTimelineEvents(callbacks: {
         state.loopEnd = snapTime(getPlayPos());
         if (state.loopStart !== null && state.loopEnd < state.loopStart) state.loopStart = null;
         renderAll();
-        break;
-
-      case 'deleteSelected':
-        // handled above by Delete/Backspace — no-op here (in case rebindable)
         break;
 
       case 'selectAll':
