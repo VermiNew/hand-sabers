@@ -1,7 +1,7 @@
 import Fuse from 'fuse.js';
-import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, saveLocalMap, saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.ts';
+import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, loadLocalMapAudio } from '../core/localstore.ts';
 import JSZip from 'jszip';
-import { assertFileSize, findPreferredAudioEntry, normalizeMap, validateZipEntryNames } from '../core/map-format.ts';
+import { importMapLocally, importMapToServer } from '../core/map-import.ts';
 import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initRemoteTrackingHost } from '../remote/host-session.ts';
@@ -180,54 +180,16 @@ function mergeMaps(serverMaps: MapEntry[], localMaps: MapEntry[]): MapEntry[] {
 
 // ── Import ────────────────────────────────────────────────────────────────────
 
-async function importToServer(file: File): Promise<{ id: string; audio?: string }> {
-  const fd = new FormData();
-  fd.append('file', file);
-  const res     = await fetch('/api/maps/import', { method: 'POST', body: fd });
-  const payload = await res.json().catch(async () => ({ error: await res.text() })) as { id: string; audio?: string; error?: string };
-  if (!res.ok) throw new Error(payload?.error ?? `${res.status} ${res.statusText}`);
-  return payload;
-}
-
-async function importLocally(file: File): Promise<{ id: string; beats: number; audio: string | null }> {
-  assertFileSize(file);
-  const name = file.name.toLowerCase();
-  let map: MapEntry;
-  let audioName: string | null = null;
-
-  if (name.endsWith('.json')) {
-    map = normalizeMap(JSON.parse(await file.text()), { fallbackId: file.name.replace(/\.[^.]+$/, '') }) as unknown as MapEntry;
-  } else if (name.endsWith('.zip')) {
-    const zip     = await JSZip.loadAsync(await file.arrayBuffer());
-    const entries = Object.values(zip.files);
-    validateZipEntryNames(entries);
-    const jsonFile = zip.file('map.json');
-    if (!jsonFile) throw new Error(t('maps.importJsonMissing'));
-    map = normalizeMap(JSON.parse(await jsonFile.async('string')), { fallbackId: file.name.replace(/\.[^.]+$/, '') }) as unknown as MapEntry;
-    const audioFile = findPreferredAudioEntry(entries, map.meta?.audioFile);
-    if (audioFile) {
-      audioName  = audioFile.name.split('/').pop() ?? null;
-      if (map.meta) (map.meta as Record<string, unknown>)['audioFile'] = audioName;
-      await saveLocalMapAudio(map.id, await audioFile.async('arraybuffer'), { fileName: audioName ?? '', mimeType: 'application/octet-stream' });
-    }
-  } else {
-    throw new Error(t('maps.importUnsupported'));
-  }
-
-  saveLocalMap(map as unknown as Parameters<typeof saveLocalMap>[0]);
-  return { id: map.id, beats: map.beats?.length ?? 0, audio: audioName };
-}
-
 async function importMapFile(file: File): Promise<void> {
   mapPreview.stop(true);
   showToast(t('maps.importing', { name: file.name }), { type: 'info' });
   try {
-    const imported = await importToServer(file);
+    const imported = await importMapToServer(file);
     showToast(t('maps.importedServer', { id: imported.id, audio: imported.audio ? t('maps.withAudio') : '' }), { type: 'success' });
     await loadMaps();
   } catch (serverErr) {
     try {
-      const imported = await importLocally(file);
+      const imported = await importMapLocally(file);
       showToast(t('maps.importedLocal', { id: imported.id, audio: imported.audio ? t('maps.withAudio') : '' }), { type: 'success' });
       await loadMaps();
     } catch (localErr) {
