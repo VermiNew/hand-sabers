@@ -1,5 +1,5 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, showGameOver, showMultiplayerResults, showHandsPaused, hideHandsPaused, updateHandsResumeProgress, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition, showCameraError } from '../ui/ui.ts';
+import { ui, updateHUD, clearDangerPulse, showGameOver, showMultiplayerResults, showHandsPaused, hideHandsPaused, updateHandsResumeProgress, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition, showCameraError } from '../ui/ui.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
@@ -487,6 +487,7 @@ function endGame(victory = false): void {
   const playTimeMs = state.map && mapTimeline ? mapTimeline.getTime() * 1000 : 0;
   recordGameEnd(state, victory, playTimeMs);
   resetGameplayFocusProtection();
+  clearDangerPulse();
   state.appState    = S.GAMEOVER;
   state.pauseReason = PAUSE_REASONS.NONE;
   const dur = mapTimeline.getDuration();
@@ -518,6 +519,7 @@ function endGame(victory = false): void {
 }
 
 function restartGame(): void {
+  clearDangerPulse();
   clearGameplayEntities();
   stopMapAudio();
   mapTimeline.reset();
@@ -529,6 +531,7 @@ function restartGame(): void {
 }
 
 function restartWithoutCalib(): void {
+  clearDangerPulse();
   clearGameplayEntities();
   stopMapAudio();
   mapTimeline.reset();
@@ -607,6 +610,7 @@ function pauseGame(reason: PauseReason, now = performance.now()): void {
   if (state.appState !== S.PLAYING) return;
   state.appState    = S.PAUSED;
   state.pauseReason = reason;
+  clearDangerPulse();
   mapTimeline.pause(now);
   if (reason === PAUSE_REASONS.HANDS) {
     // Show hands banner (camera preview + resume progress) AND full pause menu
@@ -1332,6 +1336,7 @@ document.getElementById('pauseMaps')?.addEventListener('click', () => {
 
 function returnToMainMenu(): void {
   resetGameplayFocusProtection();
+  clearDangerPulse();
   fadeTransition(() => {
     if (multiplayerRoundActive) {
       window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));

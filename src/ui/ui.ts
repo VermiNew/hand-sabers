@@ -130,7 +130,7 @@ function hideModalElement(el: HTMLElement | null): void {
   el.style.display = '';
 }
 
-function clearDangerPulse(): void {
+export function clearDangerPulse(): void {
   document.body.classList.remove('danger-pulse', 'danger-low', 'danger-crit');
 }
 
