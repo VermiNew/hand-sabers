@@ -81,6 +81,20 @@ export function registerRemoteTrackingServer(
     return null;
   };
 
+  const closeSessionPeers = (sessionId: string, reason: 'expired' | 'revoked') => {
+    for (const [socket, peer] of peers) {
+      if (peer.sessionId !== sessionId) continue;
+      send(socket, { type: 'error', code: reason === 'expired' ? 'SESSION_EXPIRED' : 'SESSION_REVOKED' });
+      try {
+        socket.close(1008, reason === 'expired' ? 'Session expired' : 'Session revoked');
+      } catch (error) {
+        console.error('Remote tracking session close failed:', error);
+        socket.terminate();
+      }
+    }
+  };
+  const stopListeningForInvalidation = sessions.onInvalidated(closeSessionPeers);
+
   const notifyPair = (sessionId: string) => {
     const host = peerFor(sessionId, 'host');
     const phone = peerFor(sessionId, 'phone');
@@ -107,6 +121,7 @@ export function registerRemoteTrackingServer(
           socket.close(1008, 'Phone authentication required');
           return;
         }
+        if (!sessions.isActive(peer.sessionId)) return;
         const packet = Buffer.isBuffer(data)
           ? data
           : Array.isArray(data) ? Buffer.concat(data) : Buffer.from(data);
@@ -137,6 +152,7 @@ export function registerRemoteTrackingServer(
             return;
           }
           const peer = peers.get(socket)!;
+          if (!sessions.isActive(peer.sessionId)) return;
           const counterpart = peerFor(peer.sessionId, peer.role === 'host' ? 'phone' : 'host');
           if (counterpart && counterpart.readyState === WebSocket.OPEN) {
             counterpart.send(data.toString());
@@ -206,6 +222,7 @@ export function registerRemoteTrackingServer(
   return {
     close() {
       server.off('upgrade', handleUpgrade);
+      stopListeningForInvalidation();
       for (const socket of peers.keys()) {
         try {
           socket.close(1001, 'Server shutdown');

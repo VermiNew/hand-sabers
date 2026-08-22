@@ -35,6 +35,8 @@ export interface TrackingSessionStatus {
   phoneConnected: boolean;
 }
 
+export type TrackingSessionInvalidationReason = 'expired' | 'revoked';
+
 function createToken(bytes = 24): string {
   return randomBytes(bytes).toString('base64url');
 }
@@ -60,6 +62,7 @@ function normalizeCode(code: string): string {
 
 export class TrackingSessionRegistry {
   private readonly sessions = new Map<string, TrackingSessionRecord>();
+  private readonly invalidationListeners = new Set<(id: string, reason: TrackingSessionInvalidationReason) => void>();
   private readonly cleanupTimer: ReturnType<typeof setInterval>;
 
   constructor() {
@@ -140,10 +143,21 @@ export class TrackingSessionRegistry {
     else session.phoneConnected = false;
   }
 
+  isActive(id: string): boolean {
+    this.deleteExpired();
+    return this.sessions.has(id);
+  }
+
+  onInvalidated(listener: (id: string, reason: TrackingSessionInvalidationReason) => void): () => void {
+    this.invalidationListeners.add(listener);
+    return () => this.invalidationListeners.delete(listener);
+  }
+
   revoke(id: string, hostToken: string): boolean {
     const session = this.sessions.get(id);
     if (!session || !tokensMatch(hostToken, session.hostToken)) return false;
-    return this.sessions.delete(id);
+    this.invalidate(id, 'revoked');
+    return true;
   }
 
   destroy(): void {
@@ -165,7 +179,18 @@ export class TrackingSessionRegistry {
 
   private deleteExpired(now = Date.now()): void {
     for (const [id, session] of this.sessions) {
-      if (session.expiresAt <= now) this.sessions.delete(id);
+      if (session.expiresAt <= now) this.invalidate(id, 'expired');
+    }
+  }
+
+  private invalidate(id: string, reason: TrackingSessionInvalidationReason): void {
+    if (!this.sessions.delete(id)) return;
+    for (const listener of this.invalidationListeners) {
+      try {
+        listener(id, reason);
+      } catch (error) {
+        console.error('Tracking session invalidation listener failed:', error);
+      }
     }
   }
 
