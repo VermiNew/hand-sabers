@@ -121,6 +121,7 @@ export interface Settings {
   maxBeats: number;
   interfaceSoundVolume: number;
   playerName: string;
+  favoriteMapIds: string[];
   noteSpeed: number;
   hitboxSensitivity: number;
   trainingMode: boolean;

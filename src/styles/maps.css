@@ -234,6 +234,8 @@ body {
 }
 .filter-chip:hover { border-color: var(--main-soft); color: var(--text); }
 .filter-chip.is-active { border-color: var(--accent); color: var(--accent); background: rgba(54, 242, 161, 0.07); }
+.filter-favorites { display: inline-flex; align-items: center; gap: 4px; }
+.filter-favorites .material-symbols-rounded { font-size: 13px; }
 
 .filter-sort {
   margin-left: auto;
@@ -462,6 +464,8 @@ option { background: #0a1628; }
 }
 
 .map-row-badges { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+.map-favorite { color: #ffc83c; font-size: 16px; filter: drop-shadow(0 0 7px rgba(255, 200, 60, 0.38)); }
+.favorite-toggle.is-favorite { border-color: rgba(255, 200, 60, 0.48); color: #ffc83c; background: rgba(255, 200, 60, 0.08); }
 
 .diff-badge {
   padding: 2px 6px;

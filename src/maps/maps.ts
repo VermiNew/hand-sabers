@@ -8,11 +8,13 @@ import { initRemoteTrackingHost } from '../remote/host-session.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
 import { createMapPreviewController } from './preview.ts';
+import { getSetting, loadSettings, setSetting } from '../core/settings.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
 initPageInterfaceSounds();
 initRemoteTrackingHost();
+loadSettings();
 
 export function applyTranslations(): void {
   translateDom();
@@ -209,6 +211,8 @@ let selectedId: string | null = null;
 let activeDiff: string      = '';
 let activeSort: string      = 'newest';
 let searchQuery: string     = '';
+let favoritesOnly           = false;
+let favoriteMapIds          = new Set(getSetting('favoriteMapIds'));
 
 let fuse: Fuse<MapEntry> | null = null;
 
@@ -220,6 +224,16 @@ function rebuildFuse(): void {
   });
 }
 
+function isFavoriteMap(id: string): boolean {
+  return favoriteMapIds.has(id);
+}
+
+function toggleFavoriteMap(id: string): void {
+  if (favoriteMapIds.has(id)) favoriteMapIds.delete(id);
+  else favoriteMapIds.add(id);
+  setSetting('favoriteMapIds', [...favoriteMapIds]);
+}
+
 function getFilteredMaps(): MapEntry[] {
   let maps = searchQuery && fuse
     ? fuse.search(searchQuery).map(r => r.item)
@@ -229,19 +243,21 @@ function getFilteredMaps(): MapEntry[] {
     maps = maps.filter(m => (m.meta?.difficulty ?? '').toLowerCase() === activeDiff.toLowerCase());
   }
 
-  if (activeSort === 'alpha') {
-    maps.sort((a, b) => (a.meta?.title ?? a.id).localeCompare(b.meta?.title ?? b.id));
-  } else if (activeSort === 'newest') {
-    maps.sort((a, b) => String(b.updatedAt ?? b.id).localeCompare(String(a.updatedAt ?? a.id)));
-  } else if (activeSort === 'beats') {
-    maps.sort((a, b) => (b.beats?.length ?? 0) - (a.beats?.length ?? 0));
-  } else if (activeSort === 'score') {
-    maps.sort((a, b) => {
+  if (favoritesOnly) maps = maps.filter(m => isFavoriteMap(m.id));
+
+  maps.sort((a, b) => {
+    const favoriteOrder = Number(isFavoriteMap(b.id)) - Number(isFavoriteMap(a.id));
+    if (favoriteOrder !== 0) return favoriteOrder;
+    if (activeSort === 'alpha') return (a.meta?.title ?? a.id).localeCompare(b.meta?.title ?? b.id);
+    if (activeSort === 'newest') return String(b.updatedAt ?? b.id).localeCompare(String(a.updatedAt ?? a.id));
+    if (activeSort === 'beats') return (b.beats?.length ?? 0) - (a.beats?.length ?? 0);
+    if (activeSort === 'score') {
       const sa = getMapScoreData(a.id).best?.score ?? 0;
       const sb = getMapScoreData(b.id).best?.score ?? 0;
       return sb - sa;
-    });
-  }
+    }
+    return 0;
+  });
 
   return maps;
 }
@@ -264,7 +280,7 @@ function renderMapList(maps: MapEntry[]): void {
   const container = document.getElementById('mapList')!;
 
   if (!maps.length) {
-    const isFiltered = searchQuery || activeDiff;
+    const isFiltered = searchQuery || activeDiff || favoritesOnly;
     container.innerHTML = `
       <div class="empty-state">
         <span class="material-symbols-rounded">search_off</span>
@@ -307,6 +323,7 @@ function renderMapCard(m: MapEntry, i: number, activeIndex: number): string {
     const isLocal = m.source === 'local' || m.source === 'autosave';
     const subParts = [artist, dur ? dur : null, beats ? t('maps.beatsCount', { count: beats }) : null].filter(Boolean);
     const score = getMapScoreData(m.id).best?.score ?? 0;
+    const favorite = isFavoriteMap(m.id);
     const offset = Math.max(-3, Math.min(3, i - activeIndex));
     const absOffset = Math.abs(offset);
     const depth = 1 - Math.min(absOffset, 3) * 0.09;
@@ -329,6 +346,7 @@ function renderMapCard(m: MapEntry, i: number, activeIndex: number): string {
           <div class="map-card-wave" aria-hidden="true">${renderWaveBars(m.id)}</div>
         </div>
         <div class="map-row-badges">
+          ${favorite ? '<span class="map-favorite material-symbols-rounded" aria-hidden="true">star</span>' : ''}
           ${diff ? `<span class="diff-badge diff-${escHtml(diff.toLowerCase())}">${escHtml(diff)}</span>` : ''}
           ${isLocal ? `<span class="local-badge">LOCAL</span>` : ''}
           ${score ? `<span class="score-badge">${String(score).padStart(6, '0')}</span>` : ''}
@@ -368,6 +386,7 @@ function renderDetail(map: MapEntry | null): void {
   const isLocal = map.source === 'local' || map.source === 'autosave';
   const canDeleteServer = map.source === 'server' || map.source === 'server+local';
   const sd = getMapScoreData(map.id);
+  const favorite = isFavoriteMap(map.id);
 
   const scoreSection = sd.best ? `
     <div class="detail-score-section">
@@ -448,6 +467,9 @@ function renderDetail(map: MapEntry | null): void {
         <span class="material-symbols-rounded">play_arrow</span>${t('maps.playBtn')}
       </a>
       <div class="detail-secondary-actions">
+        <button class="btn-secondary favorite-toggle${favorite ? ' is-favorite' : ''}" id="btnFavoriteMap" data-id="${attr(map.id)}" type="button" aria-pressed="${favorite}" title="${attr(t(favorite ? 'maps.favoriteRemove' : 'maps.favoriteAdd'))}">
+          <span class="material-symbols-rounded">star</span>${t(favorite ? 'maps.favoriteRemove' : 'maps.favoriteAdd')}
+        </button>
         <a class="btn-secondary" href="${withDevQuery(`./map-creator.html?id=${encodeURIComponent(map.id)}`)}">
           <span class="material-symbols-rounded">edit</span>${t('maps.editBtn')}
         </a>
@@ -470,6 +492,13 @@ function renderDetail(map: MapEntry | null): void {
   document.getElementById('btnExport')?.addEventListener('click', async btn => {
     const el = btn.currentTarget as HTMLButtonElement;
     await exportMap(el.dataset['id']!);
+  });
+
+  document.getElementById('btnFavoriteMap')?.addEventListener('click', btn => {
+    const el = btn.currentTarget as HTMLButtonElement;
+    toggleFavoriteMap(el.dataset['id'] ?? '');
+    renderMapList(getFilteredMaps());
+    renderDetail(map);
   });
 
   document.querySelector<HTMLAnchorElement>('.btn-play')?.addEventListener('click', () => mapPreview.stop());
@@ -759,6 +788,14 @@ export function init(): void {
       });
       renderMapList(getFilteredMaps());
     });
+  });
+
+  document.getElementById('favoritesFilter')?.addEventListener('click', () => {
+    favoritesOnly = !favoritesOnly;
+    const button = document.getElementById('favoritesFilter');
+    button?.classList.toggle('is-active', favoritesOnly);
+    button?.setAttribute('aria-pressed', String(favoritesOnly));
+    renderMapList(getFilteredMaps());
   });
 
   // sort

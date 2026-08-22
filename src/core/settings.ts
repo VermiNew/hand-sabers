@@ -67,6 +67,7 @@ export const DEFAULTS: Settings = {
   musicReactiveIntensity: 1,
   interfaceSoundVolume: 0.8,
   playerName: 'Gracz',
+  favoriteMapIds: [],
   noteSpeed: 1,
   hitboxSensitivity: 1,
   trainingMode: false,
@@ -122,6 +123,15 @@ function normalizeTrackingSource(value: unknown): TrackingSourcePreference {
   return value === 'camera' || value === 'phone' ? value : 'auto';
 }
 
+function normalizeFavoriteMapIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  const ids = value
+    .filter((id): id is string => typeof id === 'string')
+    .map(id => id.trim())
+    .filter(id => id.length > 0 && id.length <= 160);
+  return [...new Set(ids)].slice(0, 500);
+}
+
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
@@ -138,6 +148,7 @@ export function loadSettings(): Settings {
   _settings.musicReactiveIntensityMode = normalizeMusicReactiveIntensityMode(_settings.musicReactiveIntensityMode);
   _settings.musicReactiveIntensity = clampNumber(_settings.musicReactiveIntensity, 0, 1.5, DEFAULTS.musicReactiveIntensity);
   _settings.trackingSource = normalizeTrackingSource(_settings.trackingSource);
+  _settings.favoriteMapIds = normalizeFavoriteMapIds(_settings.favoriteMapIds);
   return _settings;
 }
 
