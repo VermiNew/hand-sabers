@@ -4,7 +4,7 @@ import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
-  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel, setArenaTheme, applyBackgroundTheme,
+  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel, setOneHandModeVisuals, setArenaTheme, applyBackgroundTheme,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
@@ -80,6 +80,7 @@ window.__trackingSensitivity = settings.sensitivity;
 window.__trackingFlip        = settings.flipCamera;
 state.noFail                 = settings.noFail;
 state.oneHandMode            = settings.oneHandMode || null;
+setOneHandModeVisuals(state.oneHandMode);
 window.__oneHandMode         = state.oneHandMode || 'both';
 document.body.classList.toggle('training-mode', settings.trainingMode);
 document.body.dataset['gameMode'] = settings.gameMode || 'normal';
@@ -2251,6 +2252,7 @@ function initMainMenu(): void {
       state.oneHandMode     = value;
       window.__oneHandMode  = value ?? 'both';
       setSetting('oneHandMode', value);
+      setOneHandModeVisuals(value);
       applyTrackingSettings({ oneHandMode: value });
       syncOneHandButtons();
     });
@@ -2478,6 +2480,7 @@ function initMainMenu(): void {
 
     state.oneHandMode = settings.oneHandMode;
     window.__oneHandMode = settings.oneHandMode ?? 'both';
+    setOneHandModeVisuals(state.oneHandMode);
     syncOneHandButtons();
 
     const leftColor = settings.saberColorLeft;

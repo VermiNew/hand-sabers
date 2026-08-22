@@ -217,8 +217,10 @@ export function updateSaberTrails(active: boolean, deltaSec: number): void {
     return;
   }
 
-  updateTrail(leftTrail, lSaber, getSaberColor('left'), sampleCount, intensity, deltaSec);
-  updateTrail(rightTrail, rSaber, getSaberColor('right'), sampleCount, intensity, deltaSec);
+  if (lSaber.visible) updateTrail(leftTrail, lSaber, getSaberColor('left'), sampleCount, intensity, deltaSec);
+  else resetTrail(leftTrail);
+  if (rSaber.visible) updateTrail(rightTrail, rSaber, getSaberColor('right'), sampleCount, intensity, deltaSec);
+  else resetTrail(rightTrail);
 }
 
 export function resetSaberTrails(): void {

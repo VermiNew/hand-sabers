@@ -3,7 +3,7 @@ import { THEME } from '../core/theme.ts';
 import { loadSettings } from '../core/settings.ts';
 import { SABER_COLORS } from '../core/saber-colors.ts';
 import { clampDpr, getAdjacentGraphicsTier, getPerformanceProfile } from '../core/performance.ts';
-import type { Settings, PerformanceProfile } from '../types/index.js';
+import type { OneHandMode, Settings, PerformanceProfile } from '../types/index.js';
 
 export { THREE };
 
@@ -21,6 +21,7 @@ let canvas3d = document.getElementById('gameCanvas') as HTMLCanvasElement;
 const initialSettings    = loadSettings();
 const initialPerfProfile = getPerformanceProfile(initialSettings);
 let perfProfile          = initialPerfProfile;
+let activeOneHandMode: OneHandMode = initialSettings.oneHandMode ?? null;
 
 function createRenderer(canvas: HTMLCanvasElement, profile: PerformanceProfile): THREE.WebGLRenderer {
   const nextRenderer = new THREE.WebGLRenderer({
@@ -506,6 +507,24 @@ export const rTarget = new THREE.Vector3( 0.45, 1.1, 1.5);
 export const lVel    = new THREE.Vector3();
 export const rVel    = new THREE.Vector3();
 
+function applySaberVisibility(): void {
+  const leftActive = activeOneHandMode !== 'right';
+  const rightActive = activeOneHandMode !== 'left';
+  lSaber.visible = leftActive;
+  rSaber.visible = rightActive;
+  lLight.visible = leftActive;
+  rLight.visible = rightActive;
+  lReflection.visible = leftActive && Boolean(perfProfile.floorGlows);
+  rReflection.visible = rightActive && Boolean(perfProfile.floorGlows);
+  lBlobShadow.visible = leftActive;
+  rBlobShadow.visible = rightActive;
+}
+
+export function setOneHandModeVisuals(mode: OneHandMode): void {
+  activeOneHandMode = mode;
+  applySaberVisibility();
+}
+
 function publishSaberColorCss(side: 'left' | 'right', color: THREE.Color): void {
   const hex = color.getHexString();
   const rgb = [hex.slice(0, 2), hex.slice(2, 4), hex.slice(4, 6)]
@@ -742,10 +761,8 @@ function publishGraphicsStatus(): void {
 
 function applyDecorVisibility(): void {
   const reflectionOn = Boolean(perfProfile.reflections);
-  const floorGlowOn  = Boolean(perfProfile.floorGlows);
   floorReflect.visible  = reflectionOn;
-  lReflection.visible   = floorGlowOn;
-  rReflection.visible   = floorGlowOn;
+  applySaberVisibility();
   bgMesh.visible        = Boolean(perfProfile.backgroundShader);
   if (bgMat.uniforms['uDetail']) bgMat.uniforms['uDetail'].value = perfProfile.arenaDetail;
   gridH.visible         = Boolean(perfProfile.grid);
