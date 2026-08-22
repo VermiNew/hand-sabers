@@ -32,6 +32,10 @@ export interface AchievementStats {
   bestScoreAttackScore: number;
   perfectGames: number;
   phoneConnected: number;
+  noMissGames: number;
+  currentWinStreak: number;
+  bestWinStreak: number;
+  completedMapIds: string[];
 }
 
 const ACHIEVEMENTS: AchievementDef[] = [
@@ -48,10 +52,10 @@ const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'first_win', icon: 'celebration', category: 'gameplay', tier: 'bronze', check: s => s.gamesWon >= 1 },
   { id: 'ten_wins', icon: 'trophy', category: 'gameplay', tier: 'silver', check: s => s.gamesWon >= 10 },
   { id: 'perfect_accuracy', icon: 'target', category: 'gameplay', tier: 'gold', check: s => s.totalHits > 0 && s.perfectHits / s.totalHits >= 0.5 },
-  { id: 'no_miss_game', icon: 'verified', category: 'gameplay', tier: 'gold', check: s => s.totalGames >= 1 && s.totalMisses === 0 && s.totalHits > 0 },
+  { id: 'no_miss_game', icon: 'verified', category: 'gameplay', tier: 'gold', check: s => s.noMissGames >= 1 },
   { id: 'bomb_hitter', icon: 'report', category: 'gameplay', tier: 'bronze', check: s => s.bombHits >= 10 },
-  { id: 'five_streak', icon: 'whatshot', category: 'gameplay', tier: 'bronze', check: s => s.maxCombo >= 30 },
-  { id: 'fifteen_streak', icon: 'local_fire_department', category: 'gameplay', tier: 'silver', check: s => s.maxCombo >= 75 },
+  { id: 'five_streak', icon: 'whatshot', category: 'gameplay', tier: 'bronze', check: s => s.bestWinStreak >= 5 },
+  { id: 'fifteen_streak', icon: 'local_fire_department', category: 'gameplay', tier: 'silver', check: s => s.bestWinStreak >= 15 },
   { id: 'maps_10', icon: 'library_music', category: 'gameplay', tier: 'silver', check: s => s.mapsCompleted >= 10 },
   { id: 'play_1h', icon: 'schedule', category: 'gameplay', tier: 'silver', check: s => s.totalPlayTimeMs >= 3600000 },
   { id: 'play_10h', icon: 'nightlight', category: 'gameplay', tier: 'diamond', check: s => s.totalPlayTimeMs >= 36000000 },
@@ -92,7 +96,13 @@ function saveUnlocked(): void {
 function loadStats(): AchievementStats {
   try {
     const raw = localStorage.getItem('hs_stats');
-    if (raw) return { ...createEmptyStats(), ...(JSON.parse(raw) as Partial<AchievementStats>) };
+    if (raw) {
+      const stats = { ...createEmptyStats(), ...(JSON.parse(raw) as Partial<AchievementStats>) };
+      const completedMapIds = Array.isArray(stats.completedMapIds)
+        ? [...new Set(stats.completedMapIds.filter(id => typeof id === 'string' && id.length > 0))].slice(0, 1000)
+        : [];
+      return { ...stats, completedMapIds, mapsCompleted: completedMapIds.length };
+    }
   } catch { /* ignore */ }
   return createEmptyStats();
 }
@@ -123,6 +133,10 @@ function createEmptyStats(): AchievementStats {
     bestScoreAttackScore: 0,
     perfectGames: 0,
     phoneConnected: 0,
+    noMissGames: 0,
+    currentWinStreak: 0,
+    bestWinStreak: 0,
+    completedMapIds: [],
   };
 }
 
@@ -187,10 +201,21 @@ export function recordGameEnd(state: GameState, won: boolean, playTimeMs: number
   _stats.maxCombo = Math.max(_stats.maxCombo, state.maxCombo);
   _stats.perfectHits += state.perfectHits;
   _stats.totalPlayTimeMs += playTimeMs;
-  if (won) _stats.gamesWon++;
-  else _stats.gamesLost++;
+  if (won) {
+    _stats.gamesWon++;
+    _stats.currentWinStreak++;
+    _stats.bestWinStreak = Math.max(_stats.bestWinStreak, _stats.currentWinStreak);
+  } else {
+    _stats.gamesLost++;
+    _stats.currentWinStreak = 0;
+  }
   if (won && state.misses === 0 && state.hits >= 50) _stats.perfectGames++;
-  if (state.map?.id) _stats.mapsCompleted++;
+  if (won && state.misses === 0 && state.hits > 0) _stats.noMissGames++;
+  if (won && state.map?.id && !_stats.completedMapIds.includes(state.map.id)) {
+    _stats.completedMapIds.push(state.map.id);
+    _stats.completedMapIds = _stats.completedMapIds.slice(-1000);
+    _stats.mapsCompleted = _stats.completedMapIds.length;
+  }
   saveStats(_stats);
   checkAchievements();
 }
