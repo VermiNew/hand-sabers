@@ -29,7 +29,7 @@ export interface FrameProfile {
 }
 
 interface DevData {
-  fps: number; frameMs: number; deltaMs: number; deltaScale: number; renderMs: number; detectMs: number; latMs: number; conf: number;
+  fps: number; avgFps: number; frameMs: number; deltaMs: number; deltaScale: number; renderMs: number; detectMs: number; latMs: number; conf: number;
   gameMs: number; effectsMs: number; reflectionMs: number; cpuMs: number; bottleneck: string;
   drawCalls: number; triangles: number; geoMem: number; texMem: number; vramMem: number;
   graphicsMode: string; graphicsProfile: string; renderScale: number; canvasSize: string; drawingBuffer: string; gpuRenderer: string; toneMapping: string; antialias: string; shadows: boolean; reflections: boolean;
@@ -153,7 +153,7 @@ let initStarted   = false;
 let lastRenderer: THREE.WebGLRenderer | null = null;
 
 const devData: DevData = {
-  fps: 0, frameMs: 0, deltaMs: 0, deltaScale: 1, renderMs: 0, detectMs: 0, latMs: 0, conf: 0,
+  fps: 0, avgFps: 0, frameMs: 0, deltaMs: 0, deltaScale: 1, renderMs: 0, detectMs: 0, latMs: 0, conf: 0,
   gameMs: 0, effectsMs: 0, reflectionMs: 0, cpuMs: 0, bottleneck: '—',
   drawCalls: 0, triangles: 0, geoMem: 0, texMem: 0, vramMem: 0,
   graphicsMode: '—', graphicsProfile: '—', renderScale: 1, canvasSize: '—', drawingBuffer: '—', gpuRenderer: '—', toneMapping: '—', antialias: '—', shadows: false, reflections: false,
@@ -338,6 +338,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     // ── PERF ──
     const perf = tabs.pages[0]!;
     perf.addMonitor(devData, 'fps',        { label: 'FPS',       view: 'graph', min: 0, max: 240, interval: 500 });
+    perf.addMonitor(devData, 'avgFps',     { label: 'AVG FPS',   view: 'graph', min: 0, max: 240, interval: 500 });
     perf.addMonitor(devData, 'frameMs',    { label: 'Frame ms',  view: 'graph', min: 0, max: 33,  interval: 500 });
     perf.addMonitor(devData, 'deltaMs',    { label: 'Delta ms',  view: 'graph', min: 0, max: 50,  interval: 200 });
     perf.addMonitor(devData, 'deltaScale', { label: 'Delta x',   interval: 200 });
@@ -503,6 +504,7 @@ export function tickDevPanel(
   if (statsJS) statsJS.update();
 
   devData.fps        = state.fps;
+  devData.avgFps     = state.avgFps;
   devData.frameMs    = state.frameMs;
   devData.deltaMs    = +state.deltaMs.toFixed(2);
   devData.deltaScale = +state.deltaScale.toFixed(2);

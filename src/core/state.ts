@@ -34,6 +34,7 @@ export interface GameState {
   maxLives: number;
   tick: number;
   fps: number;
+  avgFps: number;
   frameMs: number;
   deltaMs: number;
   deltaSec: number;
@@ -61,6 +62,7 @@ export const state: GameState = {
   maxLives:         10,
   tick:             0,
   fps:              0,
+  avgFps:           0,
   frameMs:          0,
   deltaMs:          16.7,
   deltaSec:         1 / 60,
