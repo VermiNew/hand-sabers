@@ -1149,6 +1149,10 @@
       <h2 data-i18n="menu.maps">Mapy</h2>
       <div class="mp-overlay-tools">
         <input type="search" id="mpSearch" class="mp-search" data-i18n-placeholder="mapPicker.searchPlaceholder" placeholder="Szukaj map..." autocomplete="off">
+        <button class="mp-import" id="mpImport" type="button">
+          <span class="material-symbols-rounded" aria-hidden="true">upload_file</span>
+          <span id="mpImportLabel" data-i18n="mapPicker.import">IMPORTUJ</span>
+        </button>
         <button class="mp-overlay-close" id="mpClose" type="button" aria-label="Zamknij">
           <span class="material-symbols-rounded" aria-hidden="true">close</span>
         </button>
@@ -1169,6 +1173,7 @@
         <option value="score" data-i18n="mapPicker.sortScore">Najlepszy wynik</option>
       </select>
     </div>
+    <div class="mp-import-status" id="mpImportStatus" role="status" hidden></div>
     <div class="mp-overlay-body">
       <div class="mp-map-list" id="mpMapList" role="listbox"></div>
       <div class="mp-detail-pane" id="mpDetailPane">
@@ -1176,6 +1181,7 @@
       </div>
     </div>
   </div>
+  <input id="mpImportInput" type="file" accept=".json,.zip,application/json,application/zip" hidden>
 </div>
 
 <!-- PROFILE ONBOARDING (first-time user) -->

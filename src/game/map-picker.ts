@@ -1,6 +1,7 @@
 import { t, translateDom } from '../i18n/index.ts';
 import { readLocalMaps, readLocalScores } from '../core/localstore.ts';
 import { normalizeMap } from '../core/map-format.ts';
+import { importMapLocally, importMapToServer } from '../core/map-import.ts';
 
 interface MapMeta {
   title?: string;
@@ -76,6 +77,20 @@ let activeSort = 'newest';
 let searchQuery = '';
 let loading = false;
 let initialized = false;
+let importing = false;
+
+function showImportStatus(message: string, type: 'info' | 'success' | 'error'): void {
+  const status = element<HTMLElement>('mpImportStatus');
+  if (!status) return;
+  status.textContent = message;
+  status.className = `mp-import-status is-${type}`;
+  status.hidden = false;
+}
+
+function clearImportStatus(): void {
+  const status = element<HTMLElement>('mpImportStatus');
+  if (status) status.hidden = true;
+}
 
 // -- Server fetch --
 
@@ -298,6 +313,49 @@ async function loadMaps(): Promise<void> {
   }
 }
 
+async function importMapFile(file: File): Promise<void> {
+  if (importing) return;
+  importing = true;
+  const importButton = element<HTMLButtonElement>('mpImport');
+  const importLabel = element<HTMLElement>('mpImportLabel');
+  if (importButton) importButton.disabled = true;
+  if (importLabel) importLabel.textContent = t('mapPicker.importing');
+  showImportStatus(t('mapPicker.importingFile', { name: file.name }), 'info');
+
+  try {
+    let importedId: string;
+    let importedWithAudio = false;
+    let importSource: 'server' | 'local';
+    try {
+      const imported = await importMapToServer(file);
+      importedId = imported.id;
+      importedWithAudio = Boolean(imported.audio);
+      importSource = 'server';
+    } catch (serverError) {
+      try {
+        const imported = await importMapLocally(file);
+        importedId = imported.id;
+        importedWithAudio = Boolean(imported.audio);
+        importSource = 'local';
+      } catch (localError) {
+        console.error('Map import failed:', { serverError, localError });
+        const message = localError instanceof Error ? localError.message : String(localError);
+        showImportStatus(t('mapPicker.importFailed', { message }), 'error');
+        return;
+      }
+    }
+    await loadMaps();
+    selectMap(importedId);
+    const source = importSource === 'server' ? 'mapPicker.importedServer' : 'mapPicker.importedLocal';
+    const message = t(source, { id: importedId });
+    showImportStatus(importedWithAudio ? `${message} ${t('mapPicker.importedAudio')}` : message, 'success');
+  } finally {
+    importing = false;
+    if (importButton) importButton.disabled = false;
+    if (importLabel) importLabel.textContent = t('mapPicker.import');
+  }
+}
+
 // -- Overlay control --
 
 function openOverlay(): void {
@@ -305,6 +363,7 @@ function openOverlay(): void {
   if (!overlay) return;
   overlay.hidden = false;
   translateDom(overlay);
+  clearImportStatus();
   if (allMaps.length === 0) void loadMaps();
   else {
     const list = element<HTMLElement>('mpMapList');
@@ -328,6 +387,8 @@ export function initMapPickerOverlay(): void {
   const closeBtn = element<HTMLButtonElement>('mpClose');
   const searchInput = element<HTMLInputElement>('mpSearch');
   const sortSelect = element<HTMLSelectElement>('mpSort');
+  const importButton = element<HTMLButtonElement>('mpImport');
+  const importInput = element<HTMLInputElement>('mpImportInput');
   if (!overlay || !closeBtn || !searchInput || !sortSelect) return;
   // Close
   closeBtn.addEventListener('click', closeOverlay);
@@ -344,6 +405,12 @@ export function initMapPickerOverlay(): void {
     activeSort = sortSelect.value;
     const list = element<HTMLElement>('mpMapList');
     if (list) renderMapList(list);
+  });
+  importButton?.addEventListener('click', () => importInput?.click());
+  importInput?.addEventListener('change', async () => {
+    const file = importInput.files?.[0];
+    if (file) await importMapFile(file);
+    importInput.value = '';
   });
   // Difficulty filters
   document.querySelectorAll<HTMLElement>('.mp-diff-chip').forEach(chip => {

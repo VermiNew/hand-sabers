@@ -844,6 +844,13 @@
   },
   "mapPicker": {
     "searchPlaceholder": "Szukaj map...",
+    "import": "IMPORTUJ",
+    "importing": "IMPORTUJĘ…",
+    "importingFile": "Importuję mapę {name}…",
+    "importedServer": "Zaimportowano mapę {id} na serwer.",
+    "importedLocal": "Zaimportowano mapę {id} lokalnie.",
+    "importedAudio": "Zaimportowano także plik audio.",
+    "importFailed": "Nie udało się zaimportować mapy: {message}",
     "allDiff": "Wszystkie",
     "sortNewest": "Najnowsze",
     "sortAlpha": "Alfabetycznie",
