@@ -13,15 +13,7 @@ import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
-import { loadSettings, replaceSettings, resetSettings, setSetting } from '../core/settings.ts';
-import {
-  MAX_SETTINGS_IMPORT_BYTES,
-  createSettingsExport,
-  getSettingsChanges,
-  parseSettingsImport,
-  serializeSettingsExport,
-} from '../core/settings-transfer.ts';
-import type { SettingsTransferDocument } from '../core/settings-transfer.ts';
+import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
 import { SABER_COLORS } from '../core/saber-colors.ts';
 import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
@@ -40,6 +32,7 @@ import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from 
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { ARENA_THEMES, getArenaTheme } from '../core/arena-themes.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
+import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, showProfileOnboardingIfNeeded } from './profile.ts';
 import { playTestSound, startMetronomeCalibration, stopMetronome, isMetronomeActive } from './audio-calibration.ts';
@@ -1499,14 +1492,6 @@ function initMainMenu(): void {
   const settingsButton   = document.getElementById('mainSettings');
   const settingsClose    = document.getElementById('mainSettingsClose');
   const settingsReset    = document.getElementById('mainSettingsReset');
-  const settingsExport   = document.getElementById('settingsExport') as HTMLButtonElement | null;
-  const settingsImport   = document.getElementById('settingsImport') as HTMLButtonElement | null;
-  const settingsImportFile = document.getElementById('settingsImportFile') as HTMLInputElement | null;
-  const settingsImportApply = document.getElementById('settingsImportApply') as HTMLButtonElement | null;
-  const settingsTransferPreview = document.getElementById('settingsTransferPreview');
-  const settingsTransferSummary = document.getElementById('settingsTransferSummary');
-  const settingsTransferList = document.getElementById('settingsTransferList');
-  const settingsTransferStatus = document.getElementById('settingsTransferStatus');
   const volumeInput      = document.getElementById('menuVolume')    as HTMLInputElement | null;
   const soundInputs      = [...document.querySelectorAll<HTMLInputElement>('[data-audio-setting]')];
   const noFailInput      = document.getElementById('menuNoFail')    as HTMLInputElement | null;
@@ -1602,110 +1587,7 @@ function initMainMenu(): void {
     btn.addEventListener('click', () => switchSettingsTab(btn.dataset['tab'] ?? 'audio'));
   });
 
-  let pendingSettingsImport: SettingsTransferDocument | null = null;
-  const setTransferStatus = (message: string, error = false) => {
-    if (!settingsTransferStatus) return;
-    settingsTransferStatus.textContent = message;
-    settingsTransferStatus.classList.toggle('is-error', error);
-  };
-  const formatTransferValue = (value: unknown): string => {
-    if (Array.isArray(value)) return `[${value.length}]`;
-    if (value && typeof value === 'object') return t('settings.transfer.calibrationData');
-    return String(value ?? '—');
-  };
-  const transferErrorMessage = (error: unknown): string => {
-    const code = error instanceof Error ? error.message : '';
-    let message = t('settings.transfer.invalid');
-    if (code === 'SETTINGS_FILE_TOO_LARGE') message = t('settings.transfer.tooLarge');
-    else if (code === 'SETTINGS_WRONG_PRODUCT') message = t('settings.transfer.wrongProduct');
-    else if (code === 'SETTINGS_UNSUPPORTED_VERSION') message = t('settings.transfer.unsupportedVersion');
-    else if (code === 'SETTINGS_UNKNOWN_FIELD') message = t('settings.transfer.unknownField');
-
-    const developerMode = Boolean(settings.developerMode) || isDeveloperPanelEnabled();
-    return developerMode && code ? `${message} [${code}]` : message;
-  };
-
-  settingsExport?.addEventListener('click', () => {
-    const blob = new Blob([serializeSettingsExport(settings)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `hand-sabers-settings-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.setTimeout(() => URL.revokeObjectURL(url), 0);
-    setTransferStatus(t('settings.transfer.exported'));
-  });
-
-  settingsImport?.addEventListener('click', () => settingsImportFile?.click());
-  settingsImportFile?.addEventListener('change', async () => {
-    const file = settingsImportFile.files?.[0];
-    settingsImportFile.value = '';
-    if (!file) return;
-    pendingSettingsImport = null;
-    if (settingsTransferPreview) settingsTransferPreview.hidden = true;
-    try {
-      if (file.size > MAX_SETTINGS_IMPORT_BYTES) throw new Error('SETTINGS_FILE_TOO_LARGE');
-      const imported = parseSettingsImport(await file.text());
-      const changes = getSettingsChanges(settings, imported.settings);
-      pendingSettingsImport = imported;
-      if (settingsTransferSummary) {
-        settingsTransferSummary.textContent = changes.length
-          ? t('settings.transfer.changes', { count: changes.length })
-          : t('settings.transfer.noChanges');
-      }
-      if (settingsTransferList) {
-        settingsTransferList.replaceChildren();
-        for (const change of changes) {
-          const row = document.createElement('div');
-          row.className = 'settings-transfer-change';
-          const key = document.createElement('strong');
-          key.textContent = change.key;
-          const values = document.createElement('span');
-          values.textContent = `${formatTransferValue(change.before)} → ${formatTransferValue(change.after)}`;
-          row.append(key, values);
-          settingsTransferList.append(row);
-        }
-      }
-      if (settingsImportApply) {
-        const applyLabelKey = changes.length
-          ? 'settings.transfer.applyButton'
-          : 'settings.transfer.nothingToApplyButton';
-        settingsImportApply.disabled = changes.length === 0;
-        settingsImportApply.dataset['i18n'] = applyLabelKey;
-        settingsImportApply.textContent = t(applyLabelKey);
-      }
-      if (settingsTransferPreview) settingsTransferPreview.hidden = false;
-      setTransferStatus('');
-    } catch (error) {
-      setTransferStatus(transferErrorMessage(error), true);
-    }
-  });
-
-  settingsImportApply?.addEventListener('click', () => {
-    if (!pendingSettingsImport) return;
-    const changes = getSettingsChanges(settings, pendingSettingsImport.settings);
-    if (!changes.length) return;
-    if (!window.confirm(t('settings.transfer.confirm', { count: changes.length }))) return;
-    const previous = createSettingsExport(settings).settings;
-    try {
-      replaceSettings(pendingSettingsImport.settings);
-      setLang(pendingSettingsImport.settings.language);
-      try { sessionStorage.setItem('hs_settings_imported', '1'); } catch {}
-      location.reload();
-    } catch {
-      try { replaceSettings(previous); } catch {}
-      setTransferStatus(t('settings.transfer.saveFailed'), true);
-    }
-  });
-
-  try {
-    if (sessionStorage.getItem('hs_settings_imported') === '1') {
-      sessionStorage.removeItem('hs_settings_imported');
-      setTransferStatus(t('settings.transfer.applied'));
-    }
-  } catch {}
+  initSettingsTransfer(settings);
 
   function setSettingsPanelVisible(visible: boolean): void {
     if (settingsBackdrop) {
