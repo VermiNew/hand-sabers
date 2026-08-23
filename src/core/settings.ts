@@ -161,11 +161,17 @@ function replaceInMemorySettings(value: Settings): void {
 }
 
 export function loadSettings(): Settings {
+  let loaded: Partial<Settings> = _settings;
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) _settings = normalizeSettings(JSON.parse(raw) as Partial<Settings>);
+    if (raw) {
+      const parsed = JSON.parse(raw) as unknown;
+      if (typeof parsed === 'object' && parsed !== null && !Array.isArray(parsed)) {
+        loaded = parsed as Partial<Settings>;
+      }
+    }
   } catch {}
-  _settings = normalizeSettings(_settings);
+  replaceInMemorySettings(normalizeSettings(loaded));
   return _settings;
 }
 
