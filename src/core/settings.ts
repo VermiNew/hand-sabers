@@ -132,23 +132,35 @@ function normalizeFavoriteMapIds(value: unknown): string[] {
   return [...new Set(ids)].slice(0, 500);
 }
 
+function normalizeSettings(value: Partial<Settings>): Settings {
+  const normalized = { ...DEFAULTS, ...value };
+  normalized.performanceMode = normalizePerformanceMode(normalized.performanceMode);
+  normalized.noteSpeed = normalizeNoteSpeed(normalized.noteSpeed);
+  normalized.hitboxSensitivity = normalizeHitboxSensitivity(normalized.hitboxSensitivity);
+  normalized.customHitShards = Math.round(clampNumber(normalized.customHitShards, 0, 7, DEFAULTS.customHitShards));
+  normalized.customSaberTrailSamples = Math.round(clampNumber(normalized.customSaberTrailSamples, 0, 16, DEFAULTS.customSaberTrailSamples));
+  normalized.customSaberTrailIntensity = clampNumber(normalized.customSaberTrailIntensity, 0, 1.25, DEFAULTS.customSaberTrailIntensity);
+  normalized.customArenaDetail = clampNumber(normalized.customArenaDetail, 0, 1.25, DEFAULTS.customArenaDetail);
+  normalized.customRenderScale = clampNumber(normalized.customRenderScale, 0.5, 1.5, DEFAULTS.customRenderScale);
+  normalized.musicReactiveIntensityMode = normalizeMusicReactiveIntensityMode(normalized.musicReactiveIntensityMode);
+  normalized.musicReactiveIntensity = clampNumber(normalized.musicReactiveIntensity, 0, 1.5, DEFAULTS.musicReactiveIntensity);
+  normalized.trackingSource = normalizeTrackingSource(normalized.trackingSource);
+  normalized.favoriteMapIds = normalizeFavoriteMapIds(normalized.favoriteMapIds);
+  return normalized;
+}
+
+function replaceInMemorySettings(value: Settings): void {
+  const mutableSettings = _settings as unknown as Record<string, unknown>;
+  for (const key of Object.keys(mutableSettings)) delete mutableSettings[key];
+  Object.assign(_settings, value);
+}
+
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) _settings = { ...DEFAULTS, ...JSON.parse(raw) as Partial<Settings> };
+    if (raw) _settings = normalizeSettings(JSON.parse(raw) as Partial<Settings>);
   } catch {}
-  _settings.performanceMode = normalizePerformanceMode(_settings.performanceMode);
-  _settings.noteSpeed = normalizeNoteSpeed(_settings.noteSpeed);
-  _settings.hitboxSensitivity = normalizeHitboxSensitivity(_settings.hitboxSensitivity);
-  _settings.customHitShards = Math.round(clampNumber(_settings.customHitShards, 0, 7, DEFAULTS.customHitShards));
-  _settings.customSaberTrailSamples = Math.round(clampNumber(_settings.customSaberTrailSamples, 0, 16, DEFAULTS.customSaberTrailSamples));
-  _settings.customSaberTrailIntensity = clampNumber(_settings.customSaberTrailIntensity, 0, 1.25, DEFAULTS.customSaberTrailIntensity);
-  _settings.customArenaDetail = clampNumber(_settings.customArenaDetail, 0, 1.25, DEFAULTS.customArenaDetail);
-  _settings.customRenderScale = clampNumber(_settings.customRenderScale, 0.5, 1.5, DEFAULTS.customRenderScale);
-  _settings.musicReactiveIntensityMode = normalizeMusicReactiveIntensityMode(_settings.musicReactiveIntensityMode);
-  _settings.musicReactiveIntensity = clampNumber(_settings.musicReactiveIntensity, 0, 1.5, DEFAULTS.musicReactiveIntensity);
-  _settings.trackingSource = normalizeTrackingSource(_settings.trackingSource);
-  _settings.favoriteMapIds = normalizeFavoriteMapIds(_settings.favoriteMapIds);
+  _settings = normalizeSettings(_settings);
   return _settings;
 }
 
@@ -157,10 +169,15 @@ export function saveSettings(): void {
 }
 
 export function resetSettings(): Settings {
-  const mutableSettings = _settings as unknown as Record<string, unknown>;
-  for (const key of Object.keys(mutableSettings)) delete mutableSettings[key];
-  Object.assign(_settings, DEFAULTS);
+  replaceInMemorySettings(normalizeSettings(DEFAULTS));
   saveSettings();
+  return _settings;
+}
+
+export function replaceSettings(value: Settings): Settings {
+  const normalized = normalizeSettings(value);
+  localStorage.setItem(KEY, JSON.stringify(normalized));
+  replaceInMemorySettings(normalized);
   return _settings;
 }
 
