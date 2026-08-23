@@ -75,6 +75,7 @@
   display:block; margin:9px 0 14px; color:#fff;
   font-family:'Oxanium',sans-serif; font-size:28px; letter-spacing:5px;
 }
+.mp-copy-actions { display:flex; flex-wrap:wrap; gap:8px; }
 .mp-copy { padding:0 13px; border:1px solid rgba(142,200,255,.3); background:transparent; color:var(--main-light); font-size:10px; }
 .mp-connected-card { display:flex; align-items:center; justify-content:center; gap:14px; min-height:116px; padding:20px; }
 .mp-connected-card > .material-symbols-rounded { color:var(--accent); font-size:31px; }

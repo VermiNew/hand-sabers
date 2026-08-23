@@ -11,6 +11,7 @@ export { PROTOCOL_VERSION } from './protocol.ts';
 
 let socket: WebSocket | null = null;
 let activeJoinUrl = '';
+let activeRoomCode = '';
 let currentPlayerId = '';
 let currentRole: 'host' | 'guest' | null = null;
 let currentRoom: RoomSnapshot | null = null;
@@ -104,6 +105,23 @@ function requestErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : translateServerError('REQUEST_FAILED');
 }
 
+async function copyText(value: string): Promise<void> {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', '');
+  textarea.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+  document.body.append(textarea);
+  textarea.select();
+  const copied = document.execCommand('copy');
+  textarea.remove();
+  if (!copied) throw new Error('COPY_FAILED');
+}
+
 function normalizePlayerName(value: string): string {
   return value.trim().replace(/\s+/g, ' ').slice(0, 32) || t('player.defaultName');
 }
@@ -127,6 +145,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const createButton = element<HTMLButtonElement>('multiplayerCreate');
   const joinButton = element<HTMLButtonElement>('multiplayerJoin');
   const copyButton = element<HTMLButtonElement>('multiplayerCopy');
+  const copyCodeButton = element<HTMLButtonElement>('multiplayerCopyCode');
   const lobby = element<HTMLElement>('multiplayerLobby');
   const lobbyCode = element<HTMLElement>('multiplayerLobbyCode');
   const playerCount = element<HTMLElement>('multiplayerPlayerCount');
@@ -144,6 +163,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const chatForm = element<HTMLFormElement>('multiplayerChatForm');
   const chatInput = element<HTMLInputElement>('multiplayerChatInput');
   const chatSend = element<HTMLButtonElement>('multiplayerChatSend');
+  const copyFeedbackTimers = new Map<HTMLButtonElement, number>();
 
   chatInput.placeholder = t('multiplayer.chatPlaceholder');
   chatInput.setAttribute('aria-label', t('multiplayer.chatPlaceholder'));
@@ -226,6 +246,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     announcedRoundId = 0;
     lastFinishedRoundId = 0;
     activeJoinUrl = '';
+    activeRoomCode = '';
     setup.hidden = false;
     room.hidden = true;
     share.hidden = true;
@@ -247,6 +268,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     readyButton.textContent = t('multiplayer.ready');
     startButton.hidden = true;
     copyButton.textContent = t('multiplayer.copyLink');
+    copyCodeButton.textContent = t('multiplayer.copyCode');
+    for (const timer of copyFeedbackTimers.values()) window.clearTimeout(timer);
+    copyFeedbackTimers.clear();
     resetChat();
   };
   const disconnectRoom = () => {
@@ -549,6 +573,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       const created = await responseJson<CreateRoomResponse>(response);
       if (!created.room?.code || !created.hostToken) throw new Error(t('multiplayer.invalidResponse'));
       activeJoinUrl = created.joinUrl;
+      activeRoomCode = created.room.code;
       roomCode.textContent = created.room.code;
       if (created.qrDataUrl.startsWith('data:image/png;base64,')) qr.src = created.qrDataUrl;
       share.hidden = false;
@@ -583,15 +608,25 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   });
   nameInput.addEventListener('change', getPlayerName);
   nameInput.addEventListener('blur', getPlayerName);
-  copyButton.addEventListener('click', async () => {
-    if (!activeJoinUrl) return;
-    try {
-      await navigator.clipboard.writeText(activeJoinUrl);
-      copyButton.textContent = t('multiplayer.copied');
-    } catch {
-      showMessage(t('multiplayer.copyFailed'));
-    }
-  });
+  const bindCopyButton = (button: HTMLButtonElement, getValue: () => string, defaultLabel: string, failureMessage: string) => {
+    button.addEventListener('click', async () => {
+      const value = getValue();
+      if (!value) return;
+      try {
+        await copyText(value);
+        button.textContent = t('multiplayer.copied');
+        window.clearTimeout(copyFeedbackTimers.get(button));
+        copyFeedbackTimers.set(button, window.setTimeout(() => {
+          button.textContent = defaultLabel;
+          copyFeedbackTimers.delete(button);
+        }, 1500));
+      } catch {
+        showMessage(failureMessage);
+      }
+    });
+  };
+  bindCopyButton(copyButton, () => activeJoinUrl, t('multiplayer.copyLink'), t('multiplayer.copyFailed'));
+  bindCopyButton(copyCodeButton, () => activeRoomCode, t('multiplayer.copyCode'), t('multiplayer.copyCodeFailed'));
   readyButton.addEventListener('click', () => {
     const self = currentRoom?.players.find(player => player.id === currentPlayerId);
     if (self?.ready) {
