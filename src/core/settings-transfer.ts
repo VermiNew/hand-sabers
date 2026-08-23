@@ -143,7 +143,9 @@ export function parseSettingsImport(text: string): SettingsTransferDocument {
   }
   if (!isRecord(raw['settings'])) throw new Error('SETTINGS_INVALID_DOCUMENT');
 
-  const settingsRecord = raw['settings'];
+  const settingsRecord = { ...raw['settings'] };
+  // The UI may persist "both", while the runtime represents the two-hand mode as null.
+  if (settingsRecord['oneHandMode'] === 'both') settingsRecord['oneHandMode'] = null;
   const allowedKeys = Object.keys(DEFAULTS) as Array<keyof Settings>;
   if (!hasOnlyKeys(settingsRecord, allowedKeys)) throw new Error('SETTINGS_UNKNOWN_FIELD');
   for (const key of allowedKeys) {

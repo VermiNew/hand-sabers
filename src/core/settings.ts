@@ -1,4 +1,4 @@
-import type { PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
+import type { OneHandMode, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
 const KEY = 'hs_settings';
 const DEFAULT_PERFORMANCE_MODE: PerformanceMode = 'auto';
@@ -123,6 +123,10 @@ function normalizeTrackingSource(value: unknown): TrackingSourcePreference {
   return value === 'camera' || value === 'phone' ? value : 'auto';
 }
 
+function normalizeOneHandMode(value: unknown): OneHandMode {
+  return value === 'left' || value === 'right' ? value : null;
+}
+
 function normalizeFavoriteMapIds(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   const ids = value
@@ -145,6 +149,7 @@ function normalizeSettings(value: Partial<Settings>): Settings {
   normalized.musicReactiveIntensityMode = normalizeMusicReactiveIntensityMode(normalized.musicReactiveIntensityMode);
   normalized.musicReactiveIntensity = clampNumber(normalized.musicReactiveIntensity, 0, 1.5, DEFAULTS.musicReactiveIntensity);
   normalized.trackingSource = normalizeTrackingSource(normalized.trackingSource);
+  normalized.oneHandMode = normalizeOneHandMode(normalized.oneHandMode);
   normalized.favoriteMapIds = normalizeFavoriteMapIds(normalized.favoriteMapIds);
   return normalized;
 }
