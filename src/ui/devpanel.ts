@@ -73,6 +73,7 @@ interface TweakpaneInstance {
 }
 
 interface TweakpaneFolder {
+  selected?: boolean;
   addMonitor(obj: DevData, key: string, opts?: Record<string, unknown>): void;
   addInput(obj: DevData, key: string, opts?: Record<string, unknown>): { on(event: string, cb: (ev: { value: unknown }) => void): void };
   addFolder?(opts: { title: string }): TweakpaneFolder;
@@ -93,7 +94,9 @@ let isDev         = false;
 
 // localStorage keys
 const DEV_PANEL_EXPANDED_KEY = 'hs_devpanel_expanded';
+const DEV_PANEL_TAB_KEY = 'hs_devpanel_tab';
 const CAM_PANEL_MINIMIZED_KEY = 'hs_campanel_minimized';
+const DEV_PANEL_TAB_COUNT = 8;
 
 function loadDevPanelExpanded(): boolean {
   try {
@@ -108,6 +111,21 @@ function loadDevPanelExpanded(): boolean {
 function saveDevPanelExpanded(expanded: boolean): void {
   try {
     localStorage.setItem(DEV_PANEL_EXPANDED_KEY, String(expanded));
+  } catch {}
+}
+
+function loadDevPanelTab(): number {
+  try {
+    const index = Number(localStorage.getItem(DEV_PANEL_TAB_KEY));
+    return Number.isInteger(index) && index >= 0 && index < DEV_PANEL_TAB_COUNT ? index : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveDevPanelTab(index: number): void {
+  try {
+    localStorage.setItem(DEV_PANEL_TAB_KEY, String(index));
   } catch {}
 }
 
@@ -334,6 +352,15 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
       { title: 'SND'  },
       { title: 'CFG'  },
     ]});
+    tabs.pages[loadDevPanelTab()]!.selected = true;
+    pane.element.addEventListener('click', event => {
+      const target = event.target as HTMLElement;
+      const tabButton = target.closest<HTMLElement>('.tp-tabv_b');
+      if (!tabButton) return;
+      const buttons = [...pane!.element.querySelectorAll<HTMLElement>('.tp-tabv_b')];
+      const index = buttons.indexOf(tabButton);
+      if (index >= 0 && index < DEV_PANEL_TAB_COUNT) saveDevPanelTab(index);
+    });
 
     // ── PERF ──
     const perf = tabs.pages[0]!;
