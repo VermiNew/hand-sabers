@@ -1668,7 +1668,14 @@ function initMainMenu(): void {
           settingsTransferList.append(row);
         }
       }
-      if (settingsImportApply) settingsImportApply.disabled = changes.length === 0;
+      if (settingsImportApply) {
+        const applyLabelKey = changes.length
+          ? 'settings.transfer.applyButton'
+          : 'settings.transfer.nothingToApplyButton';
+        settingsImportApply.disabled = changes.length === 0;
+        settingsImportApply.dataset['i18n'] = applyLabelKey;
+        settingsImportApply.textContent = t(applyLabelKey);
+      }
       if (settingsTransferPreview) settingsTransferPreview.hidden = false;
       setTransferStatus('');
     } catch (error) {

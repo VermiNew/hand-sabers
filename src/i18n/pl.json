@@ -313,6 +313,7 @@
       "changes": "Liczba zmian: {{count}}",
       "noChanges": "Plik zawiera te same ustawienia.",
       "applyButton": "ZASTOSUJ I PRZEŁADUJ",
+      "nothingToApplyButton": "BRAK ZMIAN DO ZASTOSOWANIA",
       "confirm": "Zastosować {{count}} zmian i przeładować grę?",
       "applied": "Ustawienia zostały zastosowane.",
       "invalid": "Plik ustawień jest nieprawidłowy.",

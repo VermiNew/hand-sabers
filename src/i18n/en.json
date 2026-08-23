@@ -315,6 +315,7 @@
       "changes": "Changes: {{count}}",
       "noChanges": "The file contains the same settings.",
       "applyButton": "APPLY AND RELOAD",
+      "nothingToApplyButton": "NO CHANGES TO APPLY",
       "confirm": "Apply {{count}} changes and reload the game?",
       "applied": "Settings were applied.",
       "invalid": "The settings file is invalid.",
