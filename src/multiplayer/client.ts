@@ -156,6 +156,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const noFailInput = element<HTMLInputElement>('multiplayerNoFail');
   const readyButton = element<HTMLButtonElement>('multiplayerReady');
   const startButton = element<HTMLButtonElement>('multiplayerStart');
+  const coopHint = element<HTMLElement>('multiplayerCoopHint');
   const disconnectButton = element<HTMLButtonElement>('multiplayerDisconnect');
   const lobbyScores = element<HTMLElement>('multiplayerLobbyScores');
   const hudScores = element<HTMLElement>('multiplayerHudScores');
@@ -267,6 +268,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     readyButton.classList.remove('is-ready');
     readyButton.textContent = t('multiplayer.ready');
     startButton.hidden = true;
+    coopHint.hidden = true;
     copyButton.textContent = t('multiplayer.copyLink');
     copyCodeButton.textContent = t('multiplayer.copyCode');
     for (const timer of copyFeedbackTimers.values()) window.clearTimeout(timer);
@@ -412,6 +414,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       ? t('multiplayer.preparing')
       : self?.ready ? t('multiplayer.notReady') : t('multiplayer.ready');
     startButton.hidden = currentRole !== 'host';
+    coopHint.hidden = currentRole !== 'host' || snapshot.mode !== 'coop' || snapshot.players.length <= snapshot.maxPlayers;
     startButton.disabled = !snapshot.mapId
       || snapshot.players.length === 0
       || (snapshot.mode === 'coop' && snapshot.players.length !== snapshot.maxPlayers)
@@ -644,11 +647,6 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   disconnectButton.addEventListener('click', disconnectRoom);
   modeSelect.addEventListener('change', () => {
     if (currentRole !== 'host' || !['coop', 'score-attack'].includes(modeSelect.value)) return;
-    if (modeSelect.value === 'coop' && (currentRoom?.players.length ?? 0) > 2) {
-      modeSelect.value = currentRoom?.mode ?? 'score-attack';
-      showMessage(translateServerError('ROOM_FULL'));
-      return;
-    }
     pendingPreparationMapId = '';
     sendControl({ type: 'set-mode', mode: modeSelect.value });
   });

@@ -96,6 +96,7 @@
     "mode": "TRYB",
     "scoreAttack": "SCORE ATTACK",
     "coop": "CO-OP",
+    "coopPlayerLimit": "CO-OP wymaga dokładnie 2 graczy. Usuń nadmiarowych graczy z pokoju.",
     "gameplayRules": "ZASADY ROZGRYWKI",
     "trainingMode": "TRYB TRENINGOWY",
     "noFail": "NO FAIL",

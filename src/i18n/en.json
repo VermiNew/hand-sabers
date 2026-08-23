@@ -96,6 +96,7 @@
     "mode": "MODE",
     "scoreAttack": "SCORE ATTACK",
     "coop": "CO-OP",
+    "coopPlayerLimit": "CO-OP requires exactly 2 players. Remove extra players from the room.",
     "gameplayRules": "GAMEPLAY RULES",
     "trainingMode": "TRAINING MODE",
     "noFail": "NO FAIL",

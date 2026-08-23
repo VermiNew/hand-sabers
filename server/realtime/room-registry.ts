@@ -283,7 +283,6 @@ export class RoomRegistry {
     if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
     if (mode !== 'coop' && mode !== 'score-attack') throw new RoomError('INVALID_MODE');
     const maxPlayers = maxPlayersForMode(mode);
-    if (room.players.length > maxPlayers) throw new RoomError('ROOM_FULL');
     room.mode = mode;
     room.maxPlayers = maxPlayers;
     room.round = null;
