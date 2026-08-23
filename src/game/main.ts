@@ -19,7 +19,7 @@ import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes,
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
-import { t, setLang, getCurrentLang, needsLanguageSelection, translateDom } from '../i18n/index.ts';
+import { t, needsLanguageSelection, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
@@ -32,6 +32,7 @@ import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from 
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { ARENA_THEMES, getArenaTheme } from '../core/arena-themes.ts';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
+import { initLanguageSettings } from '../ui/language-settings.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, showProfileOnboardingIfNeeded } from './profile.ts';
@@ -1855,28 +1856,7 @@ function initMainMenu(): void {
     if (event.key === 'Escape' && isSettingsPanelVisible()) setSettingsPanelVisible(false);
   });
 
-  const btnLangPl = document.getElementById('btnLangPl');
-  const btnLangEn = document.getElementById('btnLangEn');
-
-  function updateLangButtons(): void {
-    const currentLang = getCurrentLang();
-    btnLangPl?.classList.toggle('lang-active', currentLang === 'pl');
-    btnLangEn?.classList.toggle('lang-active', currentLang === 'en');
-  }
-
-  btnLangPl?.addEventListener('click', () => {
-    setLang('pl');
-    updateLangButtons();
-    applyTranslations();
-  });
-
-  btnLangEn?.addEventListener('click', () => {
-    setLang('en');
-    updateLangButtons();
-    applyTranslations();
-  });
-
-  updateLangButtons();
+  initLanguageSettings(applyTranslations);
 
   if (trackingSourceInput) {
     trackingSourceInput.value = settings.trackingSource;
