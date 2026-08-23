@@ -266,6 +266,27 @@
 }
 .sp-hint-mode { color:rgba(0,212,255,0.5); padding-top:4px; }
 
+.settings-transfer-intro { padding:0 0 14px; }
+.settings-transfer-actions .sp-toggle-row { gap:16px; }
+.settings-transfer-preview {
+  margin-top:18px; padding:14px; border:1px solid rgba(54,242,161,0.22);
+  border-radius:12px; background:rgba(54,242,161,0.04);
+}
+.settings-transfer-preview[hidden] { display:none; }
+.settings-transfer-summary { margin:0 0 10px; color:rgba(226,232,240,0.78); font-size:12px; }
+.settings-transfer-list {
+  display:grid; gap:5px; max-height:220px; margin-bottom:14px; overflow:auto;
+  scrollbar-width:thin; scrollbar-color:rgba(54,242,161,0.3) transparent;
+}
+.settings-transfer-change {
+  display:grid; grid-template-columns:minmax(100px,0.7fr) minmax(0,1.3fr); gap:10px;
+  padding:7px 9px; border-radius:7px; background:rgba(255,255,255,0.035); font-size:10px;
+}
+.settings-transfer-change strong { color:#9ee8c8; overflow-wrap:anywhere; }
+.settings-transfer-change span { color:rgba(226,232,240,0.6); overflow-wrap:anywhere; }
+.settings-transfer-status { min-height:24px; padding:10px 0 0; }
+.settings-transfer-status.is-error { color:#ff8d9a; }
+
 /* Colors */
 .sp-colors-group { display:grid; grid-template-columns:1fr 1fr; gap:0; padding:0; }
 .sp-color-side { padding:16px; border-right:1px solid rgba(255,255,255,0.06); }

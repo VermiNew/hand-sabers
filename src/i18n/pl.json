@@ -220,7 +220,8 @@
       "gameplay": "Rozgrywka",
       "saberColors": "Kolory mieczy",
       "achievements": "Osiągnięcia",
-      "profile": "Profil"
+      "profile": "Profil",
+      "data": "Dane"
     },
     "labels": {
       "selectLanguage": "Wybierz język",
@@ -298,6 +299,31 @@
         "orange": "Pomarańczowy",
         "yellow": "Żółty"
       }
+    },
+    "transfer": {
+      "intro": "Eksportuj trwałe ustawienia profilu do wersjonowanego pliku JSON albo bezpiecznie przywróć je na tym urządzeniu.",
+      "exportTitle": "Eksport ustawień",
+      "exportDesc": "Plik nie zawiera tokenów sesji ani danych tymczasowych.",
+      "exportButton": "EKSPORTUJ JSON",
+      "exported": "Ustawienia zostały wyeksportowane.",
+      "importTitle": "Import ustawień",
+      "importDesc": "Plik zostanie zwalidowany przed pokazaniem zmian.",
+      "importButton": "WYBIERZ JSON",
+      "previewTitle": "Podgląd zmian",
+      "changes": "Liczba zmian: {{count}}",
+      "noChanges": "Plik zawiera te same ustawienia.",
+      "applyButton": "ZASTOSUJ I PRZEŁADUJ",
+      "confirm": "Zastosować {{count}} zmian i przeładować grę?",
+      "applied": "Ustawienia zostały zastosowane.",
+      "invalid": "Plik ustawień jest nieprawidłowy.",
+      "tooLarge": "Plik ustawień przekracza limit 64 KiB.",
+      "wrongProduct": "Ten plik nie pochodzi z Hand Sabers.",
+      "unsupportedVersion": "Ta wersja pliku ustawień nie jest obsługiwana.",
+      "unknownField": "Plik zawiera niedozwolone pole.",
+      "calibrationData": "dane kalibracji",
+      "saveFailed": "Nie udało się zapisać ustawień. Poprzednia konfiguracja pozostała aktywna.",
+      "cancel": "ANULUJ",
+      "confirmButton": "ZASTOSUJ"
     },
     "gameplay": {
       "noFailDesc": "Gra nie kończy się przy zerowym HP",

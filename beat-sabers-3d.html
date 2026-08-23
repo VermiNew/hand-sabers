@@ -95,6 +95,10 @@
           <span class="material-symbols-rounded">person</span>
           <span data-i18n="settings.sections.profile">Profil</span>
         </button>
+        <button class="sp-nav-item" data-tab="data" type="button">
+          <span class="material-symbols-rounded">database</span>
+          <span data-i18n="settings.sections.data">Dane</span>
+        </button>
         <button class="sp-nav-item" data-tab="achievements" type="button">
           <span class="material-symbols-rounded">emoji_events</span>
           <span data-i18n="settings.sections.achievements">Osiągnięcia</span>
@@ -537,6 +541,36 @@
             <button class="sp-action-btn" id="menuProfileSave" type="button" data-i18n="profile.save">Zapisz</button>
             <span id="menuProfileSaved" class="profile-saved-status" role="status" data-i18n="profile.saved">Zapisano!</span>
           </div>
+        </div>
+
+        <!-- TAB: DATA -->
+        <div class="sp-tab" data-tab="data">
+          <h2 class="sp-tab-title" data-i18n="settings.sections.data">Dane</h2>
+          <p class="sp-hint settings-transfer-intro" data-i18n="settings.transfer.intro">Eksportuj trwałe ustawienia profilu do wersjonowanego pliku JSON albo bezpiecznie przywróć je na tym urządzeniu.</p>
+          <div class="sp-group settings-transfer-actions">
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.transfer.exportTitle">Eksport ustawień</span>
+                <span class="sp-toggle-desc" data-i18n="settings.transfer.exportDesc">Plik nie zawiera tokenów sesji ani danych tymczasowych.</span>
+              </div>
+              <button class="sp-inline-action" id="settingsExport" type="button" data-i18n="settings.transfer.exportButton">EKSPORTUJ JSON</button>
+            </div>
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.transfer.importTitle">Import ustawień</span>
+                <span class="sp-toggle-desc" data-i18n="settings.transfer.importDesc">Plik zostanie zwalidowany przed pokazaniem zmian.</span>
+              </div>
+              <button class="sp-inline-action" id="settingsImport" type="button" data-i18n="settings.transfer.importButton">WYBIERZ JSON</button>
+              <input id="settingsImportFile" type="file" accept="application/json,.json" hidden>
+            </div>
+          </div>
+          <section class="settings-transfer-preview" id="settingsTransferPreview" aria-live="polite" hidden>
+            <div class="sp-group-title" data-i18n="settings.transfer.previewTitle">Podgląd zmian</div>
+            <p class="settings-transfer-summary" id="settingsTransferSummary"></p>
+            <div class="settings-transfer-list" id="settingsTransferList"></div>
+            <button class="sp-action-btn" id="settingsImportApply" type="button" data-i18n="settings.transfer.applyButton">ZASTOSUJ I PRZEŁADUJ</button>
+          </section>
+          <p class="sp-hint settings-transfer-status" id="settingsTransferStatus" role="status"></p>
         </div>
 
         <!-- TAB: OSIĄGNIĘCIA -->

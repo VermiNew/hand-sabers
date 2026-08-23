@@ -220,7 +220,8 @@
       "gameplay": "Gameplay",
       "saberColors": "Saber colors",
       "achievements": "Achievements",
-      "profile": "Profile"
+      "profile": "Profile",
+      "data": "Data"
     },
     "labels": {
       "selectLanguage": "Select language",
@@ -300,6 +301,31 @@
         "orange": "Orange",
         "yellow": "Yellow"
       }
+    },
+    "transfer": {
+      "intro": "Export persistent profile settings to a versioned JSON file or safely restore them on this device.",
+      "exportTitle": "Export settings",
+      "exportDesc": "The file contains no session tokens or temporary data.",
+      "exportButton": "EXPORT JSON",
+      "exported": "Settings were exported.",
+      "importTitle": "Import settings",
+      "importDesc": "The file will be validated before changes are shown.",
+      "importButton": "CHOOSE JSON",
+      "previewTitle": "Change preview",
+      "changes": "Changes: {{count}}",
+      "noChanges": "The file contains the same settings.",
+      "applyButton": "APPLY AND RELOAD",
+      "confirm": "Apply {{count}} changes and reload the game?",
+      "applied": "Settings were applied.",
+      "invalid": "The settings file is invalid.",
+      "tooLarge": "The settings file exceeds the 64 KiB limit.",
+      "wrongProduct": "This file does not come from Hand Sabers.",
+      "unsupportedVersion": "This settings file version is not supported.",
+      "unknownField": "The file contains a disallowed field.",
+      "calibrationData": "calibration data",
+      "saveFailed": "Settings could not be saved. The previous configuration remains active.",
+      "cancel": "CANCEL",
+      "confirmButton": "APPLY"
     },
     "gameplay": {
       "noFailDesc": "Game doesn't end at zero HP",
