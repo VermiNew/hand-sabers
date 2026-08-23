@@ -1615,11 +1615,14 @@ function initMainMenu(): void {
   };
   const transferErrorMessage = (error: unknown): string => {
     const code = error instanceof Error ? error.message : '';
-    if (code === 'SETTINGS_FILE_TOO_LARGE') return t('settings.transfer.tooLarge');
-    if (code === 'SETTINGS_WRONG_PRODUCT') return t('settings.transfer.wrongProduct');
-    if (code === 'SETTINGS_UNSUPPORTED_VERSION') return t('settings.transfer.unsupportedVersion');
-    if (code === 'SETTINGS_UNKNOWN_FIELD') return t('settings.transfer.unknownField');
-    return t('settings.transfer.invalid');
+    let message = t('settings.transfer.invalid');
+    if (code === 'SETTINGS_FILE_TOO_LARGE') message = t('settings.transfer.tooLarge');
+    else if (code === 'SETTINGS_WRONG_PRODUCT') message = t('settings.transfer.wrongProduct');
+    else if (code === 'SETTINGS_UNSUPPORTED_VERSION') message = t('settings.transfer.unsupportedVersion');
+    else if (code === 'SETTINGS_UNKNOWN_FIELD') message = t('settings.transfer.unknownField');
+
+    const developerMode = Boolean(settings.developerMode) || isDeveloperPanelEnabled();
+    return developerMode && code ? `${message} [${code}]` : message;
   };
 
   settingsExport?.addEventListener('click', () => {
