@@ -1270,6 +1270,11 @@ function renderStatsGrid(): void {
     : 0;
   const hours = Math.floor(stats.totalPlayTimeMs / 3600000);
   const minutes = Math.floor((stats.totalPlayTimeMs % 3600000) / 60000);
+  const fullTotalScore = String(stats.totalScore);
+  const totalScoreValue = new Intl.NumberFormat(document.documentElement.lang || 'pl', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(stats.totalScore);
 
   const items = [
     { key: 'totalGames', value: String(stats.totalGames) },
@@ -1279,7 +1284,7 @@ function renderStatsGrid(): void {
     { key: 'totalMisses', value: String(stats.totalMisses) },
     { key: 'accuracy', value: `${accuracy}%` },
     { key: 'bestCombo', value: `×${stats.maxCombo}` },
-    { key: 'totalScore', value: String(stats.totalScore).padStart(6, '0') },
+    { key: 'totalScore', value: totalScoreValue, fullValue: fullTotalScore },
     { key: 'perfectHits', value: String(stats.perfectHits) },
     { key: 'mapsCompleted', value: String(stats.mapsCompleted) },
     { key: 'totalPlayTime', value: `${hours}h ${minutes}m` },
@@ -1288,11 +1293,15 @@ function renderStatsGrid(): void {
   grid.innerHTML = '';
   for (const item of items) {
     const card = document.createElement('div');
-    card.className = 'stat-card';
+    card.className = `stat-card${item.key === 'totalScore' ? ' stat-card-score' : ''}`;
     card.innerHTML = `
       <span class="stat-value">${item.value}</span>
       <span class="stat-label">${t(`stats.${item.key}`)}</span>
     `;
+    if (item.fullValue) {
+      card.title = item.fullValue;
+      card.setAttribute('aria-label', `${t('stats.totalScore')}: ${item.fullValue}`);
+    }
     grid.appendChild(card);
   }
 }

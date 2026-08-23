@@ -313,6 +313,8 @@
   border-radius: 10px;
   text-align: center;
 }
+.stat-card-score { grid-column: 1 / -1; }
+.stat-card-score .stat-value { overflow-wrap: anywhere; }
 
 .stat-value {
   font-family: 'Oxanium', sans-serif;
