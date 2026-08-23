@@ -106,7 +106,9 @@ function validateSetting(key: keyof Settings, value: unknown): boolean {
 }
 
 function cloneSettings(settings: Settings): Settings {
-  return JSON.parse(JSON.stringify(settings)) as Settings;
+  const entries = (Object.keys(DEFAULTS) as Array<keyof Settings>)
+    .map(key => [key, settings[key]] as const);
+  return JSON.parse(JSON.stringify(Object.fromEntries(entries))) as Settings;
 }
 
 export function createSettingsExport(settings: Settings = getSettings()): SettingsTransferDocument {
