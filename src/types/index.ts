@@ -81,6 +81,7 @@ export const PERFORMANCE_MODES = ['auto', 'lowest', 'very-low', 'low', 'medium',
 export type PerformanceMode = typeof PERFORMANCE_MODES[number];
 
 export interface Settings {
+  language: 'pl' | 'en';
   sensitivity: number;
   flipCamera: boolean;
   volume: number;

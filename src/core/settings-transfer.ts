@@ -17,6 +17,7 @@ const UNIT_NUMBER_KEYS = new Set<keyof Settings>([
   'interfaceSoundVolume',
 ]);
 const ENUM_VALUES: Partial<Record<keyof Settings, readonly unknown[]>> = {
+  language: ['pl', 'en'],
   performanceMode: ['auto', 'lowest', 'very-low', 'low', 'medium', 'high', 'ultra', 'maximum', 'custom'],
   oneHandMode: [null, 'left', 'right'],
   musicReactiveIntensityMode: ['auto', 'manual'],
@@ -148,6 +149,8 @@ export function parseSettingsImport(text: string): SettingsTransferDocument {
   const settingsRecord = { ...raw['settings'] };
   // The UI may persist "both", while the runtime represents the two-hand mode as null.
   if (settingsRecord['oneHandMode'] === 'both') settingsRecord['oneHandMode'] = null;
+  // Files created before language joined the shared settings model preserve the current language.
+  if (!('language' in settingsRecord)) settingsRecord['language'] = getSettings().language;
   const allowedKeys = Object.keys(DEFAULTS) as Array<keyof Settings>;
   if (!hasOnlyKeys(settingsRecord, allowedKeys)) throw new Error('SETTINGS_UNKNOWN_FIELD');
   for (const key of allowedKeys) {

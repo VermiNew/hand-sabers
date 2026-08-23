@@ -26,7 +26,22 @@ const LEGACY_MODE_MAP: Record<string, PerformanceMode> = {
   quality: 'ultra',
 };
 
+function detectDefaultLanguage(): Settings['language'] {
+  try {
+    const stored = localStorage.getItem('lang');
+    if (stored === 'pl' || stored === 'en') return stored;
+  } catch {}
+  if (typeof navigator !== 'undefined') {
+    const languages = [...(navigator.languages ?? []), navigator.language]
+      .map(language => String(language || '').toLowerCase());
+    if (languages.some(language => language === 'pl' || language.startsWith('pl-'))) return 'pl';
+    if (languages.some(language => language === 'en' || language.startsWith('en-'))) return 'en';
+  }
+  return 'pl';
+}
+
 export const DEFAULTS: Settings = {
+  language: detectDefaultLanguage(),
   sensitivity: 1.0,
   flipCamera: false,
   volume: 0.8,
@@ -123,6 +138,11 @@ function normalizeTrackingSource(value: unknown): TrackingSourcePreference {
   return value === 'camera' || value === 'phone' ? value : 'auto';
 }
 
+function normalizeLanguage(value: unknown): Settings['language'] {
+  if (value === 'pl' || value === 'en') return value;
+  return detectDefaultLanguage();
+}
+
 function normalizeOneHandMode(value: unknown): OneHandMode {
   return value === 'left' || value === 'right' ? value : null;
 }
@@ -149,6 +169,7 @@ function normalizeSettings(value: Partial<Settings>): Settings {
   normalized.musicReactiveIntensityMode = normalizeMusicReactiveIntensityMode(normalized.musicReactiveIntensityMode);
   normalized.musicReactiveIntensity = clampNumber(normalized.musicReactiveIntensity, 0, 1.5, DEFAULTS.musicReactiveIntensity);
   normalized.trackingSource = normalizeTrackingSource(normalized.trackingSource);
+  normalized.language = normalizeLanguage(value.language);
   normalized.oneHandMode = normalizeOneHandMode(normalized.oneHandMode);
   normalized.favoriteMapIds = normalizeFavoriteMapIds(normalized.favoriteMapIds);
   return normalized;

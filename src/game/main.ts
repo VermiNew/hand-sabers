@@ -1691,6 +1691,7 @@ function initMainMenu(): void {
     const previous = createSettingsExport(settings).settings;
     try {
       replaceSettings(pendingSettingsImport.settings);
+      setLang(pendingSettingsImport.settings.language);
       try { sessionStorage.setItem('hs_settings_imported', '1'); } catch {}
       location.reload();
     } catch {

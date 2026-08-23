@@ -3,6 +3,7 @@ import pl from './pl.json';
 import en from './en.json';
 import { contestTranslations } from './contest.ts';
 import { setCoreLang } from '../core/translate.js';
+import { setSetting } from '../core/settings.ts';
 
 export type Lang = 'pl' | 'en';
 
@@ -83,6 +84,7 @@ export function translateDom(root: ParentNode = document): void {
 export function setLang(lang: Lang): void {
   languageSelectionNeeded = false;
   setCoreLang(lang);
+  setSetting('language', lang);
   if (typeof localStorage !== 'undefined') localStorage.setItem('lang', lang);
   if (typeof document !== 'undefined') document.documentElement.lang = lang;
   void i18next.changeLanguage(lang);
