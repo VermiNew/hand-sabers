@@ -52,6 +52,7 @@ import { createPauseResumeGuard } from './pause-resume-guard.ts';
 import type { ResumeSource } from './pause-resume-guard.ts';
 import { createGameplayFocusProtection } from './gameplay-focus-protection.ts';
 import { createHandsPauseController, getMissingHandsText } from './hands-pause-controller.ts';
+import { createCalibrationUI } from './calibration-ui.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -260,78 +261,25 @@ function hideOverlay(): void {
 
 let calibrationReady = false;
 let multiplayerPreparationMapId = '';
-
-function showCalibPanel(): void {
-  if (ui.calibPanel) ui.calibPanel.classList.add('show');
-}
-
-function hideCalibPanel(): void {
-  if (ui.calibPanel) ui.calibPanel.classList.remove('show');
-}
+const calibrationUI = createCalibrationUI();
 
 function startCalib(): void {
   // Guard: if the user aborted during loading, don't enter calibration
   if (state.appState !== S.LOADING) return;
-  showCalibPanel();
+  calibrationUI.showPanel();
   resetCalibration();
   state.appState = S.CALIB;
   if (ui.dStatus) ui.dStatus.textContent = 'CALIB';
   // Show mode selector first; actual calibration starts when user picks a mode
-  showCalibModeSelector();
-}
-
-function showCalibModeSelector(): void {
-  const selector = document.getElementById('calibModeSelector');
-  if (selector) selector.hidden = false;
-  // Hide step content while selector is visible
-  const badge = document.getElementById('calibStepBadge');
-  const stepTitle = document.getElementById('calibStep');
-  const stepDesc = document.getElementById('calibInstr');
-  const progressWrap = document.querySelector('.calib-progress-wrap');
-  const progressLabel = document.getElementById('calibProgressLabel');
-  const actions = document.querySelector('.calib-actions');
-  if (badge) badge.hidden = true;
-  if (stepTitle) stepTitle.hidden = true;
-  if (stepDesc) stepDesc.hidden = true;
-  if (progressWrap) (progressWrap as HTMLElement).hidden = true;
-  if (progressLabel) progressLabel.hidden = true;
-  if (actions) (actions as HTMLElement).hidden = true;
-
-  // Restore checkbox state from settings
-  const checkbox = document.getElementById('calibRememberCheckbox') as HTMLInputElement | null;
-  if (checkbox) checkbox.checked = settings.rememberCalibration;
-}
-
-function hideCalibModeSelector(): void {
-  const selector = document.getElementById('calibModeSelector');
-  if (selector) selector.hidden = true;
-  // Show step content
-  const badge = document.getElementById('calibStepBadge');
-  const stepTitle = document.getElementById('calibStep');
-  const stepDesc = document.getElementById('calibInstr');
-  const progressWrap = document.querySelector('.calib-progress-wrap');
-  const progressLabel = document.getElementById('calibProgressLabel');
-  const actions = document.querySelector('.calib-actions');
-  if (badge) badge.hidden = false;
-  if (stepTitle) stepTitle.hidden = false;
-  if (stepDesc) stepDesc.hidden = false;
-  if (progressWrap) (progressWrap as HTMLElement).hidden = false;
-  if (progressLabel) progressLabel.hidden = false;
-  if (actions) (actions as HTMLElement).hidden = false;
+  calibrationUI.showModeSelector(settings.rememberCalibration);
 }
 
 function beginCalibrationSteps(mode: 'manual' | 'auto'): void {
   setSetting('calibrationMode', mode);
   const isManual = mode === 'manual';
   setManualCalibrationMode(isManual);
-  const nextBtn = document.getElementById('calibBtnNext');
-  if (nextBtn) nextBtn.style.display = isManual ? '' : 'none';
-
-  // Save "remember calibration" checkbox state
-  const checkbox = document.getElementById('calibRememberCheckbox') as HTMLInputElement | null;
-  if (checkbox) setSetting('rememberCalibration', checkbox.checked);
-
-  hideCalibModeSelector();
+  setSetting('rememberCalibration', calibrationUI.getRememberCalibration());
+  calibrationUI.showSteps(isManual);
   state.calibIdx = 0;
   renderCalibStep();
 }
@@ -363,7 +311,7 @@ async function advanceCalib(): Promise<void> {
 function completeMultiplayerPreparation(): void {
   const mapId = multiplayerPreparationMapId;
   multiplayerPreparationMapId = '';
-  hideCalibPanel();
+  calibrationUI.hidePanel();
   hideOverlay();
   state.appState = S.MENU;
   const mainMenu = document.getElementById('mainMenu');
@@ -415,7 +363,7 @@ async function beginMultiplayerRound(detail: {
   clearGameplayEntities();
   stopMapAudio();
   mapTimeline.reset();
-  hideCalibPanel();
+  calibrationUI.hidePanel();
   hideOverlay();
   hideHandsPaused();
   hidePauseMenu();
@@ -444,7 +392,7 @@ async function beginMultiplayerRound(detail: {
 
 async function beginPlaying(): Promise<void> {
   gameplayFocusProtection.reset();
-  hideCalibPanel();
+  calibrationUI.hidePanel();
   hideOverlay();
   if (ui.hud)                       ui.hud.style.display        = 'flex';
   if (ui.mapProgress && state.map)  ui.mapProgress.style.display = 'flex';
@@ -1053,7 +1001,7 @@ function returnToMainMenu(): void {
     hideHandsPaused();
     if (ui.hud) ui.hud.style.display = 'none';
     hideOverlay();
-    hideCalibPanel();
+  calibrationUI.hidePanel();
     const mainMenu = document.getElementById('mainMenu');
     if (mainMenu) mainMenu.style.display = 'flex';
     document.body.classList.add('menu-open');
