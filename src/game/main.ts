@@ -46,9 +46,10 @@ import { initAchievementUI, renderAchievementCompactGrid, renderStatsGrid } from
 import {
   applyPauseTranslations,
   setPauseMenuMessage,
-  setPauseResumeButtonDisabled,
   syncPauseMenuActions,
 } from './pause-ui.ts';
+import { createPauseResumeGuard } from './pause-resume-guard.ts';
+import type { ResumeSource } from './pause-resume-guard.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -546,28 +547,7 @@ function missingHandsText(): string {
     : t('hands.rightMissing');
 }
 
-type ResumeSource = 'ui' | 'keyboard' | 'hands';
-
-const FOCUS_RESUME_GUARD_MS = 450;
-let focusResumeAllowedAt = 0;
-let focusResumeGuardTimer = 0;
-let resumeInFlight = false;
-
-function armFocusResumeGuard(now = performance.now()): void {
-  window.clearTimeout(focusResumeGuardTimer);
-  focusResumeAllowedAt = now + FOCUS_RESUME_GUARD_MS;
-  setPauseResumeButtonDisabled(true);
-  focusResumeGuardTimer = window.setTimeout(() => {
-    if (
-      state.appState === S.PAUSED
-      && state.pauseReason === PAUSE_REASONS.FOCUS
-      && !document.hidden
-      && document.hasFocus()
-    ) {
-      setPauseResumeButtonDisabled(false);
-    }
-  }, FOCUS_RESUME_GUARD_MS);
-}
+const pauseResumeGuard = createPauseResumeGuard();
 
 function pauseGame(reason: PauseReason, now = performance.now()): void {
   if (state.appState !== S.PLAYING) return;
@@ -579,16 +559,15 @@ function pauseGame(reason: PauseReason, now = performance.now()): void {
     // Show hands banner (camera preview + resume progress) AND full pause menu
     // so the player can manually resume, restart, or quit
     showHandsPaused(missingHandsText());
-    setPauseResumeButtonDisabled(false);
+    pauseResumeGuard.unlock();
     setPauseMenuMessage(reason);
     syncPauseMenuActions(multiplayerRoundActive);
     showPauseMenu();
   } else {
     if (reason === PAUSE_REASONS.FOCUS) {
-      focusResumeAllowedAt = Number.POSITIVE_INFINITY;
-      setPauseResumeButtonDisabled(true);
+      pauseResumeGuard.lockForFocusLoss();
     } else {
-      setPauseResumeButtonDisabled(false);
+      pauseResumeGuard.unlock();
     }
     hideHandsPaused();
     setPauseMenuMessage(reason);
@@ -599,16 +578,9 @@ function pauseGame(reason: PauseReason, now = performance.now()): void {
 }
 
 async function resumeGame(now = performance.now(), source: ResumeSource = 'ui'): Promise<boolean> {
-  if (state.appState !== S.PAUSED || resumeInFlight) return false;
+  if (state.appState !== S.PAUSED) return false;
   const pausedReason = state.pauseReason;
-  if (
-    pausedReason === PAUSE_REASONS.FOCUS
-    && (source === 'hands' || document.hidden || !document.hasFocus() || now < focusResumeAllowedAt)
-  ) {
-    return false;
-  }
-
-  resumeInFlight = true;
+  if (!pauseResumeGuard.tryBeginAttempt(pausedReason, source, now)) return false;
   try {
     const audioReady = !hasMapAudio() || await resumeAudioContext();
     if (!audioReady) {
@@ -621,17 +593,14 @@ async function resumeGame(now = performance.now(), source: ResumeSource = 'ui'):
     mapTimeline.resume(syncNow);
     state.appState    = S.PLAYING;
     state.pauseReason = PAUSE_REASONS.NONE;
-    focusResumeAllowedAt = 0;
-    window.clearTimeout(focusResumeGuardTimer);
-    focusResumeGuardTimer = 0;
-    setPauseResumeButtonDisabled(false);
+    pauseResumeGuard.resetAfterResume();
     setPauseMenuMessage(PAUSE_REASONS.NONE);
     hideHandsPaused();
     hidePauseMenu();
     if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
     return true;
   } finally {
-    resumeInFlight = false;
+    pauseResumeGuard.finishAttempt();
   }
 }
 
@@ -640,11 +609,7 @@ let multiplayerFocusWarningOpen = false;
 let multiplayerFocusViolationActive = false;
 
 function resetGameplayFocusProtection(): void {
-  focusResumeAllowedAt = 0;
-  window.clearTimeout(focusResumeGuardTimer);
-  focusResumeGuardTimer = 0;
-  setPauseResumeButtonDisabled(false);
-  resumeInFlight = false;
+  pauseResumeGuard.reset();
   multiplayerFocusWarningPending = false;
   multiplayerFocusWarningOpen = false;
   multiplayerFocusViolationActive = false;
@@ -687,7 +652,7 @@ function handleGameplayFocusLoss(): void {
 
 function handleGameplayFocusReturn(): void {
   if (!document.hidden && document.hasFocus() && state.pauseReason === PAUSE_REASONS.FOCUS) {
-    armFocusResumeGuard(performance.now());
+    pauseResumeGuard.armAfterFocusReturn(performance.now());
   }
   showMultiplayerFocusWarning();
 }
