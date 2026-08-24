@@ -4,7 +4,7 @@ import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
-  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals, setArenaTheme, applyBackgroundTheme,
+  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setMusicVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
@@ -29,7 +29,6 @@ import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/
 import { isPhoneAudioActive, preparePhoneAudio, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
 import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from './narrator.ts';
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
-import { ARENA_THEMES, getArenaTheme } from '../core/arena-themes.ts';
 import { initLanguageSettings } from '../ui/language-settings.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
@@ -37,6 +36,7 @@ import { initProfileOnboarding, initProfileSettings, showProfileOnboardingIfNeed
 import { initAudioSettings } from './audio-settings.ts';
 import { initGameplaySettings } from './gameplay-settings.ts';
 import { applySaberAppearance, initSaberSettings } from './saber-settings.ts';
+import { applyArenaTheme, initArenaSettings } from './arena-settings.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -75,10 +75,7 @@ window.__oneHandMode         = state.oneHandMode || 'both';
 document.body.classList.toggle('training-mode', settings.trainingMode);
 document.body.dataset['gameMode'] = settings.gameMode || 'normal';
 applyAudioSettings(settings);
-const themeId = settings.arenaTheme || 'cosmic';
-const theme = getArenaTheme(themeId);
-setArenaTheme(theme.sceneBg, theme.fog, theme.ambient, theme.floor);
-applyBackgroundTheme(theme.shader);
+applyArenaTheme(settings.arenaTheme || 'cosmic');
 setScenePerformanceProfile(settings);
 setHitPlaneVisible(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
 prewarmGameplayResources();
@@ -1814,6 +1811,7 @@ function initMainMenu(): void {
   initProfileSettings(settings);
   const gameplaySettingsController = initGameplaySettings(settings);
   const saberSettingsController = initSaberSettings(settings);
+  const arenaSettingsController = initArenaSettings(settings);
 
   if (performanceInput) {
     const updatePerformanceHint = () => {
@@ -1940,22 +1938,6 @@ function initMainMenu(): void {
     });
   }
 
-  const arenaThemeInput = document.getElementById('menuArenaTheme') as HTMLSelectElement | null;
-  if (arenaThemeInput) {
-    arenaThemeInput.innerHTML = ARENA_THEMES.map(th =>
-      `<option value="${th.id}">${t(`arena.${th.id}`)}</option>`
-    ).join('');
-    arenaThemeInput.value = settings.arenaTheme || 'cosmic';
-    arenaThemeInput.addEventListener('change', () => {
-      const value = arenaThemeInput.value;
-      settings.arenaTheme = value;
-      setSetting('arenaTheme', value);
-      const theme = getArenaTheme(value);
-      setArenaTheme(theme.sceneBg, theme.fog, theme.ambient, theme.floor);
-      applyBackgroundTheme(theme.shader);
-    });
-  }
-
   updateGraphicsModeInfo();
   window.setInterval(updateGraphicsModeInfo, 1200);
 
@@ -1993,6 +1975,7 @@ function initMainMenu(): void {
     audioSettingsController.sync();
     gameplaySettingsController.sync();
     saberSettingsController.sync();
+    arenaSettingsController.sync();
     if (performanceInput) {
       performanceInput.value = settings.performanceMode;
       emit(performanceInput, 'change');
