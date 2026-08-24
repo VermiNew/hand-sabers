@@ -31,12 +31,14 @@ import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from 
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { initLanguageSettings } from '../ui/language-settings.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
+import { bindStyledRange, updateRangeProgress } from '../ui/settings-range.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, initProfileSettings, showProfileOnboardingIfNeeded } from './profile.ts';
 import { initAudioSettings } from './audio-settings.ts';
 import { initGameplaySettings } from './gameplay-settings.ts';
 import { applySaberAppearance, initSaberSettings } from './saber-settings.ts';
 import { applyArenaTheme, initArenaSettings } from './arena-settings.ts';
+import { initMusicReactiveSettings } from './music-reactive-settings.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -1499,12 +1501,6 @@ function initMainMenu(): void {
   const customHitShardsValue = document.getElementById('menuCustomHitShardsValue');
   const customRenderScaleInput = document.getElementById('menuCustomRenderScale') as HTMLInputElement | null;
   const customRenderScaleValue = document.getElementById('menuCustomRenderScaleValue');
-  const musicReactiveInput = document.getElementById('menuMusicReactive') as HTMLInputElement | null;
-  const musicIntensityAutoButton = document.getElementById('btnMusicIntensityAuto');
-  const musicIntensityManualButton = document.getElementById('btnMusicIntensityManual');
-  const musicIntensityManualRow = document.getElementById('menuMusicIntensityManualRow');
-  const musicReactiveIntensityInput = document.getElementById('menuMusicReactiveIntensity') as HTMLInputElement | null;
-  const musicReactiveIntensityValue = document.getElementById('menuMusicReactiveIntensityValue');
   const trackingSourceInput = document.getElementById('menuTrackingSource') as HTMLSelectElement | null;
   const trackingSourceHint = document.getElementById('menuTrackingSourceHint');
   const performanceHint  = document.getElementById('menuPerformanceHint');
@@ -1564,35 +1560,6 @@ function initMainMenu(): void {
     setSettingsPanelVisible(true);
   });
 
-  function updateRangeProgress(input: HTMLInputElement): void {
-    const min   = Number(input.min   || 0);
-    const max   = Number(input.max   || 100);
-    const value = Number(input.value || 0);
-    const pct   = max === min ? 0 : ((value - min) / (max - min)) * 100;
-    input.style.setProperty('--range-progress', `${Math.max(0, Math.min(100, pct))}%`);
-  }
-
-  function updateSettingsSliderValue(input: HTMLInputElement): void {
-    if (!input?.id) return;
-    const valueEl = document.querySelector<HTMLElement>(`.sp-value[data-for="${input.id}"]`);
-    if (!valueEl) return;
-    const min   = Number(input.min   || 0);
-    const max   = Number(input.max   || 100);
-    const value = Number(input.value || 0);
-    const pct   = max === min ? 0 : ((value - min) / (max - min)) * 100;
-    valueEl.textContent = `${Math.round(Math.max(0, Math.min(100, pct)))}%`;
-  }
-
-  function bindStyledRange(input: HTMLInputElement | null): void {
-    if (!input) return;
-    const update = () => {
-      updateRangeProgress(input);
-      updateSettingsSliderValue(input);
-    };
-    update();
-    input.addEventListener('input', update);
-  }
-
   function getGraphicsModeSummary(): string {
     const selected = getPerformanceMode(settings);
     const profile  = getScenePerformanceProfile();
@@ -1623,16 +1590,6 @@ function initMainMenu(): void {
 
   function updateCustomGraphicsVisibility(): void {
     customGraphicsSection?.classList.toggle('is-hidden', performanceInput?.value !== 'custom');
-  }
-
-  function updateMusicIntensityMode(): void {
-    const manual = settings.musicReactiveIntensityMode === 'manual';
-    musicIntensityAutoButton?.classList.toggle('is-active', !manual);
-    musicIntensityManualButton?.classList.toggle('is-active', manual);
-    musicIntensityAutoButton?.setAttribute('aria-pressed', String(!manual));
-    musicIntensityManualButton?.setAttribute('aria-pressed', String(manual));
-    musicIntensityManualRow?.classList.toggle('is-hidden', !manual);
-    if (musicReactiveIntensityInput) musicReactiveIntensityInput.disabled = !manual;
   }
 
   function applyLivePerformanceSettings(): void {
@@ -1697,14 +1654,7 @@ function initMainMenu(): void {
       updateRangeProgress(customRenderScaleInput);
     }
     if (customRenderScaleValue) customRenderScaleValue.textContent = `${Math.round(settings.customRenderScale * 100)}%`;
-    if (musicReactiveInput) musicReactiveInput.checked = settings.musicReactiveEnabled;
-    if (musicReactiveIntensityInput) {
-      musicReactiveIntensityInput.value = String(settings.musicReactiveIntensity);
-      updateRangeProgress(musicReactiveIntensityInput);
-    }
-    if (musicReactiveIntensityValue) musicReactiveIntensityValue.textContent = `${settings.musicReactiveIntensity.toFixed(1)}×`;
     updateCustomGraphicsVisibility();
-    updateMusicIntensityMode();
   }
 
   const allNavItems = [...document.querySelectorAll<HTMLElement>('.main-nav-item')];
@@ -1812,6 +1762,7 @@ function initMainMenu(): void {
   const gameplaySettingsController = initGameplaySettings(settings);
   const saberSettingsController = initSaberSettings(settings);
   const arenaSettingsController = initArenaSettings(settings);
+  const musicReactiveSettingsController = initMusicReactiveSettings(settings);
 
   if (performanceInput) {
     const updatePerformanceHint = () => {
@@ -1895,29 +1846,6 @@ function initMainMenu(): void {
     if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
   });
 
-  musicReactiveInput?.addEventListener('change', () => {
-    settings.musicReactiveEnabled = musicReactiveInput.checked;
-    setSetting('musicReactiveEnabled', musicReactiveInput.checked);
-    applyLivePerformanceSettings();
-  });
-
-  function setMusicIntensityMode(mode: Settings['musicReactiveIntensityMode']): void {
-    settings.musicReactiveIntensityMode = mode;
-    setSetting('musicReactiveIntensityMode', mode);
-    updateMusicIntensityMode();
-    applyLivePerformanceSettings();
-  }
-
-  musicIntensityAutoButton?.addEventListener('click', () => setMusicIntensityMode('auto'));
-  musicIntensityManualButton?.addEventListener('click', () => setMusicIntensityMode('manual'));
-  musicReactiveIntensityInput?.addEventListener('input', () => {
-    const value = Math.max(0, Math.min(1.5, Number(musicReactiveIntensityInput.value)));
-    settings.musicReactiveIntensity = value;
-    setSetting('musicReactiveIntensity', value);
-    updateRangeProgress(musicReactiveIntensityInput);
-    if (musicReactiveIntensityValue) musicReactiveIntensityValue.textContent = `${value.toFixed(1)}×`;
-    applyLivePerformanceSettings();
-  });
   syncAdvancedSettings();
 
   if (developerModeInput) {
@@ -1976,6 +1904,7 @@ function initMainMenu(): void {
     gameplaySettingsController.sync();
     saberSettingsController.sync();
     arenaSettingsController.sync();
+    musicReactiveSettingsController.sync();
     if (performanceInput) {
       performanceInput.value = settings.performanceMode;
       emit(performanceInput, 'change');
