@@ -4,6 +4,7 @@ import { scheduleAutosave } from './storage.ts';
 import { state } from './state.ts';
 import { renderAll } from './timeline.ts';
 import { t } from '../i18n/index.ts';
+import { fitBeatsWithinMap } from './beat-timing.ts';
 
 interface TimelineContextMenuOptions {
   checkOverlaps(): boolean;
@@ -59,7 +60,7 @@ export class TimelineContextMenu {
         label: t('creator.contextPaste'),
         action: () => {
           this.options.pushUndo();
-          const pasted = state.clipboard.map(beat => ({ ...beat, t: this.options.snapTime(clickTime + beat.t) }));
+          const pasted = fitBeatsWithinMap(state.clipboard, beat => clickTime + beat.t, this.options.snapTime);
           state.map.beats.push(...pasted);
           sortBeatsByTime(state.map.beats);
           state.selectedBeats.clear();

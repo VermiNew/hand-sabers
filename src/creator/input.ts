@@ -10,6 +10,7 @@ import { CUT_DIRECTIONS } from '../core/gameplay-rules.ts';
 import { matchAction, loadKeybinds } from './keybinds.ts';
 import { TimelineDragSelection } from './drag-selection.ts';
 import { TimelineContextMenu } from './timeline-context-menu.ts';
+import { canCreateHeldAt, clampHeldDuration, clampMapTime, fitBeatsWithinMap } from './beat-timing.ts';
 
 const MAX_UNDO = 60;
 const DEFAULT_BEAT_X = 0.82;
@@ -153,9 +154,10 @@ export function startHeld(side: 'left' | 'right'): void {
   // already holding this side — ignore
   if (side === 'left'  && state.heldLeft)  return;
   if (side === 'right' && state.heldRight) return;
-  const t = snapTime(getPlayPos());
+  const t = clampMapTime(snapTime(getPlayPos()));
+  if (!canCreateHeldAt(t)) return;
   pushUndo();
-  const beat = { t, side, type: 'held', cut: state.activeCut, duration: 0, ...createBeatPosition(side) };
+  const beat = { t, side, type: 'held', cut: state.activeCut, duration: 0.05, ...createBeatPosition(side) };
   state.map.beats.push(beat);
   sortBeatsByTime(state.map.beats);
   if (side === 'left')  state.heldLeft  = beat;
@@ -168,7 +170,7 @@ export function endHeld(side: 'left' | 'right'): void {
   const beat = side === 'left' ? state.heldLeft : state.heldRight;
   if (!beat) return;
   const now = getPlayPos();
-  beat.duration = Math.max(0.05, now - beat.t);
+  beat.duration = clampHeldDuration(beat.t, now - beat.t);
   if (side === 'left')  state.heldLeft  = null;
   if (side === 'right') state.heldRight = null;
   checkOverlaps();
@@ -559,7 +561,7 @@ export function bindTimelineEvents(callbacks: {
       case 'paste': {
         if (!state.clipboard.length) break;
         pushUndo();
-        const pasted = state.clipboard.map(b => ({ ...b, t: snapTime(state.currentTime + b.t) }));
+        const pasted = fitBeatsWithinMap(state.clipboard, beat => state.currentTime + beat.t, snapTime);
         state.map.beats.push(...pasted);
         sortBeatsByTime(state.map.beats);
         state.selectedBeats.clear();
@@ -578,7 +580,7 @@ export function bindTimelineEvents(callbacks: {
         const maxT   = sorted[sorted.length - 1]!.t;
         const span   = maxT - minT;
         const offset = span + Math.max(0.1, span > 0 ? span / sorted.length : 0.25);
-        const duped  = sorted.map(b => ({ ...b, t: snapTime(b.t + offset) }));
+        const duped  = fitBeatsWithinMap(sorted, beat => beat.t + offset, snapTime);
         state.map.beats.push(...duped);
         sortBeatsByTime(state.map.beats);
         state.selectedBeats.clear();
