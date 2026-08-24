@@ -37,10 +37,11 @@ import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, initProfileSettings, showProfileOnboardingIfNeeded } from './profile.ts';
 import { initAudioSettings } from './audio-settings.ts';
+import { initGameplaySettings } from './gameplay-settings.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
-import type { OneHandMode, PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
+import type { PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
 
 declare global {
   interface Window {
@@ -63,7 +64,6 @@ interface MultiplayerRules {
   trainingMode: boolean;
   noFail: boolean;
 }
-let multiplayerRoomRules: MultiplayerRules | null = null;
 let multiplayerRoundRules: MultiplayerRules | null = null;
 
 if (settings.saberColorLeft) {
@@ -1493,9 +1493,6 @@ function initMainMenu(): void {
   const settingsButton   = document.getElementById('mainSettings');
   const settingsClose    = document.getElementById('mainSettingsClose');
   const settingsReset    = document.getElementById('mainSettingsReset');
-  const noFailInput      = document.getElementById('menuNoFail')    as HTMLInputElement | null;
-  const trainingModeInput = document.getElementById('menuTrainingMode') as HTMLInputElement | null;
-  const beatLimitInput   = document.getElementById('menuBeatLimit') as HTMLInputElement | null;
   const flipCameraInput  = document.getElementById('menuFlipCamera')as HTMLInputElement | null;
   const performanceInput = document.getElementById('menuPerformanceMode') as HTMLSelectElement | null;
   const customGraphicsSection = document.getElementById('menuCustomGraphicsSection');
@@ -1528,36 +1525,12 @@ function initMainMenu(): void {
   const performanceHint  = document.getElementById('menuPerformanceHint');
   const graphicsModeInfo = document.getElementById('menuGraphicsModeInfo');
   const developerModeInput = document.getElementById('menuDeveloperMode') as HTMLInputElement | null;
-  window.addEventListener('hand-sabers:room-state', event => {
-    const detail = (event as CustomEvent<{ rules?: unknown } | null>).detail;
-    const rules = detail?.rules;
-    multiplayerRoomRules = rules
-      && typeof rules === 'object'
-      && !Array.isArray(rules)
-      && typeof (rules as Record<string, unknown>)['trainingMode'] === 'boolean'
-      && typeof (rules as Record<string, unknown>)['noFail'] === 'boolean'
-      ? rules as MultiplayerRules
-      : null;
-    if (noFailInput) {
-      noFailInput.disabled = multiplayerRoomRules !== null;
-      noFailInput.checked = multiplayerRoomRules?.noFail ?? settings.noFail;
-    }
-    if (trainingModeInput) {
-      trainingModeInput.disabled = multiplayerRoomRules !== null;
-      trainingModeInput.checked = multiplayerRoomRules?.trainingMode ?? settings.trainingMode;
-    }
-  });
-
   setAutoFlipSuggestionHandler(({ flipCamera }) => {
     settings.flipCamera      = flipCamera;
     window.__trackingFlip    = flipCamera;
     setSetting('flipCamera', flipCamera);
     if (flipCameraInput) flipCameraInput.checked = flipCamera;
   });
-
-  const oneHandButtons   = [...document.querySelectorAll<HTMLElement>('[data-one-hand]')];
-  const noteSpeedButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-note-speed]')];
-  const hitboxSensitivityButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-hitbox-sensitivity]')];
 
   function selectItem(item: Element): void {
     navItems.forEach(el => el.classList.toggle('is-selected', el === item));
@@ -1605,30 +1578,6 @@ function initMainMenu(): void {
     switchSettingsTab(detail?.tab ?? 'audio');
     setSettingsPanelVisible(true);
   });
-
-  function syncOneHandButtons(): void {
-    oneHandButtons.forEach(btn => {
-      btn.classList.toggle('is-active', (btn.dataset['oneHand'] ?? '') === (state.oneHandMode ?? ''));
-    });
-  }
-
-  function syncNoteSpeedButtons(): void {
-    const activeSpeed = Number(settings.noteSpeed) || 1;
-    noteSpeedButtons.forEach(button => {
-      const selected = Math.abs(Number(button.dataset['noteSpeed']) - activeSpeed) < 0.001;
-      button.classList.toggle('is-active', selected);
-      button.setAttribute('aria-pressed', String(selected));
-    });
-  }
-
-  function syncHitboxSensitivityButtons(): void {
-    const activeSensitivity = Number(settings.hitboxSensitivity) || 1;
-    hitboxSensitivityButtons.forEach(button => {
-      const selected = Math.abs(Number(button.dataset['hitboxSensitivity']) - activeSensitivity) < 0.001;
-      button.classList.toggle('is-active', selected);
-      button.setAttribute('aria-pressed', String(selected));
-    });
-  }
 
   function updateRangeProgress(input: HTMLInputElement): void {
     const min   = Number(input.min   || 0);
@@ -1875,40 +1824,7 @@ function initMainMenu(): void {
   const audioSettingsController = initAudioSettings(settings, bindStyledRange);
 
   initProfileSettings(settings);
-
-  if (noFailInput) {
-    noFailInput.checked = Boolean(settings.noFail);
-    noFailInput.addEventListener('change', () => {
-      if (multiplayerRoomRules) {
-        noFailInput.checked = multiplayerRoomRules.noFail;
-        return;
-      }
-      settings.noFail = noFailInput.checked;
-      state.noFail    = noFailInput.checked;
-      setSetting('noFail', noFailInput.checked);
-    });
-  }
-
-  if (trainingModeInput) {
-    trainingModeInput.checked = Boolean(settings.trainingMode);
-    trainingModeInput.addEventListener('change', () => {
-      if (multiplayerRoomRules) {
-        trainingModeInput.checked = multiplayerRoomRules.trainingMode;
-        return;
-      }
-      settings.trainingMode = trainingModeInput.checked;
-      document.body.classList.toggle('training-mode', trainingModeInput.checked);
-      setSetting('trainingMode', trainingModeInput.checked);
-    });
-  }
-
-  if (beatLimitInput) {
-    beatLimitInput.checked = settings.beatLimitEnabled !== false;
-    beatLimitInput.addEventListener('change', () => {
-      settings.beatLimitEnabled = beatLimitInput.checked;
-      setSetting('beatLimitEnabled', beatLimitInput.checked);
-    });
-  }
+  const gameplaySettingsController = initGameplaySettings(settings);
 
   if (performanceInput) {
     const updatePerformanceHint = () => {
@@ -2065,63 +1981,6 @@ function initMainMenu(): void {
     });
   }
 
-  for (const btn of oneHandButtons) {
-    btn.addEventListener('click', () => {
-      const value           = (btn.dataset['oneHand'] ?? null) as OneHandMode;
-      settings.oneHandMode  = value;
-      state.oneHandMode     = value;
-      window.__oneHandMode  = value ?? 'both';
-      setSetting('oneHandMode', value);
-      setOneHandModeVisuals(value);
-      applyTrackingSettings({ oneHandMode: value });
-      syncOneHandButtons();
-    });
-  }
-  syncOneHandButtons();
-
-  for (const button of noteSpeedButtons) {
-    button.addEventListener('click', () => {
-      const speed = Number(button.dataset['noteSpeed']);
-      if (!Number.isFinite(speed)) return;
-      settings.noteSpeed = speed;
-      setSetting('noteSpeed', speed);
-      syncNoteSpeedButtons();
-    });
-  }
-  syncNoteSpeedButtons();
-
-  for (const button of hitboxSensitivityButtons) {
-    button.addEventListener('click', () => {
-      const sensitivity = Number(button.dataset['hitboxSensitivity']);
-      if (!Number.isFinite(sensitivity)) return;
-      settings.hitboxSensitivity = sensitivity;
-      setSetting('hitboxSensitivity', sensitivity);
-      syncHitboxSensitivityButtons();
-    });
-  }
-  syncHitboxSensitivityButtons();
-
-  const gameModeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-game-mode]')];
-  function syncGameModeButtons(): void {
-    const activeMode = settings.gameMode || 'normal';
-    gameModeButtons.forEach(button => {
-      const selected = (button.dataset['gameMode'] ?? 'normal') === activeMode;
-      button.classList.toggle('is-active', selected);
-      button.setAttribute('aria-pressed', String(selected));
-    });
-  }
-  for (const button of gameModeButtons) {
-    button.addEventListener('click', () => {
-      const mode = button.dataset['gameMode'] as typeof settings.gameMode | undefined;
-      if (!mode) return;
-      settings.gameMode = mode;
-      setSetting('gameMode', mode);
-      document.body.dataset['gameMode'] = mode;
-      syncGameModeButtons();
-    });
-  }
-  syncGameModeButtons();
-
   // ── Kolory mieczy ─────────────────────────────────────────────────────────
   function updateColorPreview(previewBar: HTMLElement | null, previewName: HTMLElement | null, colorDef: { hex: string; labelKey?: string; label?: string }): void {
     if (previewBar) {
@@ -2234,7 +2093,7 @@ function initMainMenu(): void {
     const localTrainingMode = settings.trainingMode;
     const previousTrackingSource = settings.trackingSource;
     resetSettings();
-    if (multiplayerRoomRules) {
+    if (gameplaySettingsController.hasMultiplayerRules()) {
       setSetting('noFail', localNoFail);
       setSetting('trainingMode', localTrainingMode);
     }
@@ -2243,26 +2102,12 @@ function initMainMenu(): void {
       trackingStarted = false;
       calibrationReady = false;
     }
-    syncNoteSpeedButtons();
-    syncHitboxSensitivityButtons();
-
     const emit = (element: HTMLElement | null, eventName: 'input' | 'change') => {
       element?.dispatchEvent(new Event(eventName));
     };
 
     audioSettingsController.sync();
-    if (noFailInput) {
-      noFailInput.checked = settings.noFail;
-      emit(noFailInput, 'change');
-    }
-    if (trainingModeInput) {
-      trainingModeInput.checked = settings.trainingMode;
-      emit(trainingModeInput, 'change');
-    }
-    if (beatLimitInput) {
-      beatLimitInput.checked = settings.beatLimitEnabled;
-      emit(beatLimitInput, 'change');
-    }
+    gameplaySettingsController.sync();
     if (performanceInput) {
       performanceInput.value = settings.performanceMode;
       emit(performanceInput, 'change');
@@ -2284,11 +2129,6 @@ function initMainMenu(): void {
       flipCameraInput.checked = settings.flipCamera;
       emit(flipCameraInput, 'change');
     }
-
-    state.oneHandMode = settings.oneHandMode;
-    window.__oneHandMode = settings.oneHandMode ?? 'both';
-    setOneHandModeVisuals(state.oneHandMode);
-    syncOneHandButtons();
 
     const leftColor = settings.saberColorLeft;
     const rightColor = settings.saberColorRight;
