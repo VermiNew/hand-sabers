@@ -923,7 +923,12 @@
     "collecting": "Zbieram tapnięcia: {{collected}} / {{needed}}",
     "measurementProgress": "POMIAR {{collected}} / {{needed}}",
     "done": "Gotowe! Offset: {{ms}} ms",
-    "unstable": "Wynik niestabilny (spread duży). Ustawiono: {{ms}} ms",
+    "unstable": "Wynik niestabilny (rozrzut: ±{{spread}} ms)",
+    "resultDetails": "±{{spread}} ms · próbki {{taps}} / {{needed}}",
+    "apply": "ZASTOSUJ OFFSET",
+    "applyAnyway": "ZASTOSUJ MIMO TO",
+    "retry": "PONÓW POMIAR",
+    "close": "ZAMKNIJ",
     "cancel": "ANULUJ"
   }
 }

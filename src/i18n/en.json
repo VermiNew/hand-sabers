@@ -925,7 +925,12 @@
     "collecting": "Collecting taps: {{collected}} / {{needed}}",
     "measurementProgress": "MEASUREMENT {{collected}} / {{needed}}",
     "done": "Done! Offset: {{ms}} ms",
-    "unstable": "Unstable result (high spread). Set to: {{ms}} ms",
+    "unstable": "Unstable result (spread: ±{{spread}} ms)",
+    "resultDetails": "±{{spread}} ms · samples {{taps}} / {{needed}}",
+    "apply": "APPLY OFFSET",
+    "applyAnyway": "APPLY ANYWAY",
+    "retry": "RETRY MEASUREMENT",
+    "close": "CLOSE",
     "cancel": "CANCEL"
   }
 }

@@ -10,7 +10,6 @@ import type { CalibrationResult } from './calibration-math.ts';
 
 let metronomeActive = false;
 let metronomeTimer: ReturnType<typeof setTimeout> | null = null;
-let overlayRemovalTimer: ReturnType<typeof setTimeout> | null = null;
 let metronomeBeat = 0;
 let tapTimes: number[] = [];
 let startTime = 0;
@@ -18,8 +17,9 @@ let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 let visualEl: HTMLElement | null = null;
 let statusEl: HTMLElement | null = null;
 let counterEl: HTMLElement | null = null;
+let actionsEl: HTMLElement | null = null;
 let onCompleteCb: ((result: CalibrationResult) => void) | null = null;
-let onStopCb: (() => void) | null = null;
+let onStateChangeCb: ((active: boolean) => void) | null = null;
 let reducedMotion = false;
 
 function formatText(key: string, replacements?: Record<string, string>): string {
@@ -52,11 +52,7 @@ export function playTestSound(): void {
   osc.stop(now + 0.2);
 }
 
-function createVisualOverlay(): { visual: HTMLElement; status: HTMLElement; counter: HTMLElement } {
-  if (overlayRemovalTimer) {
-    clearTimeout(overlayRemovalTimer);
-    overlayRemovalTimer = null;
-  }
+function createVisualOverlay(): { visual: HTMLElement; status: HTMLElement; counter: HTMLElement; actions: HTMLElement } {
   document.getElementById('metronomeOverlay')?.remove();
 
   const overlay = document.createElement('div');
@@ -102,19 +98,27 @@ function createVisualOverlay(): { visual: HTMLElement; status: HTMLElement; coun
   });
   overlay.append(counter);
 
+  const actions = document.createElement('div');
+  actions.className = 'metronome-actions';
+
   const cancelBtn = document.createElement('button');
   cancelBtn.type = 'button';
   cancelBtn.className = 'metronome-cancel';
   cancelBtn.textContent = t('metronome.cancel');
   cancelBtn.addEventListener('click', () => stopMetronome());
-  overlay.append(cancelBtn);
+  actions.append(cancelBtn);
+  overlay.append(actions);
 
   document.body.append(overlay);
-  return { visual, status, counter };
+  return { visual, status, counter, actions };
 }
 
 function removeVisualOverlay(): void {
   document.getElementById('metronomeOverlay')?.remove();
+  visualEl = null;
+  statusEl = null;
+  counterEl = null;
+  actionsEl = null;
 }
 
 function pulseVisual(accent: boolean, beatInPattern: number): void {
@@ -167,10 +171,40 @@ function updateCounter(): void {
   });
 }
 
+function createResultButton(label: string, className: string, onClick: () => void): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = className;
+  button.textContent = label;
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+function showResultActions(
+  result: CalibrationResult,
+  onApply: ((result: CalibrationResult) => void) | null,
+  onRetry: () => void,
+): void {
+  if (!actionsEl) return;
+  actionsEl.replaceChildren();
+
+  const apply = () => {
+    onApply?.(result);
+    removeVisualOverlay();
+  };
+  actionsEl.append(createResultButton(
+    t(result.stable ? 'metronome.apply' : 'metronome.applyAnyway'),
+    'metronome-action metronome-apply',
+    apply,
+  ));
+  actionsEl.append(createResultButton(t('metronome.retry'), 'metronome-action metronome-retry', onRetry));
+  actionsEl.append(createResultButton(t('metronome.close'), 'metronome-cancel', removeVisualOverlay));
+}
+
 /** Start the FL Studio-style metronome calibration */
 export function startMetronomeCalibration(
   onComplete?: (result: CalibrationResult) => void,
-  onStop?: () => void,
+  onStateChange?: (active: boolean) => void,
 ): boolean {
   if (metronomeActive) return false;
   initAudio();
@@ -184,12 +218,14 @@ export function startMetronomeCalibration(
   tapTimes = [];
   startTime = performance.now();
   onCompleteCb = onComplete ?? null;
-  onStopCb = onStop ?? null;
+  onStateChangeCb = onStateChange ?? null;
 
-  const { visual, status, counter } = createVisualOverlay();
+  const { visual, status, counter, actions } = createVisualOverlay();
   visualEl = visual;
   statusEl = status;
   counterEl = counter;
+  actionsEl = actions;
+  onStateChangeCb?.(true);
 
   const playClick = (accent: boolean, audioTime: number, beatInPattern: number) => {
     const osc = ctx.createOscillator();
@@ -272,12 +308,23 @@ export function startMetronomeCalibration(
       if (result.stable) {
         updateStatus('metronome.done', { ms: String(result.offsetMs) });
       } else {
-        updateStatus('metronome.unstable', { ms: String(result.offsetMs) });
+        updateStatus('metronome.unstable', { spread: String(result.spread) });
+      }
+      if (counterEl) {
+        counterEl.textContent = formatText('metronome.resultDetails', {
+          spread: String(result.spread),
+          taps: String(result.taps),
+          needed: String(MIN_TAPS),
+        });
       }
       const complete = onCompleteCb;
+      const stateChange = onStateChangeCb;
       onCompleteCb = null;
-      stopMetronome({ preserveResult: true });
-      complete?.(result);
+      stopMetronome({ keepOverlay: true });
+      showResultActions(result, complete, () => {
+        removeVisualOverlay();
+        startMetronomeCalibration(complete ?? undefined, stateChange ?? undefined);
+      });
     }
   };
   window.addEventListener('keydown', keydownHandler);
@@ -285,7 +332,7 @@ export function startMetronomeCalibration(
 }
 
 /** Stop the metronome calibration */
-export function stopMetronome({ preserveResult = false }: { preserveResult?: boolean } = {}): void {
+export function stopMetronome({ keepOverlay = false }: { keepOverlay?: boolean } = {}): void {
   if (metronomeTimer) {
     clearTimeout(metronomeTimer);
     metronomeTimer = null;
@@ -296,23 +343,20 @@ export function stopMetronome({ preserveResult = false }: { preserveResult?: boo
   }
   metronomeActive = false;
 
-  const overlay = document.getElementById('metronomeOverlay');
-  if (overlay && preserveResult) {
-    overlayRemovalTimer = setTimeout(() => {
-      overlay.remove();
-      overlayRemovalTimer = null;
-    }, 2000);
-  } else {
+  if (!keepOverlay) {
     removeVisualOverlay();
   }
 
-  if (!preserveResult) onCompleteCb = null;
-  const stopped = onStopCb;
-  onStopCb = null;
-  stopped?.();
-  visualEl = null;
-  statusEl = null;
-  counterEl = null;
+  if (!keepOverlay) {
+    onCompleteCb = null;
+    visualEl = null;
+    statusEl = null;
+    counterEl = null;
+    actionsEl = null;
+  }
+  const stateChange = onStateChangeCb;
+  onStateChangeCb = null;
+  stateChange?.(false);
 }
 
 /** Check if metronome calibration is running */

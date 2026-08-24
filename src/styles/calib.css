@@ -484,6 +484,13 @@
 .metronome-dot.is-accent-pos.is-active{background:#36f2a1;box-shadow:0 0 16px rgba(54,242,161,.6)}
 .metronome-status{font:600 14px JetBrains Mono,monospace;color:var(--muted,#94a3b8);text-align:center;min-height:20px}
 .metronome-counter{font:800 24px Oxanium,sans-serif;color:var(--accent,#36f2a1);letter-spacing:3px}
-.metronome-cancel{padding:10px 30px;border:1px solid rgba(255,100,100,.4);border-radius:8px;background:transparent;color:var(--bomb,#ff5858);font:700 12px Oxanium,sans-serif;letter-spacing:2px;cursor:pointer;text-transform:uppercase;transition:background .2s}
+.metronome-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.metronome-action,.metronome-cancel{padding:10px 22px;border-radius:8px;font:700 12px Oxanium,sans-serif;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;transition:background .2s,border-color .2s,transform .2s}
+.metronome-action:hover,.metronome-cancel:hover{transform:translateY(-1px)}
+.metronome-apply{border:1px solid rgba(54,242,161,.55);background:rgba(54,242,161,.14);color:var(--accent,#36f2a1)}
+.metronome-apply:hover{background:rgba(54,242,161,.24)}
+.metronome-retry{border:1px solid rgba(47,124,255,.55);background:rgba(47,124,255,.14);color:#8fb7ff}
+.metronome-retry:hover{background:rgba(47,124,255,.24)}
+.metronome-cancel{border:1px solid rgba(255,100,100,.4);background:transparent;color:var(--bomb,#ff5858)}
 .metronome-cancel:hover{background:rgba(255,100,100,.1)}
 @media (prefers-reduced-motion:reduce){.metronome-dot{transition:none}.metronome-visual{transition:none}}

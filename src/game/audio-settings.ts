@@ -73,7 +73,6 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
   metronomeButton?.addEventListener('click', () => {
     if (isMetronomeActive()) {
       stopMetronome();
-      metronomeButton.textContent = t('settings.audio.metronomeCalibration');
       return;
     }
     const started = startMetronomeCalibration(
@@ -87,12 +86,11 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
         if (audioOffsetValue) audioOffsetValue.textContent = `${offsetMs} ms`;
         void narratorQuick(t('narrator.metronomeDone').replace('{{ms}}', String(offsetMs)));
       },
-      () => {
-        metronomeButton.textContent = t('settings.audio.metronomeCalibration');
+      (active) => {
+        metronomeButton.textContent = t(active ? 'settings.audio.metronomeStop' : 'settings.audio.metronomeCalibration');
       },
     );
     if (started) {
-      metronomeButton.textContent = t('settings.audio.metronomeStop');
       void narratorQuick(t('narrator.metronomeStart'));
     }
   });
