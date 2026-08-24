@@ -215,14 +215,15 @@ async function loadMediaPipe(onProgress: (msg: string, detail: string, ratio: nu
   onProgress(t('overlay.initializingResolver'), t('overlay.initializingResolverDetail'), 0.35);
   const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_CDN);
   const modelAssetBuffer = await downloadModel(onProgress);
+  const settings = getSettings();
   onProgress(t('overlay.loadingLandmarker'), t('overlay.initializingLandmarkerDetail'), 1);
   handLandmarker = await HandLandmarker.createFromOptions(vision, {
     baseOptions: { modelAssetBuffer, delegate: 'GPU' },
     runningMode:                 'VIDEO',
     numHands:                    2,
-    minHandDetectionConfidence:  0.42,
-    minHandPresenceConfidence:   0.42,
-    minTrackingConfidence:       0.42,
+    minHandDetectionConfidence:  settings.handDetectionConfidence,
+    minHandPresenceConfidence:   settings.handPresenceConfidence,
+    minTrackingConfidence:       settings.handTrackingConfidence,
   });
   onProgress(t('overlay.modelReady'), t('overlay.modelReadyDetail'), 1.0);
 }
