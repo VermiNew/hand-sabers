@@ -1,4 +1,5 @@
 import { sanitizeAvatar } from './avatars.ts';
+import { DEFAULT_PROFILE_COLOR, isProfileColor, sanitizeProfileColor } from '../core/profile-color.ts';
 
 export const PROTOCOL_VERSION = 1;
 
@@ -31,6 +32,7 @@ export interface ChatMessage {
   playerId: string;
   playerName: string;
   avatar: string;
+  color: string;
   text: string;
   sentAt: number;
 }
@@ -40,6 +42,7 @@ export interface RoomPlayer {
   streamId: number;
   name: string;
   avatar: string;
+  color: string;
   role: 'host' | 'guest';
   saber: 'left' | 'right' | 'both';
   ready: boolean;
@@ -73,6 +76,7 @@ export function parseRoomPlayer(value: unknown): RoomPlayer | null {
     || Number(player['streamId']) > 0xffff_ffff
     || typeof player['name'] !== 'string'
     || player['name'].length > 32
+    || (player['color'] !== undefined && !isProfileColor(player['color']))
     || (player['role'] !== 'host' && player['role'] !== 'guest')
     || (player['saber'] !== 'left' && player['saber'] !== 'right' && player['saber'] !== 'both')
     || typeof player['ready'] !== 'boolean'
@@ -97,6 +101,7 @@ export function parseRoomPlayer(value: unknown): RoomPlayer | null {
     streamId: player['streamId'] as number,
     name: player['name'],
     avatar: sanitizeAvatar(player['avatar']),
+    color: player['color'] === undefined ? DEFAULT_PROFILE_COLOR : sanitizeProfileColor(player['color']),
     role: player['role'],
     saber: player['saber'],
     ready: player['ready'],
@@ -117,6 +122,7 @@ export function parseChatMessage(value: unknown): ChatMessage | null {
     || message['playerId'].length > 64
     || typeof message['playerName'] !== 'string'
     || message['playerName'].length > 32
+    || (message['color'] !== undefined && !isProfileColor(message['color']))
     || typeof message['text'] !== 'string'
     || message['text'].length < 1
     || message['text'].length > 240
@@ -129,6 +135,7 @@ export function parseChatMessage(value: unknown): ChatMessage | null {
     playerId: message['playerId'],
     playerName: message['playerName'],
     avatar: sanitizeAvatar(message['avatar']),
+    color: message['color'] === undefined ? DEFAULT_PROFILE_COLOR : sanitizeProfileColor(message['color']),
     text: message['text'],
     sentAt: message['sentAt'],
   };

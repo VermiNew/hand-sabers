@@ -7,9 +7,16 @@ const SCORE_ATTACK_MAX_PLAYERS = 8;
 const COOP_PLAYERS = 2;
 const AVATAR_IDS = ['default', 'cat', 'rocket', 'star', 'music', 'bolt', 'diamond', 'forest'];
 const DEFAULT_AVATAR = 'default';
+const DEFAULT_PLAYER_COLOR = '#2f7cff';
 
 function sanitizeAvatar(value: unknown): string {
   return typeof value === 'string' && AVATAR_IDS.includes(value) ? value : DEFAULT_AVATAR;
+}
+
+function sanitizePlayerColor(value: unknown): string {
+  return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value)
+    ? value.toLowerCase()
+    : DEFAULT_PLAYER_COLOR;
 }
 
 export type RoomErrorCode =
@@ -43,6 +50,7 @@ export interface RoomPlayer {
   streamId: number;
   name: string;
   avatar: string;
+  color: string;
   role: 'host' | 'guest';
   saber: 'left' | 'right' | 'both';
   ready: boolean;
@@ -186,7 +194,7 @@ export class RoomRegistry {
     };
   }
 
-  join(code: string, token: string, requestedName: string, requestedAvatar: unknown): { player: RoomPlayer; snapshot: RoomSnapshot } {
+  join(code: string, token: string, requestedName: string, requestedAvatar: unknown, requestedColor: unknown): { player: RoomPlayer; snapshot: RoomSnapshot } {
     this.deleteExpired();
     const room = this.rooms.get(normalizeRoomCode(code));
     if (!room) throw new RoomError('ROOM_NOT_FOUND');
@@ -210,6 +218,7 @@ export class RoomRegistry {
       streamId,
       name,
       avatar: sanitizeAvatar(requestedAvatar),
+      color: sanitizePlayerColor(requestedColor),
       role,
       saber: saberForPlayer(room.mode, role),
       ready: false,
@@ -252,7 +261,7 @@ export class RoomRegistry {
     return this.snapshot(room);
   }
 
-  setProfile(code: string, playerId: string, name: string, avatar: unknown): RoomSnapshot {
+  setProfile(code: string, playerId: string, name: string, avatar: unknown, color: unknown): RoomSnapshot {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player) throw new RoomError('PLAYER_NOT_FOUND');
@@ -260,6 +269,7 @@ export class RoomRegistry {
     const sanitized = sanitizePlayerName(name);
     if (sanitized) player.name = sanitized;
     player.avatar = sanitizeAvatar(avatar);
+    player.color = sanitizePlayerColor(color);
     room.revision++;
     return this.snapshot(room);
   }

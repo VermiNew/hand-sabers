@@ -1,5 +1,5 @@
 import type { OneHandMode, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
-import { DEFAULT_PROFILE_COLOR, sanitizeProfileColor } from './profile-color.ts';
+import { DEFAULT_PROFILE_COLOR, sanitizeProfileColor } from './profile-color.js';
 
 const KEY = 'hs_settings';
 const DEFAULT_PERFORMANCE_MODE: PerformanceMode = 'auto';

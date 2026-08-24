@@ -195,9 +195,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     row.className = `mp-chat-message${chatMessage.playerId === currentPlayerId ? ' is-own' : ''}`;
     const header = document.createElement('div');
     header.className = 'mp-chat-header';
-    header.append(createAvatarBadge(chatMessage.avatar, 20));
+    header.append(createAvatarBadge(chatMessage.avatar, 20, chatMessage.color));
     const playerName = document.createElement('strong');
     playerName.textContent = chatMessage.playerName;
+    playerName.style.color = chatMessage.color;
     header.append(playerName);
     const text = document.createElement('p');
     text.textContent = chatMessage.text;
@@ -317,6 +318,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       row.className = 'mp-score-row';
       const name = document.createElement('span');
       name.textContent = player.name;
+      name.style.color = player.color;
       const value = document.createElement('strong');
       value.textContent = player.score.toLocaleString();
       row.append(name, value);
@@ -369,9 +371,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       row.className = `mp-player-row${player.ready ? ' is-ready' : ''}`;
       const identity = document.createElement('span');
       identity.className = 'mp-player-name';
-      identity.append(createAvatarBadge(player.avatar, 18));
+      identity.append(createAvatarBadge(player.avatar, 18, player.color));
       const nameText = document.createElement('span');
       nameText.textContent = player.name;
+      nameText.style.color = player.color;
       identity.append(nameText);
       if (player.role === 'host') {
         const role = document.createElement('span');
@@ -467,6 +470,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         token,
         name,
         avatar: settings.avatar,
+        playerColor: settings.playerColor,
       }), 'join');
       if (!joined) {
         showMessage(t('multiplayer.connectionError'));
@@ -684,11 +688,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
 
   // Live profile updates — propagate to server when in a room
   window.addEventListener('hand-sabers:profile-updated', event => {
-    const detail = (event as CustomEvent<{ playerName: string; avatar: string }>).detail;
+    const detail = (event as CustomEvent<{ playerName: string; avatar: string; playerColor: string }>).detail;
     if (!detail) return;
     nameInput.value = normalizePlayerName(detail.playerName);
     if (currentPlayerId && socket?.readyState === WebSocket.OPEN) {
-      sendControl({ type: 'set-profile', name: detail.playerName, avatar: detail.avatar });
+      sendControl({ type: 'set-profile', name: detail.playerName, avatar: detail.avatar, playerColor: detail.playerColor });
     }
   });
 

@@ -1,10 +1,12 @@
 import type { RemoteLandmarkPacket, RemoteRealtimePacket } from './realtime.ts';
 import { avatarIcon } from './avatars.ts';
+import { sanitizeProfileColor } from '../core/profile-color.ts';
 
 interface RoomStatePlayer {
   streamId: number;
   name: string;
   avatar: string;
+  color?: unknown;
 }
 
 interface RoomStateDetail {
@@ -23,6 +25,7 @@ const HAND_CONNECTIONS: readonly [number, number][] = [
 interface PlayerInfo {
   name: string;
   avatar: string;
+  color: string;
 }
 
 const playerInfo = new Map<number, PlayerInfo>();
@@ -38,9 +41,10 @@ function drawHand(
   landmarks: Float32Array,
   width: number,
   height: number,
+  color: string,
 ): void {
-  context.strokeStyle = 'rgba(54, 242, 161, 0.82)';
-  context.fillStyle = 'rgba(126, 255, 207, 0.95)';
+  context.strokeStyle = color;
+  context.fillStyle = color;
   context.lineWidth = 1.5;
   for (const [from, to] of HAND_CONNECTIONS) {
     const fromOffset = from * 3;
@@ -76,6 +80,7 @@ function renderPlayerLabel(label: HTMLElement, info: PlayerInfo): void {
   icon.textContent = avatarIcon(info.avatar);
 
   const name = document.body.classList.contains('dev-tools') ? `ML · ${info.name}` : info.name;
+  label.style.color = info.color;
   label.replaceChildren(icon, document.createTextNode(name));
 }
 
@@ -113,8 +118,10 @@ function renderLandmarks(packet: RemoteLandmarkPacket): void {
   context.clearRect(0, 0, width, height);
   context.fillStyle = '#03060f';
   context.fillRect(0, 0, width, height);
-  if (packet.left) drawHand(context, packet.left, width, height);
-  if (packet.right) drawHand(context, packet.right, width, height);
+  const color = playerInfo.get(packet.streamId)?.color;
+  if (!color) return;
+  if (packet.left) drawHand(context, packet.left, width, height, color);
+  if (packet.right) drawHand(context, packet.right, width, height, color);
 }
 
 function updatePlayers(detail: RoomStateDetail | null): void {
@@ -124,6 +131,7 @@ function updatePlayers(detail: RoomStateDetail | null): void {
       playerInfo.set(player.streamId, {
         name: player.name.slice(0, 32),
         avatar: player.avatar ?? 'default',
+        color: sanitizeProfileColor(player.color),
       });
     }
   }

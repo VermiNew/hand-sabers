@@ -96,7 +96,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
 
   function broadcastChat(
     roomCode: string,
-    message: { playerId: string; playerName: string; avatar: string; text: string; sentAt: number },
+    message: { playerId: string; playerName: string; avatar: string; color: string; text: string; sentAt: number },
   ): void {
     for (const [socket, client] of clients) {
       if (client.roomCode === roomCode) send(socket, { type: 'chat', message });
@@ -186,6 +186,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
             String(message.token || ''),
             String(message.name || ''),
             message.avatar,
+            message.playerColor,
           );
           client.roomCode = joined.snapshot.code;
           client.playerId = joined.player.id;
@@ -217,6 +218,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
             playerId: player.id,
             playerName: player.name,
             avatar: player.avatar,
+            color: player.color,
             text,
             sentAt: now,
           });
@@ -233,6 +235,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
             client.playerId,
             String(message.name || ''),
             message.avatar,
+            message.playerColor,
           ));
           return;
         }

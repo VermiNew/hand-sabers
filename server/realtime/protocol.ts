@@ -12,6 +12,7 @@ export interface ClientMessage {
   token?: unknown;
   name?: unknown;
   avatar?: unknown;
+  playerColor?: unknown;
   ready?: unknown;
   mapId?: unknown;
   mode?: unknown;
