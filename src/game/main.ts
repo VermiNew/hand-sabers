@@ -50,6 +50,7 @@ import {
 } from './pause-ui.ts';
 import { createPauseResumeGuard } from './pause-resume-guard.ts';
 import type { ResumeSource } from './pause-resume-guard.ts';
+import { createGameplayFocusProtection } from './gameplay-focus-protection.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -409,7 +410,7 @@ async function beginMultiplayerRound(detail: {
   }
   initAudio();
   await ensureCurrentMapAudio();
-  resetGameplayFocusProtection();
+  gameplayFocusProtection.reset();
   clearGameplayEntities();
   stopMapAudio();
   mapTimeline.reset();
@@ -442,7 +443,7 @@ async function beginMultiplayerRound(detail: {
 }
 
 async function beginPlaying(): Promise<void> {
-  resetGameplayFocusProtection();
+  gameplayFocusProtection.reset();
   hideCalibPanel();
   hideOverlay();
   if (ui.hud)                       ui.hud.style.display        = 'flex';
@@ -470,7 +471,7 @@ async function beginPlaying(): Promise<void> {
 function endGame(victory = false): void {
   const playTimeMs = state.map && mapTimeline ? mapTimeline.getTime() * 1000 : 0;
   recordGameEnd(state, victory, playTimeMs);
-  resetGameplayFocusProtection();
+  gameplayFocusProtection.reset();
   clearDangerPulse();
   state.appState    = S.GAMEOVER;
   state.pauseReason = PAUSE_REASONS.NONE;
@@ -604,67 +605,11 @@ async function resumeGame(now = performance.now(), source: ResumeSource = 'ui'):
   }
 }
 
-let multiplayerFocusWarningPending = false;
-let multiplayerFocusWarningOpen = false;
-let multiplayerFocusViolationActive = false;
-
-function resetGameplayFocusProtection(): void {
-  pauseResumeGuard.reset();
-  multiplayerFocusWarningPending = false;
-  multiplayerFocusWarningOpen = false;
-  multiplayerFocusViolationActive = false;
-  setPauseMenuMessage(PAUSE_REASONS.NONE);
-}
-
-function showMultiplayerFocusWarning(): void {
-  if (!multiplayerFocusWarningPending || multiplayerFocusWarningOpen) return;
-  if (!multiplayerRoundActive || state.appState !== S.PLAYING) {
-    multiplayerFocusWarningPending = false;
-    multiplayerFocusViolationActive = false;
-    return;
-  }
-  if (document.hidden) return;
-
-  multiplayerFocusWarningPending = false;
-  multiplayerFocusWarningOpen = true;
-  try {
-    window.alert(t('multiplayer.focusWarning'));
-    window.focus();
-  } finally {
-    multiplayerFocusWarningOpen = false;
-    window.setTimeout(() => { multiplayerFocusViolationActive = false; }, 0);
-  }
-}
-
-function handleGameplayFocusLoss(): void {
-  if (state.appState !== S.PLAYING) return;
-
-  if (!multiplayerRoundActive) {
-    pauseGame(PAUSE_REASONS.FOCUS, performance.now());
-    return;
-  }
-
-  if (multiplayerFocusViolationActive) return;
-  multiplayerFocusViolationActive = true;
-  multiplayerFocusWarningPending = true;
-  window.setTimeout(showMultiplayerFocusWarning, 0);
-}
-
-function handleGameplayFocusReturn(): void {
-  if (!document.hidden && document.hasFocus() && state.pauseReason === PAUSE_REASONS.FOCUS) {
-    pauseResumeGuard.armAfterFocusReturn(performance.now());
-  }
-  showMultiplayerFocusWarning();
-}
-
-function bindGameplayFocusProtection(): void {
-  window.addEventListener('blur', handleGameplayFocusLoss);
-  window.addEventListener('focus', handleGameplayFocusReturn);
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) handleGameplayFocusLoss();
-    else handleGameplayFocusReturn();
-  });
-}
+const gameplayFocusProtection = createGameplayFocusProtection({
+  isMultiplayerRoundActive: () => multiplayerRoundActive,
+  pauseForFocus: now => pauseGame(PAUSE_REASONS.FOCUS, now),
+  resumeGuard: pauseResumeGuard,
+});
 
 function updateHandsPauseState(now: number): void {
   if (multiplayerRoundActive) {
@@ -1141,7 +1086,7 @@ document.getElementById('pauseMaps')?.addEventListener('click', () => {
 });
 
 function returnToMainMenu(): void {
-  resetGameplayFocusProtection();
+  gameplayFocusProtection.reset();
   clearDangerPulse();
   fadeTransition(() => {
     if (multiplayerRoundActive) {
@@ -1458,7 +1403,7 @@ initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 initMapPickerOverlay();
 initProfileOnboarding();
-bindGameplayFocusProtection();
+gameplayFocusProtection.bind();
 initMainMenu();
 showFirstRunWelcome();
 showProfileOnboardingIfNeeded();
