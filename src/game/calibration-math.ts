@@ -103,7 +103,7 @@ export function computeCalibration(
   startTimeMs: number,
 ): { offsetMs: number; stable: boolean; taps: number; spread: number } {
   const usable = tapTimes.slice(WARMUP_TAPS);
-  if (usable.length < MIN_TAPS - WARMUP_TAPS) {
+  if (usable.length < MIN_TAPS) {
     return { offsetMs: 0, stable: false, taps: usable.length, spread: Infinity };
   }
 

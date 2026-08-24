@@ -22,6 +22,16 @@ let onCompleteCb: ((offsetMs: number) => void) | null = null;
 let onStopCb: (() => void) | null = null;
 let reducedMotion = false;
 
+function formatText(key: string, replacements?: Record<string, string>): string {
+  let text = t(key);
+  if (replacements) {
+    for (const [name, value] of Object.entries(replacements)) {
+      text = text.replace(`{{${name}}}`, value);
+    }
+  }
+  return text;
+}
+
 /** Play a short test sound using the current audio offset */
 export function playTestSound(): void {
   initAudio();
@@ -86,7 +96,10 @@ function createVisualOverlay(): { visual: HTMLElement; status: HTMLElement; coun
   const counter = document.createElement('div');
   counter.id = 'metronomeCounter';
   counter.className = 'metronome-counter';
-  counter.textContent = `0 / ${MIN_TAPS}`;
+  counter.textContent = formatText('metronome.warmupProgress', {
+    collected: '0',
+    needed: String(WARMUP_TAPS),
+  });
   overlay.append(counter);
 
   const cancelBtn = document.createElement('button');
@@ -136,20 +149,22 @@ function pulseVisual(accent: boolean, beatInPattern: number): void {
 
 function updateStatus(key: string, replacements?: Record<string, string>): void {
   if (!statusEl) return;
-  let text = t(key);
-  if (replacements) {
-    for (const [k, v] of Object.entries(replacements)) {
-      text = text.replace(`{{${k}}}`, v);
-    }
-  }
-  statusEl.textContent = text;
+  statusEl.textContent = formatText(key, replacements);
 }
 
 function updateCounter(): void {
-  if (counterEl) {
-    const collected = Math.max(0, tapTimes.length - WARMUP_TAPS);
-    counterEl.textContent = `${collected} / ${MIN_TAPS}`;
+  if (!counterEl) return;
+  if (tapTimes.length < WARMUP_TAPS) {
+    counterEl.textContent = formatText('metronome.warmupProgress', {
+      collected: String(tapTimes.length),
+      needed: String(WARMUP_TAPS),
+    });
+    return;
   }
+  counterEl.textContent = formatText('metronome.measurementProgress', {
+    collected: String(tapTimes.length - WARMUP_TAPS),
+    needed: String(MIN_TAPS),
+  });
 }
 
 /** Start the FL Studio-style metronome calibration */
@@ -248,12 +263,10 @@ export function startMetronomeCalibration(
 
     const collected = tapTimes.length - WARMUP_TAPS;
 
-    if (collected < MIN_TAPS) {
-      if (collected <= 0) {
-        updateStatus('metronome.warmup');
-      } else {
-        updateStatus('metronome.collecting', { collected: String(collected), needed: String(MIN_TAPS) });
-      }
+    if (tapTimes.length < WARMUP_TAPS) {
+      updateStatus('metronome.warmup');
+    } else if (collected < MIN_TAPS) {
+      updateStatus('metronome.collecting', { collected: String(collected), needed: String(MIN_TAPS) });
     } else {
       const result = computeCalibration(tapTimes, startTime);
       setSetting('audioOffsetMs', result.offsetMs);

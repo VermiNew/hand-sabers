@@ -722,7 +722,7 @@
     "quickGuide": "SZYBKI PRZEWODNIK",
     "later": "POZNIE",
     "chooseLanguage": "Wybierz jezyk interfejsu.",
-    "metronomeStart": "Metronom włączony! Naciskaj spację w rytm. Po 8 tapnięciach gra dopasuje opóźnienie.",
+    "metronomeStart": "Metronom włączony! Naciskaj spację w rytm. Najpierw wykonasz 2 tapnięcia rozgrzewkowe, a potem 8 właściwych.",
     "metronomeDone": "Gotowe! Ustawiono offset na {{ms}} ms."
   },
   "player": {
@@ -919,7 +919,9 @@
     "title": "KALIBRACJA METRONOMU",
     "tapHint": "Naciskaj SPACJE w rytm tikania",
     "warmup": "Rozgrzewka... Słuchaj rytmu",
+    "warmupProgress": "ROZGRZEWKA {{collected}} / {{needed}}",
     "collecting": "Zbieram tapnięcia: {{collected}} / {{needed}}",
+    "measurementProgress": "POMIAR {{collected}} / {{needed}}",
     "done": "Gotowe! Offset: {{ms}} ms",
     "unstable": "Wynik niestabilny (spread duży). Ustawiono: {{ms}} ms",
     "cancel": "ANULUJ"

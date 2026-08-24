@@ -724,7 +724,7 @@
     "quickGuide": "QUICK GUIDE",
     "later": "LATER",
     "chooseLanguage": "Choose your interface language.",
-    "metronomeStart": "Metronome on! Tap space to the beat. After 8 taps the game will calibrate the offset.",
+    "metronomeStart": "Metronome on! Tap space to the beat. First make 2 warm-up taps, followed by 8 measurement taps.",
     "metronomeDone": "Done! Offset set to {{ms}} ms."
   },
   "player": {
@@ -921,7 +921,9 @@
     "title": "METRONOME CALIBRATION",
     "tapHint": "Tap SPACE in sync with the beat",
     "warmup": "Warm-up... Listen to the rhythm",
+    "warmupProgress": "WARM-UP {{collected}} / {{needed}}",
     "collecting": "Collecting taps: {{collected}} / {{needed}}",
+    "measurementProgress": "MEASUREMENT {{collected}} / {{needed}}",
     "done": "Done! Offset: {{ms}} ms",
     "unstable": "Unstable result (high spread). Set to: {{ms}} ms",
     "cancel": "CANCEL"
