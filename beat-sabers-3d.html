@@ -488,6 +488,25 @@
             </div>
             <p class="sp-hint" id="menuTrackingSourceHint"></p>
           </div>
+          <div class="sp-group-title" data-i18n="remoteTracking.modelSettings">Model śledzenia dłoni (kamera PC)</div>
+          <div class="sp-group">
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="remoteTracking.detectionConfidence">Pewność wykrycia</span>
+              <div class="sp-slider-wrap"><input id="menuHandDetectionConfidence" type="range" min="0" max="1" step="0.01"></div>
+              <span class="sp-value" data-for="menuHandDetectionConfidence">42%</span>
+            </div>
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="remoteTracking.presenceConfidence">Pewność obecności</span>
+              <div class="sp-slider-wrap"><input id="menuHandPresenceConfidence" type="range" min="0" max="1" step="0.01"></div>
+              <span class="sp-value" data-for="menuHandPresenceConfidence">42%</span>
+            </div>
+            <div class="sp-row">
+              <span class="sp-label" data-i18n="remoteTracking.trackingConfidence">Pewność śledzenia</span>
+              <div class="sp-slider-wrap"><input id="menuHandTrackingConfidence" type="range" min="0" max="1" step="0.01"></div>
+              <span class="sp-value" data-for="menuHandTrackingConfidence">42%</span>
+            </div>
+          </div>
+          <p class="sp-hint" data-i18n="remoteTracking.modelSettingsHint">Domyślnie 42%. Zmiany działają przy kolejnym uruchomieniu kamery PC; nie są wysyłane do telefonu.</p>
           <div class="sp-group">
             <div class="sp-toggle-row">
               <div class="sp-toggle-info">

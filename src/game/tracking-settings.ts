@@ -5,11 +5,14 @@ import {
   applyTrackingSettings,
   setAutoFlipSuggestionHandler,
 } from '../tracking/tracking.ts';
+import { bindStyledRange } from '../ui/settings-range.ts';
 import type { Settings, TrackingSourcePreference } from '../types/index.js';
 
 interface TrackingSettingsOptions {
   onSourceChange(changed: boolean): void;
 }
+
+type HandModelSettingKey = 'handDetectionConfidence' | 'handPresenceConfidence' | 'handTrackingConfidence';
 
 export interface TrackingSettingsController {
   sync(): void;
@@ -23,6 +26,11 @@ export function initTrackingSettings(
   const sourceInput = document.getElementById('menuTrackingSource') as HTMLSelectElement | null;
   const sourceHint = document.getElementById('menuTrackingSourceHint');
   const flipCameraInput = document.getElementById('menuFlipCamera') as HTMLInputElement | null;
+  const modelInputs: Array<[HandModelSettingKey, HTMLInputElement | null]> = [
+    ['handDetectionConfidence', document.getElementById('menuHandDetectionConfidence') as HTMLInputElement | null],
+    ['handPresenceConfidence', document.getElementById('menuHandPresenceConfidence') as HTMLInputElement | null],
+    ['handTrackingConfidence', document.getElementById('menuHandTrackingConfidence') as HTMLInputElement | null],
+  ];
 
   function updateSourceHint(): void {
     if (!sourceHint) return;
@@ -53,6 +61,17 @@ export function initTrackingSettings(
     applyTrackingSettings({ flipCamera: flipCameraInput.checked });
   });
 
+  for (const [key, input] of modelInputs) {
+    if (!input) continue;
+    input.value = String(settings[key]);
+    bindStyledRange(input);
+    input.addEventListener('input', () => {
+      const value = Number(input.value);
+      settings[key] = value;
+      setSetting(key, value);
+    });
+  }
+
   setAutoFlipSuggestionHandler(({ flipCamera }) => {
     settings.flipCamera = flipCamera;
     window.__trackingFlip = flipCamera;
@@ -65,6 +84,11 @@ export function initTrackingSettings(
   function sync(): void {
     if (sourceInput) sourceInput.value = settings.trackingSource;
     if (flipCameraInput) flipCameraInput.checked = settings.flipCamera;
+    for (const [key, input] of modelInputs) {
+      if (!input) continue;
+      input.value = String(settings[key]);
+      input.dispatchEvent(new Event('input'));
+    }
     window.__trackingSensitivity = settings.sensitivity;
     window.__trackingFlip = settings.flipCamera;
     applyTrackingSettings(settings);
