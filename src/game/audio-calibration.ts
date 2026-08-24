@@ -1,4 +1,3 @@
-import { setSetting } from '../core/settings.ts';
 import { initAudio, resumeAudioContext, getAudioContext } from './audio.ts';
 import { t } from '../i18n/index.ts';
 import {
@@ -7,6 +6,7 @@ import {
   WARMUP_TAPS,
   computeCalibration,
 } from './calibration-math.ts';
+import type { CalibrationResult } from './calibration-math.ts';
 
 let metronomeActive = false;
 let metronomeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -18,7 +18,7 @@ let keydownHandler: ((e: KeyboardEvent) => void) | null = null;
 let visualEl: HTMLElement | null = null;
 let statusEl: HTMLElement | null = null;
 let counterEl: HTMLElement | null = null;
-let onCompleteCb: ((offsetMs: number) => void) | null = null;
+let onCompleteCb: ((result: CalibrationResult) => void) | null = null;
 let onStopCb: (() => void) | null = null;
 let reducedMotion = false;
 
@@ -169,7 +169,7 @@ function updateCounter(): void {
 
 /** Start the FL Studio-style metronome calibration */
 export function startMetronomeCalibration(
-  onComplete?: (offsetMs: number) => void,
+  onComplete?: (result: CalibrationResult) => void,
   onStop?: () => void,
 ): boolean {
   if (metronomeActive) return false;
@@ -269,7 +269,6 @@ export function startMetronomeCalibration(
       updateStatus('metronome.collecting', { collected: String(collected), needed: String(MIN_TAPS) });
     } else {
       const result = computeCalibration(tapTimes, startTime);
-      setSetting('audioOffsetMs', result.offsetMs);
       if (result.stable) {
         updateStatus('metronome.done', { ms: String(result.offsetMs) });
       } else {
@@ -278,7 +277,7 @@ export function startMetronomeCalibration(
       const complete = onCompleteCb;
       onCompleteCb = null;
       stopMetronome({ preserveResult: true });
-      complete?.(result.offsetMs);
+      complete?.(result);
     }
   };
   window.addEventListener('keydown', keydownHandler);

@@ -77,7 +77,9 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
       return;
     }
     const started = startMetronomeCalibration(
-      (offsetMs) => {
+      (result) => {
+        const { offsetMs } = result;
+        setSetting('audioOffsetMs', offsetMs);
         if (audioOffsetInput) {
           audioOffsetInput.value = String(offsetMs);
           settings.audioOffsetMs = offsetMs;

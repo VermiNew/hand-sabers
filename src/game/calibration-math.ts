@@ -25,6 +25,13 @@ export const TRIM_FRACTION = 0.2;
 /** Maximum allowed offset magnitude in ms. */
 export const MAX_OFFSET = 500;
 
+export interface CalibrationResult {
+  offsetMs: number;
+  stable: boolean;
+  taps: number;
+  spread: number;
+}
+
 /**
  * Wrap a raw phase error into [-halfPeriod, +halfPeriod].
  *
@@ -101,7 +108,7 @@ export function mad(values: number[]): number {
 export function computeCalibration(
   tapTimes: number[],
   startTimeMs: number,
-): { offsetMs: number; stable: boolean; taps: number; spread: number } {
+): CalibrationResult {
   const usable = tapTimes.slice(WARMUP_TAPS);
   if (usable.length < MIN_TAPS) {
     return { offsetMs: 0, stable: false, taps: usable.length, spread: Infinity };
