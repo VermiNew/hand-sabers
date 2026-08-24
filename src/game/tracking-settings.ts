@@ -25,6 +25,7 @@ export function initTrackingSettings(
 ): TrackingSettingsController {
   const sourceInput = document.getElementById('menuTrackingSource') as HTMLSelectElement | null;
   const sourceHint = document.getElementById('menuTrackingSourceHint');
+  const modelLocation = document.getElementById('menuTrackingModelLocation');
   const flipCameraInput = document.getElementById('menuFlipCamera') as HTMLInputElement | null;
   const modelInputs: Array<[HandModelSettingKey, HTMLInputElement | null]> = [
     ['handDetectionConfidence', document.getElementById('menuHandDetectionConfidence') as HTMLInputElement | null],
@@ -43,6 +44,14 @@ export function initTrackingSettings(
         : connected ? 'remoteTracking.sourceAutoPhone' : 'remoteTracking.sourceAutoCamera';
     sourceHint.textContent = t(key);
     sourceHint.classList.toggle('is-error', source === 'phone' && !connected);
+    if (modelLocation) {
+      const usesPhoneModel = source === 'phone' || (source === 'auto' && connected);
+      const modelKey = usesPhoneModel
+        ? connected ? 'remoteTracking.modelPhone' : 'remoteTracking.modelPhoneMissing'
+        : 'remoteTracking.modelLocal';
+      modelLocation.textContent = t(modelKey);
+      modelLocation.classList.toggle('is-error', usesPhoneModel && !connected);
+    }
   }
 
   sourceInput?.addEventListener('change', () => {
