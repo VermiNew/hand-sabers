@@ -417,7 +417,15 @@ export function hitTestBeat(mx: number, my: number) {
 
   for (const beat of state.map.beats) {
     const x = LABEL_W + (beat.t - state.viewStart) * state.pxPerSec;
-    if (Math.abs(mx - x) > bw) continue;
+    const isHeld = beat.type === 'held';
+    const heldWidth = isHeld
+      ? Math.max(4, (Number(beat.duration ?? 0) > 0
+        ? Number(beat.duration)
+        : Math.max(0, getPlayPos() - beat.t)) * state.pxPerSec)
+      : 0;
+    const minX = x - bw;
+    const maxX = isHeld ? x + heldWidth + bw : x + bw;
+    if (mx < minX || mx > maxX) continue;
     const isBomb = beat.type === 'bomb';
     const ty     = isBomb ? TRACK_B_Y : beat.side === 'left' ? TRACK_L_Y : TRACK_R_Y;
     if (my >= ty && my <= ty + TRACK_H) return beat;
