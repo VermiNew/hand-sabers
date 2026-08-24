@@ -6,7 +6,7 @@ import {
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel, setOneHandModeVisuals, setArenaTheme, applyBackgroundTheme,
 } from './scene.ts';
-import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setVolume, setMusicVolume, setSfxVolume, setSoundVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
+import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setMusicVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
@@ -36,7 +36,7 @@ import { initLanguageSettings } from '../ui/language-settings.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, initProfileSettings, showProfileOnboardingIfNeeded } from './profile.ts';
-import { playTestSound, startMetronomeCalibration, stopMetronome, isMetronomeActive } from './audio-calibration.ts';
+import { initAudioSettings } from './audio-settings.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -1493,8 +1493,6 @@ function initMainMenu(): void {
   const settingsButton   = document.getElementById('mainSettings');
   const settingsClose    = document.getElementById('mainSettingsClose');
   const settingsReset    = document.getElementById('mainSettingsReset');
-  const volumeInput      = document.getElementById('menuVolume')    as HTMLInputElement | null;
-  const soundInputs      = [...document.querySelectorAll<HTMLInputElement>('[data-audio-setting]')];
   const noFailInput      = document.getElementById('menuNoFail')    as HTMLInputElement | null;
   const trainingModeInput = document.getElementById('menuTrainingMode') as HTMLInputElement | null;
   const beatLimitInput   = document.getElementById('menuBeatLimit') as HTMLInputElement | null;
@@ -1557,8 +1555,6 @@ function initMainMenu(): void {
     if (flipCameraInput) flipCameraInput.checked = flipCamera;
   });
 
-  const audioOffsetInput = document.getElementById('menuAudioOffset')      as HTMLInputElement | null;
-  const audioOffsetValue = document.getElementById('menuAudioOffsetValue');
   const oneHandButtons   = [...document.querySelectorAll<HTMLElement>('[data-one-hand]')];
   const noteSpeedButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-note-speed]')];
   const hitboxSensitivityButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-hitbox-sensitivity]')];
@@ -1876,112 +1872,9 @@ function initMainMenu(): void {
   window.addEventListener('hand-sabers:remote-tracking-state', updateTrackingSourceHint);
   updateTrackingSourceHint();
 
-  if (volumeInput) {
-    volumeInput.value = String(settings.volume ?? 0.8);
-    bindStyledRange(volumeInput);
-    volumeInput.addEventListener('input', () => {
-      const value = Number(volumeInput.value);
-      settings.volume = value;
-      setSetting('volume', value);
-      setVolume(value);
-    });
-  }
-
-  const audioSetters: Record<string, (v: number) => void> = {
-    musicVolume: setMusicVolume,
-    sfxVolume:   setSfxVolume,
-  };
-  for (const input of soundInputs) {
-    const key = input.dataset['audioSetting'] ?? '';
-    input.value = String((settings as unknown as Record<string, unknown>)[key] ?? 1);
-    bindStyledRange(input);
-    input.addEventListener('input', () => {
-      const value = Number(input.value);
-      (settings as unknown as Record<string, unknown>)[key] = value;
-      setSetting(key as keyof Settings, value);
-      if (audioSetters[key]) audioSetters[key]!(value);
-      else setSoundVolume(key, value);
-    });
-  }
-
-  if (audioOffsetInput) {
-    audioOffsetInput.value = String(settings.audioOffsetMs ?? 0);
-    bindStyledRange(audioOffsetInput);
-    if (audioOffsetValue) audioOffsetValue.textContent = `${settings.audioOffsetMs ?? 0} ms`;
-    audioOffsetInput.addEventListener('input', () => {
-      const value = Number(audioOffsetInput.value);
-      settings.audioOffsetMs = value;
-      setSetting('audioOffsetMs', value);
-      if (audioOffsetValue) audioOffsetValue.textContent = `${value} ms`;
-    });
-  }
-
-  // Test sound button
-  const testSoundBtn = document.getElementById('menuAudioTestSound') as HTMLButtonElement | null;
-  testSoundBtn?.addEventListener('click', () => {
-    playTestSound();
-  });
-
-  // Metronome calibration button
-  const metronomeBtn = document.getElementById('menuAudioMetronome') as HTMLButtonElement | null;
-  metronomeBtn?.addEventListener('click', () => {
-    if (isMetronomeActive()) {
-      stopMetronome();
-      metronomeBtn.textContent = t('settings.audio.metronomeCalibration');
-    } else {
-      void narratorQuick(t('narrator.metronomeStart'));
-      startMetronomeCalibration((offsetMs) => {
-        metronomeBtn.textContent = t('settings.audio.metronomeCalibration');
-        if (audioOffsetInput) {
-          audioOffsetInput.value = String(offsetMs);
-          settings.audioOffsetMs = offsetMs;
-        }
-        if (audioOffsetValue) audioOffsetValue.textContent = `${offsetMs} ms`;
-        void narratorQuick(t('narrator.metronomeDone').replace('{{ms}}', String(offsetMs)));
-      });
-      metronomeBtn.textContent = t('settings.audio.metronomeStop');
-    }
-  });
-
-  // Phone audio output toggle
-  const phoneAudioToggle = document.getElementById('menuPhoneAudioOutput') as HTMLInputElement | null;
-  if (phoneAudioToggle) {
-    phoneAudioToggle.checked = settings.phoneAudioOutput ?? false;
-    phoneAudioToggle.addEventListener('change', () => {
-      settings.phoneAudioOutput = phoneAudioToggle.checked;
-      setSetting('phoneAudioOutput', phoneAudioToggle.checked);
-      // Mute PC music when phone audio output is enabled
-      setMusicVolume(phoneAudioToggle.checked ? 0 : settings.musicVolume);
-    });
-  }
-
-  // Phone audio latency
-  const phoneLatencyInput = document.getElementById('menuPhoneAudioLatency') as HTMLInputElement | null;
-  const phoneLatencyValue = document.getElementById('menuPhoneAudioLatencyValue');
-  if (phoneLatencyInput) {
-    phoneLatencyInput.value = String(settings.phoneAudioLatencyMs ?? 0);
-    bindStyledRange(phoneLatencyInput);
-    if (phoneLatencyValue) phoneLatencyValue.textContent = `${settings.phoneAudioLatencyMs ?? 0} ms`;
-    phoneLatencyInput.addEventListener('input', () => {
-      const value = Number(phoneLatencyInput.value);
-      settings.phoneAudioLatencyMs = value;
-      setSetting('phoneAudioLatencyMs', value);
-      if (phoneLatencyValue) phoneLatencyValue.textContent = `${value} ms`;
-    });
-  }
+  const audioSettingsController = initAudioSettings(settings, bindStyledRange);
 
   initProfileSettings(settings);
-
-  const interfaceSoundInput = document.getElementById('menuInterfaceSoundVolume') as HTMLInputElement | null;
-  if (interfaceSoundInput) {
-    interfaceSoundInput.value = String(settings.interfaceSoundVolume ?? 0.8);
-    bindStyledRange(interfaceSoundInput);
-    interfaceSoundInput.addEventListener('input', () => {
-      const value = Number(interfaceSoundInput.value);
-      settings.interfaceSoundVolume = value;
-      setSetting('interfaceSoundVolume', value);
-    });
-  }
 
   if (noFailInput) {
     noFailInput.checked = Boolean(settings.noFail);
@@ -2357,20 +2250,7 @@ function initMainMenu(): void {
       element?.dispatchEvent(new Event(eventName));
     };
 
-    if (volumeInput) {
-      volumeInput.value = String(settings.volume);
-      emit(volumeInput, 'input');
-    }
-    for (const input of soundInputs) {
-      const key = input.dataset['audioSetting'] as keyof Settings | undefined;
-      if (!key) continue;
-      input.value = String(settings[key]);
-      emit(input, 'input');
-    }
-    if (audioOffsetInput) {
-      audioOffsetInput.value = String(settings.audioOffsetMs);
-      emit(audioOffsetInput, 'input');
-    }
+    audioSettingsController.sync();
     if (noFailInput) {
       noFailInput.checked = settings.noFail;
       emit(noFailInput, 'change');
