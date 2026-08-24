@@ -14,7 +14,6 @@ import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDe
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
-import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
 import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
@@ -31,7 +30,7 @@ import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from 
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { initLanguageSettings } from '../ui/language-settings.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
-import { bindStyledRange, updateRangeProgress } from '../ui/settings-range.ts';
+import { bindStyledRange } from '../ui/settings-range.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, initProfileSettings, showProfileOnboardingIfNeeded } from './profile.ts';
 import { initAudioSettings } from './audio-settings.ts';
@@ -39,10 +38,11 @@ import { initGameplaySettings } from './gameplay-settings.ts';
 import { applySaberAppearance, initSaberSettings } from './saber-settings.ts';
 import { applyArenaTheme, initArenaSettings } from './arena-settings.ts';
 import { initMusicReactiveSettings } from './music-reactive-settings.ts';
+import { initGraphicsSettings } from './graphics-settings.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
-import type { PauseReason, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
+import type { PauseReason, TrackingSourcePreference } from '../types/index.js';
 
 declare global {
   interface Window {
@@ -1481,30 +1481,8 @@ function initMainMenu(): void {
   const settingsClose    = document.getElementById('mainSettingsClose');
   const settingsReset    = document.getElementById('mainSettingsReset');
   const flipCameraInput  = document.getElementById('menuFlipCamera')as HTMLInputElement | null;
-  const performanceInput = document.getElementById('menuPerformanceMode') as HTMLSelectElement | null;
-  const customGraphicsSection = document.getElementById('menuCustomGraphicsSection');
-  const customAntialiasInput = document.getElementById('menuCustomAntialias') as HTMLInputElement | null;
-  const customReflectionsInput = document.getElementById('menuCustomReflections') as HTMLInputElement | null;
-  const customFloorGlowsInput = document.getElementById('menuCustomFloorGlows') as HTMLInputElement | null;
-  const customSaberGlintsInput = document.getElementById('menuCustomSaberGlints') as HTMLInputElement | null;
-  const customSaberTrailsInput = document.getElementById('menuCustomSaberTrails') as HTMLInputElement | null;
-  const customSaberTrailSamplesInput = document.getElementById('menuCustomSaberTrailSamples') as HTMLInputElement | null;
-  const customSaberTrailSamplesValue = document.getElementById('menuCustomSaberTrailSamplesValue');
-  const customSaberTrailIntensityInput = document.getElementById('menuCustomSaberTrailIntensity') as HTMLInputElement | null;
-  const customSaberTrailIntensityValue = document.getElementById('menuCustomSaberTrailIntensityValue');
-  const customArenaDetailInput = document.getElementById('menuCustomArenaDetail') as HTMLInputElement | null;
-  const customArenaDetailValue = document.getElementById('menuCustomArenaDetailValue');
-  const customBackgroundShaderInput = document.getElementById('menuCustomBackgroundShader') as HTMLInputElement | null;
-  const customFogInput = document.getElementById('menuCustomFog') as HTMLInputElement | null;
-  const customGridInput = document.getElementById('menuCustomGrid') as HTMLInputElement | null;
-  const customHitShardsInput = document.getElementById('menuCustomHitShards') as HTMLInputElement | null;
-  const customHitShardsValue = document.getElementById('menuCustomHitShardsValue');
-  const customRenderScaleInput = document.getElementById('menuCustomRenderScale') as HTMLInputElement | null;
-  const customRenderScaleValue = document.getElementById('menuCustomRenderScaleValue');
   const trackingSourceInput = document.getElementById('menuTrackingSource') as HTMLSelectElement | null;
   const trackingSourceHint = document.getElementById('menuTrackingSourceHint');
-  const performanceHint  = document.getElementById('menuPerformanceHint');
-  const graphicsModeInfo = document.getElementById('menuGraphicsModeInfo');
   const developerModeInput = document.getElementById('menuDeveloperMode') as HTMLInputElement | null;
   setAutoFlipSuggestionHandler(({ flipCamera }) => {
     settings.flipCamera      = flipCamera;
@@ -1560,21 +1538,6 @@ function initMainMenu(): void {
     setSettingsPanelVisible(true);
   });
 
-  function getGraphicsModeSummary(): string {
-    const selected = getPerformanceMode(settings);
-    const profile  = getScenePerformanceProfile();
-    const active   = window.__graphicsQualityMode ?? profile.qualityMode ?? selected;
-    const label    = window.__graphicsProfile     ?? profile.label       ?? active;
-    const dpr      = window.__graphicsDpr ? `, DPR ${Number(window.__graphicsDpr).toFixed(2)}` : '';
-    return selected === 'auto'
-      ? t('settings.performance.currentModeAuto', { active, details: `${label}${dpr}` })
-      : t('settings.performance.currentModeActive', { active, details: `${label}${dpr}` });
-  }
-
-  function updateGraphicsModeInfo(): void {
-    if (graphicsModeInfo) graphicsModeInfo.textContent = getGraphicsModeSummary();
-  }
-
   function updateTrackingSourceHint(): void {
     if (!trackingSourceHint) return;
     const source = settings.trackingSource;
@@ -1586,75 +1549,6 @@ function initMainMenu(): void {
         : connected ? 'remoteTracking.sourceAutoPhone' : 'remoteTracking.sourceAutoCamera';
     trackingSourceHint.textContent = t(key);
     trackingSourceHint.classList.toggle('is-error', source === 'phone' && !connected);
-  }
-
-  function updateCustomGraphicsVisibility(): void {
-    customGraphicsSection?.classList.toggle('is-hidden', performanceInput?.value !== 'custom');
-  }
-
-  function applyLivePerformanceSettings(): void {
-    setScenePerformanceProfile(settings);
-    updateGraphicsModeInfo();
-  }
-
-  type CustomBooleanSetting =
-    | 'customAntialias'
-    | 'customReflections'
-    | 'customFloorGlows'
-    | 'customSaberGlints'
-    | 'customSaberTrails'
-    | 'customBackgroundShader'
-    | 'customFog'
-    | 'customGrid';
-
-  function bindCustomToggle(input: HTMLInputElement | null, key: CustomBooleanSetting): void {
-    if (!input) return;
-    input.checked = settings[key];
-    input.addEventListener('change', () => {
-      settings[key] = input.checked;
-      setSetting(key, input.checked);
-      if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
-    });
-  }
-
-  function syncAdvancedSettings(): void {
-    const customToggles: Array<[HTMLInputElement | null, CustomBooleanSetting]> = [
-      [customAntialiasInput, 'customAntialias'],
-      [customReflectionsInput, 'customReflections'],
-      [customFloorGlowsInput, 'customFloorGlows'],
-      [customSaberGlintsInput, 'customSaberGlints'],
-      [customSaberTrailsInput, 'customSaberTrails'],
-      [customBackgroundShaderInput, 'customBackgroundShader'],
-      [customFogInput, 'customFog'],
-      [customGridInput, 'customGrid'],
-    ];
-    for (const [input, key] of customToggles) if (input) input.checked = settings[key];
-    if (customHitShardsInput) {
-      customHitShardsInput.value = String(settings.customHitShards);
-      updateRangeProgress(customHitShardsInput);
-    }
-    if (customHitShardsValue) customHitShardsValue.textContent = String(settings.customHitShards);
-    if (customSaberTrailSamplesInput) {
-      customSaberTrailSamplesInput.value = String(settings.customSaberTrailSamples);
-      updateRangeProgress(customSaberTrailSamplesInput);
-    }
-    if (customSaberTrailSamplesValue) customSaberTrailSamplesValue.textContent = String(settings.customSaberTrailSamples);
-    if (customSaberTrailIntensityInput) {
-      customSaberTrailIntensityInput.value = String(settings.customSaberTrailIntensity);
-      updateRangeProgress(customSaberTrailIntensityInput);
-    }
-    if (customSaberTrailIntensityValue) customSaberTrailIntensityValue.textContent = `${Math.round(settings.customSaberTrailIntensity * 100)}%`;
-    if (customArenaDetailInput) {
-      customArenaDetailInput.value = String(settings.customArenaDetail);
-      updateRangeProgress(customArenaDetailInput);
-    }
-    if (customArenaDetailValue) customArenaDetailValue.textContent = `${Math.round(settings.customArenaDetail * 100)}%`;
-    if (customRenderScaleInput) {
-      customRenderScaleInput.value = String(settings.customRenderScale);
-      updateRangeProgress(customRenderScaleInput);
-    }
-    if (customRenderScaleValue) customRenderScaleValue.textContent = `${Math.round(settings.customRenderScale * 100)}%`;
-    updateCustomGraphicsVisibility();
   }
 
   const allNavItems = [...document.querySelectorAll<HTMLElement>('.main-nav-item')];
@@ -1763,90 +1657,8 @@ function initMainMenu(): void {
   const saberSettingsController = initSaberSettings(settings);
   const arenaSettingsController = initArenaSettings(settings);
   const musicReactiveSettingsController = initMusicReactiveSettings(settings);
+  const graphicsSettingsController = initGraphicsSettings(settings);
 
-  if (performanceInput) {
-    const updatePerformanceHint = () => {
-      if (!performanceHint) return;
-      const mode        = getPerformanceMode({ performanceMode: performanceInput.value } as Settings);
-      const activeProfile = window.__graphicsQualityMode ? t('performance.activeProfile', { mode: window.__graphicsQualityMode }) : '';
-      performanceHint.textContent = `${getPerformanceModeDescription(mode)}${mode === 'auto' ? activeProfile : ''}`;
-      updateGraphicsModeInfo();
-    };
-    performanceInput.innerHTML = getPerformanceModes()
-      .map(mode => `<option value="${mode.value}">${mode.label}</option>`)
-      .join('');
-    performanceInput.value = getPerformanceMode(settings);
-    updateCustomGraphicsVisibility();
-    updatePerformanceHint();
-    performanceInput.addEventListener('change', () => {
-      const value = performanceInput.value as PerformanceMode;
-      settings.performanceMode = value;
-      setSetting('performanceMode', value);
-      setScenePerformanceProfile(settings);
-      prewarmGameplayResources();
-      applyTrackingSettings({ performanceMode: value });
-      const profile = getPerformanceProfile(settings);
-      if (ui.dStatus) ui.dStatus.textContent = `PERF: ${profile.label}`;
-      updateCustomGraphicsVisibility();
-      updatePerformanceHint();
-    });
-  }
-
-  bindCustomToggle(customAntialiasInput, 'customAntialias');
-  bindCustomToggle(customReflectionsInput, 'customReflections');
-  bindCustomToggle(customFloorGlowsInput, 'customFloorGlows');
-  bindCustomToggle(customSaberGlintsInput, 'customSaberGlints');
-  bindCustomToggle(customSaberTrailsInput, 'customSaberTrails');
-  bindCustomToggle(customBackgroundShaderInput, 'customBackgroundShader');
-  bindCustomToggle(customFogInput, 'customFog');
-  bindCustomToggle(customGridInput, 'customGrid');
-
-  customHitShardsInput?.addEventListener('input', () => {
-    const value = Math.max(0, Math.min(7, Math.round(Number(customHitShardsInput.value))));
-    settings.customHitShards = value;
-    setSetting('customHitShards', value);
-    updateRangeProgress(customHitShardsInput);
-    if (customHitShardsValue) customHitShardsValue.textContent = String(value);
-    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
-  });
-
-  customSaberTrailSamplesInput?.addEventListener('input', () => {
-    const value = Math.max(0, Math.min(16, Math.round(Number(customSaberTrailSamplesInput.value))));
-    settings.customSaberTrailSamples = value;
-    setSetting('customSaberTrailSamples', value);
-    updateRangeProgress(customSaberTrailSamplesInput);
-    if (customSaberTrailSamplesValue) customSaberTrailSamplesValue.textContent = String(value);
-    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
-  });
-
-  customSaberTrailIntensityInput?.addEventListener('input', () => {
-    const value = Math.max(0, Math.min(1.25, Number(customSaberTrailIntensityInput.value)));
-    settings.customSaberTrailIntensity = value;
-    setSetting('customSaberTrailIntensity', value);
-    updateRangeProgress(customSaberTrailIntensityInput);
-    if (customSaberTrailIntensityValue) customSaberTrailIntensityValue.textContent = `${Math.round(value * 100)}%`;
-    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
-  });
-
-  customArenaDetailInput?.addEventListener('input', () => {
-    const value = Math.max(0, Math.min(1.25, Number(customArenaDetailInput.value)));
-    settings.customArenaDetail = value;
-    setSetting('customArenaDetail', value);
-    updateRangeProgress(customArenaDetailInput);
-    if (customArenaDetailValue) customArenaDetailValue.textContent = `${Math.round(value * 100)}%`;
-    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
-  });
-
-  customRenderScaleInput?.addEventListener('input', () => {
-    const value = Math.max(0.5, Math.min(1.5, Number(customRenderScaleInput.value)));
-    settings.customRenderScale = value;
-    setSetting('customRenderScale', value);
-    updateRangeProgress(customRenderScaleInput);
-    if (customRenderScaleValue) customRenderScaleValue.textContent = `${Math.round(value * 100)}%`;
-    if (performanceInput?.value === 'custom') applyLivePerformanceSettings();
-  });
-
-  syncAdvancedSettings();
 
   if (developerModeInput) {
     developerModeInput.checked = Boolean(settings.developerMode) || isDeveloperPanelEnabled();
@@ -1865,9 +1677,6 @@ function initMainMenu(): void {
       applyDevAccent(devAccentInput.value);
     });
   }
-
-  updateGraphicsModeInfo();
-  window.setInterval(updateGraphicsModeInfo, 1200);
 
   if (flipCameraInput) {
     flipCameraInput.checked = Boolean(settings.flipCamera);
@@ -1905,11 +1714,7 @@ function initMainMenu(): void {
     saberSettingsController.sync();
     arenaSettingsController.sync();
     musicReactiveSettingsController.sync();
-    if (performanceInput) {
-      performanceInput.value = settings.performanceMode;
-      emit(performanceInput, 'change');
-    }
-    syncAdvancedSettings();
+    graphicsSettingsController.sync();
     if (trackingSourceInput) {
       trackingSourceInput.value = settings.trackingSource;
       emit(trackingSourceInput, 'change');
