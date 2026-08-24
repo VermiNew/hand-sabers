@@ -76,17 +76,23 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
       metronomeButton.textContent = t('settings.audio.metronomeCalibration');
       return;
     }
-    void narratorQuick(t('narrator.metronomeStart'));
-    startMetronomeCalibration((offsetMs) => {
-      metronomeButton.textContent = t('settings.audio.metronomeCalibration');
-      if (audioOffsetInput) {
-        audioOffsetInput.value = String(offsetMs);
-        settings.audioOffsetMs = offsetMs;
-      }
-      if (audioOffsetValue) audioOffsetValue.textContent = `${offsetMs} ms`;
-      void narratorQuick(t('narrator.metronomeDone').replace('{{ms}}', String(offsetMs)));
-    });
-    metronomeButton.textContent = t('settings.audio.metronomeStop');
+    const started = startMetronomeCalibration(
+      (offsetMs) => {
+        if (audioOffsetInput) {
+          audioOffsetInput.value = String(offsetMs);
+          settings.audioOffsetMs = offsetMs;
+        }
+        if (audioOffsetValue) audioOffsetValue.textContent = `${offsetMs} ms`;
+        void narratorQuick(t('narrator.metronomeDone').replace('{{ms}}', String(offsetMs)));
+      },
+      () => {
+        metronomeButton.textContent = t('settings.audio.metronomeCalibration');
+      },
+    );
+    if (started) {
+      metronomeButton.textContent = t('settings.audio.metronomeStop');
+      void narratorQuick(t('narrator.metronomeStart'));
+    }
   });
 
   if (phoneAudioToggle) {

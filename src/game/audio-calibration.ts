@@ -19,6 +19,7 @@ let visualEl: HTMLElement | null = null;
 let statusEl: HTMLElement | null = null;
 let counterEl: HTMLElement | null = null;
 let onCompleteCb: ((offsetMs: number) => void) | null = null;
+let onStopCb: (() => void) | null = null;
 let reducedMotion = false;
 
 /** Play a short test sound using the current audio offset */
@@ -152,12 +153,15 @@ function updateCounter(): void {
 }
 
 /** Start the FL Studio-style metronome calibration */
-export function startMetronomeCalibration(onComplete?: (offsetMs: number) => void): void {
-  if (metronomeActive) return;
+export function startMetronomeCalibration(
+  onComplete?: (offsetMs: number) => void,
+  onStop?: () => void,
+): boolean {
+  if (metronomeActive) return false;
   initAudio();
   resumeAudioContext();
   const ctx = getAudioContext();
-  if (!ctx) return;
+  if (!ctx) return false;
 
   reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   metronomeActive = true;
@@ -165,6 +169,7 @@ export function startMetronomeCalibration(onComplete?: (offsetMs: number) => voi
   tapTimes = [];
   startTime = performance.now();
   onCompleteCb = onComplete ?? null;
+  onStopCb = onStop ?? null;
 
   const { visual, status, counter } = createVisualOverlay();
   visualEl = visual;
@@ -264,6 +269,7 @@ export function startMetronomeCalibration(onComplete?: (offsetMs: number) => voi
     }
   };
   window.addEventListener('keydown', keydownHandler);
+  return true;
 }
 
 /** Stop the metronome calibration */
@@ -289,6 +295,9 @@ export function stopMetronome({ preserveResult = false }: { preserveResult?: boo
   }
 
   if (!preserveResult) onCompleteCb = null;
+  const stopped = onStopCb;
+  onStopCb = null;
+  stopped?.();
   visualEl = null;
   statusEl = null;
   counterEl = null;
