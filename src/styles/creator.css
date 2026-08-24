@@ -566,6 +566,15 @@ body {
 #difficultyInput:focus { border-color:rgba(196,181,253,0.82); background:rgba(167,139,250,0.12); }
 #difficultyInput option { background:#0b0e18; color:var(--text); }
 
+.difficulty-suggest-btn { height:30px; padding:4px 8px; border-color:rgba(167,139,250,0.34); color:#c4b5fd; }
+.difficulty-suggest-btn:hover { border-color:rgba(196,181,253,0.82); background:rgba(167,139,250,0.12); }
+.difficulty-suggestion { min-width:116px; color:rgba(226,232,240,0.72); font-size:9px; letter-spacing:.3px; white-space:nowrap; }
+.difficulty-suggestion.is-easy { color:#6ee7b7; }
+.difficulty-suggestion.is-medium { color:#fcd34d; }
+.difficulty-suggestion.is-hard { color:#fda4af; }
+.difficulty-suggestion.is-expert { color:#c4b5fd; }
+.difficulty-suggestion.is-empty { color:var(--dim); }
+
 #btnShortcuts {
   width:30px; height:30px; padding:0; font-size:15px; font-weight:800;
   border-color:rgba(148,163,184,0.22); color:rgba(148,163,184,0.55);

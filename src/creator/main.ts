@@ -6,6 +6,7 @@ import { showAlert, showToast } from './dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initRemoteTrackingHost } from '../remote/host-session.ts';
 import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
+import { suggestMapDifficulty } from '../core/map-difficulty.ts';
 
 import { state, MAP_ID } from './state.ts';
 import type { CreatorMap } from './state.ts';
@@ -176,6 +177,7 @@ async function handleFile(file: File): Promise<void> {
         { fallbackId: MAP_ID(), requireBeats: false },
       ) as unknown as CreatorMap;
       syncDifficultyInput();
+      updateDifficultySuggestion();
       sortBeatsByTime(state.map.beats);
       state.selectedBeats.clear();
       checkOverlaps();
@@ -199,6 +201,7 @@ async function handleFile(file: File): Promise<void> {
     } else if (lowerName.endsWith('.zip')) {
       await loadZipFile(file, audioCallbacks);
       syncDifficultyInput();
+      updateDifficultySuggestion();
       checkOverlaps();
       renderAll();
       showToast(t('creator.zipLoaded'), { type: 'success' });
@@ -303,6 +306,26 @@ function bindDifficulty(): void {
     state.map.meta.difficulty = input.value;
     scheduleAutosave();
   });
+
+  document.getElementById('btnSuggestDifficulty')?.addEventListener('click', updateDifficultySuggestion);
+  updateDifficultySuggestion();
+}
+
+function updateDifficultySuggestion(): void {
+  const output = document.getElementById('difficultySuggestion');
+  if (!output) return;
+  const suggestion = suggestMapDifficulty(state.map);
+  if (!suggestion) {
+    output.textContent = t('creator.difficultySuggestionEmpty');
+    output.className = 'difficulty-suggestion is-empty';
+    return;
+  }
+
+  output.textContent = t('creator.difficultySuggestion', {
+    difficulty: t(`difficulty.${suggestion.difficulty}`),
+    score: String(suggestion.score),
+  });
+  output.className = `difficulty-suggestion is-${suggestion.difficulty}`;
 }
 
 // ── Shortcuts panel ───────────────────────────────────────────────
@@ -417,6 +440,7 @@ window.addEventListener('resize', () => {
 
 runCreatorTask('initial-map-load', () => loadInitialMap({
   onDecoded: audioCallbacks.onDecoded,
-  onMapLoaded: () => { syncDifficultyInput(); checkOverlaps(); renderAll(); },
+  onMapLoaded: () => { syncDifficultyInput(); updateDifficultySuggestion(); checkOverlaps(); renderAll(); },
   getLocalMapById: (id: string) => getLocalMapById(id),
 }));
+
