@@ -56,6 +56,7 @@ export const state = {
   redoStack: [] as string[],
 
   autosaveTimer: null as ReturnType<typeof setTimeout> | null,
+  autosaveMaxTimer: null as ReturnType<typeof setTimeout> | null,
   lastSavedAt:   null as Date | null,
 
   tapFlashTimer: null as ReturnType<typeof setTimeout> | null,

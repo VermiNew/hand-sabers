@@ -8,12 +8,26 @@ import { t } from '../i18n/index.ts';
 import { state, MAP_ID } from './state.ts';
 import type { CreatorMap } from './state.ts';
 
+const AUTOSAVE_DEBOUNCE_MS = 5_000;
+const AUTOSAVE_MAX_INTERVAL_MS = 30_000;
+
+function clearAutosaveTimers(): void {
+  if (state.autosaveTimer) clearTimeout(state.autosaveTimer);
+  if (state.autosaveMaxTimer) clearTimeout(state.autosaveMaxTimer);
+  state.autosaveTimer = null;
+  state.autosaveMaxTimer = null;
+}
+
 export function scheduleAutosave(onAutosaved?: () => void): void {
   if (state.autosaveTimer) clearTimeout(state.autosaveTimer);
-  state.autosaveTimer = setTimeout(() => { autoSaveToLocalStorage(onAutosaved); }, 5000);
+  state.autosaveTimer = setTimeout(() => { autoSaveToLocalStorage(onAutosaved); }, AUTOSAVE_DEBOUNCE_MS);
+  if (!state.autosaveMaxTimer) {
+    state.autosaveMaxTimer = setTimeout(() => { autoSaveToLocalStorage(onAutosaved); }, AUTOSAVE_MAX_INTERVAL_MS);
+  }
 }
 
 export function autoSaveToLocalStorage(onAutosaved?: () => void): void {
+  clearAutosaveTimers();
   try {
     localStorage.setItem('hs_autosave', JSON.stringify(state.map));
     saveLocalMap(state.map as unknown as Parameters<typeof saveLocalMap>[0]);
@@ -31,8 +45,21 @@ export function autoSaveToLocalStorage(onAutosaved?: () => void): void {
     const autosaveLbl = document.getElementById('autosaveLabel');
     if (autosaveLbl) autosaveLbl.textContent = `${t('creator.autosave')}: ${state.lastSavedAt.toLocaleTimeString()}`;
     onAutosaved?.();
-  } catch { /* storage quota exceeded */ }
+  } catch (error) {
+    console.error('Creator autosave failed:', error);
+    const autosaveLbl = document.getElementById('autosaveLabel');
+    if (autosaveLbl) autosaveLbl.textContent = t('creator.autosaveFailed');
+  }
 }
+
+export function flushAutosave(): void {
+  autoSaveToLocalStorage();
+}
+
+window.addEventListener('pagehide', flushAutosave);
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') flushAutosave();
+});
 
 async function saveMapToServer(mapToSave: CreatorMap): Promise<Record<string, unknown>> {
   const fd = new FormData();

@@ -521,6 +521,7 @@
     "autosaveAudioLocal": "audio restored locally",
     "autosaveAudioServer": "audio fetched from server",
     "autosave": "autosave",
+    "autosaveFailed": "Autosave failed — save the map manually.",
     "autosaveAudioFailed": "Audio could not be autosaved.",
     "exportNoAudioConfirm": "No audio in memory. Export ZIP with map.json only?",
     "exportNoAudioTitle": "Export without audio",
