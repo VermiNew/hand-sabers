@@ -10,6 +10,7 @@ import {
 
 let metronomeActive = false;
 let metronomeTimer: ReturnType<typeof setTimeout> | null = null;
+let overlayRemovalTimer: ReturnType<typeof setTimeout> | null = null;
 let metronomeBeat = 0;
 let tapTimes: number[] = [];
 let startTime = 0;
@@ -41,6 +42,10 @@ export function playTestSound(): void {
 }
 
 function createVisualOverlay(): { visual: HTMLElement; status: HTMLElement; counter: HTMLElement } {
+  if (overlayRemovalTimer) {
+    clearTimeout(overlayRemovalTimer);
+    overlayRemovalTimer = null;
+  }
   document.getElementById('metronomeOverlay')?.remove();
 
   const overlay = document.createElement('div');
@@ -252,16 +257,17 @@ export function startMetronomeCalibration(onComplete?: (offsetMs: number) => voi
       } else {
         updateStatus('metronome.unstable', { ms: String(result.offsetMs) });
       }
-      stopMetronome();
-      onCompleteCb?.(result.offsetMs);
+      const complete = onCompleteCb;
       onCompleteCb = null;
+      stopMetronome({ preserveResult: true });
+      complete?.(result.offsetMs);
     }
   };
   window.addEventListener('keydown', keydownHandler);
 }
 
 /** Stop the metronome calibration */
-export function stopMetronome(): void {
+export function stopMetronome({ preserveResult = false }: { preserveResult?: boolean } = {}): void {
   if (metronomeTimer) {
     clearTimeout(metronomeTimer);
     metronomeTimer = null;
@@ -273,15 +279,16 @@ export function stopMetronome(): void {
   metronomeActive = false;
 
   const overlay = document.getElementById('metronomeOverlay');
-  if (overlay) {
-    const status = document.getElementById('metronomeStatus');
-    if (status && status.textContent && !status.textContent.includes(t('metronome.tapHint'))) {
-      setTimeout(() => removeVisualOverlay(), 2000);
-    } else {
-      removeVisualOverlay();
-    }
+  if (overlay && preserveResult) {
+    overlayRemovalTimer = setTimeout(() => {
+      overlay.remove();
+      overlayRemovalTimer = null;
+    }, 2000);
+  } else {
+    removeVisualOverlay();
   }
 
+  if (!preserveResult) onCompleteCb = null;
   visualEl = null;
   statusEl = null;
   counterEl = null;
