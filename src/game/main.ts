@@ -41,6 +41,7 @@ import { initMusicReactiveSettings } from './music-reactive-settings.ts';
 import { initGraphicsSettings } from './graphics-settings.ts';
 import { initTrackingSettings } from './tracking-settings.ts';
 import { initDeveloperSettings } from './developer-settings.ts';
+import { initMainMenuShell, triggerMenuEnter } from './main-menu-shell.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -132,23 +133,6 @@ function runAsyncTask(context: string, task: () => Promise<unknown>, onError?: (
         reportRuntimeError(`${context}:recovery`, recoveryError);
       }
     });
-}
-
-function withDevQuery(url: string): string {
-  const current = new URLSearchParams(location.search);
-  const target  = new URL(url, location.href);
-  for (const key of ['dev', 'testing']) {
-    if (current.has(key)) target.searchParams.set(key, current.get(key) ?? '');
-  }
-  return `${target.pathname.split('/').pop()}${target.search}${target.hash}`;
-}
-
-function preserveDevQueryOnMenuLinks(): void {
-  const current = new URLSearchParams(location.search);
-  if (!current.has('dev') && !current.has('testing')) return;
-  for (const link of document.querySelectorAll('.main-menu-footer a[href]')) {
-    link.setAttribute('href', withDevQuery(link.getAttribute('href') ?? ''));
-  }
 }
 
 // ── Score submit ──────────────────────────────────────────────────────────────
@@ -1460,27 +1444,8 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
   trackingStarting = false;
 }
 
-function triggerMenuEnter(): void {
-  const mainMenu = document.getElementById('mainMenu');
-  if (!mainMenu) return;
-  mainMenu.classList.remove('is-leaving');
-  mainMenu.classList.remove('is-entering');
-  void mainMenu.offsetWidth;
-  mainMenu.classList.add('is-entering');
-  setTimeout(() => mainMenu.classList.remove('is-entering'), 800);
-}
-
 function initMainMenu(): void {
-  document.body.classList.add('menu-open');
-  preserveDevQueryOnMenuLinks();
   resetMenuDemo();
-  triggerMenuEnter();
-
-  const navItems         = [...document.querySelectorAll<HTMLElement>('.main-nav-item:not(.is-disabled)')];
-  const settingsBackdrop = document.getElementById('mainSettingsBackdrop');
-  const settingsPanel    = document.getElementById('mainSettingsPanel');
-  const settingsButton   = document.getElementById('mainSettings');
-  const settingsClose    = document.getElementById('mainSettingsClose');
   const settingsReset    = document.getElementById('mainSettingsReset');
   const trackingSettingsController = initTrackingSettings(settings, {
     onSourceChange(changed) {
@@ -1490,89 +1455,16 @@ function initMainMenu(): void {
       calibrationReady = false;
     },
   });
-
-  function selectItem(item: Element): void {
-    navItems.forEach(el => el.classList.toggle('is-selected', el === item));
-  }
-
-  function isSettingsPanelVisible(): boolean {
-    return Boolean(settingsBackdrop && !settingsBackdrop.hidden);
-  }
-
-  function switchSettingsTab(tabName: string): void {
-    document.querySelectorAll<HTMLElement>('.sp-nav-item').forEach(btn => {
-      btn.classList.toggle('is-active', btn.dataset['tab'] === tabName);
-    });
-    document.querySelectorAll<HTMLElement>('.sp-tab').forEach(tab => {
-      tab.classList.toggle('is-active', tab.dataset['tab'] === tabName);
-    });
-    if (tabName === 'achievements') {
+  const menuShell = initMainMenuShell({
+    onAchievementsOpen() {
       renderStatsGrid();
       renderAchievementCompactGrid();
-    }
-  }
-
-  document.querySelectorAll<HTMLElement>('.sp-nav-item[data-tab]').forEach(btn => {
-    btn.addEventListener('click', () => switchSettingsTab(btn.dataset['tab'] ?? 'audio'));
+    },
   });
 
   initSettingsTransfer(settings);
 
-  function setSettingsPanelVisible(visible: boolean): void {
-    if (settingsBackdrop) {
-      settingsBackdrop.hidden = !visible;
-      settingsBackdrop.classList.toggle('show', visible);
-    }
-    settingsPanel?.classList.toggle('show', visible);
-    settingsButton?.setAttribute('aria-expanded', String(visible));
-    if (visible) {
-      requestAnimationFrame(() => (settingsPanel?.querySelector('input,button,summary') as HTMLElement | null)?.focus());
-    } else {
-      (settingsButton as HTMLElement | null)?.focus({ preventScroll: true });
-    }
-  }
-
-  window.addEventListener('hand-sabers:open-settings', event => {
-    const detail = (event as CustomEvent<{ tab?: string }>).detail;
-    switchSettingsTab(detail?.tab ?? 'audio');
-    setSettingsPanelVisible(true);
-  });
-
-  const allNavItems = [...document.querySelectorAll<HTMLElement>('.main-nav-item')];
-  allNavItems.forEach((item, i) => item.style.setProperty('--i', String(i)));
-
-  for (const item of navItems) {
-    item.addEventListener('mouseenter', () => selectItem(item));
-    item.addEventListener('focus',      () => selectItem(item));
-    item.addEventListener('pointerdown',  () => item.classList.add('is-pressed'));
-    item.addEventListener('pointerup',    () => item.classList.remove('is-pressed'));
-    item.addEventListener('pointerleave', () => item.classList.remove('is-pressed'));
-  }
-
-  for (const item of allNavItems) {
-    item.addEventListener('click', () => {
-      if (item.classList.contains('is-disabled')) {
-        item.classList.remove('is-locked-attempt');
-        void item.offsetWidth;
-        item.classList.add('is-locked-attempt');
-        setTimeout(() => item.classList.remove('is-locked-attempt'), 420);
-        return;
-      }
-      item.classList.remove('is-clicked');
-      void item.offsetWidth;
-      item.classList.add('is-clicked');
-      setTimeout(() => item.classList.remove('is-clicked'), 380);
-    });
-  }
-
-  function dispatchMenuAction(id: string, action: () => void): void {
-    document.getElementById(id)?.addEventListener('click', () => {
-      if (document.getElementById(id)?.classList.contains('is-disabled')) return;
-      setTimeout(action, 350);
-    });
-  }
-
-  dispatchMenuAction('mainStart', () => {
+  menuShell.bindAction('mainStart', () => {
     if (!state.map) {
       runAsyncTask('map-selection-prompt', async () => {
         const choice = await narratorShow({
@@ -1584,37 +1476,24 @@ function initMainMenu(): void {
       return;
     }
     if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
-      switchSettingsTab('remoteTracking');
-      setSettingsPanelVisible(true);
+      menuShell.openSettings('remoteTracking');
       trackingSettingsController.updateSourceHint();
       return;
     }
-    setSettingsPanelVisible(false);
+    menuShell.closeSettings();
     runAsyncTask('game-start', () => startFromMainMenu({ calibrate: false }));
   });
-  dispatchMenuAction('mainCalibrate', () => {
+  menuShell.bindAction('mainCalibrate', () => {
     if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
-      switchSettingsTab('remoteTracking');
-      setSettingsPanelVisible(true);
+      menuShell.openSettings('remoteTracking');
       trackingSettingsController.updateSourceHint();
       return;
     }
-    setSettingsPanelVisible(false);
+    menuShell.closeSettings();
     runAsyncTask('calibration-start', () => startFromMainMenu({ calibrate: true }));
   });
-  dispatchMenuAction('mainMaps', () => {
+  menuShell.bindAction('mainMaps', () => {
     openMapPicker();
-  });
-  settingsButton?.addEventListener('click', () => {
-    selectItem(settingsButton);
-    setSettingsPanelVisible(!isSettingsPanelVisible());
-  });
-  settingsClose?.addEventListener('click', () => setSettingsPanelVisible(false));
-  settingsBackdrop?.addEventListener('pointerdown', (event) => {
-    if (event.target === settingsBackdrop) setSettingsPanelVisible(false);
-  });
-  window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && isSettingsPanelVisible()) setSettingsPanelVisible(false);
   });
 
   initLanguageSettings(applyTranslations);
