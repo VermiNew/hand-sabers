@@ -30,9 +30,13 @@ export function createCalibrationController(
   { onComplete }: CalibrationControllerOptions,
 ): CalibrationController {
   let ready = false;
+  let stepsStarted = false;
+  let advancing = false;
 
   function start(): void {
     if (state.appState !== S.LOADING) return;
+    ready = false;
+    stepsStarted = false;
     calibrationUI.showPanel();
     resetCalibration();
     state.appState = S.CALIB;
@@ -41,6 +45,8 @@ export function createCalibrationController(
   }
 
   function beginSteps(mode: 'manual' | 'auto'): void {
+    if (state.appState !== S.CALIB || stepsStarted) return;
+    stepsStarted = true;
     setSetting('calibrationMode', mode);
     const manualMode = mode === 'manual';
     setManualCalibrationMode(manualMode);
@@ -51,26 +57,33 @@ export function createCalibrationController(
   }
 
   async function advance(): Promise<void> {
-    finishCalibStep(state.calibIdx);
-    if (state.calibIdx < CALIB_STEPS.length - 1) {
-      state.calibIdx++;
-      renderCalibStep();
-      return;
-    }
+    if (state.appState !== S.CALIB || !stepsStarted || advancing) return;
+    advancing = true;
+    try {
+      finishCalibStep(state.calibIdx);
+      if (state.calibIdx < CALIB_STEPS.length - 1) {
+        state.calibIdx++;
+        renderCalibStep();
+        return;
+      }
 
-    ready = true;
-    if (settings.rememberCalibration) {
-      const data = getCalibrationData();
-      setSetting('savedCalibration', {
-        minX: data.minX,
-        maxX: data.maxX,
-        minY: data.minY,
-        maxY: data.maxY,
-        rangeX: data.rangeX,
-        rangeY: data.rangeY,
-      });
+      stepsStarted = false;
+      ready = true;
+      if (settings.rememberCalibration) {
+        const data = getCalibrationData();
+        setSetting('savedCalibration', {
+          minX: data.minX,
+          maxX: data.maxX,
+          minY: data.minY,
+          maxY: data.maxY,
+          rangeX: data.rangeX,
+          rangeY: data.rangeY,
+        });
+      }
+      await onComplete();
+    } finally {
+      advancing = false;
     }
-    await onComplete();
   }
 
   return {
