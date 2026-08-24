@@ -10,6 +10,7 @@ import type { CalibrationResult } from './calibration-math.ts';
 
 let metronomeActive = false;
 let metronomeTimer: ReturnType<typeof setTimeout> | null = null;
+const visualTimers = new Set<ReturnType<typeof setTimeout>>();
 let metronomeBeat = 0;
 let tapTimes: number[] = [];
 let startTime = 0;
@@ -30,6 +31,32 @@ function formatText(key: string, replacements?: Record<string, string>): string 
     }
   }
   return text;
+}
+
+function scheduleVisualTask(callback: () => void, delayMs: number): void {
+  let timer: ReturnType<typeof setTimeout>;
+  timer = setTimeout(() => {
+    visualTimers.delete(timer);
+    callback();
+  }, delayMs);
+  visualTimers.add(timer);
+}
+
+function clearVisualTasks(): void {
+  for (const timer of visualTimers) clearTimeout(timer);
+  visualTimers.clear();
+}
+
+function resetVisualState(): void {
+  if (visualEl) {
+    visualEl.style.transform = '';
+    visualEl.style.borderColor = '';
+    visualEl.style.boxShadow = '';
+    visualEl.style.background = '';
+  }
+  document.querySelectorAll<HTMLElement>('#metronomeOverlay .metronome-dot.is-active').forEach(dot => {
+    dot.classList.remove('is-active');
+  });
 }
 
 /** Play a short test sound using the current audio offset */
@@ -114,6 +141,8 @@ function createVisualOverlay(): { visual: HTMLElement; status: HTMLElement; coun
 }
 
 function removeVisualOverlay(): void {
+  clearVisualTasks();
+  resetVisualState();
   document.getElementById('metronomeOverlay')?.remove();
   visualEl = null;
   statusEl = null;
@@ -141,7 +170,7 @@ function pulseVisual(accent: boolean, beatInPattern: number): void {
   visualEl.style.borderColor = color;
   visualEl.style.boxShadow = shadow;
   visualEl.style.background = accent ? 'rgba(54,242,161,0.15)' : 'rgba(47,124,255,0.12)';
-  setTimeout(() => {
+  scheduleVisualTask(() => {
     if (visualEl) {
       visualEl.style.transform = 'scale(1)';
       visualEl.style.borderColor = '';
@@ -245,7 +274,7 @@ export function startMetronomeCalibration(
     if (delayMs <= 0) {
       pulseVisual(accent, beatInPattern);
     } else {
-      setTimeout(() => pulseVisual(accent, beatInPattern), delayMs);
+      scheduleVisualTask(() => pulseVisual(accent, beatInPattern), delayMs);
     }
   };
 
@@ -294,7 +323,7 @@ export function startMetronomeCalibration(
 
     if (visualEl && !reducedMotion) {
       visualEl.style.transform = 'scale(1.35)';
-      setTimeout(() => { if (visualEl) visualEl.style.transform = 'scale(1)'; }, 80);
+      scheduleVisualTask(() => { if (visualEl) visualEl.style.transform = 'scale(1)'; }, 80);
     }
 
     const collected = tapTimes.length - WARMUP_TAPS;
@@ -342,6 +371,8 @@ export function stopMetronome({ keepOverlay = false }: { keepOverlay?: boolean }
     keydownHandler = null;
   }
   metronomeActive = false;
+  clearVisualTasks();
+  resetVisualState();
 
   if (!keepOverlay) {
     removeVisualOverlay();
