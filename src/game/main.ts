@@ -7,7 +7,7 @@ import {
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setMusicVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
-import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
+import { initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, tickDevPanel, initCameraPanelToggle } from '../ui/devpanel.ts';
@@ -53,6 +53,7 @@ import type { ResumeSource } from './pause-resume-guard.ts';
 import { createGameplayFocusProtection } from './gameplay-focus-protection.ts';
 import { createHandsPauseController, getMissingHandsText } from './hands-pause-controller.ts';
 import { createCalibrationUI } from './calibration-ui.ts';
+import { createCalibrationController } from './calibration-controller.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -259,54 +260,17 @@ function hideOverlay(): void {
   ui.overlay.classList.remove('show', 'is-gameover', 'is-victory', 'is-defeat');
 }
 
-let calibrationReady = false;
 let multiplayerPreparationMapId = '';
 const calibrationUI = createCalibrationUI();
-
-function startCalib(): void {
-  // Guard: if the user aborted during loading, don't enter calibration
-  if (state.appState !== S.LOADING) return;
-  calibrationUI.showPanel();
-  resetCalibration();
-  state.appState = S.CALIB;
-  if (ui.dStatus) ui.dStatus.textContent = 'CALIB';
-  // Show mode selector first; actual calibration starts when user picks a mode
-  calibrationUI.showModeSelector(settings.rememberCalibration);
-}
-
-function beginCalibrationSteps(mode: 'manual' | 'auto'): void {
-  setSetting('calibrationMode', mode);
-  const isManual = mode === 'manual';
-  setManualCalibrationMode(isManual);
-  setSetting('rememberCalibration', calibrationUI.getRememberCalibration());
-  calibrationUI.showSteps(isManual);
-  state.calibIdx = 0;
-  renderCalibStep();
-}
-
-async function advanceCalib(): Promise<void> {
-  finishCalibStep(state.calibIdx);
-  if (state.calibIdx < CALIB_STEPS.length - 1) {
-    state.calibIdx++;
-    renderCalibStep();
-    return;
-  }
-  calibrationReady = true;
-  // Save calibration data if "remember calibration" is enabled
-  if (settings.rememberCalibration) {
-    const data = getCalibrationData();
-    setSetting('savedCalibration', {
-      minX: data.minX, maxX: data.maxX,
-      minY: data.minY, maxY: data.maxY,
-      rangeX: data.rangeX, rangeY: data.rangeY,
-    });
-  }
-  if (multiplayerPreparationMapId) {
-    completeMultiplayerPreparation();
-    return;
-  }
-  await beginPlaying();
-}
+const calibrationController = createCalibrationController(settings, calibrationUI, {
+  async onComplete() {
+    if (multiplayerPreparationMapId) {
+      completeMultiplayerPreparation();
+      return;
+    }
+    await beginPlaying();
+  },
+});
 
 function completeMultiplayerPreparation(): void {
   const mapId = multiplayerPreparationMapId;
@@ -329,7 +293,7 @@ async function prepareMultiplayerMap(mapId: string): Promise<void> {
     initAudio();
     if (!await loadMapById(mapId)) throw new Error('MAP_NOT_FOUND');
     await ensureCurrentMapAudio();
-    if (calibrationReady) {
+    if (calibrationController.isReady()) {
       completeMultiplayerPreparation();
       return;
     }
@@ -459,7 +423,7 @@ function restartGame(): void {
   hidePauseMenu();
   handsPauseController.reset();
   state.pauseReason = PAUSE_REASONS.NONE;
-  startCalib();
+  calibrationController.start();
 }
 
 function restartWithoutCalib(): void {
@@ -857,7 +821,7 @@ function renderFrame(timestamp: number): void {
 function handleOverlayButton(): void {
   initAudio();
   if (state.appState === S.GAMEOVER) restartWithoutCalib();
-  else runAsyncTask('calibration-advance', advanceCalib);
+  else runAsyncTask('calibration-advance', () => calibrationController.advance());
 }
 
 function handleCalibButton(): void {
@@ -968,11 +932,11 @@ window.__narratorCombo = (combo: number) => {
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
 ui.ovBtnMaps?.addEventListener('click',   () => { openMapPicker(); });
 ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
-ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', advanceCalib); });
+ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', () => calibrationController.advance()); });
 ui.calibBtnRetry?.addEventListener('click', () => { initAudio(); restartGame(); });
 ui.calibBtnMenu?.addEventListener('click',  returnToMainMenu);
-document.getElementById('calibModeAuto')?.addEventListener('click',   () => { initAudio(); beginCalibrationSteps('auto'); });
-document.getElementById('calibModeManual')?.addEventListener('click', () => { initAudio(); beginCalibrationSteps('manual'); });
+document.getElementById('calibModeAuto')?.addEventListener('click',   () => { initAudio(); calibrationController.beginSteps('auto'); });
+document.getElementById('calibModeManual')?.addEventListener('click', () => { initAudio(); calibrationController.beginSteps('manual'); });
 document.getElementById('pauseResume')?.addEventListener('click', () => { void resumeGame(performance.now(), 'ui'); });
 document.getElementById('pauseRestart')?.addEventListener('click', () => {
   hidePauseMenu();
@@ -1023,7 +987,7 @@ function abortLoading(): void {
     trackingStarted = false;
     trackingStarting = false;
   }
-  calibrationReady = false;
+  calibrationController.setReady(false);
   returnToMainMenu();
 }
 document.getElementById('ovAbortBtn')?.addEventListener('click', abortLoading);
@@ -1048,7 +1012,7 @@ initKeyboardNav({
   },
 });
 setCalibAutoAdvanceHandler(() => {
-  if (state.appState === S.CALIB) runAsyncTask('calibration-auto-advance', advanceCalib);
+  if (state.appState === S.CALIB) runAsyncTask('calibration-auto-advance', () => calibrationController.advance());
 });
 initDevPanel(renderer, null);
 initCameraPanelToggle();
@@ -1076,17 +1040,17 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
   state.appState = S.LOADING;
 
   if (trackingStarted) {
-    if (calibrate || !calibrationReady) restartGame();
+    if (calibrate || !calibrationController.isReady()) restartGame();
     else restartWithoutCalib();
     return;
   }
 
   // If "remember calibration" is enabled and we have saved data, skip calibration
   if (!calibrate && settings.rememberCalibration && settings.savedCalibration) {
-    calibrationReady = true;
+    calibrationController.setReady(true);
   } else if (calibrate) {
     // Explicit recalibration — invalidate saved calibration
-    calibrationReady = false;
+    calibrationController.setReady(false);
     if (settings.savedCalibration) setSetting('savedCalibration', null);
   }
 
@@ -1094,7 +1058,7 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
   trackingStarting = true;
   trackingStarted = await initMP(() => {
     // After tracking init, if we have saved calibration, restore it and skip calibration steps
-    if (calibrationReady && settings.savedCalibration) {
+    if (calibrationController.isReady() && settings.savedCalibration) {
       restoreCalibrationData(settings.savedCalibration);
       if (multiplayerPreparationMapId) {
         completeMultiplayerPreparation();
@@ -1102,7 +1066,7 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
       }
       runAsyncTask('game-start-skip-calib', beginPlaying);
     } else {
-      startCalib();
+      calibrationController.start();
     }
   });
   trackingStarting = false;
@@ -1116,7 +1080,7 @@ function initMainMenu(): void {
       if (!changed || !trackingStarted) return;
       stopTracking();
       trackingStarted = false;
-      calibrationReady = false;
+      calibrationController.setReady(false);
     },
   });
   const menuShell = initMainMenuShell({
@@ -1186,7 +1150,7 @@ function initMainMenu(): void {
     if (trackingStarted && previousTrackingSource !== settings.trackingSource) {
       stopTracking();
       trackingStarted = false;
-      calibrationReady = false;
+      calibrationController.setReady(false);
     }
     audioSettingsController.sync();
     gameplaySettingsController.sync();
