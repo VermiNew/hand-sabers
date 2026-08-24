@@ -4,17 +4,16 @@ import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
-  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setSaberColor, setHitPlaneVisible, setSaberModel, setOneHandModeVisuals, setArenaTheme, applyBackgroundTheme,
+  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals, setArenaTheme, applyBackgroundTheme,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setMusicVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
-import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, setBlockColor } from './gameplay.ts';
+import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
-import { SABER_COLORS } from '../core/saber-colors.ts';
 import { getPerformanceMode, getPerformanceModeDescription, getPerformanceModes, getPerformanceProfile } from '../core/performance.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS, canAutoResumeFromHands } from '../core/pause.ts';
@@ -31,13 +30,13 @@ import { isPhoneAudioActive, preparePhoneAudio, playPhoneAudio, pausePhoneAudio,
 import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from './narrator.ts';
 import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
 import { ARENA_THEMES, getArenaTheme } from '../core/arena-themes.ts';
-import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
 import { initLanguageSettings } from '../ui/language-settings.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, initProfileSettings, showProfileOnboardingIfNeeded } from './profile.ts';
 import { initAudioSettings } from './audio-settings.ts';
 import { initGameplaySettings } from './gameplay-settings.ts';
+import { applySaberAppearance, initSaberSettings } from './saber-settings.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -66,18 +65,7 @@ interface MultiplayerRules {
 }
 let multiplayerRoundRules: MultiplayerRules | null = null;
 
-if (settings.saberColorLeft) {
-  setSaberColor('left', settings.saberColorLeft);
-  setBlockColor('left', parseInt(settings.saberColorLeft.replace('#', ''), 16));
-}
-if (settings.saberModel) {
-  setSaberModel('left',  settings.saberModel as Parameters<typeof setSaberModel>[1]);
-  setSaberModel('right', settings.saberModel as Parameters<typeof setSaberModel>[1]);
-}
-if (settings.saberColorRight) {
-  setSaberColor('right', settings.saberColorRight);
-  setBlockColor('right', parseInt(settings.saberColorRight.replace('#', ''), 16));
-}
+applySaberAppearance(settings);
 window.__trackingSensitivity = settings.sensitivity;
 window.__trackingFlip        = settings.flipCamera;
 state.noFail                 = settings.noFail;
@@ -1825,6 +1813,7 @@ function initMainMenu(): void {
 
   initProfileSettings(settings);
   const gameplaySettingsController = initGameplaySettings(settings);
+  const saberSettingsController = initSaberSettings(settings);
 
   if (performanceInput) {
     const updatePerformanceHint = () => {
@@ -1981,111 +1970,6 @@ function initMainMenu(): void {
     });
   }
 
-  // ── Kolory mieczy ─────────────────────────────────────────────────────────
-  function updateColorPreview(previewBar: HTMLElement | null, previewName: HTMLElement | null, colorDef: { hex: string; labelKey?: string; label?: string }): void {
-    if (previewBar) {
-      previewBar.style.background  = colorDef.hex;
-      previewBar.style.boxShadow   = `0 0 8px 2px ${colorDef.hex}88`;
-    }
-    if (previewName) previewName.textContent = colorDef.labelKey ? t(colorDef.labelKey) : (colorDef.label ?? '');
-  }
-
-  function buildColorGrid(gridEl: HTMLElement | null, previewBar: HTMLElement | null, previewName: HTMLElement | null, side: 'left' | 'right', currentHex: string): void {
-    if (!gridEl) return;
-    const selectedColor = SABER_COLORS.find(color => color.hex.toLowerCase() === currentHex.toLowerCase());
-    gridEl.innerHTML    = '';
-
-    for (const colorDef of SABER_COLORS) {
-      const selected = colorDef === selectedColor;
-      const btn      = document.createElement('button');
-      btn.type       = 'button';
-      btn.className  = 'saber-color-swatch' + (selected ? ' is-selected' : '');
-      btn.title      = t(colorDef.labelKey);
-      btn.setAttribute('aria-label',   t(colorDef.labelKey));
-      btn.setAttribute('aria-checked', String(selected));
-      btn.setAttribute('role', 'radio');
-      btn.style.setProperty('background-color', colorDef.hex);
-      btn.style.setProperty('--saber-glow', `${colorDef.hex}66`);
-
-      btn.addEventListener('click', () => {
-        gridEl.querySelectorAll('.saber-color-swatch').forEach(s => {
-          s.classList.remove('is-selected');
-          s.setAttribute('aria-checked', 'false');
-        });
-        btn.classList.add('is-selected');
-        btn.setAttribute('aria-checked', 'true');
-
-        setSaberColor(side, colorDef.hex);
-        setBlockColor(side, parseInt(colorDef.hex.replace('#', ''), 16));
-        const settingKey = side === 'left' ? 'saberColorLeft' : 'saberColorRight';
-        (settings as unknown as Record<string, unknown>)[settingKey] = colorDef.hex;
-        setSetting(settingKey as keyof Settings, colorDef.hex);
-        updateColorPreview(previewBar, previewName, colorDef);
-      });
-
-      gridEl.appendChild(btn);
-    }
-
-    updateColorPreview(
-      previewBar,
-      previewName,
-      selectedColor ?? { hex: currentHex, label: t('settings.gameplay.custom') },
-    );
-  }
-
-  const leftHex  = settings.saberColorLeft  || '#36f2a1';
-  const rightHex = settings.saberColorRight || '#2f7cff';
-
-  buildColorGrid(
-    document.getElementById('saberColorGridLeft'),
-    document.getElementById('saberColorPreviewLeft'),
-    document.getElementById('saberColorNameLeft'),
-    'left', leftHex
-  );
-  buildColorGrid(
-    document.getElementById('saberColorGridRight'),
-    document.getElementById('saberColorPreviewRight'),
-    document.getElementById('saberColorNameRight'),
-    'right', rightHex
-  );
-
-  // ── Custom color picker modal ────────────────────────────────────────────
-  initSaberColorPicker({
-    getColor: side => side === 'left'
-      ? settings.saberColorLeft || '#36f2a1'
-      : settings.saberColorRight || '#2f7cff',
-    onApply: (side, hex) => {
-      setSaberColor(side, hex);
-      setBlockColor(side, parseInt(hex.replace('#', ''), 16));
-      const key = side === 'left' ? 'saberColorLeft' : 'saberColorRight';
-      settings[key] = hex;
-      setSetting(key, hex);
-      const previewBar = document.getElementById(side === 'left' ? 'saberColorPreviewLeft' : 'saberColorPreviewRight');
-      const previewName = document.getElementById(side === 'left' ? 'saberColorNameLeft' : 'saberColorNameRight');
-      updateColorPreview(previewBar, previewName, { hex, label: t('settings.gameplay.custom') });
-    },
-  });
-
-  // ── Picker modelu miecza ──────────────────────────────────────────────────
-  const modelPicker = document.getElementById('saberModelPicker');
-  if (modelPicker) {
-    const currentModel = (settings.saberModel || 'classic') as Parameters<typeof setSaberModel>[1];
-    modelPicker.querySelectorAll<HTMLButtonElement>('[data-saber-model]').forEach(btn => {
-      if (btn.dataset['saberModel'] === currentModel) btn.classList.add('is-active');
-      else                                             btn.classList.remove('is-active');
-      btn.addEventListener('click', () => {
-        const model = btn.dataset['saberModel'] as Parameters<typeof setSaberModel>[1];
-        if (!model) return;
-        modelPicker.querySelectorAll('[data-saber-model]').forEach(b => b.classList.remove('is-active'));
-        btn.classList.add('is-active');
-        setSaberModel('left',  model);
-        setSaberModel('right', model);
-        (settings as unknown as Record<string, unknown>)['saberModel'] = model;
-        setSetting('saberModel' as keyof Settings, model);
-      });
-    });
-  }
-
   settingsReset?.addEventListener('click', () => {
     if (!window.confirm(t('settings.resetConfirm'))) return;
 
@@ -2108,6 +1992,7 @@ function initMainMenu(): void {
 
     audioSettingsController.sync();
     gameplaySettingsController.sync();
+    saberSettingsController.sync();
     if (performanceInput) {
       performanceInput.value = settings.performanceMode;
       emit(performanceInput, 'change');
@@ -2129,34 +2014,6 @@ function initMainMenu(): void {
       flipCameraInput.checked = settings.flipCamera;
       emit(flipCameraInput, 'change');
     }
-
-    const leftColor = settings.saberColorLeft;
-    const rightColor = settings.saberColorRight;
-    setSaberColor('left', leftColor);
-    setSaberColor('right', rightColor);
-    setBlockColor('left', parseInt(leftColor.slice(1), 16));
-    setBlockColor('right', parseInt(rightColor.slice(1), 16));
-    buildColorGrid(
-      document.getElementById('saberColorGridLeft'),
-      document.getElementById('saberColorPreviewLeft'),
-      document.getElementById('saberColorNameLeft'),
-      'left',
-      leftColor,
-    );
-    buildColorGrid(
-      document.getElementById('saberColorGridRight'),
-      document.getElementById('saberColorPreviewRight'),
-      document.getElementById('saberColorNameRight'),
-      'right',
-      rightColor,
-    );
-
-    const model = settings.saberModel as Parameters<typeof setSaberModel>[1];
-    setSaberModel('left', model);
-    setSaberModel('right', model);
-    modelPicker?.querySelectorAll<HTMLElement>('[data-saber-model]').forEach(button => {
-      button.classList.toggle('is-active', button.dataset['saberModel'] === model);
-    });
 
     window.__trackingSensitivity = settings.sensitivity;
     applyAudioSettings(settings);
