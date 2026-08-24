@@ -912,7 +912,17 @@
     "server": "Server",
     "unknown": "Unknown",
     "bestScore": "Best score",
-    "tries": "tries"
+    "tries": "tries",
+    "preview": "PREVIEW",
+    "previewResume": "RESUME",
+    "previewHint": "Listen to up to 30 seconds",
+    "previewLoading": "Loading audio preview…",
+    "previewPlaying": "Preview playing",
+    "previewPaused": "Preview paused",
+    "previewFinished": "Preview finished",
+    "previewNoAudio": "This map has no available audio.",
+    "previewMuted": "Music volume is muted.",
+    "previewFailed": "Could not play the preview."
   },
   "profile": {
     "welcomeTitle": "Welcome to Hand Sabers!",

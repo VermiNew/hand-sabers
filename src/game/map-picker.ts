@@ -1,7 +1,8 @@
 import { t, translateDom } from '../i18n/index.ts';
-import { readLocalMaps, readLocalScores } from '../core/localstore.ts';
+import { loadLocalMapAudio, readLocalMaps, readLocalScores } from '../core/localstore.ts';
 import { normalizeMap } from '../core/map-format.ts';
 import { importMapLocally, importMapToServer } from '../core/map-import.ts';
+import { getSettings } from '../core/settings.ts';
 
 interface MapMeta {
   title?: string;
@@ -78,6 +79,25 @@ let searchQuery = '';
 let loading = false;
 let initialized = false;
 let importing = false;
+const PREVIEW_MAX_SECONDS = 30;
+let previewAudio: HTMLAudioElement | null = null;
+let previewObjectUrl: string | null = null;
+let previewTimer: ReturnType<typeof setTimeout> | null = null;
+let previewProgressTimer: ReturnType<typeof setInterval> | null = null;
+let previewToken = 0;
+let previewRemainingSeconds = PREVIEW_MAX_SECONDS;
+let previewStartedAt = 0;
+let previewPaused = false;
+let previewMapId: string | null = null;
+
+interface PreviewUi {
+  button: HTMLButtonElement;
+  icon: HTMLElement;
+  label: HTMLElement;
+  status: HTMLElement;
+  progress: HTMLElement;
+  time: HTMLElement;
+}
 
 function showImportStatus(message: string, type: 'info' | 'success' | 'error'): void {
   const status = element<HTMLElement>('mpImportStatus');
@@ -90,6 +110,197 @@ function showImportStatus(message: string, type: 'info' | 'success' | 'error'): 
 function clearImportStatus(): void {
   const status = element<HTMLElement>('mpImportStatus');
   if (status) status.hidden = true;
+}
+
+function getPreviewAudio(): HTMLAudioElement {
+  previewAudio ??= new Audio();
+  return previewAudio;
+}
+
+function clearPreviewTimers(): void {
+  if (previewTimer) clearTimeout(previewTimer);
+  if (previewProgressTimer) clearInterval(previewProgressTimer);
+  previewTimer = null;
+  previewProgressTimer = null;
+}
+
+function stopPreview(): void {
+  previewToken++;
+  clearPreviewTimers();
+  const audio = previewAudio;
+  if (audio) {
+    audio.pause();
+    audio.onended = null;
+    audio.removeAttribute('src');
+    audio.load();
+  }
+  if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+  previewObjectUrl = null;
+  previewRemainingSeconds = PREVIEW_MAX_SECONDS;
+  previewStartedAt = 0;
+  previewPaused = false;
+  previewMapId = null;
+}
+
+function setPreviewUi(ui: PreviewUi, state: 'idle' | 'loading' | 'playing' | 'paused' | 'error', message: string): void {
+  ui.status.textContent = message;
+  ui.status.dataset['state'] = state;
+  ui.button.disabled = state === 'loading';
+  ui.icon.textContent = state === 'playing' ? 'pause' : 'play_arrow';
+  ui.label.textContent = state === 'paused' ? t('mapPicker.previewResume') : t('mapPicker.preview');
+}
+
+function updatePreviewProgress(ui: PreviewUi): void {
+  const elapsed = previewPaused ? 0 : Math.max(0, (performance.now() - previewStartedAt) / 1000);
+  const remaining = Math.max(0, previewPaused ? previewRemainingSeconds : previewRemainingSeconds - elapsed);
+  const progress = 1 - remaining / PREVIEW_MAX_SECONDS;
+  ui.progress.style.width = `${Math.round(Math.max(0, Math.min(1, progress)) * 100)}%`;
+  ui.time.textContent = `${Math.ceil(remaining)}s`;
+}
+
+function startPreviewTimers(ui: PreviewUi, token: number): void {
+  clearPreviewTimers();
+  previewStartedAt = performance.now();
+  previewTimer = setTimeout(() => {
+    if (token !== previewToken) return;
+    stopPreview();
+    ui.progress.style.width = '100%';
+    ui.time.textContent = '0s';
+    setPreviewUi(ui, 'idle', t('mapPicker.previewFinished'));
+  }, Math.max(0, previewRemainingSeconds * 1000));
+  previewProgressTimer = setInterval(() => {
+    if (token !== previewToken) return;
+    updatePreviewProgress(ui);
+  }, 200);
+  updatePreviewProgress(ui);
+}
+
+async function loadPreviewSource(map: MapEntry): Promise<string | null> {
+  if (!map.localOnly) {
+    const audioUrl = map.meta?.audioUrl ?? `/api/maps/${encodeURIComponent(map.id)}/audio`;
+    try {
+      const response = await fetch(audioUrl, { credentials: 'same-origin' });
+      if (response.ok) return URL.createObjectURL(await response.blob());
+    } catch { /* local audio is a valid fallback */ }
+  }
+  const local = await loadLocalMapAudio(map.id).catch(() => null);
+  if (!local?.arrayBuffer) return null;
+  return URL.createObjectURL(new Blob([local.arrayBuffer], { type: local.mimeType || 'application/octet-stream' }));
+}
+
+async function startPreview(map: MapEntry, ui: PreviewUi): Promise<void> {
+  stopPreview();
+  const token = previewToken;
+  previewMapId = map.id;
+  setPreviewUi(ui, 'loading', t('mapPicker.previewLoading'));
+  try {
+    const source = await loadPreviewSource(map);
+    if (token !== previewToken) {
+      if (source) URL.revokeObjectURL(source);
+      return;
+    }
+    if (!source) {
+      setPreviewUi(ui, 'error', t('mapPicker.previewNoAudio'));
+      return;
+    }
+    const settings = getSettings();
+    const masterVolume = Number.isFinite(settings.volume) ? settings.volume : 0;
+    const musicVolume = Number.isFinite(settings.musicVolume) ? settings.musicVolume : 0;
+    const volume = Math.max(0, Math.min(1, masterVolume * musicVolume * 0.34));
+    if (volume <= 0) {
+      URL.revokeObjectURL(source);
+      setPreviewUi(ui, 'error', t('mapPicker.previewMuted'));
+      return;
+    }
+    const audio = getPreviewAudio();
+    previewObjectUrl = source;
+    audio.src = source;
+    audio.volume = volume;
+    if (audio.readyState < HTMLMediaElement.HAVE_METADATA) {
+      await new Promise<void>((resolve, reject) => {
+        const cleanup = () => {
+          audio.removeEventListener('loadedmetadata', onReady);
+          audio.removeEventListener('error', onError);
+        };
+        const onReady = () => { cleanup(); resolve(); };
+        const onError = () => { cleanup(); reject(new Error('Preview audio failed to load')); };
+        audio.addEventListener('loadedmetadata', onReady, { once: true });
+        audio.addEventListener('error', onError, { once: true });
+      });
+    }
+    if (token !== previewToken) return;
+    const requestedStart = Number(map.meta?.previewStartSec ?? 0);
+    const maxStart = Number.isFinite(audio.duration) ? Math.max(0, audio.duration - 1) : 0;
+    audio.currentTime = Math.max(0, Math.min(Number.isFinite(requestedStart) ? requestedStart : 0, maxStart));
+    await audio.play();
+    if (token !== previewToken) return;
+    previewPaused = false;
+    previewRemainingSeconds = PREVIEW_MAX_SECONDS;
+    audio.onended = () => {
+      if (token !== previewToken) return;
+      stopPreview();
+      ui.progress.style.width = '100%';
+      ui.time.textContent = '0s';
+      setPreviewUi(ui, 'idle', t('mapPicker.previewFinished'));
+    };
+    startPreviewTimers(ui, token);
+    setPreviewUi(ui, 'playing', t('mapPicker.previewPlaying'));
+  } catch {
+    if (token !== previewToken) return;
+    stopPreview();
+    setPreviewUi(ui, 'error', t('mapPicker.previewFailed'));
+  }
+}
+
+function togglePreview(map: MapEntry, ui: PreviewUi): void {
+  const audio = previewAudio;
+  if (!audio || previewMapId !== map.id || !audio.src) {
+    void startPreview(map, ui);
+    return;
+  }
+  if (!previewPaused) {
+    previewRemainingSeconds = Math.max(0, previewRemainingSeconds - (performance.now() - previewStartedAt) / 1000);
+    previewPaused = true;
+    clearPreviewTimers();
+    audio.pause();
+    updatePreviewProgress(ui);
+    setPreviewUi(ui, 'paused', t('mapPicker.previewPaused'));
+    return;
+  }
+  void audio.play().then(() => {
+    if (previewMapId !== map.id) return;
+    previewPaused = false;
+    startPreviewTimers(ui, previewToken);
+    setPreviewUi(ui, 'playing', t('mapPicker.previewPlaying'));
+  }).catch(() => setPreviewUi(ui, 'error', t('mapPicker.previewFailed')));
+}
+
+function renderAudioPreview(map: MapEntry): HTMLElement {
+  const section = document.createElement('div');
+  section.className = 'mp-detail-preview';
+  const button = document.createElement('button');
+  button.className = 'mp-detail-preview-toggle';
+  button.type = 'button';
+  const icon = document.createElement('span');
+  icon.className = 'material-symbols-rounded';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = 'play_arrow';
+  const label = document.createElement('span');
+  label.textContent = t('mapPicker.preview');
+  button.append(icon, label);
+  const status = document.createElement('p');
+  status.className = 'mp-detail-preview-status';
+  const progressTrack = document.createElement('div');
+  progressTrack.className = 'mp-detail-preview-progress';
+  const progress = document.createElement('span');
+  progressTrack.append(progress);
+  const time = document.createElement('time');
+  time.textContent = `${PREVIEW_MAX_SECONDS}s`;
+  const ui = { button, icon, label, status, progress, time } satisfies PreviewUi;
+  setPreviewUi(ui, 'idle', t('mapPicker.previewHint'));
+  button.addEventListener('click', () => togglePreview(map, ui));
+  section.append(button, status, progressTrack, time);
+  return section;
 }
 
 // -- Server fetch --
@@ -241,6 +452,7 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
     scoreBox.append(scoreLabel, scoreValue);
     detailPane.append(scoreBox);
   }
+  detailPane.append(renderAudioPreview(map));
   // Play button
   const actions = document.createElement('div');
   actions.className = 'mp-detail-actions';
@@ -257,6 +469,7 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
 }
 
 function selectMap(mapId: string): void {
+  stopPreview();
   selectedId = mapId;
   const list = element<HTMLElement>('mpMapList');
   const detailPane = element<HTMLElement>('mpDetailPane');
@@ -375,6 +588,7 @@ function openOverlay(): void {
 function closeOverlay(): void {
   const overlay = element<HTMLElement>('mapPickerOverlay');
   if (!overlay) return;
+  stopPreview();
   overlay.hidden = true;
 }
 
@@ -394,6 +608,7 @@ export function initMapPickerOverlay(): void {
   closeBtn.addEventListener('click', closeOverlay);
   overlay.addEventListener('pointerdown', e => { if (e.target === overlay) closeOverlay(); });
   window.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.hidden) closeOverlay(); });
+  window.addEventListener('pagehide', stopPreview, { once: true });
   // Search
   searchInput.addEventListener('input', () => {
     searchQuery = searchInput.value;

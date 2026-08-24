@@ -910,7 +910,17 @@
     "server": "Serwer",
     "unknown": "Nieznana",
     "bestScore": "Najlepszy wynik",
-    "tries": "prób"
+    "tries": "prób",
+    "preview": "PREVIEW",
+    "previewResume": "WZNÓW",
+    "previewHint": "Odsłuch do 30 sekund",
+    "previewLoading": "Ładuję preview audio…",
+    "previewPlaying": "Odtwarzanie preview",
+    "previewPaused": "Preview wstrzymane",
+    "previewFinished": "Preview zakończone",
+    "previewNoAudio": "Ta mapa nie ma dostępnego audio.",
+    "previewMuted": "Głośność muzyki jest wyciszona.",
+    "previewFailed": "Nie udało się odtworzyć preview."
   },
   "profile": {
     "welcomeTitle": "Witaj w Hand Sabers!",
