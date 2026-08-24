@@ -925,6 +925,7 @@
     "collecting": "Collecting taps: {{collected}} / {{needed}}",
     "measurementProgress": "MEASUREMENT {{collected}} / {{needed}}",
     "done": "Done! Offset: {{ms}} ms",
+    "stable": "Stable measurement · offset: {{ms}} ms · spread: ±{{spread}} ms",
     "unstable": "Unstable result (spread: ±{{spread}} ms)",
     "resultDetails": "±{{spread}} ms · samples {{taps}} / {{needed}}",
     "apply": "APPLY OFFSET",

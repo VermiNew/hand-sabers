@@ -335,7 +335,10 @@ export function startMetronomeCalibration(
     } else {
       const result = computeCalibration(tapTimes, startTime);
       if (result.stable) {
-        updateStatus('metronome.done', { ms: String(result.offsetMs) });
+        updateStatus('metronome.stable', {
+          ms: String(result.offsetMs),
+          spread: String(result.spread),
+        });
       } else {
         updateStatus('metronome.unstable', { spread: String(result.spread) });
       }

@@ -923,6 +923,7 @@
     "collecting": "Zbieram tapnięcia: {{collected}} / {{needed}}",
     "measurementProgress": "POMIAR {{collected}} / {{needed}}",
     "done": "Gotowe! Offset: {{ms}} ms",
+    "stable": "Pomiar stabilny · offset: {{ms}} ms · rozrzut: ±{{spread}} ms",
     "unstable": "Wynik niestabilny (rozrzut: ±{{spread}} ms)",
     "resultDetails": "±{{spread}} ms · próbki {{taps}} / {{needed}}",
     "apply": "ZASTOSUJ OFFSET",
