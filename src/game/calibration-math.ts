@@ -1,9 +1,9 @@
 /**
  * Pure math for metronome-based audio calibration.
  *
- * The metronome plays accent beats at a fixed interval. The user taps Space
- * in sync with what they hear/see. We compute the phase error of each tap
- * relative to the nearest accent beat, discard warm-up taps and outliers,
+ * The metronome plays beats at a fixed interval and accents every fifth beat.
+ * The user taps Space in sync with every click. We compute the phase error of
+ * each tap relative to the nearest beat, discard warm-up taps and outliers,
  * then return a robust central estimate (trimmed mean).
  */
 
@@ -41,22 +41,22 @@ export function wrapPhaseError(rawMs: number, period = ACCENT_PERIOD): number {
 }
 
 /**
- * Compute the phase error of a single tap relative to the nearest accent beat.
+ * Compute the phase error of a single tap relative to the nearest beat.
  *
  * @param tapMs     Tap timestamp (performance.now baseline).
  * @param startTimeMs  Metronome start timestamp.
- * @param period    Accent period in ms.
+ * @param period    Reference beat period in ms.
  * @returns Signed offset in ms, wrapped to [-period/2, +period/2].
  */
 export function phaseError(
   tapMs: number,
   startTimeMs: number,
-  period = ACCENT_PERIOD,
+  period = BEAT_INTERVAL,
 ): number {
   const elapsed = tapMs - startTimeMs;
   const beatIndex = Math.round(elapsed / period);
-  const nearestAccent = startTimeMs + beatIndex * period;
-  return wrapPhaseError(tapMs - nearestAccent, period);
+  const nearestBeat = startTimeMs + beatIndex * period;
+  return wrapPhaseError(tapMs - nearestBeat, period);
 }
 
 /**
@@ -92,7 +92,7 @@ export function mad(values: number[]): number {
  *
  * Steps:
  * 1. Discard the first WARMUP_TAPS taps.
- * 2. Compute phase errors relative to nearest accent beats.
+ * 2. Compute phase errors relative to the nearest beats.
  * 3. Reject outliers whose phase error exceeds 2x the MAD.
  * 4. Return the trimmed mean of surviving errors, clamped to [-MAX_OFFSET, +MAX_OFFSET].
  *
