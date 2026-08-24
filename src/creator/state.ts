@@ -14,7 +14,7 @@ export interface CreatorBeat {
 export interface CreatorMap {
   formatVersion: number;
   id: string;
-  meta: { title: string; duration: number; bpm?: number; audioFile?: string; audioUrl?: string };
+  meta: { title: string; duration: number; bpm?: number; difficulty?: string; audioFile?: string; audioUrl?: string };
   beats: CreatorBeat[];
 }
 
@@ -26,7 +26,7 @@ export const state = {
   map: {
     formatVersion: 1,
     id:    MAP_ID(),
-    meta:  { title: '', duration: 0, bpm: 120 },
+    meta:  { title: '', duration: 0, bpm: 120, difficulty: 'medium' },
     beats: [],
   } as CreatorMap,
 

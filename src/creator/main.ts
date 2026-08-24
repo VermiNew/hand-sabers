@@ -175,6 +175,7 @@ async function handleFile(file: File): Promise<void> {
         { id: (loaded['id'] as string | undefined) || MAP_ID(), ...loaded },
         { fallbackId: MAP_ID(), requireBeats: false },
       ) as unknown as CreatorMap;
+      syncDifficultyInput();
       sortBeatsByTime(state.map.beats);
       state.selectedBeats.clear();
       checkOverlaps();
@@ -197,6 +198,7 @@ async function handleFile(file: File): Promise<void> {
       showToast(t('creator.mapJsonLoaded'), { type: 'success' });
     } else if (lowerName.endsWith('.zip')) {
       await loadZipFile(file, audioCallbacks);
+      syncDifficultyInput();
       checkOverlaps();
       renderAll();
       showToast(t('creator.zipLoaded'), { type: 'success' });
@@ -283,6 +285,26 @@ function bindBpm(): void {
   });
 }
 
+const CREATOR_DIFFICULTIES = new Set(['easy', 'medium', 'hard', 'expert']);
+
+function syncDifficultyInput(): void {
+  const input = document.getElementById('difficultyInput') as HTMLSelectElement | null;
+  if (!input) return;
+  const difficulty = String(state.map.meta.difficulty ?? '').toLowerCase();
+  input.value = CREATOR_DIFFICULTIES.has(difficulty) ? difficulty : '';
+}
+
+function bindDifficulty(): void {
+  const input = document.getElementById('difficultyInput') as HTMLSelectElement | null;
+  if (!input) return;
+
+  syncDifficultyInput();
+  input.addEventListener('change', () => {
+    state.map.meta.difficulty = input.value;
+    scheduleAutosave();
+  });
+}
+
 // ── Shortcuts panel ───────────────────────────────────────────────
 function bindShortcutsPanel(): void {
   const panel   = document.getElementById('shortcutsPanel');
@@ -354,6 +376,7 @@ function onPlay(): void {
 bindCutDirPanel();
 bindVolume();
 bindBpm();
+bindDifficulty();
 bindShortcutsPanel();
 bindWaveformScroll();
 initKeybindsUI();
@@ -394,6 +417,6 @@ window.addEventListener('resize', () => {
 
 runCreatorTask('initial-map-load', () => loadInitialMap({
   onDecoded: audioCallbacks.onDecoded,
-  onMapLoaded: () => { checkOverlaps(); renderAll(); },
+  onMapLoaded: () => { syncDifficultyInput(); checkOverlaps(); renderAll(); },
   getLocalMapById: (id: string) => getLocalMapById(id),
 }));

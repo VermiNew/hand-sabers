@@ -554,6 +554,18 @@ body {
 #btnTapTempo:hover { border-color:rgba(255,200,80,0.7); color:#ffc850; background:rgba(255,200,80,0.08); }
 #btnTapTempo:active { background:rgba(255,200,80,0.2); transform:scale(0.97); }
 
+/* ── DIFFICULTY ── */
+.difficulty-group { display:flex; align-items:center; gap:6px; }
+.difficulty-label { font-size:10px; letter-spacing:1.5px; color:var(--dim); flex-shrink:0; }
+#difficultyInput {
+  height:30px; min-width:92px; padding:0 24px 0 8px;
+  background:rgba(167,139,250,0.06); border:1px solid rgba(167,139,250,0.34);
+  color:#c4b5fd; border-radius:4px; outline:0;
+  font:700 11px 'JetBrains Mono', monospace; letter-spacing:.4px;
+}
+#difficultyInput:focus { border-color:rgba(196,181,253,0.82); background:rgba(167,139,250,0.12); }
+#difficultyInput option { background:#0b0e18; color:var(--text); }
+
 #btnShortcuts {
   width:30px; height:30px; padding:0; font-size:15px; font-weight:800;
   border-color:rgba(148,163,184,0.22); color:rgba(148,163,184,0.55);
