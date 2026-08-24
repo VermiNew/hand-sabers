@@ -921,7 +921,10 @@
     "save": "Zapisz",
     "saved": "Zapisano!",
     "yourIdentity": "Twoja tożsamość",
-    "settingsIntro": "Nazwa i awatar będą widoczne w grze, rankingach oraz trybie multiplayer."
+    "settingsIntro": "Nazwa, awatar i kolor będą widoczne w grze, rankingach oraz trybie multiplayer.",
+    "chooseColor": "Kolor profilu",
+    "customColor": "Własny",
+    "colorPreset": "Kolor profilu: {{color}}"
   },
   "metronome": {
     "title": "KALIBRACJA METRONOMU",

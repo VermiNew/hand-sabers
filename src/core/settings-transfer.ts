@@ -1,4 +1,5 @@
 import { DEFAULTS, getSettings } from './settings.ts';
+import { sanitizeProfileColor } from './profile-color.ts';
 import type { SavedCalibrationData, Settings } from '../types/index.js';
 
 export const SETTINGS_TRANSFER_VERSION = 1;
@@ -97,7 +98,8 @@ function validateSetting(key: keyof Settings, value: unknown): boolean {
     case 'handPresenceConfidence':
     case 'handTrackingConfidence': return isFiniteNumber(value, 0, 1);
     case 'saberColorLeft':
-    case 'saberColorRight': return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
+    case 'saberColorRight':
+    case 'playerColor': return typeof value === 'string' && sanitizeProfileColor(value) === value.toLowerCase();
     case 'playerName': return typeof value === 'string'
       && value === value.trim()
       && value.length > 0
@@ -154,6 +156,8 @@ export function parseSettingsImport(text: string): SettingsTransferDocument {
   if (settingsRecord['oneHandMode'] === 'both') settingsRecord['oneHandMode'] = null;
   // Files created before language joined the shared settings model preserve the current language.
   if (!('language' in settingsRecord)) settingsRecord['language'] = getSettings().language;
+  // Files created before profile colors preserve the color already selected on this device.
+  if (!('playerColor' in settingsRecord)) settingsRecord['playerColor'] = getSettings().playerColor;
   const allowedKeys = Object.keys(DEFAULTS) as Array<keyof Settings>;
   if (!hasOnlyKeys(settingsRecord, allowedKeys)) throw new Error('SETTINGS_UNKNOWN_FIELD');
   for (const key of allowedKeys) {

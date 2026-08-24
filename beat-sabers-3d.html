@@ -557,6 +557,24 @@
             </div>
           </div>
 
+          <div class="profile-settings-section">
+            <div class="sp-group-title" data-i18n="profile.chooseColor">Kolor profilu</div>
+            <div class="profile-color-controls">
+              <div class="profile-color-presets" id="menuProfileColorPresets" role="group" data-i18n-aria-label="profile.chooseColor">
+                <button class="profile-color-preset" type="button" data-profile-color="#2f7cff" style="--profile-color:#2f7cff"></button>
+                <button class="profile-color-preset" type="button" data-profile-color="#36f2a1" style="--profile-color:#36f2a1"></button>
+                <button class="profile-color-preset" type="button" data-profile-color="#a855f7" style="--profile-color:#a855f7"></button>
+                <button class="profile-color-preset" type="button" data-profile-color="#ec4899" style="--profile-color:#ec4899"></button>
+                <button class="profile-color-preset" type="button" data-profile-color="#f59e0b" style="--profile-color:#f59e0b"></button>
+                <button class="profile-color-preset" type="button" data-profile-color="#ef4444" style="--profile-color:#ef4444"></button>
+              </div>
+              <label class="profile-color-custom" for="menuProfileColor">
+                <span data-i18n="profile.customColor">Własny</span>
+                <input id="menuProfileColor" type="color" value="#2f7cff">
+              </label>
+            </div>
+          </div>
+
           <div class="profile-settings-actions">
             <button class="sp-action-btn" id="menuProfileSave" type="button" data-i18n="profile.save">Zapisz</button>
             <span id="menuProfileSaved" class="profile-saved-status" role="status" data-i18n="profile.saved">Zapisano!</span>

@@ -120,9 +120,10 @@ export interface Settings {
   saberModel: string;
   beatLimitEnabled: boolean;
   maxBeats: number;
-  interfaceSoundVolume: number;
-  playerName: string;
-  favoriteMapIds: string[];
+    interfaceSoundVolume: number;
+    playerName: string;
+    playerColor: string;
+    favoriteMapIds: string[];
   noteSpeed: number;
   hitboxSensitivity: number;
   trainingMode: boolean;

@@ -923,7 +923,10 @@
     "save": "Save",
     "saved": "Saved!",
     "yourIdentity": "Your identity",
-    "settingsIntro": "Your name and avatar appear in the game, leaderboards, and multiplayer."
+    "settingsIntro": "Your name, avatar, and color appear in the game, leaderboards, and multiplayer.",
+    "chooseColor": "Profile color",
+    "customColor": "Custom",
+    "colorPreset": "Profile color: {{color}}"
   },
   "metronome": {
     "title": "METRONOME CALIBRATION",

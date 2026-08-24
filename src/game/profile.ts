@@ -1,5 +1,6 @@
 import { t, translateDom } from '../i18n/index.ts';
 import { getSettings, setSetting } from '../core/settings.ts';
+import { PROFILE_COLOR_PRESETS, sanitizeProfileColor } from '../core/profile-color.ts';
 import type { Settings } from '../types/index.js';
 
 function element<T extends HTMLElement>(id: string): T | null {
@@ -70,10 +71,25 @@ export function initProfileSettings(settings: Settings): void {
   const saveButton = element<HTMLButtonElement>('menuProfileSave');
   const savedLabel = element<HTMLElement>('menuProfileSaved');
   const avatarPreview = document.querySelector<HTMLElement>('#menuProfileAvatarPreview .material-symbols-rounded');
+  const profilePreview = element<HTMLElement>('menuProfileAvatarPreview');
   const namePreview = element<HTMLElement>('menuProfileNamePreview');
   const nameCount = element<HTMLElement>('menuProfileNameCount');
+  const colorInput = element<HTMLInputElement>('menuProfileColor');
+  const colorPresets = element<HTMLElement>('menuProfileColorPresets');
 
   let pendingAvatar = settings.avatar ?? 'default';
+  let pendingColor = sanitizeProfileColor(settings.playerColor);
+
+  function setPendingColor(color: string): void {
+    pendingColor = sanitizeProfileColor(color);
+    if (colorInput) colorInput.value = pendingColor;
+    colorPresets?.querySelectorAll<HTMLButtonElement>('[data-profile-color]').forEach(button => {
+      const selected = button.dataset['profileColor'] === pendingColor;
+      button.classList.toggle('is-selected', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+    profilePreview?.style.setProperty('--profile-color', pendingColor);
+  }
 
   function updatePreview(): void {
     const name = (nameInput?.value ?? '').trim() || t('player.defaultName');
@@ -81,6 +97,7 @@ export function initProfileSettings(settings: Settings): void {
     if (nameCount) nameCount.textContent = `${nameInput?.value.length ?? 0} / 32`;
     const selectedAvatar = avatarGrid?.querySelector<HTMLElement>(`[data-avatar="${pendingAvatar}"] .material-symbols-rounded`);
     if (avatarPreview) avatarPreview.textContent = selectedAvatar?.textContent ?? 'person';
+    setPendingColor(pendingColor);
   }
 
   if (nameInput) {
@@ -97,19 +114,28 @@ export function initProfileSettings(settings: Settings): void {
       updatePreview();
     });
   });
+  colorPresets?.querySelectorAll<HTMLButtonElement>('[data-profile-color]').forEach(button => {
+    const color = button.dataset['profileColor'];
+    if (!color || !PROFILE_COLOR_PRESETS.includes(color as typeof PROFILE_COLOR_PRESETS[number])) return;
+    button.setAttribute('aria-label', t('profile.colorPreset', { color }));
+    button.addEventListener('click', () => setPendingColor(color));
+  });
+  colorInput?.addEventListener('input', () => setPendingColor(colorInput.value));
   updatePreview();
 
   saveButton?.addEventListener('click', () => {
     const name = (nameInput?.value ?? '').trim().slice(0, 32) || t('player.defaultName');
     settings.playerName = name;
     settings.avatar = pendingAvatar;
+    settings.playerColor = pendingColor;
     settings.profileCompleted = true;
     setSetting('playerName', name);
     setSetting('avatar', pendingAvatar);
+    setSetting('playerColor', pendingColor);
     setSetting('profileCompleted', true);
     if (nameInput) nameInput.value = name;
     window.dispatchEvent(new CustomEvent('hand-sabers:profile-updated', {
-      detail: { playerName: name, avatar: pendingAvatar },
+      detail: { playerName: name, avatar: pendingAvatar, playerColor: pendingColor },
     }));
     if (savedLabel) {
       savedLabel.classList.add('is-visible');

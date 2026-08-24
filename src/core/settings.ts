@@ -1,4 +1,5 @@
 import type { OneHandMode, PerformanceMode, Settings, TrackingSourcePreference } from '../types/index.js';
+import { DEFAULT_PROFILE_COLOR, sanitizeProfileColor } from './profile-color.ts';
 
 const KEY = 'hs_settings';
 const DEFAULT_PERFORMANCE_MODE: PerformanceMode = 'auto';
@@ -82,6 +83,7 @@ export const DEFAULTS: Settings = {
   musicReactiveIntensity: 1,
   interfaceSoundVolume: 0.8,
   playerName: 'Gracz',
+  playerColor: DEFAULT_PROFILE_COLOR,
   favoriteMapIds: [],
   noteSpeed: 1,
   hitboxSensitivity: 1,
@@ -177,6 +179,7 @@ function normalizeSettings(value: Partial<Settings>): Settings {
   normalized.handTrackingConfidence = clampNumber(normalized.handTrackingConfidence, 0, 1, DEFAULTS.handTrackingConfidence);
   normalized.language = normalizeLanguage(value.language);
   normalized.oneHandMode = normalizeOneHandMode(normalized.oneHandMode);
+  normalized.playerColor = sanitizeProfileColor(normalized.playerColor);
   normalized.favoriteMapIds = normalizeFavoriteMapIds(normalized.favoriteMapIds);
   return normalized;
 }

@@ -334,14 +334,15 @@
 }
 
 .profile-settings-avatar {
+  --profile-color: #2f7cff;
   display: grid;
   place-items: center;
   width: 58px;
   height: 58px;
   flex: 0 0 58px;
-  border: 1px solid rgba(126,184,255,0.34);
+  border: 1px solid var(--profile-color);
   border-radius: 16px;
-  color: #8fc7ff;
+  color: var(--profile-color);
   background: rgba(47,124,255,0.13);
   box-shadow: inset 0 0 24px rgba(47,124,255,0.08), 0 10px 30px rgba(0,0,0,0.18);
 }
@@ -423,6 +424,17 @@
 .profile-settings-section .profile-avatar-option.is-selected {
   box-shadow: 0 0 0 3px rgba(47,124,255,0.1), inset 0 0 18px rgba(47,124,255,0.09);
 }
+
+.profile-color-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.profile-color-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.profile-color-preset {
+  width: 28px; height: 28px; padding: 0; border: 2px solid transparent; border-radius: 50%;
+  background: var(--profile-color); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.24); cursor: pointer;
+}
+.profile-color-preset:hover { transform: translateY(-1px); }
+.profile-color-preset.is-selected { border-color: #fff; box-shadow: 0 0 0 3px var(--profile-color); }
+.profile-color-custom { display: inline-flex; align-items: center; gap: 8px; color: rgba(148,163,184,0.72); font: 600 10px 'JetBrains Mono', monospace; }
+.profile-color-custom input { width: 32px; height: 28px; padding: 0; border: 0; border-radius: 7px; background: transparent; cursor: pointer; }
 
 .profile-settings-actions { display: flex; align-items: center; gap: 14px; }
 .profile-settings-actions .sp-action-btn { flex: 0 0 auto; min-width: 132px; }
