@@ -7,7 +7,7 @@ import {
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setMusicVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
-import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setAutoFlipSuggestionHandler, setSaberTargetSetter, applyTrackingSettings, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
+import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent, initCameraPanelToggle } from '../ui/devpanel.ts';
@@ -39,10 +39,11 @@ import { applySaberAppearance, initSaberSettings } from './saber-settings.ts';
 import { applyArenaTheme, initArenaSettings } from './arena-settings.ts';
 import { initMusicReactiveSettings } from './music-reactive-settings.ts';
 import { initGraphicsSettings } from './graphics-settings.ts';
+import { initTrackingSettings } from './tracking-settings.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
-import type { PauseReason, TrackingSourcePreference } from '../types/index.js';
+import type { PauseReason } from '../types/index.js';
 
 declare global {
   interface Window {
@@ -1480,15 +1481,14 @@ function initMainMenu(): void {
   const settingsButton   = document.getElementById('mainSettings');
   const settingsClose    = document.getElementById('mainSettingsClose');
   const settingsReset    = document.getElementById('mainSettingsReset');
-  const flipCameraInput  = document.getElementById('menuFlipCamera')as HTMLInputElement | null;
-  const trackingSourceInput = document.getElementById('menuTrackingSource') as HTMLSelectElement | null;
-  const trackingSourceHint = document.getElementById('menuTrackingSourceHint');
   const developerModeInput = document.getElementById('menuDeveloperMode') as HTMLInputElement | null;
-  setAutoFlipSuggestionHandler(({ flipCamera }) => {
-    settings.flipCamera      = flipCamera;
-    window.__trackingFlip    = flipCamera;
-    setSetting('flipCamera', flipCamera);
-    if (flipCameraInput) flipCameraInput.checked = flipCamera;
+  const trackingSettingsController = initTrackingSettings(settings, {
+    onSourceChange(changed) {
+      if (!changed || !trackingStarted) return;
+      stopTracking();
+      trackingStarted = false;
+      calibrationReady = false;
+    },
   });
 
   function selectItem(item: Element): void {
@@ -1538,19 +1538,6 @@ function initMainMenu(): void {
     setSettingsPanelVisible(true);
   });
 
-  function updateTrackingSourceHint(): void {
-    if (!trackingSourceHint) return;
-    const source = settings.trackingSource;
-    const connected = isRemoteTrackingConnected();
-    const key = source === 'camera'
-      ? 'remoteTracking.sourceCameraHint'
-      : source === 'phone'
-        ? connected ? 'remoteTracking.sourcePhoneReady' : 'remoteTracking.sourcePhoneMissing'
-        : connected ? 'remoteTracking.sourceAutoPhone' : 'remoteTracking.sourceAutoCamera';
-    trackingSourceHint.textContent = t(key);
-    trackingSourceHint.classList.toggle('is-error', source === 'phone' && !connected);
-  }
-
   const allNavItems = [...document.querySelectorAll<HTMLElement>('.main-nav-item')];
   allNavItems.forEach((item, i) => item.style.setProperty('--i', String(i)));
 
@@ -1599,7 +1586,7 @@ function initMainMenu(): void {
     if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
       switchSettingsTab('remoteTracking');
       setSettingsPanelVisible(true);
-      updateTrackingSourceHint();
+      trackingSettingsController.updateSourceHint();
       return;
     }
     setSettingsPanelVisible(false);
@@ -1609,7 +1596,7 @@ function initMainMenu(): void {
     if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
       switchSettingsTab('remoteTracking');
       setSettingsPanelVisible(true);
-      updateTrackingSourceHint();
+      trackingSettingsController.updateSourceHint();
       return;
     }
     setSettingsPanelVisible(false);
@@ -1631,24 +1618,6 @@ function initMainMenu(): void {
   });
 
   initLanguageSettings(applyTranslations);
-
-  if (trackingSourceInput) {
-    trackingSourceInput.value = settings.trackingSource;
-    trackingSourceInput.addEventListener('change', () => {
-      const value = trackingSourceInput.value as TrackingSourcePreference;
-      const changed = settings.trackingSource !== value;
-      settings.trackingSource = value;
-      setSetting('trackingSource', value);
-      if (changed && trackingStarted) {
-        stopTracking();
-        trackingStarted = false;
-        calibrationReady = false;
-      }
-      updateTrackingSourceHint();
-    });
-  }
-  window.addEventListener('hand-sabers:remote-tracking-state', updateTrackingSourceHint);
-  updateTrackingSourceHint();
 
   const audioSettingsController = initAudioSettings(settings, bindStyledRange);
 
@@ -1678,17 +1647,6 @@ function initMainMenu(): void {
     });
   }
 
-  if (flipCameraInput) {
-    flipCameraInput.checked = Boolean(settings.flipCamera);
-    flipCameraInput.addEventListener('change', () => {
-      const value           = flipCameraInput.checked;
-      settings.flipCamera   = value;
-      window.__trackingFlip = value;
-      setSetting('flipCamera', value);
-      applyTrackingSettings({ flipCamera: value });
-    });
-  }
-
   settingsReset?.addEventListener('click', () => {
     if (!window.confirm(t('settings.resetConfirm'))) return;
 
@@ -1715,10 +1673,7 @@ function initMainMenu(): void {
     arenaSettingsController.sync();
     musicReactiveSettingsController.sync();
     graphicsSettingsController.sync();
-    if (trackingSourceInput) {
-      trackingSourceInput.value = settings.trackingSource;
-      emit(trackingSourceInput, 'change');
-    }
+    trackingSettingsController.sync();
     if (developerModeInput) {
       developerModeInput.checked = settings.developerMode;
       emit(developerModeInput, 'change');
@@ -1727,14 +1682,7 @@ function initMainMenu(): void {
       devAccentInput.value = settings.devAccent;
       emit(devAccentInput, 'change');
     }
-    if (flipCameraInput) {
-      flipCameraInput.checked = settings.flipCamera;
-      emit(flipCameraInput, 'change');
-    }
-
-    window.__trackingSensitivity = settings.sensitivity;
     applyAudioSettings(settings);
-    applyTrackingSettings(settings);
   });
 
   document.getElementById('mainDevMode')?.addEventListener('click', () => {
