@@ -27,7 +27,7 @@ import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { isPhoneAudioActive, preparePhoneAudio, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
 import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from './narrator.ts';
-import { initAchievements, getAllAchievements, getUnlockedCount, getTotalAchievements, getStats, recordGameEnd, resetAchievements, getDefinition, getUnlockedSet } from '../core/achievements.ts';
+import { initAchievements, recordGameEnd } from '../core/achievements.ts';
 import { initLanguageSettings } from '../ui/language-settings.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { bindStyledRange } from '../ui/settings-range.ts';
@@ -42,6 +42,7 @@ import { initGraphicsSettings } from './graphics-settings.ts';
 import { initTrackingSettings } from './tracking-settings.ts';
 import { initDeveloperSettings } from './developer-settings.ts';
 import { initMainMenuShell, triggerMenuEnter } from './main-menu-shell.ts';
+import { initAchievementUI, renderAchievementCompactGrid, renderStatsGrid } from './achievement-ui.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -1192,114 +1193,6 @@ window.__narratorCombo = (combo: number) => {
   if (!msg) return;
   narratorQuick(t(msg.key), msg.mood, 3500);
 };
-
-function initAchievementUI(): void {
-  window.addEventListener('hand-sabers:achievement', (event) => {
-    const { id } = (event as CustomEvent<{ id: string }>).detail;
-    showAchievementToast(id);
-  });
-
-  const resetBtn = document.getElementById('achResetBtn');
-  resetBtn?.addEventListener('click', () => {
-    if (confirm(t('settings.resetConfirm'))) {
-      resetAchievements();
-      renderAchievementCompactGrid();
-    }
-  });
-}
-
-function showAchievementToast(id: string): void {
-  const def = getDefinition(id);
-  if (!def) return;
-  const toast = document.getElementById('achievementToast');
-  const icon = document.getElementById('achToastIcon');
-  const title = document.getElementById('achToastTitle');
-  if (!toast || !icon || !title) return;
-  icon.textContent = def.icon;
-  icon.className = `material-symbols-rounded ach-toast-icon ach-tier-${def.tier}`;
-  title.textContent = t(`achievements.names.${id}`);
-  let tier = document.getElementById('achToastTier');
-  if (!tier) {
-    tier = document.createElement('span');
-    tier.id = 'achToastTier';
-    tier.className = 'ach-toast-tier';
-    title.insertAdjacentElement('afterend', tier);
-  }
-  tier.className = `ach-toast-tier ach-tier-${def.tier}`;
-  tier.textContent = t(`achievements.tiers.${def.tier}`);
-  toast.hidden = false;
-  toast.classList.add('is-visible');
-  clearTimeout((toast as unknown as { _timer?: ReturnType<typeof setTimeout> })._timer);
-  (toast as unknown as { _timer?: ReturnType<typeof setTimeout> })._timer = setTimeout(() => {
-    toast.classList.remove('is-visible');
-    setTimeout(() => { toast.hidden = true; }, 350);
-  }, 4000);
-}
-
-function renderStatsGrid(): void {
-  const grid = document.getElementById('statsGrid');
-  if (!grid) return;
-  const stats = getStats();
-  const accuracy = (stats.totalHits + stats.totalMisses) > 0
-    ? Math.round((stats.totalHits / (stats.totalHits + stats.totalMisses)) * 100)
-    : 0;
-  const hours = Math.floor(stats.totalPlayTimeMs / 3600000);
-  const minutes = Math.floor((stats.totalPlayTimeMs % 3600000) / 60000);
-  const fullTotalScore = String(stats.totalScore);
-  const totalScoreValue = new Intl.NumberFormat(document.documentElement.lang || 'pl', {
-    notation: 'compact',
-    maximumFractionDigits: 1,
-  }).format(stats.totalScore);
-
-  const items = [
-    { key: 'totalGames', value: String(stats.totalGames) },
-    { key: 'gamesWon', value: String(stats.gamesWon) },
-    { key: 'gamesLost', value: String(stats.gamesLost) },
-    { key: 'totalHits', value: String(stats.totalHits) },
-    { key: 'totalMisses', value: String(stats.totalMisses) },
-    { key: 'accuracy', value: `${accuracy}%` },
-    { key: 'bestCombo', value: `×${stats.maxCombo}` },
-    { key: 'totalScore', value: totalScoreValue, fullValue: fullTotalScore },
-    { key: 'perfectHits', value: String(stats.perfectHits) },
-    { key: 'mapsCompleted', value: String(stats.mapsCompleted) },
-    { key: 'totalPlayTime', value: `${hours}h ${minutes}m` },
-  ];
-
-  grid.innerHTML = '';
-  for (const item of items) {
-    const card = document.createElement('div');
-    card.className = `stat-card${item.key === 'totalScore' ? ' stat-card-score' : ''}`;
-    card.innerHTML = `
-      <span class="stat-value">${item.value}</span>
-      <span class="stat-label">${t(`stats.${item.key}`)}</span>
-    `;
-    if (item.fullValue) {
-      card.title = item.fullValue;
-      card.setAttribute('aria-label', `${t('stats.totalScore')}: ${item.fullValue}`);
-    }
-    grid.appendChild(card);
-  }
-}
-
-function renderAchievementCompactGrid(): void {
-  const grid = document.getElementById('achCompactGrid');
-  if (!grid) return;
-  const defs = getAllAchievements();
-  const unlocked = getUnlockedSet();
-  grid.innerHTML = '';
-  for (const a of defs) {
-    const card = document.createElement('div');
-    card.className = 'ach-compact-card' + (unlocked.has(a.id) ? '' : ' is-locked');
-    card.innerHTML = `<span class="material-symbols-rounded">${a.icon}</span><span class="ach-compact-name">${t(`achievements.names.${a.id}`)}</span>`;
-    grid.appendChild(card);
-  }
-  const progressText = document.getElementById('achProgressText');
-  const progressFill = document.getElementById('achProgressFill');
-  const unlockedCount = getUnlockedCount();
-  const total = getTotalAchievements();
-  if (progressText) progressText.textContent = `${unlockedCount} / ${total}`;
-  if (progressFill) progressFill.style.width = `${total > 0 ? (unlockedCount / total) * 100 : 0}%`;
-}
 
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
 ui.ovBtnMaps?.addEventListener('click',   () => { openMapPicker(); });
