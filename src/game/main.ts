@@ -10,7 +10,7 @@ import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMa
 import { CALIB_STEPS, initMP, resetCalibration, finishCalibStep, renderCalibStep, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, setManualCalibrationMode, getCalibrationData, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
-import { initDevPanel, isDeveloperPanelEnabled, setDeveloperPanelEnabled, tickDevPanel, applyDevAccent, initCameraPanelToggle } from '../ui/devpanel.ts';
+import { initDevPanel, isDeveloperPanelEnabled, tickDevPanel, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
@@ -40,6 +40,7 @@ import { applyArenaTheme, initArenaSettings } from './arena-settings.ts';
 import { initMusicReactiveSettings } from './music-reactive-settings.ts';
 import { initGraphicsSettings } from './graphics-settings.ts';
 import { initTrackingSettings } from './tracking-settings.ts';
+import { initDeveloperSettings } from './developer-settings.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -1481,7 +1482,6 @@ function initMainMenu(): void {
   const settingsButton   = document.getElementById('mainSettings');
   const settingsClose    = document.getElementById('mainSettingsClose');
   const settingsReset    = document.getElementById('mainSettingsReset');
-  const developerModeInput = document.getElementById('menuDeveloperMode') as HTMLInputElement | null;
   const trackingSettingsController = initTrackingSettings(settings, {
     onSourceChange(changed) {
       if (!changed || !trackingStarted) return;
@@ -1627,25 +1627,7 @@ function initMainMenu(): void {
   const arenaSettingsController = initArenaSettings(settings);
   const musicReactiveSettingsController = initMusicReactiveSettings(settings);
   const graphicsSettingsController = initGraphicsSettings(settings);
-
-
-  if (developerModeInput) {
-    developerModeInput.checked = Boolean(settings.developerMode) || isDeveloperPanelEnabled();
-    developerModeInput.addEventListener('change', () => {
-      const value = developerModeInput.checked;
-      settings.developerMode = value;
-      setDeveloperPanelEnabled(renderer, value);
-      setHitPlaneVisible(value);
-    });
-  }
-
-  const devAccentInput = document.getElementById('menuDevAccent') as HTMLSelectElement | null;
-  if (devAccentInput) {
-    devAccentInput.value = settings.devAccent || 'green';
-    devAccentInput.addEventListener('change', () => {
-      applyDevAccent(devAccentInput.value);
-    });
-  }
+  const developerSettingsController = initDeveloperSettings(settings);
 
   settingsReset?.addEventListener('click', () => {
     if (!window.confirm(t('settings.resetConfirm'))) return;
@@ -1663,10 +1645,6 @@ function initMainMenu(): void {
       trackingStarted = false;
       calibrationReady = false;
     }
-    const emit = (element: HTMLElement | null, eventName: 'input' | 'change') => {
-      element?.dispatchEvent(new Event(eventName));
-    };
-
     audioSettingsController.sync();
     gameplaySettingsController.sync();
     saberSettingsController.sync();
@@ -1674,22 +1652,8 @@ function initMainMenu(): void {
     musicReactiveSettingsController.sync();
     graphicsSettingsController.sync();
     trackingSettingsController.sync();
-    if (developerModeInput) {
-      developerModeInput.checked = settings.developerMode;
-      emit(developerModeInput, 'change');
-    }
-    if (devAccentInput) {
-      devAccentInput.value = settings.devAccent;
-      emit(devAccentInput, 'change');
-    }
+    developerSettingsController.sync();
     applyAudioSettings(settings);
-  });
-
-  document.getElementById('mainDevMode')?.addEventListener('click', () => {
-    const current = new URLSearchParams(location.search);
-    if (!current.has('dev')) current.set('dev', '');
-    const qs = current.toString().replace(/=(?=&|$)/g, '');
-    location.href = `${location.pathname}${qs ? `?${qs}` : ''}${location.hash}`;
   });
 }
 
