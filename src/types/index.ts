@@ -127,6 +127,9 @@ export interface Settings {
   hitboxSensitivity: number;
   trainingMode: boolean;
   trackingSource: TrackingSourcePreference;
+  handDetectionConfidence: number;
+  handPresenceConfidence: number;
+  handTrackingConfidence: number;
   gameMode: GameMode;
   arenaTheme: string;
   calibrationMode: 'manual' | 'auto';

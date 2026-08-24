@@ -87,6 +87,9 @@ export const DEFAULTS: Settings = {
   hitboxSensitivity: 1,
   trainingMode: false,
   trackingSource: 'auto',
+  handDetectionConfidence: 0.42,
+  handPresenceConfidence: 0.42,
+  handTrackingConfidence: 0.42,
   gameMode: 'normal',
   arenaTheme: 'cosmic',
   calibrationMode: 'auto',
@@ -169,6 +172,9 @@ function normalizeSettings(value: Partial<Settings>): Settings {
   normalized.musicReactiveIntensityMode = normalizeMusicReactiveIntensityMode(normalized.musicReactiveIntensityMode);
   normalized.musicReactiveIntensity = clampNumber(normalized.musicReactiveIntensity, 0, 1.5, DEFAULTS.musicReactiveIntensity);
   normalized.trackingSource = normalizeTrackingSource(normalized.trackingSource);
+  normalized.handDetectionConfidence = clampNumber(normalized.handDetectionConfidence, 0, 1, DEFAULTS.handDetectionConfidence);
+  normalized.handPresenceConfidence = clampNumber(normalized.handPresenceConfidence, 0, 1, DEFAULTS.handPresenceConfidence);
+  normalized.handTrackingConfidence = clampNumber(normalized.handTrackingConfidence, 0, 1, DEFAULTS.handTrackingConfidence);
   normalized.language = normalizeLanguage(value.language);
   normalized.oneHandMode = normalizeOneHandMode(normalized.oneHandMode);
   normalized.favoriteMapIds = normalizeFavoriteMapIds(normalized.favoriteMapIds);

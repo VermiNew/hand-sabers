@@ -93,6 +93,9 @@ function validateSetting(key: keyof Settings, value: unknown): boolean {
     case 'musicReactiveIntensity': return isFiniteNumber(value, 0, 1.5);
     case 'maxBeats': return Number.isInteger(value) && isFiniteNumber(value, 1, 100_000);
     case 'phoneAudioLatencyMs': return isFiniteNumber(value, 0, 500);
+    case 'handDetectionConfidence':
+    case 'handPresenceConfidence':
+    case 'handTrackingConfidence': return isFiniteNumber(value, 0, 1);
     case 'saberColorLeft':
     case 'saberColorRight': return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
     case 'playerName': return typeof value === 'string'
