@@ -246,13 +246,13 @@ export function startMetronomeCalibration(onComplete?: (offsetMs: number) => voi
       }
     } else {
       const result = computeCalibration(tapTimes, startTime);
-      stopMetronome();
       setSetting('audioOffsetMs', result.offsetMs);
       if (result.stable) {
         updateStatus('metronome.done', { ms: String(result.offsetMs) });
       } else {
         updateStatus('metronome.unstable', { ms: String(result.offsetMs) });
       }
+      stopMetronome();
       onCompleteCb?.(result.offsetMs);
       onCompleteCb = null;
     }
