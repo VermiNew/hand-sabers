@@ -1,6 +1,8 @@
 import { openRemoteTrackingChannel } from './channel.ts';
+import { getSettings } from '../core/settings.ts';
 import { isAudioEvent } from './audio-protocol.ts';
 import { onPhoneAudioError, onPhoneAudioReady, setHostAudioSocket } from './host-audio.ts';
+import type { TrackingOptionsCommand } from './tracking-options-protocol.ts';
 
 export interface RemoteTrackingSession {
   id: string;
@@ -59,6 +61,19 @@ let activeSession: ActiveSession | null = null;
 let remoteTrackingConnected = false;
 let initialized = false;
 let state: RemoteTrackingSessionState = { session: null, phase: 'idle', error: null };
+
+function createTrackingOptionsCommand(): TrackingOptionsCommand {
+  const settings = getSettings();
+  return {
+    v: 1,
+    type: 'tracking-options',
+    options: {
+      handDetectionConfidence: settings.handDetectionConfidence,
+      handPresenceConfidence: settings.handPresenceConfidence,
+      handTrackingConfidence: settings.handTrackingConfidence,
+    },
+  };
+}
 
 function publicSession(session: ActiveSession | null): RemoteTrackingSession | null {
   if (!session) return null;
@@ -208,6 +223,7 @@ function connectHostChannel(session: ActiveSession): void {
         if (session.pollTimer) clearInterval(session.pollTimer);
         session.pollTimer = null;
         setHostAudioSocket(session.socket);
+        sendPhoneTrackingOptions();
       } else if (event.type === 'peer-disconnected') {
         setRemoteTrackingConnected(false);
         dispatchState('claimed');
@@ -264,6 +280,18 @@ export function getRemoteTrackingSessionState(): RemoteTrackingSessionState {
 
 export function isRemoteTrackingConnected(): boolean {
   return remoteTrackingConnected;
+}
+
+/** Send the validated shared model thresholds to the currently paired phone. */
+export function sendPhoneTrackingOptions(): boolean {
+  const socket = activeSession?.socket;
+  if (!remoteTrackingConnected || !socket || socket.readyState !== WebSocket.OPEN) return false;
+  try {
+    socket.send(JSON.stringify(createTrackingOptionsCommand()));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function initRemoteTrackingHost(): void {

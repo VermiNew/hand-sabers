@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import type { HandTrackingOptions } from './tracking-options-protocol.ts';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
@@ -10,6 +11,11 @@ const HAND_CONNECTIONS: readonly [number, number][] = [
   [0, 17], [17, 18], [18, 19], [19, 20],
   [5, 9], [9, 13], [13, 17],
 ];
+const DEFAULT_HAND_TRACKING_OPTIONS: HandTrackingOptions = {
+  handDetectionConfidence: 0.42,
+  handPresenceConfidence: 0.42,
+  handTrackingConfidence: 0.42,
+};
 
 interface Landmark { x: number; y: number; z: number }
 interface Handedness { categoryName?: string; displayName?: string; score?: number }
@@ -106,6 +112,7 @@ function drawHands(context: CanvasRenderingContext2D, result: DetectionResult): 
 
 export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean): {
   setPeerConnected(connected: boolean): void;
+  setModelOptions(options: HandTrackingOptions): void;
 } {
   const startButton = element<HTMLButtonElement>('remoteStartCamera');
   const preview = element<HTMLElement>('remoteTrackingPreview');
@@ -121,6 +128,7 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
   let startAttempt = 0;
   let sequence = 0;
   let lastDetectionAt = -Infinity;
+  let modelOptions = { ...DEFAULT_HAND_TRACKING_OPTIONS };
 
   function stopCamera(): void {
     starting = false;
@@ -168,9 +176,9 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
         baseOptions: { modelAssetPath: MODEL_URL, delegate: 'GPU' },
         runningMode: 'VIDEO',
         numHands: 2,
-        minHandDetectionConfidence: 0.42,
-        minHandPresenceConfidence: 0.42,
-        minTrackingConfidence: 0.42,
+        minHandDetectionConfidence: modelOptions.handDetectionConfidence,
+        minHandPresenceConfidence: modelOptions.handPresenceConfidence,
+        minTrackingConfidence: modelOptions.handTrackingConfidence,
       }) as HandLandmarker;
       if (attempt !== startAttempt || !peerConnected) return;
       starting = false;
@@ -217,6 +225,9 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
       }
       startButton.disabled = started;
       if (started) trackingStatus.textContent = t('remoteTracking.trackingActive');
+    },
+    setModelOptions(options: HandTrackingOptions): void {
+      modelOptions = { ...options };
     },
   };
 }

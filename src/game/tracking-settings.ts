@@ -1,6 +1,6 @@
 import { setSetting } from '../core/settings.ts';
 import { t } from '../i18n/index.ts';
-import { isRemoteTrackingConnected } from '../remote/host-pairing.ts';
+import { isRemoteTrackingConnected, sendPhoneTrackingOptions } from '../remote/host-pairing.ts';
 import {
   applyTrackingSettings,
   setAutoFlipSuggestionHandler,
@@ -78,6 +78,7 @@ export function initTrackingSettings(
       const value = Number(input.value);
       settings[key] = value;
       setSetting(key, value);
+      sendPhoneTrackingOptions();
     });
   }
 

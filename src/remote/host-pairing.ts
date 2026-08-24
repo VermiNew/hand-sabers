@@ -8,7 +8,7 @@ import {
 } from './host-session.ts';
 import type { RemoteTrackingSessionState } from './host-session.ts';
 
-export { isRemoteTrackingConnected } from './host-session.ts';
+export { isRemoteTrackingConnected, sendPhoneTrackingOptions } from './host-session.ts';
 
 function element<T extends HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;

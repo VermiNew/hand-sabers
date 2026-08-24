@@ -2,6 +2,7 @@ import { getCurrentLang, t } from '../i18n/index.ts';
 import { openRemoteTrackingChannel } from './channel.ts';
 import { initPhoneTracking } from './phone-tracking.ts';
 import { initPhoneAudio, setupPhoneAudioUI } from './phone-audio.ts';
+import { isTrackingOptionsCommand } from './tracking-options-protocol.ts';
 
 interface PhoneCredential {
   id: string;
@@ -111,6 +112,9 @@ function connectTrackingChannel(next: PhoneCredential): void {
       }
       if (event.type === 'error') {
         authenticationRejected = true;
+      }
+      if (isTrackingOptionsCommand(event)) {
+        phoneTracking.setModelOptions(event.options);
       }
       // Forward audio commands to the phone audio player
       if (event.type && event.type.startsWith('audio-') && event.type !== 'audio-ready' && event.type !== 'audio-error') {
