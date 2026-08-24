@@ -443,4 +443,3 @@ runCreatorTask('initial-map-load', () => loadInitialMap({
   onMapLoaded: () => { syncDifficultyInput(); updateDifficultySuggestion(); checkOverlaps(); renderAll(); },
   getLocalMapById: (id: string) => getLocalMapById(id),
 }));
-
