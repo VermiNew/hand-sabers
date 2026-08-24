@@ -43,6 +43,12 @@ import { initTrackingSettings } from './tracking-settings.ts';
 import { initDeveloperSettings } from './developer-settings.ts';
 import { initMainMenuShell, triggerMenuEnter } from './main-menu-shell.ts';
 import { initAchievementUI, renderAchievementCompactGrid, renderStatsGrid } from './achievement-ui.ts';
+import {
+  applyPauseTranslations,
+  setPauseMenuMessage,
+  setPauseResumeButtonDisabled,
+  syncPauseMenuActions,
+} from './pause-ui.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
@@ -547,30 +553,10 @@ let focusResumeAllowedAt = 0;
 let focusResumeGuardTimer = 0;
 let resumeInFlight = false;
 
-function setPauseMenuMessage(reason: PauseReason): void {
-  const message = document.getElementById('pauseMenuSub');
-  if (!message) return;
-  if (reason === PAUSE_REASONS.FOCUS) {
-    message.textContent = `${t('pause.focusLost')} ${t('pause.focusResumeHint')}`;
-    message.hidden = false;
-  } else if (reason === PAUSE_REASONS.HANDS) {
-    message.textContent = t('pause.handsLostManual');
-    message.hidden = false;
-  } else {
-    message.textContent = '';
-    message.hidden = true;
-  }
-}
-
-function setFocusResumeButtonDisabled(disabled: boolean): void {
-  const resumeButton = document.getElementById('pauseResume') as HTMLButtonElement | null;
-  if (resumeButton) resumeButton.disabled = disabled;
-}
-
 function armFocusResumeGuard(now = performance.now()): void {
   window.clearTimeout(focusResumeGuardTimer);
   focusResumeAllowedAt = now + FOCUS_RESUME_GUARD_MS;
-  setFocusResumeButtonDisabled(true);
+  setPauseResumeButtonDisabled(true);
   focusResumeGuardTimer = window.setTimeout(() => {
     if (
       state.appState === S.PAUSED
@@ -578,7 +564,7 @@ function armFocusResumeGuard(now = performance.now()): void {
       && !document.hidden
       && document.hasFocus()
     ) {
-      setFocusResumeButtonDisabled(false);
+      setPauseResumeButtonDisabled(false);
     }
   }, FOCUS_RESUME_GUARD_MS);
 }
@@ -593,20 +579,20 @@ function pauseGame(reason: PauseReason, now = performance.now()): void {
     // Show hands banner (camera preview + resume progress) AND full pause menu
     // so the player can manually resume, restart, or quit
     showHandsPaused(missingHandsText());
-    setFocusResumeButtonDisabled(false);
+    setPauseResumeButtonDisabled(false);
     setPauseMenuMessage(reason);
-    syncPauseMenuActions();
+    syncPauseMenuActions(multiplayerRoundActive);
     showPauseMenu();
   } else {
     if (reason === PAUSE_REASONS.FOCUS) {
       focusResumeAllowedAt = Number.POSITIVE_INFINITY;
-      setFocusResumeButtonDisabled(true);
+      setPauseResumeButtonDisabled(true);
     } else {
-      setFocusResumeButtonDisabled(false);
+      setPauseResumeButtonDisabled(false);
     }
     hideHandsPaused();
     setPauseMenuMessage(reason);
-    syncPauseMenuActions();
+    syncPauseMenuActions(multiplayerRoundActive);
     showPauseMenu();
   }
   if (ui.dStatus) ui.dStatus.textContent = reason === PAUSE_REASONS.HANDS ? t('game.pauseHands') : t('game.pause');
@@ -638,7 +624,7 @@ async function resumeGame(now = performance.now(), source: ResumeSource = 'ui'):
     focusResumeAllowedAt = 0;
     window.clearTimeout(focusResumeGuardTimer);
     focusResumeGuardTimer = 0;
-    setFocusResumeButtonDisabled(false);
+    setPauseResumeButtonDisabled(false);
     setPauseMenuMessage(PAUSE_REASONS.NONE);
     hideHandsPaused();
     hidePauseMenu();
@@ -657,7 +643,7 @@ function resetGameplayFocusProtection(): void {
   focusResumeAllowedAt = 0;
   window.clearTimeout(focusResumeGuardTimer);
   focusResumeGuardTimer = 0;
-  setFocusResumeButtonDisabled(false);
+  setPauseResumeButtonDisabled(false);
   resumeInFlight = false;
   multiplayerFocusWarningPending = false;
   multiplayerFocusWarningOpen = false;
@@ -1137,30 +1123,7 @@ function initMapDrop(): void {
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 
-// Apply translations to static pause UI elements
-const applyPauseTranslations = (): void => {
-  document.querySelectorAll('.pause-title, .pause-menu-title').forEach(el => { el.textContent = t('pause.title'); });
-  const pauseSub = document.getElementById('pauseSub');
-  if (pauseSub) pauseSub.textContent = t('pause.handsLost');
-  const el = (id: string) => document.getElementById(id);
-  const setText = (id: string, key: string) => { const e = el(id); if (e) e.textContent = t(key); };
-  setText('pauseResume',  'pause.resume');
-  setText('pauseRestart', 'pause.restart');
-  setText('pauseMaps',    'pause.maps');
-  setText('pauseQuit',    'pause.mainMenu');
-};
 applyPauseTranslations();
-
-function syncPauseMenuActions(): void {
-  const restart = document.getElementById('pauseRestart') as HTMLButtonElement | null;
-  const maps = document.getElementById('pauseMaps') as HTMLButtonElement | null;
-  const quit = document.getElementById('pauseQuit') as HTMLButtonElement | null;
-  const title = document.querySelector('.pause-menu-title');
-  if (restart) restart.hidden = multiplayerRoundActive;
-  if (maps) maps.hidden = multiplayerRoundActive;
-  if (quit) quit.textContent = t(multiplayerRoundActive ? 'pause.leaveRoomMenu' : 'pause.mainMenu');
-  if (title) title.textContent = t(multiplayerRoundActive ? 'pause.titleMP' : 'pause.title');
-}
 
 function showFirstRunWelcome(): void {
   const seenRaw = localStorage.getItem('hs_welcome_seen');
