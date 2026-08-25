@@ -9,9 +9,8 @@ import { decodeRemoteLandmarks, sendRealtimeLandmarks, sendRealtimePose } from '
 import type { DetectResult, Landmark, WorkerResult } from './realtime.ts';
 import { drawHandLandmarks, HAND_CONNECTIONS } from './landmark-canvas.ts';
 import { updateCalibrationSourceUI } from './calibration-source-ui.ts';
+import { loadHandLandmarker } from './mediapipe-loader.ts';
 
-const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
-const MODEL_URL     = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const URL_PARAMS = new URLSearchParams(location.search);
 function isDebugVisuals(): boolean {
   return URL_PARAMS.has('dev') || URL_PARAMS.has('testing') || Boolean(getSettings().developerMode);
@@ -183,75 +182,6 @@ export function renderCalibStep(): void {
   }
 
   scheduleCalibAuto();
-}
-
-async function loadMediaPipe(onProgress: (msg: string, detail: string, ratio: number | null) => void): Promise<void> {
-  onProgress(t('overlay.loadingRuntime'), t('overlay.loadingRuntimeDetail'), 0.1);
-  const { HandLandmarker, FilesetResolver } = await import(
-    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js' as string
-  );
-  onProgress(t('overlay.initializingResolver'), t('overlay.initializingResolverDetail'), 0.35);
-  const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_CDN);
-  const modelAssetBuffer = await downloadModel(onProgress);
-  const settings = getSettings();
-  onProgress(t('overlay.loadingLandmarker'), t('overlay.initializingLandmarkerDetail'), 1);
-  handLandmarker = await HandLandmarker.createFromOptions(vision, {
-    baseOptions: { modelAssetBuffer, delegate: 'GPU' },
-    runningMode:                 'VIDEO',
-    numHands:                    2,
-    minHandDetectionConfidence:  settings.handDetectionConfidence,
-    minHandPresenceConfidence:   settings.handPresenceConfidence,
-    minTrackingConfidence:       settings.handTrackingConfidence,
-  });
-  onProgress(t('overlay.modelReady'), t('overlay.modelReadyDetail'), 1.0);
-}
-
-function formatMegabytes(bytes: number): string {
-  return (Math.max(0, bytes) / (1024 * 1024)).toFixed(1);
-}
-
-async function downloadModel(
-  onProgress: (msg: string, detail: string, ratio: number | null) => void,
-): Promise<Uint8Array> {
-  const response = await fetch(MODEL_URL);
-  if (!response.ok) throw new Error(`Model download failed: ${response.status}`);
-
-  const totalBytes = Number(response.headers.get('content-length')) || 0;
-  const reader = response.body?.getReader();
-  if (!reader) {
-    const buffer = new Uint8Array(await response.arrayBuffer());
-    onProgress(
-      t('overlay.loadingLandmarker'),
-      `${t('overlay.loadingLandmarkerDetail')}\n${formatMegabytes(buffer.byteLength)}\u00a0MB`,
-      1,
-    );
-    return buffer;
-  }
-
-  const chunks: Uint8Array[] = [];
-  let loadedBytes = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    loadedBytes += value.byteLength;
-    const size = totalBytes > 0
-      ? `${formatMegabytes(loadedBytes)}\u00a0/\u00a0${formatMegabytes(totalBytes)}\u00a0MB`
-      : `${formatMegabytes(loadedBytes)}\u00a0MB`;
-    onProgress(
-      t('overlay.loadingLandmarker'),
-      `${t('overlay.loadingLandmarkerDetail')}\n${size}`,
-      totalBytes > 0 ? loadedBytes / totalBytes : null,
-    );
-  }
-
-  const model = new Uint8Array(loadedBytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    model.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return model;
 }
 
 function setupCalibFeed(): void {
@@ -628,7 +558,7 @@ export async function initMP(onReady: () => void): Promise<boolean> {
       if (ui.dCam) ui.dCam.textContent = 'PHONE';
     } else {
       setLoadingProgress(t('overlay.loadingModel'), t('overlay.loadingRuntimeDetail'), null);
-      await loadMediaPipe((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
+      handLandmarker = await loadHandLandmarker((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
       setLoadingProgress(t('overlay.startingCamera'), t('overlay.startingCameraDetail'), null);
       await startCamera();
       setLoadingProgress(t('overlay.cameraReady'), t('overlay.cameraReadyDetail'), null);
