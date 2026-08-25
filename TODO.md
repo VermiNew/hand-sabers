@@ -274,6 +274,7 @@
   - [x] Obsługa ustawień (bindings) — inicjalizacja kontrolerów ustawień i obsługa resetu są w `src/game/settings-bindings.ts`
   - [x] Wydzielić rejestrację zdarzeń zdalnego audio telefonu i fallback głośności PC do `src/game/phone-audio-events.ts`
   - [x] Wydzielić startowy wybór języka, rekomendację ustawień i otwieranie tutoriala do `src/game/startup-guidance.ts`
+  - [x] Wydzielić zdarzenie wyboru mapy i feedback Lyry do `src/game/map-selection-events.ts`
   - [ ] Integracja multiplayer
     - [x] Wydzielić walidację i rejestrację zdarzeń przygotowania, startu oraz wyników rundy do `src/game/multiplayer-events.ts`
 - [ ] Rozbić `src/game/gameplay.ts` (1015 linii) na logiczne moduły

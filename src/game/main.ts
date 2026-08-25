@@ -22,7 +22,7 @@ import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
-import { narratorShow, narratorQuick, NARRATOR_SPEEDS } from './narrator.ts';
+import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initAchievements, recordGameEnd } from '../core/achievements.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
@@ -51,6 +51,7 @@ import { initMultiplayerEvents, type MultiplayerRoundStart, type MultiplayerRule
 import { nextFrameTiming, resetFrameTiming, smoothProfileValue } from './frame-timing.ts';
 import { initPhoneAudioEvents } from './phone-audio-events.ts';
 import { initStartupGuidance } from './startup-guidance.ts';
+import { initMapSelectionEvents } from './map-selection-events.ts';
 
 declare global {
   interface Window {
@@ -770,19 +771,7 @@ showFirstRunWelcome();
 showProfileOnboardingIfNeeded();
 
 initPhoneAudioEvents(settings);
-
-// Handle map selection from the in-game map picker overlay
-window.addEventListener('hand-sabers:map-selected', (event) => {
-  const detail = (event as CustomEvent).detail as { mapId: string } | undefined;
-  if (!detail?.mapId) return;
-  void loadMapById(detail.mapId).then(success => {
-    if (success) {
-      void narratorQuick(t('narrator.mapLoaded'));
-    } else {
-      void narratorQuick(t('narrator.mapLoadFailed'));
-    }
-  });
-});
+initMapSelectionEvents();
 
 initStartupGuidance();
 
