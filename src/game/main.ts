@@ -6,7 +6,7 @@ import {
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
-import { initAudio, initInterfaceSounds, stopMapAudio, hasMapAudio, clearMapAudio, setMusicVolume, applyAudioSettings } from './audio.ts';
+import { initAudio, initInterfaceSounds, stopMapAudio, hasMapAudio, clearMapAudio, applyAudioSettings } from './audio.ts';
 import { initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
@@ -22,7 +22,6 @@ import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
-import { isPhoneAudioActive, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
 import { narratorShow, narratorQuick, NARRATOR_SPEEDS } from './narrator.ts';
 import { initAchievements, recordGameEnd } from '../core/achievements.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
@@ -50,6 +49,7 @@ import { updateSaberTrails } from './saber-trails.ts';
 import { initSettingsBindings } from './settings-bindings.ts';
 import { initMultiplayerEvents, type MultiplayerRoundStart, type MultiplayerRules } from './multiplayer-events.ts';
 import { nextFrameTiming, resetFrameTiming, smoothProfileValue } from './frame-timing.ts';
+import { initPhoneAudioEvents } from './phone-audio-events.ts';
 
 declare global {
   interface Window {
@@ -768,28 +768,7 @@ initMainMenu();
 showFirstRunWelcome();
 showProfileOnboardingIfNeeded();
 
-// ── Phone audio remote playback ──────────────────────────────────────────
-// Forward map audio events to the phone when phone audio output is active
-window.addEventListener('hand-sabers:map-audio-start', event => {
-  if (!isPhoneAudioActive()) return;
-  const detail = (event as CustomEvent<{ offsetSec: number; playbackRate: number }>).detail;
-  if (!detail) return;
-  playPhoneAudio(detail.offsetSec, Date.now(), detail.playbackRate);
-});
-window.addEventListener('hand-sabers:map-audio-pause', () => {
-  if (isPhoneAudioActive()) pausePhoneAudio();
-});
-window.addEventListener('hand-sabers:map-audio-stop', () => {
-  if (isPhoneAudioActive()) stopPhoneAudio();
-});
-// Mute/restore PC music when phone takes over audio
-window.addEventListener('hand-sabers:phone-audio-mute', () => {
-  setMusicVolume(0);
-});
-window.addEventListener('hand-sabers:phone-audio-restore', (event) => {
-  const detail = (event as CustomEvent<{ volume: number }>).detail;
-  setMusicVolume(detail?.volume ?? settings.musicVolume);
-});
+initPhoneAudioEvents(settings);
 
 // Handle map selection from the in-game map picker overlay
 window.addEventListener('hand-sabers:map-selected', (event) => {

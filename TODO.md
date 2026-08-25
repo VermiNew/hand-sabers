@@ -272,6 +272,7 @@
     - [x] Wydzielić stan gotowości, przebieg auto/manual, kolejne kroki i zapis zakresów do `src/game/calibration-controller.ts`
     - [x] Zablokować przejście kroku przed wyborem trybu oraz równoległe/dwukrotne zakończenie kroku przez auto-advance, przycisk lub skrót
   - [x] Obsługa ustawień (bindings) — inicjalizacja kontrolerów ustawień i obsługa resetu są w `src/game/settings-bindings.ts`
+  - [x] Wydzielić rejestrację zdarzeń zdalnego audio telefonu i fallback głośności PC do `src/game/phone-audio-events.ts`
   - [ ] Integracja multiplayer
     - [x] Wydzielić walidację i rejestrację zdarzeń przygotowania, startu oraz wyników rundy do `src/game/multiplayer-events.ts`
 - [ ] Rozbić `src/game/gameplay.ts` (1015 linii) na logiczne moduły
