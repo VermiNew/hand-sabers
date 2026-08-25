@@ -51,6 +51,10 @@
     <label for="bpmInput" class="bpm-label">BPM</label>
     <input id="bpmInput" type="number" min="20" max="400" step="0.5" placeholder="—" title="Beats per minute" data-i18n-title="creator.bpmTitle">
     <button class="transport-btn" id="btnTapTempo" title="Tap tempo" data-i18n-title="creator.tapTempoTitle">TAP</button>
+    <!-- #14 Metronome: ticks at the BPM entered above (preview helper, not the calibration one) -->
+    <button class="transport-btn metro-btn" id="btnMetronome" title="Metronome" data-i18n-title="creator.metronomeTitle" aria-pressed="false">
+      <span class="metro-text" data-i18n="creator.metronomeOff">METRO: OFF</span>
+    </button>
   </div>
 
   <div class="transport-sep"></div>
@@ -101,6 +105,10 @@
   </div>
 
   <div class="transport-spacer"></div>
+  <!-- #17 Back to menu: takes the user back to the game menu -->
+  <a class="transport-btn back-menu-btn" id="btnBackMenu" href="./beat-sabers-3d.html" title="Back to menu" data-i18n-title="creator.backMenuTitle">
+    <span data-i18n="creator.backMenu">MENU</span>
+  </a>
   <button class="transport-btn" id="btnShortcuts" title="Keyboard shortcuts" data-i18n-title="creator.kbTitle">?</button>
 
   <!-- Tap flash indicator -->

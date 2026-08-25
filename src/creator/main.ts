@@ -6,6 +6,7 @@ import { showAlert, showToast } from './dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initRemoteTrackingHost } from '../remote/host-session.ts';
 import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
+import { bindMetronome } from './metronome.ts';
 import { suggestMapDifficulty } from '../core/map-difficulty.ts';
 
 import { state, MAP_ID } from './state.ts';
@@ -400,6 +401,7 @@ bindCutDirPanel();
 bindVolume();
 bindBpm();
 bindDifficulty();
+bindMetronome();
 bindShortcutsPanel();
 bindWaveformScroll();
 initKeybindsUI();

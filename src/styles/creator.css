@@ -554,6 +554,21 @@ body {
 #btnTapTempo:hover { border-color:rgba(255,200,80,0.7); color:#ffc850; background:rgba(255,200,80,0.08); }
 #btnTapTempo:active { background:rgba(255,200,80,0.2); transform:scale(0.97); }
 
+/* #14 Metronome button — same bpm-group accent family as TAP */
+.metro-btn {
+  border-color:rgba(255,200,80,0.32); color:rgba(255,200,80,0.8);
+  padding:4px 11px; font-size:11px; height:30px; letter-spacing:1.5px;
+  transition:background .15s, border-color .15s, color .15s, transform .12s;
+}
+.metro-btn:hover { border-color:rgba(255,200,80,0.7); color:#ffc850; background:rgba(255,200,80,0.08); }
+.metro-btn:active { background:rgba(255,200,80,0.2); transform:scale(0.97); }
+.metro-btn[aria-pressed="true"] {
+  border-color:rgba(54,242,161,0.7); color:#36f2a1;
+  background:rgba(54,242,161,0.1);
+  box-shadow:0 0 12px rgba(54,242,161,0.18);
+}
+.metro-btn[aria-pressed="true"]:hover { background:rgba(54,242,161,0.16); color:#5cffb8; }
+
 /* ── DIFFICULTY ── */
 .difficulty-group { display:flex; align-items:center; gap:6px; }
 .difficulty-label { font-size:10px; letter-spacing:1.5px; color:var(--dim); flex-shrink:0; }
@@ -565,7 +580,6 @@ body {
 }
 #difficultyInput:focus { border-color:rgba(196,181,253,0.82); background:rgba(167,139,250,0.12); }
 #difficultyInput option { background:#0b0e18; color:var(--text); }
-
 .difficulty-suggest-btn { height:30px; padding:4px 8px; border-color:rgba(167,139,250,0.34); color:#c4b5fd; }
 .difficulty-suggest-btn:hover { border-color:rgba(196,181,253,0.82); background:rgba(167,139,250,0.12); }
 .difficulty-suggestion { min-width:116px; color:rgba(226,232,240,0.72); font-size:9px; letter-spacing:.3px; white-space:nowrap; }
@@ -574,6 +588,16 @@ body {
 .difficulty-suggestion.is-hard { color:#fda4af; }
 .difficulty-suggestion.is-expert { color:#c4b5fd; }
 .difficulty-suggestion.is-empty { color:var(--dim); }
+
+/* #17 Back to menu button */
+.back-menu-btn {
+  border-color:rgba(148,163,184,0.3); color:rgba(148,163,184,0.85);
+  padding:4px 12px; font-size:11px; height:30px; letter-spacing:1.5px;
+  display:inline-flex; align-items:center; gap:5px; text-decoration:none;
+  cursor:pointer; transition:border-color .15s, color .15s, background .15s;
+}
+.back-menu-btn:hover { border-color:rgba(148,163,184,0.6); color:var(--text); background:rgba(148,163,184,0.08); }
+.back-menu-btn:active { background:rgba(148,163,184,0.18); transform:scale(0.97); }
 
 #btnShortcuts {
   width:30px; height:30px; padding:0; font-size:15px; font-weight:800;
