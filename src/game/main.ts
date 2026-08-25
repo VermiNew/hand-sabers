@@ -51,6 +51,7 @@ import { ensureCurrentMapAudio, loadMapById, tryLoadMapFromUrl } from './map-ses
 import { submitScore } from './score-submission.ts';
 import { isMainMenuOpen, updateMenuAutoplay, updateSabers } from './saber-motion.ts';
 import { createRuntimeReporter } from './runtime-reporter.ts';
+import { createRenderLoop } from './render-loop.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 
@@ -332,8 +333,6 @@ function publishMultiplayerScore(now: number, progress: number): void {
 // ── Główna pętla ──────────────────────────────────────────────────────────────
 let renderMs         = 0;
 let detectMs         = 0;
-let mainLoopRaf: number | null = null;
-let mainLoopRunning  = false;
 let _nearestBeatAt   = 0;
 const BASE_FRAME_MS      = 1000 / 60;
 const MAX_FRAME_DELTA_MS = 250;
@@ -344,16 +343,6 @@ const frameProfile: FrameProfile = { gameMs: 0, effectsMs: 0, reflectionMs: 0, c
 
 function smoothProfileValue(previous: number, sample: number): number {
   return previous === 0 ? sample : previous * 0.88 + sample * 0.12;
-}
-
-function loop(timestamp: number): void {
-  if (!mainLoopRunning) return;
-  mainLoopRaf = requestAnimationFrame(loop);
-  try {
-    renderFrame(timestamp);
-  } catch (error) {
-    reportRuntimeError('render-loop', error);
-  }
 }
 
 function renderFrame(timestamp: number): void {
@@ -815,20 +804,15 @@ function initMainMenu(): void {
 }
 
 const { reportRuntimeError, runAsyncTask } = createRuntimeReporter({ showOverlay });
+const renderLoop = createRenderLoop(renderFrame, reportRuntimeError);
 
 function startRenderLoop(): void {
-  if (mainLoopRunning) return;
   loopLastNow      = undefined;
-  mainLoopRunning  = true;
-  mainLoopRaf      = requestAnimationFrame(loop);
+  renderLoop.start();
 }
 
 function stopRenderLoop(): void {
-  mainLoopRunning = false;
-  if (mainLoopRaf !== null) {
-    cancelAnimationFrame(mainLoopRaf);
-    mainLoopRaf = null;
-  }
+  renderLoop.stop();
 }
 
 window.__handSabersStopRenderLoop = stopRenderLoop;
