@@ -289,6 +289,7 @@
   - [x] Wydzielić odłamki trafień, fallback pyłu, prewarm, animację, reset i zwalnianie efektów do `src/game/gameplay-hit-effects.ts`, zachowując eksport `updateSparks` w `gameplay.ts`
 - [ ] Rozbić `src/game/scene.ts` (720 linii) na moduły sceny
   - [x] Wydzielić stan, wygaszanie i aplikowanie drgań kamery do `src/game/camera-shake.ts`, zachowując publiczne API sceny
+  - [x] Wydzielić geometrię, uniformy, shadery i aplikowanie palety tła do `src/game/arena-background.ts`, zachowując publiczne `bgMat` i `applyBackgroundTheme` w scenie
 - [ ] Rozbić `src/maps/maps.ts` (723 linii) na moduły
   - [x] Wydzielić typy biblioteki oraz komunikację z API map i wyników do `src/maps/library-api.ts`
   - [x] Wydzielić odczyt autosave oraz łączenie map serwerowych i lokalnych do `src/maps/library-sources.ts`
