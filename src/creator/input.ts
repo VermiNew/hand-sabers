@@ -1,7 +1,7 @@
 import { state } from './state.ts';
 import { removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
 import { cutButtonText, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
-import { getPlayPos, playAudio, pauseAudio, stopAudio } from './audio.ts';
+import { getPlayPos, playAudio, stopAudio } from './audio.ts';
 import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, formatTime, getLabelWidth, xToTime } from './timeline.ts';
 import { scheduleAutosave } from './storage.ts';
 import { t } from '../i18n/index.ts';
@@ -13,6 +13,7 @@ import { TimelineContextMenu } from './timeline-context-menu.ts';
 import { canCreateHeldAt, clampHeldDuration, clampMapTime, fitBeatsWithinMap } from './beat-timing.ts';
 import { checkOverlaps, pushUndo, redo, undo } from './history.ts';
 import { cycleSnap, snapTime } from './snap.ts';
+import { cancelPrecount } from './precount.ts';
 
 const DEFAULT_BEAT_X = 0.82;
 const DEFAULT_BEAT_Y = 1.1;
@@ -145,40 +146,7 @@ export function toggleLoop(): void {
   }
 }
 
-export function cancelPrecount(): void {
-  if (state.precountTimer) { clearInterval(state.precountTimer); state.precountTimer = null; }
-  const precountEl = document.getElementById('precount');
-  if (precountEl) precountEl.classList.remove('show');
-}
-
-export function startPrecount(onPlay: () => void): void {
-  if (state.precountTimer || state.isPlaying) return;
-  const precountEl    = document.getElementById('precount');
-  const precountNumEl = document.getElementById('precountNum');
-  if (!precountEl || !precountNumEl) return;
-  precountEl.classList.add('show');
-  let n = 4;
-  precountNumEl.textContent = String(n);
-  state.precountTimer = setInterval(() => {
-    n--;
-    if (n <= 0) {
-      cancelPrecount();
-      onPlay();
-    } else {
-      precountNumEl.textContent        = String(n);
-      precountNumEl.style.animation    = 'none';
-      void precountNumEl.offsetHeight;
-      precountNumEl.style.animation    = 'precountPulse 1s ease-out';
-    }
-  }, 1000);
-}
-
-export function handlePlay(onPlay: () => void): void {
-  if (!state.audioBuffer) return;
-  if (state.precountTimer) { cancelPrecount(); return; }
-  if (state.isPlaying) { pauseAudio(); return; }
-  startPrecount(onPlay);
-}
+export { cancelPrecount, handlePlay, startPrecount } from './precount.ts';
 
 const dragSelection = new TimelineDragSelection();
 const timelineContextMenu = new TimelineContextMenu({ checkOverlaps, pushUndo, snapTime });
