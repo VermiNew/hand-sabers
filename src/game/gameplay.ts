@@ -29,8 +29,19 @@ import {
   type BladeHitbox,
 } from './saber-hitbox.ts';
 import type { CutDirection, Beat, SaberSide } from '../types/index.js';
+import {
+  acquireBlock,
+  acquireBomb,
+  configureBlockArrow,
+  disposeBlockPool,
+  getBlockPoolCounts,
+  getCurrentBlockColor,
+  getHeldMaterial,
+  prewarmBlockPool,
+  releaseBlock,
+  type PoolMesh,
+} from './gameplay-block-pool.ts';
 
-type PoolMesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material> & { __poolKind: 'block' | 'bomb'; __inFreeList: boolean };
 type ShardMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial> & { __inFreeList: boolean };
 
 interface ActiveBlock {
@@ -80,28 +91,6 @@ const HIT_Z               = 1.5;
 const BLOCK_SPEED_PER_MS  = (HIT_Z - SPAWN_Z) / APPROACH_TIME_MS;
 const MENU_DEMO_HIT_Z     = HIT_Z - 0.15;
 
-// ── Geometrie (pre-ładowane) ────────────────────────────────────────────────
-const BLOCK_GEO         = new THREE.BoxGeometry(0.38, 0.38, 0.38);
-const BLOCK_OUTLINE_GEO = new THREE.BoxGeometry(0.5,  0.5,  0.5);
-const BLOCK_ARROW_GEO   = new THREE.ConeGeometry(0.07, 0.16, 4);
-const BOMB_GEO          = new THREE.IcosahedronGeometry(0.22, 1);
-const BOMB_SPIKE_GEO    = new THREE.ConeGeometry(0.04, 0.14, 4);
-
-const MATS = {
-  blockL: new THREE.MeshStandardMaterial({ color: THEME.left,  emissive: THEME.left,  emissiveIntensity: 0.62, roughness: 0.28, metalness: 0.58 }),
-  blockR: new THREE.MeshStandardMaterial({ color: THEME.right, emissive: THEME.right, emissiveIntensity: 0.62, roughness: 0.28, metalness: 0.58 }),
-  outlineL: new THREE.MeshBasicMaterial({ color: THEME.left,  transparent: true, opacity: 0.25, side: THREE.BackSide }),
-  outlineR: new THREE.MeshBasicMaterial({ color: THEME.right, transparent: true, opacity: 0.25, side: THREE.BackSide }),
-  arrow: new THREE.MeshBasicMaterial({ color: THEME.white, transparent: true, opacity: 0.9 }),
-  bomb: new THREE.MeshStandardMaterial({ color: THEME.bomb, emissive: THEME.bomb, emissiveIntensity: 0.4, roughness: 0.4, metalness: 0.6 }),
-  bombSpike: new THREE.MeshBasicMaterial({ color: 0xff6060 }),
-  heldL: new THREE.MeshStandardMaterial({ color: THEME.left,  emissive: THEME.left,  emissiveIntensity: 0.45, roughness: 0.35, metalness: 0.5, transparent: true, opacity: 0.75 }),
-  heldR: new THREE.MeshStandardMaterial({ color: THEME.right, emissive: THEME.right, emissiveIntensity: 0.45, roughness: 0.35, metalness: 0.5, transparent: true, opacity: 0.75 }),
-};
-
-// Current block colors, kept in sync with saber color (used for shards)
-let currentColorLeft:  number = THEME.left;
-let currentColorRight: number = THEME.right;
 let activeSabers: SaberSide | 'both' = 'both';
 
 function isSaberActive(side: SaberSide): boolean {
@@ -110,93 +99,6 @@ function isSaberActive(side: SaberSide): boolean {
 
 function effectiveOneHandMode(): SaberSide | null {
   return activeSabers === 'both' ? state.oneHandMode : null;
-}
-
-const CUT_ARROW_ROT_Z = {
-  down: 0,
-  up: Math.PI,
-  left: -Math.PI / 2,
-  right: Math.PI / 2,
-  'down-left': -Math.PI / 4,
-  'down-right': Math.PI / 4,
-  'up-left': -Math.PI * 3 / 4,
-  'up-right': Math.PI * 3 / 4,
-  any: 0,
-};
-
-function configureBlockArrow(mesh: PoolMesh, cut: string = 'any'): void {
-  const arrow = mesh?.children?.[1];
-  if (!arrow) return;
-  const dir = normalizeCutDirection(cut);
-  arrow.visible = dir !== 'any';
-  arrow.rotation.x = -Math.PI / 2;
-  arrow.rotation.y = 0;
-  arrow.rotation.z = CUT_ARROW_ROT_Z[dir] ?? 0;
-  arrow.userData.cut = dir;
-}
-
-// ── Object Pool ─────────────────────────────────────────────────────────────
-const blockPool: PoolMesh[] = [];
-const bombPool: PoolMesh[]  = [];
-const freeBlocks: PoolMesh[] = [];
-const freeBombs: PoolMesh[]  = [];
-
-function createNewBlock(): PoolMesh {
-  const mesh = new THREE.Mesh(BLOCK_GEO, MATS.blockL) as unknown as PoolMesh;
-  mesh.add(new THREE.Mesh(BLOCK_OUTLINE_GEO, MATS.outlineL));
-  const arrow = new THREE.Mesh(BLOCK_ARROW_GEO, MATS.arrow);
-  arrow.position.set(0, 0, 0.22);
-  arrow.rotation.x = -Math.PI / 2;
-  mesh.add(arrow);
-  mesh.frustumCulled = false;
-  mesh.__poolKind = 'block';
-  mesh.__inFreeList = false;
-  scene.add(mesh);
-  blockPool.push(mesh);
-  return mesh;
-}
-
-function createNewBomb(): PoolMesh {
-  const mesh = new THREE.Mesh(BOMB_GEO, MATS.bomb) as unknown as PoolMesh;
-  for (let i = 0; i < 6; i++) {
-    const spike = new THREE.Mesh(BOMB_SPIKE_GEO, MATS.bombSpike);
-    const angle = (i / 6) * Math.PI * 2;
-    spike.position.set(Math.cos(angle) * 0.22, Math.sin(angle) * 0.22, 0);
-    spike.rotation.z = angle + Math.PI / 2;
-    mesh.add(spike);
-  }
-  mesh.frustumCulled = false;
-  mesh.__poolKind = 'bomb';
-  mesh.__inFreeList = false;
-  scene.add(mesh);
-  bombPool.push(mesh);
-  return mesh;
-}
-
-function acquireBlock(side: SaberSide): PoolMesh {
-  const mesh = freeBlocks.pop() ?? createNewBlock();
-  mesh.__inFreeList = false;
-  mesh.material = side === 'left' ? MATS.blockL : MATS.blockR;
-  (mesh.children[0] as THREE.Mesh).material = side === 'left' ? MATS.outlineL : MATS.outlineR;
-  mesh.visible = true;
-  configureBlockArrow(mesh, 'any');
-  return mesh;
-}
-
-function acquireBomb() {
-  const mesh = freeBombs.pop() ?? createNewBomb();
-  mesh.__inFreeList = false;
-  mesh.visible = true;
-  return mesh;
-}
-
-function releaseBlock(mesh: PoolMesh | null | undefined): void {
-  if (!mesh || mesh.__inFreeList) return;
-  mesh.visible = false;
-  mesh.userData.alive = false;
-  mesh.__inFreeList = true;
-  if (mesh.__poolKind === 'bomb') freeBombs.push(mesh);
-  else freeBlocks.push(mesh);
 }
 
 const PREWARM_TARGETS = {
@@ -340,8 +242,7 @@ function releaseShardAt(index: number): void {
 
 export function prewarmGameplayResources() {
   const targets = poolTargetsForCurrentGraphicsMode();
-  while (blockPool.length < targets.blocks) releaseBlock(createNewBlock());
-  while (bombPool.length < targets.bombs) releaseBlock(createNewBomb());
+  prewarmBlockPool(targets.blocks, targets.bombs);
   while (shardPool.length < targets.shards) {
     const color = shardPool.length % 2 ? THEME.right : THEME.left;
     const shard = createNewShard(color);
@@ -349,8 +250,9 @@ export function prewarmGameplayResources() {
     shard.__inFreeList = true;
     freeShards.push(shard);
   }
-  window.__prewarmedBlockPool = blockPool.length;
-  window.__prewarmedBombPool = bombPool.length;
+  const poolCounts = getBlockPoolCounts();
+  window.__prewarmedBlockPool = poolCounts.blocks;
+  window.__prewarmedBombPool = poolCounts.bombs;
   window.__prewarmedShardPool = shardPool.length;
 }
 
@@ -524,8 +426,9 @@ function publishGameplayStats() {
   window.__gameplayVisualPressure = Number.isFinite(nearestZ)
     ? THREE.MathUtils.clamp((nearestZ + 5.5) / 7, 0, 1)
     : 0;
-  window.__prewarmedBlockPool = blockPool.length;
-  window.__prewarmedBombPool = bombPool.length;
+  const poolCounts = getBlockPoolCounts();
+  window.__prewarmedBlockPool = poolCounts.blocks;
+  window.__prewarmedBombPool = poolCounts.bombs;
   window.__prewarmedShardPool = shardPool.length;
 }
 
@@ -636,7 +539,7 @@ function spawnBlock(side: SaberSide | null = null, isBomb = false, options: Spaw
   let heldMesh: THREE.Mesh | null = null;
   if (heldLen > 0) {
     const geo = new THREE.BoxGeometry(0.38, 0.38, heldLen);
-    const mat = side === 'left' ? MATS.heldL : MATS.heldR;
+    const mat = getHeldMaterial(side);
     heldMesh = new THREE.Mesh(geo, mat);
     heldMesh.frustumCulled = false;
     heldMesh.position.set(x, y, z - (heldLen * 0.5 + 0.19));
@@ -992,14 +895,8 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
 
 export function disposeGameplayResources() {
   clearGameplayEntities();
-  for (const mesh of blockPool) scene.remove(mesh);
-  for (const mesh of bombPool) scene.remove(mesh);
-  blockPool.length = 0;
-  bombPool.length = 0;
-  freeBlocks.length = 0;
-  freeBombs.length = 0;
-  for (const geom of [BLOCK_GEO, BLOCK_OUTLINE_GEO, BLOCK_ARROW_GEO, BOMB_GEO, BOMB_SPIKE_GEO, shardGeo, sparkGeo]) geom.dispose?.();
-  for (const mat of Object.values(MATS)) mat.dispose?.();
+  disposeBlockPool();
+  for (const geom of [shardGeo, sparkGeo]) geom.dispose?.();
   sparkMat.dispose?.();
   for (const shard of shardPool) {
     scene.remove(shard);
@@ -1011,23 +908,4 @@ export function disposeGameplayResources() {
 
 export function getLastHitMs() { return lastHitMs; }
 
-// Sync block + outline materials (and the tracked shard color) with the saber color.
-export function setBlockColor(side: 'left' | 'right', hex: number): void {
-  const mat  = side === 'left' ? MATS.blockL   : MATS.blockR;
-  const outl = side === 'left' ? MATS.outlineL : MATS.outlineR;
-  mat.color.setHex(hex);
-  mat.emissive.setHex(hex);
-  mat.needsUpdate = true;
-  const held = side === 'left' ? MATS.heldL : MATS.heldR;
-  held.color.setHex(hex);
-  held.emissive.setHex(hex);
-  held.needsUpdate = true;
-  outl.color.setHex(hex);
-  outl.needsUpdate = true;
-  if (side === 'left') currentColorLeft = hex;
-  else currentColorRight = hex;
-}
-
-export function getCurrentBlockColor(side: 'left' | 'right'): number {
-  return side === 'left' ? currentColorLeft : currentColorRight;
-}
+export { getCurrentBlockColor, setBlockColor } from './gameplay-block-pool.ts';
