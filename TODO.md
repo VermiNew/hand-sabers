@@ -271,7 +271,8 @@
     - [x] Wydzielić stan gotowości, przebieg auto/manual, kolejne kroki i zapis zakresów do `src/game/calibration-controller.ts`
     - [x] Zablokować przejście kroku przed wyborem trybu oraz równoległe/dwukrotne zakończenie kroku przez auto-advance, przycisk lub skrót
   - [x] Obsługa ustawień (bindings) — inicjalizacja kontrolerów ustawień i obsługa resetu są w `src/game/settings-bindings.ts`
-  - Integracja multiplayer
+  - [ ] Integracja multiplayer
+    - [x] Wydzielić walidację i rejestrację zdarzeń przygotowania, startu oraz wyników rundy do `src/game/multiplayer-events.ts`
 - [ ] Rozbić `src/game/gameplay.ts` (1015 linii) na logiczne moduły
   - [x] Wydzielić reguły prędkości nut, trybu treningowego i czasu podejścia do `src/game/gameplay-speed.ts`
 - [ ] Rozbić `src/game/scene.ts` (720 linii) na moduły sceny

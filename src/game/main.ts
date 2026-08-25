@@ -1,5 +1,5 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, clearDangerPulse, showGameOver, showMultiplayerResults, hideHandsPaused, updateMapProgress, showMapTitle, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
+import { ui, updateHUD, clearDangerPulse, showGameOver, hideHandsPaused, updateMapProgress, showMapTitle, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
@@ -19,8 +19,7 @@ import { t, needsLanguageSelection, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
-import { initMultiplayerOverlay, sendMultiplayerScore, getCurrentPlayerId } from '../multiplayer/client.ts';
-import { parseRoomSnapshot } from '../multiplayer/protocol.ts';
+import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { isPhoneAudioActive, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
@@ -49,6 +48,7 @@ import { bindComboNarrator, showFirstRunWelcome } from './narrator-prompts.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 import { initSettingsBindings } from './settings-bindings.ts';
+import { initMultiplayerEvents, type MultiplayerRoundStart, type MultiplayerRules } from './multiplayer-events.ts';
 
 declare global {
   interface Window {
@@ -67,10 +67,6 @@ declare global {
 
 // ── Ustawienia ────────────────────────────────────────────────────────────────
 const settings = loadSettings();
-interface MultiplayerRules {
-  trainingMode: boolean;
-  noFail: boolean;
-}
 let multiplayerRoundRules: MultiplayerRules | null = null;
 
 applySaberAppearance(settings);
@@ -745,59 +741,17 @@ window.addEventListener('beforeunload', () => {
 initHelpOverlay();
 registerMlAssetCache();
 initRemoteTrackingPairing();
-window.addEventListener('hand-sabers:multiplayer-prepare', event => {
-  const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
-  if (typeof mapId === 'string') runAsyncTask('multiplayer-prepare', () => prepareMultiplayerMap(mapId));
-});
-window.addEventListener('hand-sabers:multiplayer-start', event => {
-  const detail = (event as CustomEvent<{
-    mapId?: unknown;
-    mode?: unknown;
-    rules?: unknown;
-    saber?: unknown;
-    startAtPerformance?: unknown;
-  }>).detail;
-  const rules = detail?.rules;
-  if (
-    typeof detail?.mapId === 'string'
-    && (detail.mode === 'coop' || detail.mode === 'score-attack')
-    && (detail.saber === 'left' || detail.saber === 'right' || detail.saber === 'both')
-    && ((detail.mode === 'coop' && detail.saber !== 'both')
-      || (detail.mode === 'score-attack' && detail.saber === 'both'))
-    && rules
-    && typeof rules === 'object'
-    && !Array.isArray(rules)
-    && typeof (rules as Record<string, unknown>)['trainingMode'] === 'boolean'
-    && typeof (rules as Record<string, unknown>)['noFail'] === 'boolean'
-    && typeof detail.startAtPerformance === 'number'
-  ) {
-    const roundDetail: Parameters<typeof beginMultiplayerRound>[0] = {
-      mapId: detail.mapId,
-      mode: detail.mode,
-      rules: rules as MultiplayerRules,
-      saber: detail.saber,
-      startAtPerformance: detail.startAtPerformance,
-    };
+initMultiplayerEvents({
+  onPrepare(mapId) {
+    runAsyncTask('multiplayer-prepare', () => prepareMultiplayerMap(mapId));
+  },
+  onStart(detail: MultiplayerRoundStart) {
     runAsyncTask(
       'multiplayer-round-start',
-      () => beginMultiplayerRound(roundDetail),
+      () => beginMultiplayerRound(detail),
       () => window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error')),
     );
-  }
-});
-
-// ── Multiplayer round results — show ranking when server confirms round end
-window.addEventListener('hand-sabers:multiplayer-results', event => {
-  const detail = (event as CustomEvent<{ snapshot?: unknown }>).detail;
-  const snapshot = detail?.snapshot;
-  if (!snapshot || typeof snapshot !== 'object') return;
-  if (state.appState !== S.GAMEOVER) return;
-  const localPlayerId = getCurrentPlayerId();
-  if (!localPlayerId) return;
-  const s = snapshot as Record<string, unknown>;
-  if (!Array.isArray(s['players']) || !s['round']) return;
-  const parsed = parseRoomSnapshot(snapshot);
-  if (parsed) showMultiplayerResults(parsed, localPlayerId);
+  },
 });
 
 // ── Narrator pause/resume — pause gameplay while narrator buttons are visible
