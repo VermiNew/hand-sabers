@@ -11,6 +11,13 @@ import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './sc
 import { showHitFeedback } from './hit-feedback.ts';
 import { MapSpawnQueue } from './map-spawn-queue.ts';
 import { getCurrentMusicIntensity, resetMusicVisualizer, triggerMusicVisualizerBeat } from './music-visualizer.ts';
+import {
+  APPROACH_TIME_MS,
+  getEffectiveSpeed,
+  getMapApproachTimeSec,
+  getTrainingRate,
+  MAP_APPROACH_TIME_SEC,
+} from './gameplay-speed.ts';
 import type { CutDirection, Beat, SaberSide } from '../types/index.js';
 
 type PoolMesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material> & { __poolKind: 'block' | 'bomb'; __inFreeList: boolean };
@@ -68,9 +75,6 @@ const BLADE_LOCAL_START   = new THREE.Vector3(0, 0.03, 0);
 const BLADE_LOCAL_END     = new THREE.Vector3(0, 1.18, 0);
 const STARTING_LIVES      = 10;
 const REGEN_EVERY_HITS    = 8;
-// Base travel time at 1×. Presets scale approach time without modifying beat.t.
-export const APPROACH_TIME_MS = 1800;
-export const MAP_APPROACH_TIME_SEC = APPROACH_TIME_MS / 1000;
 const MENU_DEMO_BEAT_MS   = 540;
 const HELD_MISS_GRACE_SEC = 0.45;
 
@@ -82,28 +86,6 @@ const SPAWN_Z             = -22;
 const HIT_Z               = 1.5;
 const BLOCK_SPEED_PER_MS  = (HIT_Z - SPAWN_Z) / APPROACH_TIME_MS;
 const MENU_DEMO_HIT_Z     = HIT_Z - 0.15;
-
-function getNoteSpeed(): number {
-  return THREE.MathUtils.clamp(Number(getSettings().noteSpeed) || 1, 0.75, 1.75);
-}
-
-function getEffectiveSpeed(mapTimeSec: number): number {
-  const base = getNoteSpeed();
-  const mode = getSettings().gameMode;
-  if (mode === 'speed-trials') {
-    const ramp = 1 + mapTimeSec * 0.008;
-    return base * Math.min(ramp, 3);
-  }
-  return base;
-}
-
-function getTrainingRate(): number {
-  return getSettings().trainingMode ? 0.75 : 1;
-}
-
-function getMapApproachTimeSec(mapTimeSec = 0): number {
-  return MAP_APPROACH_TIME_SEC / getEffectiveSpeed(mapTimeSec);
-}
 
 // ── Geometrie (pre-ładowane) ────────────────────────────────────────────────
 const BLOCK_GEO         = new THREE.BoxGeometry(0.38, 0.38, 0.38);

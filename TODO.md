@@ -273,6 +273,7 @@
   - [x] Obsługa ustawień (bindings) — inicjalizacja kontrolerów ustawień i obsługa resetu są w `src/game/settings-bindings.ts`
   - Integracja multiplayer
 - [ ] Rozbić `src/game/gameplay.ts` (1015 linii) na logiczne moduły
+  - [x] Wydzielić reguły prędkości nut, trybu treningowego i czasu podejścia do `src/game/gameplay-speed.ts`
 - [ ] Rozbić `src/game/scene.ts` (720 linii) na moduły sceny
 - [ ] Rozbić `src/maps/maps.ts` (723 linii) na moduły
 - [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
