@@ -310,6 +310,7 @@
   - [x] Wydzielić timer, animację i sterowanie odliczaniem przed odtwarzaniem do `src/creator/precount.ts`
   - [x] Wydzielić rejestrowanie tapów, bomb i held beats, kierunek cięcia, flash oraz pętlę do `src/creator/beat-input.ts`, zachowując eksporty kompatybilności w `input.ts`
 - [ ] Każda refaktoryzacja musi zachować wszystkie funkcje i nie uszkodzić kodu — weryfikacja przez `npm run verify` po każdym kroku
+  - [x] Dodać zatwierdzony Playwright smoke głównego menu: brak krytycznych błędów strony/konsoli oraz otwarcie i zamknięcie pickera map z kontrolą focusu
 
 ## 34. Balans trudności
 
@@ -370,7 +371,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Uodpornić autosave kreatora: poza debounce 5 s dodać maksymalny interwał zapisu lub flush na `visibilitychange/pagehide`, a błędów `localStorage` (zwłaszcza quota exceeded) nie połykać bez komunikatu. Mapa jest zapisywana synchronicznie; audio w IndexedDB przy zamknięciu strony pozostaje best-effort.
 - [ ] Usunąć lub jednoznacznie zablokować legacy `server.js`. Uruchomiony ręcznie serwuje katalog projektu ze słabszymi zabezpieczeniami niż wspierany serwer TypeScript i może ujawniać źródła/dokumentację.
 - [ ] Dodać produkcyjne nagłówki bezpieczeństwa: CSP, `X-Content-Type-Options`, ochronę przed framingiem, `Permissions-Policy` oraz HSTS na warstwie HTTPS/reverse proxy.
-- [ ] Dodać i commitować lockfile zależności; wersje z `^` bez `package-lock.json` nie dają reprodukowalnego builda produkcyjnego.
+- [x] Dodać i commitować lockfile zależności; wersje z `^` bez `package-lock.json` nie dają reprodukowalnego builda produkcyjnego.
 - [ ] Poprawić narzędzia kontroli: `scripts/check-js.mjs` nie analizuje kodu TypeScript, a `scripts/check-i18n-keys.mjs` wbrew opisowi skanuje tylko HTML i nie jest włączony do skryptów npm.
 - [ ] Uzupełnić testy krytycznych ścieżek: autoryzacja i limity uploadu, WebSocket/expiry/backpressure, osiągnięcia, operacje kreatora i regresja DOM XSS. Obecne testy nie obejmują tych granic zaufania.
 - [ ] Zaktualizować dokumentację do implementacji: `npm run dev` uruchamia serwer i Vite, remote tracking korzysta obecnie z WebSocket (nie DataChannel), a opis parowania i gwarancji TTL musi odpowiadać faktycznym kontrolom.

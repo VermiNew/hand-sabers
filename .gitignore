@@ -19,6 +19,8 @@ maps/beatdata/*.json
 .DS_Store
 Thumbs.db
 *.log
+playwright-report/
+test-results/
 .vscode/
 
 # Claude Code notes

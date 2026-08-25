@@ -34,6 +34,7 @@
     "dev:vite": "node scripts/dev-vite.mjs",
     "check": "node scripts/check-js.mjs",
     "smoke": "node scripts/smoke-server.mjs",
+    "smoke:e2e": "playwright test",
     "test": "npm run check && npm run unit && npm run server:build && npm run smoke",
     "verify": "npm run lint && npm run build && npm run typecheck:server && npm run server:build && npm run unit && npm run smoke",
     "unit": "node --experimental-strip-types --import ./scripts/register-ts-loader.mjs --test tests/*.test.mjs"
@@ -50,6 +51,7 @@
     "ws": "^8.21.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
     "@types/node": "^25.9.1",
