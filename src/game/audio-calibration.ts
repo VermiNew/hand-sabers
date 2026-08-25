@@ -9,6 +9,8 @@ import {
 import type { CalibrationResult } from './calibration-math.ts';
 
 let metronomeActive = false;
+let metronomeStarting = false;
+let startRequest = 0;
 let metronomeTimer: ReturnType<typeof setTimeout> | null = null;
 const visualTimers = new Set<ReturnType<typeof setTimeout>>();
 let metronomeBeat = 0;
@@ -22,6 +24,12 @@ let actionsEl: HTMLElement | null = null;
 let onCompleteCb: ((result: CalibrationResult) => void) | null = null;
 let onStateChangeCb: ((active: boolean) => void) | null = null;
 let reducedMotion = false;
+
+// Keep the click on the AudioContext timeline instead of trusting a timer to
+// fire at the exact beat. The matching performance.now() reference lets tap
+// timestamps use the same planned beat schedule.
+const START_LEAD_MS = 120;
+const SCHEDULE_AHEAD_MS = 100;
 
 function formatText(key: string, replacements?: Record<string, string>): string {
   let text = t(key);
@@ -231,21 +239,32 @@ function showResultActions(
 }
 
 /** Start the FL Studio-style metronome calibration */
-export function startMetronomeCalibration(
+export async function startMetronomeCalibration(
   onComplete?: (result: CalibrationResult) => void,
   onStateChange?: (active: boolean) => void,
-): boolean {
-  if (metronomeActive) return false;
+): Promise<boolean> {
+  if (metronomeActive || metronomeStarting) return false;
+  metronomeStarting = true;
+  const request = ++startRequest;
   initAudio();
-  resumeAudioContext();
+  const resumed = await resumeAudioContext();
+  if (request !== startRequest || !resumed) {
+    if (request === startRequest) metronomeStarting = false;
+    return false;
+  }
   const ctx = getAudioContext();
-  if (!ctx) return false;
+  if (!ctx) {
+    metronomeStarting = false;
+    return false;
+  }
 
   reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   metronomeActive = true;
+  metronomeStarting = false;
   metronomeBeat = 0;
   tapTimes = [];
-  startTime = performance.now();
+  startTime = performance.now() + START_LEAD_MS;
+  const startAudioTime = ctx.currentTime + START_LEAD_MS / 1000;
   onCompleteCb = onComplete ?? null;
   onStateChangeCb = onStateChange ?? null;
 
@@ -281,33 +300,29 @@ export function startMetronomeCalibration(
   function scheduleNextBeat(): void {
     if (!metronomeActive || !ctx) return;
 
-    const beatTimePerf = startTime + metronomeBeat * BEAT_INTERVAL;
-    const delay = beatTimePerf - performance.now();
+    const audioTime = startAudioTime + metronomeBeat * (BEAT_INTERVAL / 1000);
+    const delayMs = (audioTime - ctx.currentTime) * 1000;
 
-    if (delay > 200) {
-      metronomeTimer = setTimeout(scheduleNextBeat, delay - 100);
+    if (delayMs > SCHEDULE_AHEAD_MS) {
+      metronomeTimer = setTimeout(scheduleNextBeat, delayMs - SCHEDULE_AHEAD_MS);
       return;
     }
 
-    if (delay > 0) {
-      metronomeTimer = setTimeout(() => {
-        if (!metronomeActive) return;
-        const beatInPattern = metronomeBeat % 5;
-        const isAccent = beatInPattern === 0;
-        const audioTime = ctx.currentTime + 0.001;
-        playClick(isAccent, audioTime, beatInPattern);
-        metronomeBeat++;
-        scheduleNextBeat();
-      }, delay);
-    } else {
-      metronomeBeat++;
+    if (delayMs <= 0) {
+      const skippedBeats = Math.floor(-delayMs / BEAT_INTERVAL) + 1;
+      metronomeBeat += skippedBeats;
       scheduleNextBeat();
+      return;
     }
+
+    const beatInPattern = metronomeBeat % 5;
+    playClick(beatInPattern === 0, audioTime, beatInPattern);
+    metronomeBeat++;
+    scheduleNextBeat();
   }
 
-  // First beat immediately (accent)
-  playClick(true, ctx.currentTime + 0.001, 0);
-  metronomeBeat = 1;
+  // The first click starts after a small lead-in, so the visible beat and the
+  // audio click use one planned timestamp.
   scheduleNextBeat();
 
   keydownHandler = (e: KeyboardEvent) => {
@@ -355,7 +370,7 @@ export function startMetronomeCalibration(
       stopMetronome({ keepOverlay: true });
       showResultActions(result, complete, () => {
         removeVisualOverlay();
-        startMetronomeCalibration(complete ?? undefined, stateChange ?? undefined);
+        void startMetronomeCalibration(complete ?? undefined, stateChange ?? undefined);
       });
     }
   };
@@ -365,6 +380,8 @@ export function startMetronomeCalibration(
 
 /** Stop the metronome calibration */
 export function stopMetronome({ keepOverlay = false }: { keepOverlay?: boolean } = {}): void {
+  startRequest++;
+  metronomeStarting = false;
   if (metronomeTimer) {
     clearTimeout(metronomeTimer);
     metronomeTimer = null;
@@ -395,5 +412,5 @@ export function stopMetronome({ keepOverlay = false }: { keepOverlay?: boolean }
 
 /** Check if metronome calibration is running */
 export function isMetronomeActive(): boolean {
-  return metronomeActive;
+  return metronomeActive || metronomeStarting;
 }

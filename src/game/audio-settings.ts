@@ -70,12 +70,12 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
 
   testSoundButton?.addEventListener('click', playTestSound);
 
-  metronomeButton?.addEventListener('click', () => {
+  metronomeButton?.addEventListener('click', async () => {
     if (isMetronomeActive()) {
       stopMetronome();
       return;
     }
-    const started = startMetronomeCalibration(
+    const started = await startMetronomeCalibration(
       (result) => {
         const { offsetMs } = result;
         setSetting('audioOffsetMs', offsetMs);
