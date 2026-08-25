@@ -1,16 +1,16 @@
 import { S, state } from '../core/state.ts';
 import { ui, updateHUD, clearDangerPulse, showGameOver, hideHandsPaused, updateMapProgress, showMapTitle, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
 import {
-  renderer, scene, cam3d, bgMat,
+  renderer, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel,
-  animateIdleSabers, resizeRenderer, adaptRenderQuality, disposeSceneResources,
+  animateIdleSabers, resizeRenderer, disposeSceneResources,
   setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, stopMapAudio, hasMapAudio, clearMapAudio, applyAudioSettings } from './audio.ts';
 import { initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
-import { initDevPanel, isDeveloperPanelEnabled, tickDevPanel, initCameraPanelToggle } from '../ui/devpanel.ts';
+import { initDevPanel, isDeveloperPanelEnabled, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
@@ -54,6 +54,7 @@ import { initMapSelectionEvents } from './map-selection-events.ts';
 import { initNarratorPauseEvents } from './narrator-pause-events.ts';
 import { updateArenaReactiveFrame } from './arena-reactive-frame.ts';
 import { updateFrameEffects } from './frame-effects.ts';
+import { renderAndReportFrame } from './frame-renderer.ts';
 
 declare global {
   interface Window {
@@ -315,8 +316,6 @@ function restartWithoutCalib(): void {
 }
 
 // ── Główna pętla ──────────────────────────────────────────────────────────────
-let renderMs         = 0;
-let detectMs         = 0;
 let _nearestBeatAt   = 0;
 const frameProfile: FrameProfile = { gameMs: 0, effectsMs: 0, reflectionMs: 0, cpuMs: 0 };
 
@@ -420,25 +419,13 @@ function renderFrame(timestamp: number): void {
     frameProfile.effectsMs = smoothProfileValue(frameProfile.effectsMs, effectsProfile.effectsMs);
   }
 
-  const rStart = performance.now();
-  renderer.render(scene, cam3d);
-  renderMs = performance.now() - rStart;
-  if (profiling) frameProfile.cpuMs = smoothProfileValue(frameProfile.cpuMs, performance.now() - profileStart);
-  detectMs = window.__lastDetectMs ?? detectMs;
-  adaptRenderQuality(frameTiming.deltaMs, state.fps);
-
-  const drawCalls = renderer.info.render.calls;
-  const triangles = renderer.info.render.triangles;
-  if (ui.dRender) ui.dRender.textContent = `${renderMs.toFixed(1)}ms`;
-
-  tickDevPanel(renderer, now, renderMs, detectMs, {
-    drawCalls, triangles,
-    activeBlocks:  window.__activeBlockCount  ?? 0,
-    activeSparks:  window.__activeSparkCount  ?? 0,
-    conf:          window.__lastHandConf      ?? 0,
-    filteredHands: window.__filteredHandCount ?? 0,
-    rawHands:      window.__rawHandCount      ?? 0,
-  }, profiling ? frameProfile : undefined);
+  renderAndReportFrame({
+    now,
+    frameDeltaMs: frameTiming.deltaMs,
+    profiling,
+    frameProfile,
+    profileStart,
+  });
 }
 
 // ── Przyciski overlay ─────────────────────────────────────────────────────────
