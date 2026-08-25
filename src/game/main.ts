@@ -12,7 +12,7 @@ import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks,
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, tickDevPanel, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
-import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
+import { loadSettings, setSetting } from '../core/settings.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS } from '../core/pause.ts';
 import { t, needsLanguageSelection, translateDom } from '../i18n/index.ts';
@@ -26,19 +26,11 @@ import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/
 import { isPhoneAudioActive, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
 import { narratorShow, narratorQuick, NARRATOR_SPEEDS } from './narrator.ts';
 import { initAchievements, recordGameEnd } from '../core/achievements.ts';
-import { initLanguageSettings } from '../ui/language-settings.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
-import { bindStyledRange } from '../ui/settings-range.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
-import { initProfileOnboarding, initProfileSettings, showProfileOnboardingIfNeeded } from './profile.ts';
-import { initAudioSettings } from './audio-settings.ts';
-import { initGameplaySettings } from './gameplay-settings.ts';
-import { applySaberAppearance, initSaberSettings } from './saber-settings.ts';
-import { applyArenaTheme, initArenaSettings } from './arena-settings.ts';
-import { initMusicReactiveSettings } from './music-reactive-settings.ts';
-import { initGraphicsSettings } from './graphics-settings.ts';
-import { initTrackingSettings } from './tracking-settings.ts';
-import { initDeveloperSettings } from './developer-settings.ts';
+import { initProfileOnboarding, showProfileOnboardingIfNeeded } from './profile.ts';
+import { applySaberAppearance } from './saber-settings.ts';
+import { applyArenaTheme } from './arena-settings.ts';
 import { initMainMenuShell, triggerMenuEnter } from './main-menu-shell.ts';
 import { initAchievementUI, renderAchievementCompactGrid, renderStatsGrid } from './achievement-ui.ts';
 import { applyPauseTranslations } from './pause-ui.ts';
@@ -56,6 +48,7 @@ import { createMultiplayerScorePublisher } from './multiplayer-score-publisher.t
 import { bindComboNarrator, showFirstRunWelcome } from './narrator-prompts.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
+import { initSettingsBindings } from './settings-bindings.ts';
 
 declare global {
   interface Window {
@@ -673,15 +666,6 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
 
 function initMainMenu(): void {
   resetMenuDemo();
-  const settingsReset    = document.getElementById('mainSettingsReset');
-  const trackingSettingsController = initTrackingSettings(settings, {
-    onSourceChange(changed) {
-      if (!changed || !trackingStarted) return;
-      stopTracking();
-      trackingStarted = false;
-      calibrationController.setReady(false);
-    },
-  });
   const menuShell = initMainMenuShell({
     onAchievementsOpen() {
       renderStatsGrid();
@@ -704,7 +688,7 @@ function initMainMenu(): void {
     }
     if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
       menuShell.openSettings('remoteTracking');
-      trackingSettingsController.updateSourceHint();
+      settingsBindingsController.updateTrackingSourceHint();
       return;
     }
     menuShell.closeSettings();
@@ -713,7 +697,7 @@ function initMainMenu(): void {
   menuShell.bindAction('mainCalibrate', () => {
     if (settings.trackingSource === 'phone' && !isRemoteTrackingConnected()) {
       menuShell.openSettings('remoteTracking');
-      trackingSettingsController.updateSourceHint();
+      settingsBindingsController.updateTrackingSourceHint();
       return;
     }
     menuShell.closeSettings();
@@ -723,43 +707,17 @@ function initMainMenu(): void {
     openMapPicker();
   });
 
-  initLanguageSettings(applyTranslations);
-
-  const audioSettingsController = initAudioSettings(settings, bindStyledRange);
-
-  initProfileSettings(settings);
-  const gameplaySettingsController = initGameplaySettings(settings);
-  const saberSettingsController = initSaberSettings(settings);
-  const arenaSettingsController = initArenaSettings(settings);
-  const musicReactiveSettingsController = initMusicReactiveSettings(settings);
-  const graphicsSettingsController = initGraphicsSettings(settings);
-  const developerSettingsController = initDeveloperSettings(settings);
-
-  settingsReset?.addEventListener('click', () => {
-    if (!window.confirm(t('settings.resetConfirm'))) return;
-
-    const localNoFail = settings.noFail;
-    const localTrainingMode = settings.trainingMode;
-    const previousTrackingSource = settings.trackingSource;
-    resetSettings();
-    if (gameplaySettingsController.hasMultiplayerRules()) {
-      setSetting('noFail', localNoFail);
-      setSetting('trainingMode', localTrainingMode);
-    }
-    if (trackingStarted && previousTrackingSource !== settings.trackingSource) {
+  const settingsBindingsController = initSettingsBindings({
+    settings,
+    applyTranslations,
+    isTrackingStarted: () => trackingStarted,
+    onStopTracking() {
       stopTracking();
       trackingStarted = false;
+    },
+    onCalibrationInvalidated() {
       calibrationController.setReady(false);
-    }
-    audioSettingsController.sync();
-    gameplaySettingsController.sync();
-    saberSettingsController.sync();
-    arenaSettingsController.sync();
-    musicReactiveSettingsController.sync();
-    graphicsSettingsController.sync();
-    trackingSettingsController.sync();
-    developerSettingsController.sync();
-    applyAudioSettings(settings);
+    },
   });
 }
 
