@@ -1,7 +1,7 @@
 import { S, state } from '../core/state.ts';
 import { ui, updateHUD, clearDangerPulse, showGameOver, hideHandsPaused, updateMapProgress, showMapTitle, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
 import {
-  THREE, renderer, scene, cam3d, bgMat,
+  renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
@@ -44,7 +44,7 @@ import { createRuntimeReporter } from './runtime-reporter.ts';
 import { createRenderLoop } from './render-loop.ts';
 import { createMultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
 import { bindComboNarrator, showFirstRunWelcome } from './narrator-prompts.ts';
-import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
+import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 import { initSettingsBindings } from './settings-bindings.ts';
 import { initMultiplayerEvents, type MultiplayerRoundStart, type MultiplayerRules } from './multiplayer-events.ts';
@@ -53,6 +53,7 @@ import { initPhoneAudioEvents } from './phone-audio-events.ts';
 import { initStartupGuidance } from './startup-guidance.ts';
 import { initMapSelectionEvents } from './map-selection-events.ts';
 import { initNarratorPauseEvents } from './narrator-pause-events.ts';
+import { updateArenaReactiveFrame } from './arena-reactive-frame.ts';
 
 declare global {
   interface Window {
@@ -397,36 +398,14 @@ function renderFrame(timestamp: number): void {
   const musicEnergy = getCurrentMusicEnergy();
   const beatPulse = getCurrentBeatPulse();
   const visualPressure = state.appState === S.PLAYING ? window.__gameplayVisualPressure ?? 0 : 0;
-  if (bgMat.uniforms['uMusic']) bgMat.uniforms['uMusic'].value = musicEnergy;
-  if (bgMat.uniforms['uBeat']) bgMat.uniforms['uBeat'].value = beatPulse;
-  if (bgMat.uniforms['uPressure']) {
-    const targetPressure = visualPressure;
-    bgMat.uniforms['uPressure'].value = THREE.MathUtils.lerp(
-      Number(bgMat.uniforms['uPressure'].value) || 0,
-      targetPressure,
-      0.12,
-    );
-  }
-  // Music bands feed layered shader effects.
-  if (bgMat.uniforms['uBass']) bgMat.uniforms['uBass'].value = getCurrentBassLevel();
-  if (bgMat.uniforms['uMid'])  bgMat.uniforms['uMid'].value  = getCurrentMidLevel();
-  if (bgMat.uniforms['uHigh']) bgMat.uniforms['uHigh'].value = getCurrentHighLevel();
-  // Beat flash — sharp decay from the current beat pulse.
-  if (bgMat.uniforms['uBeatFlash']) {
-    const flashTarget = Math.min(1, beatPulse);
-    bgMat.uniforms['uBeatFlash'].value = THREE.MathUtils.lerp(
-      Number(bgMat.uniforms['uBeatFlash'].value) || 0,
-      flashTarget,
-      0.35,
-    ) * Math.exp(-6.0 * Math.max(0, state.deltaSec));
-  }
-  // Subtle parallax from camera position (head bob) — keep small for readability.
-  if (bgMat.uniforms['uCamOffset'] && bgMat.uniforms['uCamOffset'].value instanceof THREE.Vector2) {
-    (bgMat.uniforms['uCamOffset'].value as THREE.Vector2).set(
-      THREE.MathUtils.clamp((cam3d.position.x) * 0.05, -0.5, 0.5),
-      THREE.MathUtils.clamp((cam3d.position.y - 1.55) * 0.08, -0.5, 0.5),
-    );
-  }
+  updateArenaReactiveFrame({
+    material: bgMat,
+    camera: cam3d,
+    musicEnergy,
+    beatPulse,
+    visualPressure,
+    deltaSec: state.deltaSec,
+  });
   if (profiling) frameProfile.gameMs = smoothProfileValue(frameProfile.gameMs, performance.now() - gamePhaseStart);
 
   const effectsPhaseStart = profiling ? performance.now() : 0;

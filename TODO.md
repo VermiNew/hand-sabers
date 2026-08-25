@@ -261,6 +261,7 @@
   - [x] Wydzielić toast, statystyki, siatkę i progres osiągnięć do `src/game/achievement-ui.ts`, bez budowania dynamicznych kart przez `innerHTML`
   - [ ] Pętla gry (render loop)
     - [x] Wydzielić obliczanie delta time, limit kroku symulacji i wygładzanie profilu do `src/game/frame-timing.ts`
+    - [x] Wydzielić aktualizację shaderów areny reagujących na muzykę do `src/game/arena-reactive-frame.ts`
   - [ ] Obsługa pauzy
     - [x] Wydzielić komunikaty, tłumaczenia, stan przycisku wznowienia i warianty akcji SP/MP do `src/game/pause-ui.ts`
     - [x] Zamknąć timer focus guard i ochronę przed równoległym wznowieniem w `src/game/pause-resume-guard.ts`
