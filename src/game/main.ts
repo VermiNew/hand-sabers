@@ -16,7 +16,6 @@ import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS } from '../core/pause.ts';
-import { appendLocalScore } from '../core/localstore.ts';
 import { t, needsLanguageSelection, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
@@ -56,6 +55,7 @@ import { createCalibrationUI } from './calibration-ui.ts';
 import { createCalibrationController } from './calibration-controller.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { ensureCurrentMapAudio, loadMapById, tryLoadMapFromUrl } from './map-session.ts';
+import { submitScore } from './score-submission.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 import type { PauseReason } from '../types/index.js';
@@ -146,31 +146,6 @@ function runAsyncTask(context: string, task: () => Promise<unknown>, onError?: (
         reportRuntimeError(`${context}:recovery`, recoveryError);
       }
     });
-}
-
-// ── Score submit ──────────────────────────────────────────────────────────────
-async function submitScore(progress?: number, trainingMode = settings.trainingMode): Promise<void> {
-  if (trainingMode) return;
-
-  const payload = {
-    mapId:  state.map?.id ?? 'random',
-    player: settings.playerName || t('player.defaultName'),
-    score:  state.score,
-    combo:  state.maxCombo,
-    date:   new Date().toISOString(),
-    ...(progress !== undefined ? { progress } : {}),
-  };
-
-  try {
-    const res = await fetch('/api/scores', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error(`Score submit failed: ${res.status}`);
-  } catch {
-    appendLocalScore(payload);
-  }
 }
 
 let multiplayerRoundActive = false;
@@ -342,7 +317,11 @@ function endGame(victory = false): void {
   stopMapAudio();
   mapTimeline.reset();
   clearGameplayEntities();
-  runAsyncTask('score-submit', () => submitScore(progress, wasTrainingMode));
+  runAsyncTask('score-submit', () => submitScore({
+    playerName: settings.playerName,
+    progress,
+    trainingMode: wasTrainingMode,
+  }));
   fadeTransition(() => { showGameOver(state, victory); });
 }
 
