@@ -8,6 +8,7 @@ import type { Settings } from '../types/index.js';
 import { decodeRemoteLandmarks, sendRealtimeLandmarks, sendRealtimePose } from './realtime.ts';
 import type { DetectResult, Landmark, WorkerResult } from './realtime.ts';
 import { drawHandLandmarks, HAND_CONNECTIONS } from './landmark-canvas.ts';
+import { updateCalibrationSourceUI } from './calibration-source-ui.ts';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
 const MODEL_URL     = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
@@ -71,22 +72,7 @@ let dynamicDetectIntervalMs  = getDetectIntervalMs(trackingProfile);
 let trackingSource: 'camera' | 'remote' | null = null;
 
 function updateCalibrationSourceIndicator(remoteConnected = isRemoteTrackingConnected()): void {
-  const badge = document.getElementById('calibTrackingSource');
-  const icon = document.getElementById('calibSourceIcon');
-  const text = document.getElementById('calibSourceText');
-  const feedLabel = document.getElementById('calibFeedLabel');
-  if (!badge || !icon || !text || !feedLabel) return;
-  if (trackingSource === 'remote') {
-    badge.dataset['state'] = remoteConnected ? 'phone-connected' : 'phone-disconnected';
-    icon.textContent = remoteConnected ? 'smartphone' : 'phonelink_off';
-    text.textContent = t(remoteConnected ? 'calib.sourcePhoneConnected' : 'calib.sourcePhoneDisconnected');
-    feedLabel.textContent = t('calib.landmarkFeed');
-    return;
-  }
-  badge.dataset['state'] = 'camera';
-  icon.textContent = 'videocam';
-  text.textContent = t('calib.sourceCamera');
-  feedLabel.textContent = t('calib.cameraFeed');
+  updateCalibrationSourceUI(trackingSource, remoteConnected);
 }
 
 export function setCalibAutoAdvanceHandler(fn: () => void): void { autoAdvance = fn; }

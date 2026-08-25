@@ -290,6 +290,7 @@
   - [x] Wydzielić próbki RTT, estymację offsetu i konwersję czasu serwera do `src/multiplayer/clock-sync.ts`
 - [ ] Rozbić `src/tracking/tracking.ts` (613 linii) na moduły
   - [x] Wydzielić renderowanie obrazu kamery i landmarków dłoni do `src/tracking/landmark-canvas.ts`
+  - [x] Wydzielić prezentację źródła kalibracji kamery/telefonu do `src/tracking/calibration-source-ui.ts`
 - [ ] Rozbić `src/creator/input.ts` (619 linii) na moduły
   - [x] Wydzielić historię undo/redo i kontrolę nakładania beatów do `src/creator/history.ts`
   - [x] Wydzielić obliczenia i kontrolki siatki snap do `src/creator/snap.ts`, zachowując eksporty kompatybilności w `input.ts`
