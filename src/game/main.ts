@@ -1,19 +1,18 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, clearDangerPulse, showGameOver, hideHandsPaused, updateMapProgress, showMapTitle, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
+import { ui, updateHUD, clearDangerPulse, showGameOver, hideHandsPaused, showMapTitle, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
 import {
   renderer, cam3d, bgMat,
-  lSaber, rSaber, lTarget, rTarget, lVel, rVel,
-  animateIdleSabers, resizeRenderer, disposeSceneResources,
+  lTarget, rTarget,
+  resizeRenderer, disposeSceneResources,
   setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
-import { initAudio, initInterfaceSounds, stopMapAudio, hasMapAudio, clearMapAudio, applyAudioSettings } from './audio.ts';
+import { initAudio, initInterfaceSounds, stopMapAudio, clearMapAudio, applyAudioSettings } from './audio.ts';
 import { initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, restoreCalibrationData } from '../tracking/tracking.ts';
-import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
+import { setGameOverHandler, startGameplay, clearGameplayEntities, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
-import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS } from '../core/pause.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
@@ -39,7 +38,6 @@ import { MapTimeline } from './map-timeline.ts';
 import { initMapDrop } from './map-drop.ts';
 import { ensureCurrentMapAudio, loadMapById, tryLoadMapFromUrl } from './map-session.ts';
 import { submitScore } from './score-submission.ts';
-import { isMainMenuOpen, updateMenuAutoplay, updateSabers } from './saber-motion.ts';
 import { createRuntimeReporter } from './runtime-reporter.ts';
 import { createRenderLoop } from './render-loop.ts';
 import { createMultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
@@ -55,6 +53,7 @@ import { initNarratorPauseEvents } from './narrator-pause-events.ts';
 import { updateArenaReactiveFrame } from './arena-reactive-frame.ts';
 import { updateFrameEffects } from './frame-effects.ts';
 import { renderAndReportFrame } from './frame-renderer.ts';
+import { updateFrameGamePhase } from './frame-game-phase.ts';
 
 declare global {
   interface Window {
@@ -316,7 +315,6 @@ function restartWithoutCalib(): void {
 }
 
 // ── Główna pętla ──────────────────────────────────────────────────────────────
-let _nearestBeatAt   = 0;
 const frameProfile: FrameProfile = { gameMs: 0, effectsMs: 0, reflectionMs: 0, cpuMs: 0 };
 
 function renderFrame(timestamp: number): void {
@@ -334,58 +332,18 @@ function renderFrame(timestamp: number): void {
 
   const perfProfile = getScenePerformanceProfile();
   if (bgMat.uniforms['uTime']) bgMat.uniforms['uTime'].value = t;
-  gamePauseController.updateHands(now);
 
   const gamePhaseStart = profiling ? performance.now() : 0;
-  if (isMainMenuOpen()) {
-    if (perfProfile.menuDemo) updateMenuAutoplay(now, t);
-    else animateIdleSabers(t);
-    const pulse = 0.76 + Math.sin(t * 7) * 0.12;
-    (lSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = pulse;
-    (rSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = pulse;
-  } else if (state.appState === S.PLAYING) {
-    updateSabers(now);
-
-    mapTimeline.updateAudioSchedule(now);
-    const mapBeats   = state.map?.beats ?? null;
-    const mapTimeSec = state.map ? mapTimeline.getTime(now) : 0;
-    window.__songTimeSec = mapTimeSec;
-    updateBlocks(now, mapBeats, mapTimeSec);
-
-    if (state.map) {
-      const progressTime = Math.max(0, mapTimeSec);
-      const duration = mapTimeline.getDuration();
-      updateMapProgress(progressTime, duration);
-      if (mapTimeSec >= 0) multiplayerScorePublisher.publish(now, duration > 0 ? progressTime / duration : 0);
-      if (isDeveloperPanelEnabled() && now - _nearestBeatAt > 250) {
-        _nearestBeatAt = now;
-        const raw = nearestBeats(state.map?.beats, mapTimeSec, 3);
-        window.__nearestBeatDeltaMs = raw[0]?.deltaMs ?? null;
-        window.__nearestBeats = raw.map(n => ({
-          deltaMs: n.deltaMs,
-          side: n.beat.side ?? '—',
-          cut: n.beat.cut ?? '—',
-        }));
-      }
-      window.__audioOffsetMs      = Math.round(getAudioOffsetSec(settings, state.map) * 1000);
-      if ((mapTimeline.hasStartedAudio || !hasMapAudio()) && progressTime >= duration && duration > 0) {
-        endGame(true);
-      }
-    }
-
-    const pulse = 0.65 + Math.sin(t * 8) * 0.1;
-    (lSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = pulse;
-    (rSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = pulse;
-  } else if (state.appState === S.PAUSED) {
-    lVel.set(0, 0, 0); rVel.set(0, 0, 0);
-    const pulse = 0.35 + Math.sin(t * 3) * 0.1;
-    (lSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = pulse;
-    (rSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = pulse;
-  } else {
-    animateIdleSabers(t);
-    (lSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = 0.7 + Math.sin(t * 4) * 0.15;
-    (rSaber.userData as { bladeGlow: { opacity: number } }).bladeGlow.opacity = 0.7 + Math.sin(t * 4 + 1) * 0.15;
-  }
+  updateFrameGamePhase({
+    now,
+    timeSec: t,
+    settings,
+    performanceProfile: perfProfile,
+    mapTimeline,
+    pauseController: gamePauseController,
+    scorePublisher: multiplayerScorePublisher,
+    onMapComplete: () => endGame(true),
+  });
   updateMusicVisualizer({
     active: state.appState === S.PLAYING,
     beats: state.map?.beats ?? null,
