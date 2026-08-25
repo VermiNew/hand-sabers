@@ -259,7 +259,8 @@
   - [x] Wydzielić ustawienia trybu deweloperskiego, akcentu i wejścia przez `?dev` do `src/game/developer-settings.ts`
   - [x] Wydzielić powłokę menu głównego i nawigację ustawień do `src/game/main-menu-shell.ts` (animacje, focus, zakładki, backdrop, Escape i akcje przez callbacki)
   - [x] Wydzielić toast, statystyki, siatkę i progres osiągnięć do `src/game/achievement-ui.ts`, bez budowania dynamicznych kart przez `innerHTML`
-  - Pętla gry (render loop)
+  - [ ] Pętla gry (render loop)
+    - [x] Wydzielić obliczanie delta time, limit kroku symulacji i wygładzanie profilu do `src/game/frame-timing.ts`
   - [ ] Obsługa pauzy
     - [x] Wydzielić komunikaty, tłumaczenia, stan przycisku wznowienia i warianty akcji SP/MP do `src/game/pause-ui.ts`
     - [x] Zamknąć timer focus guard i ochronę przed równoległym wznowieniem w `src/game/pause-resume-guard.ts`

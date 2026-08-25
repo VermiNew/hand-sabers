@@ -49,6 +49,7 @@ import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getC
 import { updateSaberTrails } from './saber-trails.ts';
 import { initSettingsBindings } from './settings-bindings.ts';
 import { initMultiplayerEvents, type MultiplayerRoundStart, type MultiplayerRules } from './multiplayer-events.ts';
+import { nextFrameTiming, resetFrameTiming, smoothProfileValue } from './frame-timing.ts';
 
 declare global {
   interface Window {
@@ -313,28 +314,17 @@ function restartWithoutCalib(): void {
 let renderMs         = 0;
 let detectMs         = 0;
 let _nearestBeatAt   = 0;
-const BASE_FRAME_MS      = 1000 / 60;
-const MAX_FRAME_DELTA_MS = 250;
-const MAX_SIM_DELTA_SCALE = 3;
-
-let loopLastNow: number | undefined;
 const frameProfile: FrameProfile = { gameMs: 0, effectsMs: 0, reflectionMs: 0, cpuMs: 0 };
-
-function smoothProfileValue(previous: number, sample: number): number {
-  return previous === 0 ? sample : previous * 0.88 + sample * 0.12;
-}
 
 function renderFrame(timestamp: number): void {
   const now = timestamp;
   updateFpsCounter(now);
   const t = now * 0.001;
 
-  const previousNow   = Number.isFinite(loopLastNow) ? loopLastNow! : now - BASE_FRAME_MS;
-  const frameDeltaMs  = THREE.MathUtils.clamp(now - previousNow, 0, MAX_FRAME_DELTA_MS);
-  loopLastNow         = now;
-  state.deltaMs       = frameDeltaMs;
-  state.deltaSec      = frameDeltaMs / 1000;
-  state.deltaScale    = Math.min(frameDeltaMs / BASE_FRAME_MS, MAX_SIM_DELTA_SCALE);
+  const frameTiming   = nextFrameTiming(now);
+  state.deltaMs       = frameTiming.deltaMs;
+  state.deltaSec      = frameTiming.deltaSec;
+  state.deltaScale    = frameTiming.deltaScale;
   state.tick++;
   const profiling = isDeveloperPanelEnabled();
   const profileStart = profiling ? performance.now() : 0;
@@ -466,7 +456,7 @@ function renderFrame(timestamp: number): void {
   renderMs = performance.now() - rStart;
   if (profiling) frameProfile.cpuMs = smoothProfileValue(frameProfile.cpuMs, performance.now() - profileStart);
   detectMs = window.__lastDetectMs ?? detectMs;
-  adaptRenderQuality(frameDeltaMs, state.fps);
+  adaptRenderQuality(frameTiming.deltaMs, state.fps);
 
   const drawCalls = renderer.info.render.calls;
   const triangles = renderer.info.render.triangles;
@@ -721,7 +711,7 @@ const { reportRuntimeError, runAsyncTask } = createRuntimeReporter({ showOverlay
 const renderLoop = createRenderLoop(renderFrame, reportRuntimeError);
 
 function startRenderLoop(): void {
-  loopLastNow      = undefined;
+  resetFrameTiming();
   renderLoop.start();
 }
 
