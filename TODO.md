@@ -281,6 +281,7 @@
 - [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
 - [ ] Rozbić `src/tracking/tracking.ts` (613 linii) na moduły
 - [ ] Rozbić `src/creator/input.ts` (619 linii) na moduły
+  - [x] Wydzielić historię undo/redo i kontrolę nakładania beatów do `src/creator/history.ts`
 - [ ] Każda refaktoryzacja musi zachować wszystkie funkcje i nie uszkodzić kodu — weryfikacja przez `npm run verify` po każdym kroku
 
 ## 34. Balans trudności

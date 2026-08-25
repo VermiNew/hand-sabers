@@ -1,5 +1,5 @@
 import { state, SNAP_DIVISIONS } from './state.ts';
-import { markOverlaps, removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
+import { removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
 import { cutButtonText, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
 import { getPlayPos, playAudio, pauseAudio, stopAudio } from './audio.ts';
 import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, formatTime, getLabelWidth, xToTime } from './timeline.ts';
@@ -11,8 +11,8 @@ import { matchAction, loadKeybinds } from './keybinds.ts';
 import { TimelineDragSelection } from './drag-selection.ts';
 import { TimelineContextMenu } from './timeline-context-menu.ts';
 import { canCreateHeldAt, clampHeldDuration, clampMapTime, fitBeatsWithinMap } from './beat-timing.ts';
+import { checkOverlaps, pushUndo, redo, undo } from './history.ts';
 
-const MAX_UNDO = 60;
 const DEFAULT_BEAT_X = 0.82;
 const DEFAULT_BEAT_Y = 1.1;
 
@@ -55,40 +55,7 @@ export function snapTime(t: number): number {
   return s ? Math.round(t / s) * s : t;
 }
 
-export function checkOverlaps(): boolean {
-  const hasOverlap = markOverlaps(state.map.beats, 0.08);
-  const warningMsg = document.getElementById('warningMsg');
-  if (warningMsg) {
-    warningMsg.innerHTML = hasOverlap
-      ? `<span class="material-symbols-rounded inline-icon">warning</span>${t('creator.overlapWarning')}`
-      : '';
-  }
-  return hasOverlap;
-}
-
-export function pushUndo(): void {
-  state.undoStack.push(JSON.stringify(state.map.beats));
-  if (state.undoStack.length > MAX_UNDO) state.undoStack.shift();
-  state.redoStack.length = 0;
-}
-
-export function undo(): void {
-  if (!state.undoStack.length) return;
-  state.redoStack.push(JSON.stringify(state.map.beats));
-  state.map.beats = sortBeatsByTime(JSON.parse(state.undoStack.pop()!));
-  state.selectedBeats.clear();
-  checkOverlaps();
-  renderAll();
-}
-
-export function redo(): void {
-  if (!state.redoStack.length) return;
-  state.undoStack.push(JSON.stringify(state.map.beats));
-  state.map.beats = sortBeatsByTime(JSON.parse(state.redoStack.pop()!));
-  state.selectedBeats.clear();
-  checkOverlaps();
-  renderAll();
-}
+export { checkOverlaps, pushUndo, redo, undo } from './history.ts';
 
 export function syncCutButton(): void {
   const cutBtn = document.getElementById('btnCutDirection');
