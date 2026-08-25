@@ -14,8 +14,8 @@ Follow this cycle for every piece of work:
 5. **Verify** — Run the full verification pipeline, in order:
    - `npm run lint`
    - `npm run build`
-   - Playwright — only after obtaining the user's explicit permission; then open the app and visually inspect the result
-   - **Look at how it works** — when the user permits Playwright, visual verification is mandatory
+   - Playwright — only after obtaining the user's explicit permission. By default run a short smoke check of the changed flow: page loads, no critical console/page errors, and one relevant interaction works.
+   - **Look at how it works** — perform a full visual inspection only when the user explicitly asks for it or the change materially affects UI/layout; otherwise record that only the smoke check was run.
 6. **Fix or commit:**
    - If something is broken → fix it and go back to step 5.
    - If everything works → commit with a conventional commit message.
