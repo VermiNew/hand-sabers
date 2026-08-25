@@ -10,6 +10,7 @@ import type { DetectResult, Landmark, WorkerResult } from './realtime.ts';
 import { drawHandLandmarks, HAND_CONNECTIONS } from './landmark-canvas.ts';
 import { updateCalibrationSourceUI } from './calibration-source-ui.ts';
 import { loadHandLandmarker } from './mediapipe-loader.ts';
+import { createAutoFlipDetector } from './auto-flip.ts';
 
 const URL_PARAMS = new URLSearchParams(location.search);
 function isDebugVisuals(): boolean {
@@ -64,8 +65,7 @@ let calibAutoScheduled = false;
 let calibFeedLoop:   ReturnType<typeof setTimeout> | null = null;
 let trackingActive           = false;
 let cameraStream:            MediaStream | null = null;
-let autoFlipSamples:         boolean[] = [];
-let autoFlipAppliedThisCalib = false;
+const autoFlipDetector = createAutoFlipDetector();
 let trackingProfile          = getPerformanceProfile(getSettings());
 let dynamicDetectIntervalMs  = getDetectIntervalMs(trackingProfile);
 let trackingSource: 'camera' | 'remote' | null = null;
@@ -96,8 +96,7 @@ function clearCalibAutoTimer(): void {
 export function resetCalibration(): void {
   Object.assign(calibData, DEFAULT_CALIB);
   calibPoints              = [];
-  autoFlipSamples          = [];
-  autoFlipAppliedThisCalib = false;
+  autoFlipDetector.reset();
   clearCalibAutoTimer();
 }
 
@@ -313,36 +312,13 @@ function scheduleDetect(delayMs = 0): void {
   detectLoop = setTimeout(runDetect, Math.max(0, delayMs));
 }
 
-function desiredFlipFromHandSample(handedness: string | undefined, wristX: number, currentFlip: boolean): boolean | null {
-  const label = String(handedness || '').toLowerCase();
-  const side  = label.includes('left') ? 'left' : label.includes('right') ? 'right' : null;
-  if (!side || !Number.isFinite(wristX)) return null;
-  const mappedRawX      = currentFlip ? (1 - wristX) : wristX;
-  const worldX          = 0.5 - mappedRawX;
-  const shouldBeLeftSide = side === 'left';
-  const isMappedLeftSide = worldX < 0;
-  return shouldBeLeftSide === isMappedLeftSide ? currentFlip : !currentFlip;
-}
-
 function collectAutoFlipSamples(result: DetectResult): void {
-  if (autoFlipAppliedThisCalib || state.appState !== S.CALIB || CALIB_STEPS[state.calibIdx]?.id !== 'sides') return;
+  if (state.appState !== S.CALIB || CALIB_STEPS[state.calibIdx]?.id !== 'sides') return;
   const currentFlip = Boolean(getSettings().flipCamera);
-  const handed      = result?.handedness ?? [];
-  const landmarks   = result?.landmarks  ?? [];
-  for (let i = 0; i < landmarks.length; i++) {
-    const h = handed[i]?.[0];
-    if ((h?.score ?? 0) < 0.62) continue;
-    const desired = desiredFlipFromHandSample(h?.categoryName ?? h?.displayName, landmarks[i]?.[0]?.x ?? 0.5, currentFlip);
-    if (desired !== null) autoFlipSamples.push(desired);
-    if (autoFlipSamples.length > 15) autoFlipSamples.shift();
-  }
-  if (autoFlipSamples.length < 5) return;
-  const trueCount   = autoFlipSamples.filter(Boolean).length;
-  const desiredFlip = trueCount >= Math.ceil(autoFlipSamples.length / 2);
-  autoFlipAppliedThisCalib = true;
-  if (desiredFlip !== currentFlip) {
-    onAutoFlipSuggestion({ flipCamera: desiredFlip, confidence: Math.max(trueCount, autoFlipSamples.length - trueCount) / autoFlipSamples.length });
-    applyTrackingSettings({ flipCamera: desiredFlip });
+  const suggestion = autoFlipDetector.collect(result, currentFlip);
+  if (suggestion && suggestion.flipCamera !== currentFlip) {
+    onAutoFlipSuggestion(suggestion);
+    applyTrackingSettings({ flipCamera: suggestion.flipCamera });
   }
 }
 
