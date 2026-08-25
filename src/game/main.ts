@@ -52,6 +52,7 @@ import { submitScore } from './score-submission.ts';
 import { isMainMenuOpen, updateMenuAutoplay, updateSabers } from './saber-motion.ts';
 import { createRuntimeReporter } from './runtime-reporter.ts';
 import { createRenderLoop } from './render-loop.ts';
+import { createMultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 
@@ -112,7 +113,6 @@ applyTranslations();
 initInterfaceSounds();
 
 let multiplayerRoundActive = false;
-let lastMultiplayerScoreAt = 0;
 
 const mapTimeline = new MapTimeline({
   isTrainingMode: () => multiplayerRoundActive
@@ -147,6 +147,7 @@ const gamePauseController = createGamePauseController({
   mapTimeline,
 });
 const { pauseGame, resumeGame } = gamePauseController;
+const multiplayerScorePublisher = createMultiplayerScorePublisher(() => multiplayerRoundActive);
 
 function completeMultiplayerPreparation(): void {
   const mapId = multiplayerPreparationMapId;
@@ -219,7 +220,7 @@ async function beginMultiplayerRound(detail: {
   state.appState = S.PLAYING;
   multiplayerRoundRules = { ...detail.rules };
   multiplayerRoundActive = true;
-  lastMultiplayerScoreAt = 0;
+  multiplayerScorePublisher.reset();
   state.noFail = detail.rules.noFail;
   document.body.classList.toggle('training-mode', detail.rules.trainingMode);
   document.body.dataset['multiplayerMode'] = detail.mode;
@@ -318,18 +319,6 @@ function restartWithoutCalib(): void {
   runAsyncTask('game-restart', beginPlaying);
 }
 
-function publishMultiplayerScore(now: number, progress: number): void {
-  if (!multiplayerRoundActive || now - lastMultiplayerScoreAt < 100) return;
-  if (sendMultiplayerScore({
-    score: Math.max(0, Math.round(state.score)),
-    combo: Math.max(0, Math.round(state.combo)),
-    lives: Math.max(0, Math.round(state.lives)),
-    progress: Math.max(0, Math.min(1, progress)),
-  })) {
-    lastMultiplayerScoreAt = now;
-  }
-}
-
 // ── Główna pętla ──────────────────────────────────────────────────────────────
 let renderMs         = 0;
 let detectMs         = 0;
@@ -384,7 +373,7 @@ function renderFrame(timestamp: number): void {
       const progressTime = Math.max(0, mapTimeSec);
       const duration = mapTimeline.getDuration();
       updateMapProgress(progressTime, duration);
-      if (mapTimeSec >= 0) publishMultiplayerScore(now, duration > 0 ? progressTime / duration : 0);
+      if (mapTimeSec >= 0) multiplayerScorePublisher.publish(now, duration > 0 ? progressTime / duration : 0);
       if (isDeveloperPanelEnabled() && now - _nearestBeatAt > 250) {
         _nearestBeatAt = now;
         const raw = nearestBeats(state.map?.beats, mapTimeSec, 3);
