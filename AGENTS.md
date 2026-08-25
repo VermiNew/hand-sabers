@@ -14,8 +14,8 @@ Follow this cycle for every piece of work:
 5. **Verify** — Run the full verification pipeline, in order:
    - `npm run lint`
    - `npm run build`
-   - Playwright — open the app and visually inspect the result
-   - **Look at how it works** — visual verification is not optional
+   - Playwright — only after obtaining the user's explicit permission; then open the app and visually inspect the result
+   - **Look at how it works** — when the user permits Playwright, visual verification is mandatory
 6. **Fix or commit:**
    - If something is broken → fix it and go back to step 5.
    - If everything works → commit with a conventional commit message.
