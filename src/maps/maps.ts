@@ -11,6 +11,12 @@ import { createMapPreviewController } from './preview.ts';
 import { getSetting, loadSettings, setSetting } from '../core/settings.ts';
 import { checkServerHealth, fetchJson, loadServerMaps, type MapEntry, type ScoreEntry } from './library-api.ts';
 import { getAutosaveMap, mergeMaps } from './library-sources.ts';
+import {
+  escapeAttribute as attr,
+  escapeHtml as escHtml,
+  formatMapTime as formatTime,
+  withDevQuery,
+} from './library-format.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -23,15 +29,6 @@ export function applyTranslations(): void {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function escHtml(str: unknown): string {
-  return String(str ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-function attr(str: unknown): string {
-  return escHtml(str).replace(/'/g, '&#39;');
-}
 
 let lastMapsError = '';
 let lastMapsErrorAt = 0;
@@ -59,21 +56,6 @@ function runMapsTask(context: string, task: () => Promise<unknown>, onError?: ()
 }
 
 const mapPreview = createMapPreviewController({ reportError: reportMapsError });
-
-function formatTime(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
-
-function withDevQuery(url: string): string {
-  const current = new URLSearchParams(location.search);
-  const target  = new URL(url, location.href);
-  for (const key of ['dev', 'testing']) {
-    if (current.has(key)) target.searchParams.set(key, current.get(key) ?? '');
-  }
-  return `${target.pathname.split('/').pop()}${target.search}${target.hash}`;
-}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

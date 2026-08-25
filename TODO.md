@@ -283,6 +283,7 @@
 - [ ] Rozbić `src/maps/maps.ts` (723 linii) na moduły
   - [x] Wydzielić typy biblioteki oraz komunikację z API map i wyników do `src/maps/library-api.ts`
   - [x] Wydzielić odczyt autosave oraz łączenie map serwerowych i lokalnych do `src/maps/library-sources.ts`
+  - [x] Wydzielić bezpieczne formatowanie HTML, atrybutów, czasu i linków dev do `src/maps/library-format.ts`
 - [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
   - [x] Wydzielić obsługę odpowiedzi HTTP, tłumaczenie błędów, kopiowanie i budowę URL WebSocket do `src/multiplayer/client-utils.ts`
   - [x] Wydzielić próbki RTT, estymację offsetu i konwersję czasu serwera do `src/multiplayer/clock-sync.ts`
