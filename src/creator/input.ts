@@ -1,150 +1,44 @@
 import { state } from './state.ts';
 import { removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
-import { cutButtonText, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
 import { getPlayPos, playAudio, stopAudio } from './audio.ts';
 import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, formatTime, getLabelWidth, xToTime } from './timeline.ts';
 import { scheduleAutosave } from './storage.ts';
-import { t } from '../i18n/index.ts';
-import type { BeatSide, CutDirection } from '../types/index.js';
+import type { CutDirection } from '../types/index.js';
 import { CUT_DIRECTIONS } from '../core/gameplay-rules.ts';
 import { matchAction, loadKeybinds } from './keybinds.ts';
 import { TimelineDragSelection } from './drag-selection.ts';
 import { TimelineContextMenu } from './timeline-context-menu.ts';
-import { canCreateHeldAt, clampHeldDuration, clampMapTime, fitBeatsWithinMap } from './beat-timing.ts';
+import { fitBeatsWithinMap } from './beat-timing.ts';
 import { checkOverlaps, pushUndo, redo, undo } from './history.ts';
 import { cycleSnap, snapTime } from './snap.ts';
 import { cancelPrecount } from './precount.ts';
-
-const DEFAULT_BEAT_X = 0.82;
-const DEFAULT_BEAT_Y = 1.1;
-
-function centeredRandom(): number {
-  return Math.random() + Math.random() - 1;
-}
-
-function roundPosition(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-function createBeatPosition(side: BeatSide): { x?: number; y: number } {
-  const y = roundPosition(DEFAULT_BEAT_Y + centeredRandom() * 0.22);
-  if (side === 'random') return { y };
-  const laneX = side === 'left' ? -DEFAULT_BEAT_X : DEFAULT_BEAT_X;
-  return {
-    x: roundPosition(laneX + centeredRandom() * 0.18),
-    y,
-  };
-}
+import {
+  cycleCutForSelectionOrTap,
+  endHeld,
+  setActiveCut,
+  startHeld,
+  tapBeat,
+  tapBomb,
+  tapRandom,
+  toggleLoop,
+} from './beat-input.ts';
 
 export { cycleSnap, getSnap, snapTime } from './snap.ts';
 
 export { checkOverlaps, pushUndo, redo, undo } from './history.ts';
 
-export function syncCutButton(): void {
-  const cutBtn = document.getElementById('btnCutDirection');
-  if (!cutBtn) return;
-  cutBtn.textContent = cutButtonText(state.activeCut);
-  cutBtn.classList.toggle('active', state.activeCut !== 'any');
-}
-
-export function setActiveCut(cut: CutDirection): void {
-  state.activeCut = normalizeCutDirection(cut);
-  syncCutButton();
-}
-
-export function cycleCutForSelectionOrTap(): void {
-  pushUndo();
-  if (state.selectedBeats.size) {
-    for (const beat of state.selectedBeats) {
-      if (beat.type !== 'bomb') beat.cut = nextCutDirection(beat.cut);
-    }
-    checkOverlaps();
-    scheduleAutosave();
-    renderAll();
-    return;
-  }
-  setActiveCut(nextCutDirection(state.activeCut));
-}
-
-export function tapBeat(side: BeatSide): void {
-  if (!state.isPlaying) return;
-  const t = snapTime(getPlayPos());
-  pushUndo();
-  state.map.beats.push({ t, side, type: 'block', cut: state.activeCut, ...createBeatPosition(side) });
-  sortBeatsByTime(state.map.beats);
-  checkOverlaps();
-  flashTap(side);
-  scheduleAutosave();
-}
-
-export function tapRandom(): void {
-  if (!state.isPlaying) return;
-  const t: number = snapTime(getPlayPos());
-  pushUndo();
-  state.map.beats.push({ t, side: 'random', type: 'block', cut: state.activeCut, ...createBeatPosition('random') });
-  sortBeatsByTime(state.map.beats);
-  checkOverlaps();
-  flashTap('rand');
-  scheduleAutosave();
-}
-
-export function tapBomb(): void {
-  if (!state.isPlaying) return;
-  const t    = snapTime(getPlayPos());
-  pushUndo();
-  const side: BeatSide = Math.random() < 0.5 ? 'left' : 'right';
-  state.map.beats.push({ t, side, type: 'bomb', cut: 'any' });
-  sortBeatsByTime(state.map.beats);
-  flashTap('bomb');
-  scheduleAutosave();
-}
-
-export function startHeld(side: 'left' | 'right'): void {
-  if (!state.isPlaying) return;
-  // already holding this side — ignore
-  if (side === 'left'  && state.heldLeft)  return;
-  if (side === 'right' && state.heldRight) return;
-  const t = clampMapTime(snapTime(getPlayPos()));
-  if (!canCreateHeldAt(t)) return;
-  pushUndo();
-  const beat = { t, side, type: 'held', cut: state.activeCut, duration: 0.05, ...createBeatPosition(side) };
-  state.map.beats.push(beat);
-  sortBeatsByTime(state.map.beats);
-  if (side === 'left')  state.heldLeft  = beat;
-  if (side === 'right') state.heldRight = beat;
-  flashTap(side);
-  scheduleAutosave();
-}
-
-export function endHeld(side: 'left' | 'right'): void {
-  const beat = side === 'left' ? state.heldLeft : state.heldRight;
-  if (!beat) return;
-  const now = getPlayPos();
-  beat.duration = clampHeldDuration(beat.t, now - beat.t);
-  if (side === 'left')  state.heldLeft  = null;
-  if (side === 'right') state.heldRight = null;
-  checkOverlaps();
-  scheduleAutosave();
-  renderAll();
-}
-
-export function flashTap(side: string): void {
-  const el = document.getElementById('tapFlash');
-  if (!el) return;
-  el.className = side === 'left' ? 'flash-left' : side === 'right' ? 'flash-right' : 'flash-rand';
-  if (state.tapFlashTimer) clearTimeout(state.tapFlashTimer);
-  state.tapFlashTimer = setTimeout(() => { el.className = ''; }, 80);
-}
-
-export function toggleLoop(): void {
-  state.loopEnabled = !state.loopEnabled;
-  const btn = document.getElementById('btnLoop');
-  if (btn) { btn.textContent = state.loopEnabled ? t('creator.loopOn') : t('creator.loopOff'); btn.classList.toggle('active', state.loopEnabled); }
-  if (state.loopEnabled && state.loopStart === null) {
-    state.loopStart = state.currentTime;
-    state.loopEnd   = Math.min(state.currentTime + 4, state.map.meta.duration);
-  }
-}
+export {
+  cycleCutForSelectionOrTap,
+  endHeld,
+  flashTap,
+  setActiveCut,
+  startHeld,
+  syncCutButton,
+  tapBeat,
+  tapBomb,
+  tapRandom,
+  toggleLoop,
+} from './beat-input.ts';
 
 export { cancelPrecount, handlePlay, startPrecount } from './precount.ts';
 

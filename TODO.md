@@ -304,6 +304,7 @@
   - [x] Wydzielić historię undo/redo i kontrolę nakładania beatów do `src/creator/history.ts`
   - [x] Wydzielić obliczenia i kontrolki siatki snap do `src/creator/snap.ts`, zachowując eksporty kompatybilności w `input.ts`
   - [x] Wydzielić timer, animację i sterowanie odliczaniem przed odtwarzaniem do `src/creator/precount.ts`
+  - [x] Wydzielić rejestrowanie tapów, bomb i held beats, kierunek cięcia, flash oraz pętlę do `src/creator/beat-input.ts`, zachowując eksporty kompatybilności w `input.ts`
 - [ ] Każda refaktoryzacja musi zachować wszystkie funkcje i nie uszkodzić kodu — weryfikacja przez `npm run verify` po każdym kroku
 
 ## 34. Balans trudności
