@@ -286,6 +286,7 @@
   - [x] Wydzielić reguły prędkości nut, trybu treningowego i czasu podejścia do `src/game/gameplay-speed.ts`
   - [x] Wydzielić geometrię hitboxu ostrza, pomiar swingu i czułość trafień do `src/game/saber-hitbox.ts`
   - [x] Wydzielić geometrie, materiały, kolory i pule bloków oraz bomb do `src/game/gameplay-block-pool.ts`, zachowując eksporty kolorów w `gameplay.ts`
+  - [x] Wydzielić odłamki trafień, fallback pyłu, prewarm, animację, reset i zwalnianie efektów do `src/game/gameplay-hit-effects.ts`, zachowując eksport `updateSparks` w `gameplay.ts`
 - [ ] Rozbić `src/game/scene.ts` (720 linii) na moduły sceny
   - [x] Wydzielić stan, wygaszanie i aplikowanie drgań kamery do `src/game/camera-shake.ts`, zachowując publiczne API sceny
 - [ ] Rozbić `src/maps/maps.ts` (723 linii) na moduły
