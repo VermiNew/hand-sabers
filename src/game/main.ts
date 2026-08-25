@@ -1,5 +1,5 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, clearDangerPulse, showGameOver, showMultiplayerResults, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition, showCameraError } from '../ui/ui.ts';
+import { ui, updateHUD, clearDangerPulse, showGameOver, showMultiplayerResults, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
@@ -57,6 +57,7 @@ import { initMapDrop } from './map-drop.ts';
 import { ensureCurrentMapAudio, loadMapById, tryLoadMapFromUrl } from './map-session.ts';
 import { submitScore } from './score-submission.ts';
 import { isMainMenuOpen, updateMenuAutoplay, updateSabers } from './saber-motion.ts';
+import { createRuntimeReporter } from './runtime-reporter.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 import type { PauseReason } from '../types/index.js';
@@ -116,38 +117,6 @@ function applyTranslations(): void {
 
 applyTranslations();
 initInterfaceSounds();
-
-let lastRuntimeError = '';
-let lastRuntimeErrorAt = 0;
-
-function reportRuntimeError(context: string, error: unknown): void {
-  const message = error instanceof Error ? error.message : String(error);
-  const signature = `${context}:${message}`;
-  const now = Date.now();
-  if (signature !== lastRuntimeError || now - lastRuntimeErrorAt > 5_000) {
-    console.error(`[${context}]`, error);
-    lastRuntimeError = signature;
-    lastRuntimeErrorAt = now;
-  }
-  if (ui.dStatus) ui.dStatus.textContent = `${t('errors.error')}: ${message}`;
-  if (state.appState === S.LOADING || state.appState === S.CALIB) {
-    showCameraError(error);
-    showOverlay();
-  }
-}
-
-function runAsyncTask(context: string, task: () => Promise<unknown>, onError?: () => void): void {
-  void Promise.resolve()
-    .then(task)
-    .catch(error => {
-      reportRuntimeError(context, error);
-      try {
-        onError?.();
-      } catch (recoveryError) {
-        reportRuntimeError(`${context}:recovery`, recoveryError);
-      }
-    });
-}
 
 let multiplayerRoundActive = false;
 let lastMultiplayerScoreAt = 0;
@@ -915,6 +884,8 @@ function initMainMenu(): void {
     applyAudioSettings(settings);
   });
 }
+
+const { reportRuntimeError, runAsyncTask } = createRuntimeReporter({ showOverlay });
 
 function startRenderLoop(): void {
   if (mainLoopRunning) return;
