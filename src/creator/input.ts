@@ -1,4 +1,4 @@
-import { state, SNAP_DIVISIONS } from './state.ts';
+import { state } from './state.ts';
 import { removeBeatByReference, removeBeatsByReference, sortBeatsByTime } from '../core/creator-rules.ts';
 import { cutButtonText, normalizeCutDirection, nextCutDirection } from './cut-ui.ts';
 import { getPlayPos, playAudio, pauseAudio, stopAudio } from './audio.ts';
@@ -12,6 +12,7 @@ import { TimelineDragSelection } from './drag-selection.ts';
 import { TimelineContextMenu } from './timeline-context-menu.ts';
 import { canCreateHeldAt, clampHeldDuration, clampMapTime, fitBeatsWithinMap } from './beat-timing.ts';
 import { checkOverlaps, pushUndo, redo, undo } from './history.ts';
+import { cycleSnap, snapTime } from './snap.ts';
 
 const DEFAULT_BEAT_X = 0.82;
 const DEFAULT_BEAT_Y = 1.1;
@@ -34,26 +35,7 @@ function createBeatPosition(side: BeatSide): { x?: number; y: number } {
   };
 }
 
-function getSnapDivision(): number | null {
-  return SNAP_DIVISIONS[state.snapIdx] ?? null;
-}
-
-function getSnapLabel(): string | null {
-  const division = getSnapDivision();
-  return division ? `1/${division * 4}` : null;
-}
-
-export function getSnap(): number | null {
-  const division = getSnapDivision();
-  if (!division) return null;
-  const bpm = Math.max(20, Math.min(400, Number(state.map.meta.bpm) || 120));
-  return (60 / bpm) / division;
-}
-
-export function snapTime(t: number): number {
-  const s = getSnap();
-  return s ? Math.round(t / s) * s : t;
-}
+export { cycleSnap, getSnap, snapTime } from './snap.ts';
 
 export { checkOverlaps, pushUndo, redo, undo } from './history.ts';
 
@@ -151,18 +133,6 @@ export function flashTap(side: string): void {
   el.className = side === 'left' ? 'flash-left' : side === 'right' ? 'flash-right' : 'flash-rand';
   if (state.tapFlashTimer) clearTimeout(state.tapFlashTimer);
   state.tapFlashTimer = setTimeout(() => { el.className = ''; }, 80);
-}
-
-export function cycleSnap(): void {
-  state.snapIdx = (state.snapIdx + 1) % SNAP_DIVISIONS.length;
-  const label = getSnapLabel();
-  const btnSnap = document.getElementById('btnSnap');
-  const stSnap  = document.getElementById('stSnap');
-  if (btnSnap) {
-    btnSnap.textContent = label ? `SNAP: ${label}` : t('creator.snapOff');
-    btnSnap.classList.toggle('active', Boolean(label));
-  }
-  if (stSnap) stSnap.textContent = label ?? t('creator.off');
 }
 
 export function toggleLoop(): void {
