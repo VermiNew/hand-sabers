@@ -275,6 +275,7 @@
     - [x] Wydzielić walidację i rejestrację zdarzeń przygotowania, startu oraz wyników rundy do `src/game/multiplayer-events.ts`
 - [ ] Rozbić `src/game/gameplay.ts` (1015 linii) na logiczne moduły
   - [x] Wydzielić reguły prędkości nut, trybu treningowego i czasu podejścia do `src/game/gameplay-speed.ts`
+  - [x] Wydzielić geometrię hitboxu ostrza, pomiar swingu i czułość trafień do `src/game/saber-hitbox.ts`
 - [ ] Rozbić `src/game/scene.ts` (720 linii) na moduły sceny
 - [ ] Rozbić `src/maps/maps.ts` (723 linii) na moduły
 - [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły

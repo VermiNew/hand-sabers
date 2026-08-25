@@ -18,6 +18,16 @@ import {
   getTrainingRate,
   MAP_APPROACH_TIME_SEC,
 } from './gameplay-speed.ts';
+import {
+  BASE_HIT_RADIUS,
+  bladeHits,
+  captureBladeHitbox,
+  centerDistanceToBlade,
+  createBladeHitbox,
+  getSwingSpeed,
+  MIN_SWING_SPEED,
+  type BladeHitbox,
+} from './saber-hitbox.ts';
 import type { CutDirection, Beat, SaberSide } from '../types/index.js';
 
 type PoolMesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material> & { __poolKind: 'block' | 'bomb'; __inFreeList: boolean };
@@ -40,16 +50,6 @@ interface ActiveBlock {
   heldDrainAccum: number;
 }
 
-interface BladeCache {
-  hasCurrent: boolean;
-  hasPrevious: boolean;
-  radius: number;
-  currentStart: THREE.Vector3;
-  currentEnd: THREE.Vector3;
-  previousStart: THREE.Vector3;
-  previousEnd: THREE.Vector3;
-}
-
 declare global {
   interface Window {
     __activeBlockCount?: number;
@@ -67,19 +67,12 @@ declare global {
 const BPM          = 120;
 const BEAT_MS      = 60000 / BPM;
 const BLOCK_CAP_MS = 1000 / 60;
-const HIT_RADIUS   = 0.50;
-const MAX_SWING_BONUS     = 0.18;
-const SWING_BONUS_FACTOR  = 0.36;
-const MIN_SWING_SPEED     = 0.006;
-const BLADE_LOCAL_START   = new THREE.Vector3(0, 0.03, 0);
-const BLADE_LOCAL_END     = new THREE.Vector3(0, 1.18, 0);
 const STARTING_LIVES      = 10;
 const REGEN_EVERY_HITS    = 8;
 const MENU_DEMO_BEAT_MS   = 540;
 const HELD_MISS_GRACE_SEC = 0.45;
 
 // Perfect hit: środek ostrza (25% długości od centrum)
-const BLADE_CENTER = new THREE.Vector3();
 const PERFECT_RADIUS = 0.22;
 const COMBO_MILESTONES = new Set([10, 25, 50, 100, 200]);
 const SPAWN_Z             = -22;
@@ -361,7 +354,7 @@ export function prewarmGameplayResources() {
   window.__prewarmedShardPool = shardPool.length;
 }
 
-function computeSlicePush(cache: BladeCache | null | undefined): THREE.Vector3 {
+function computeSlicePush(cache: BladeHitbox | null | undefined): THREE.Vector3 {
   if (!cache?.hasCurrent) return tmpPushDir.set(0, 0.18, 0.45).normalize();
   tmpSliceDir.subVectors(cache.currentEnd, cache.currentStart);
   if (tmpSliceDir.lengthSq() < 0.0001) return tmpPushDir.set(0, 0.18, 0.45).normalize();
@@ -371,7 +364,7 @@ function computeSlicePush(cache: BladeCache | null | undefined): THREE.Vector3 {
   return tmpPushDir.normalize();
 }
 
-function shatterBlock(mesh: THREE.Object3D, colorHex: number, cache: BladeCache | null | undefined, { strong = false, demo = false } = {}): void {
+function shatterBlock(mesh: THREE.Object3D, colorHex: number, cache: BladeHitbox | null | undefined, { strong = false, demo = false } = {}): void {
   tmpShardCenter.copy(mesh.position);
   tmpShardQuat.copy(mesh.quaternion);
   tmpPushSnapshot.copy(computeSlicePush(cache));
@@ -508,10 +501,6 @@ window.__prewarmedShardPool = 0;
 window.__menuDemoTarget = null;
 window.__gameplayVisualPressure = 0;
 
-const tmpBlade   = new THREE.Vector3();
-const tmpPoint   = new THREE.Vector3();
-const tmpClosest = new THREE.Vector3();
-
 function swapRemoveActiveBlock(index: number): ActiveBlock | null {
   const last = activeBlocks.length - 1;
   if (index < 0 || index > last) return null;
@@ -521,17 +510,7 @@ function swapRemoveActiveBlock(index: number): ActiveBlock | null {
   return entry;
 }
 
-function createBladeCache(): BladeCache {
-  return {
-    hasCurrent: false, hasPrevious: false,
-    radius: HIT_RADIUS,
-    currentStart:  new THREE.Vector3(),
-    currentEnd:    new THREE.Vector3(),
-    previousStart: new THREE.Vector3(),
-    previousEnd:   new THREE.Vector3(),
-  };
-}
-const bladeHitboxes = { left: createBladeCache(), right: createBladeCache() };
+const bladeHitboxes = { left: createBladeHitbox(), right: createBladeHitbox() };
 
 export function setGameOverHandler(fn: () => void): void { gameOverHandler = fn; }
 
@@ -615,7 +594,7 @@ export function resetMenuDemo() {
 function resetBladeHitboxes() {
   for (const k of ['left', 'right'] as const) {
     bladeHitboxes[k].hasCurrent = bladeHitboxes[k].hasPrevious = false;
-    bladeHitboxes[k].radius = HIT_RADIUS;
+    bladeHitboxes[k].radius = BASE_HIT_RADIUS;
   }
 }
 
@@ -684,70 +663,12 @@ function spawnBlock(side: SaberSide | null = null, isBomb = false, options: Spaw
 }
 
 // ── Hit detection ─────────────────────────────────────────────────────────────
-function captureBladeHitbox(saber: THREE.Object3D, cache: BladeCache): void {
-  if (cache.hasCurrent) {
-    cache.previousStart.copy(cache.currentStart);
-    cache.previousEnd.copy(cache.currentEnd);
-    cache.hasPrevious = true;
-  }
-  saber.updateMatrixWorld(true);
-  cache.currentStart.copy(BLADE_LOCAL_START).applyMatrix4(saber.matrixWorld);
-  cache.currentEnd.copy(BLADE_LOCAL_END).applyMatrix4(saber.matrixWorld);
-
-  const hitboxSensitivity = THREE.MathUtils.clamp(Number(getSettings().hitboxSensitivity) || 1, 0.82, 1.2);
-  const baseRadius = HIT_RADIUS * hitboxSensitivity;
-  if (!cache.hasPrevious) { cache.radius = baseRadius; cache.hasCurrent = true; return; }
-  const swing = Math.max(
-    cache.currentStart.distanceTo(cache.previousStart),
-    cache.currentEnd.distanceTo(cache.previousEnd)
-  );
-  cache.radius = baseRadius + Math.min(MAX_SWING_BONUS, swing * SWING_BONUS_FACTOR);
-  cache.hasCurrent = true;
-}
-
-function distPtSegSq(point: THREE.Vector3, a: THREE.Vector3, b: THREE.Vector3): number {
-  tmpBlade.subVectors(b, a);
-  const lenSq = tmpBlade.lengthSq();
-  if (lenSq <= 0.000001) return point.distanceToSquared(a);
-  const t = THREE.MathUtils.clamp(tmpPoint.subVectors(point, a).dot(tmpBlade) / lenSq, 0, 1);
-  tmpClosest.copy(a).addScaledVector(tmpBlade, t);
-  return point.distanceToSquared(tmpClosest);
-}
-
-function bladeDistSq(point: THREE.Vector3, cache: BladeCache): number {
-  let best = distPtSegSq(point, cache.currentStart, cache.currentEnd);
-  if (cache.hasPrevious) {
-    best = Math.min(best, distPtSegSq(point, cache.previousStart, cache.previousEnd));
-    best = Math.min(best, distPtSegSq(point, cache.previousStart, cache.currentStart));
-    best = Math.min(best, distPtSegSq(point, cache.previousEnd, cache.currentEnd));
-  }
-  return best;
-}
-
-function bladeHits(mesh: THREE.Object3D, cache: BladeCache): boolean {
-  if (!cache.hasCurrent) return false;
-  return bladeDistSq(mesh.position, cache) <= cache.radius * cache.radius;
-}
-
-function getSwingSpeed(cache: BladeCache): number {
-  if (!cache.hasPrevious) return 0;
-  return Math.max(
-    cache.currentStart.distanceTo(cache.previousStart),
-    cache.currentEnd.distanceTo(cache.previousEnd)
-  );
-}
-
-function centerDistanceToBlade(mesh: THREE.Object3D, cache: BladeCache): number {
-  BLADE_CENTER.lerpVectors(cache.currentStart, cache.currentEnd, 0.5);
-  return mesh.position.distanceTo(BLADE_CENTER);
-}
-
 function getHitDeltaMs(entry: ActiveBlock): number {
   if (!entry.mapBeat || !Number.isFinite(entry.hitTimeSec) || !Number.isFinite(window.__songTimeSec)) return 0;
   return (window.__songTimeSec! - entry.hitTimeSec!) * 1000;
 }
 
-function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, cache: BladeCache): void {
+function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, cache: BladeHitbox): void {
   entry.alive = false;
   entry.mesh.userData.alive = false;
 
@@ -819,7 +740,7 @@ function hitBomb(entry: ActiveBlock): void {
   if (state.lives <= 0 && !state.noFail) gameOverHandler();
 }
 
-function bladeInsideHeld(entry: ActiveBlock, cache: BladeCache): boolean {
+function bladeInsideHeld(entry: ActiveBlock, cache: BladeHitbox): boolean {
   if (!cache.hasCurrent) return false;
   const bx = entry.mesh.position.x;
   const by = entry.mesh.position.y;
