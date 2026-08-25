@@ -15,7 +15,7 @@ import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS } from '../core/pause.ts';
-import { t, needsLanguageSelection, translateDom } from '../i18n/index.ts';
+import { t, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
@@ -50,6 +50,7 @@ import { initSettingsBindings } from './settings-bindings.ts';
 import { initMultiplayerEvents, type MultiplayerRoundStart, type MultiplayerRules } from './multiplayer-events.ts';
 import { nextFrameTiming, resetFrameTiming, smoothProfileValue } from './frame-timing.ts';
 import { initPhoneAudioEvents } from './phone-audio-events.ts';
+import { initStartupGuidance } from './startup-guidance.ts';
 
 declare global {
   interface Window {
@@ -783,32 +784,7 @@ window.addEventListener('hand-sabers:map-selected', (event) => {
   });
 });
 
-const requestFirstRunTutorial = (force = false): void => {
-  window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', { detail: { force } }));
-};
-
-if (needsLanguageSelection()) {
-  window.dispatchEvent(new CustomEvent('hand-sabers:open-settings', { detail: { tab: 'language' } }));
-  window.setTimeout(() => {
-    void narratorShow({ text: t('narrator.chooseLanguage'), buttons: [t('calib.ok')] });
-  }, 250);
-} else if (localStorage.getItem('hs_settings_recommendation_seen') !== '1') {
-  localStorage.setItem('hs_settings_recommendation_seen', '1');
-  window.setTimeout(() => {
-    void narratorShow({
-      text: t('narrator.configureSettings'),
-      buttons: [t('narrator.openSettings'), t('narrator.quickGuide'), t('narrator.later')],
-    }).then(choice => {
-      if (choice === 0) {
-        window.dispatchEvent(new CustomEvent('hand-sabers:open-settings', { detail: { tab: 'gameplay' } }));
-      } else if (choice === 1) {
-        requestFirstRunTutorial(true);
-      }
-    });
-  }, 900);
-} else {
-  window.setTimeout(() => requestFirstRunTutorial(), 650);
-}
+initStartupGuidance();
 
 runAsyncTask('application-startup', async () => {
   try {
