@@ -1,4 +1,3 @@
-import Fuse from 'fuse.js';
 import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, loadLocalMapAudio } from '../core/localstore.ts';
 import JSZip from 'jszip';
 import { importMapLocally, importMapToServer } from '../core/map-import.ts';
@@ -8,9 +7,10 @@ import { initRemoteTrackingHost } from '../remote/host-session.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
 import { createMapPreviewController } from './preview.ts';
-import { getSetting, loadSettings, setSetting } from '../core/settings.ts';
+import { loadSettings } from '../core/settings.ts';
 import { checkServerHealth, fetchJson, loadServerMaps, type MapEntry, type ScoreEntry } from './library-api.ts';
 import { getAutosaveMap, mergeMaps } from './library-sources.ts';
+import { createLibraryFilter } from './library-filter.ts';
 import {
   escapeAttribute as attr,
   escapeHtml as escHtml,
@@ -109,54 +109,20 @@ let activeDiff: string      = '';
 let activeSort: string      = 'newest';
 let searchQuery: string     = '';
 let favoritesOnly           = false;
-let favoriteMapIds          = new Set(getSetting('favoriteMapIds'));
-
-let fuse: Fuse<MapEntry> | null = null;
-
-function rebuildFuse(): void {
-  fuse = new Fuse(allMaps, {
-    keys: ['meta.title', 'meta.artist', 'meta.mapper', 'id'],
-    threshold: 0.35,
-    includeScore: false,
-  });
-}
+const libraryFilter = createLibraryFilter();
 
 function isFavoriteMap(id: string): boolean {
-  return favoriteMapIds.has(id);
-}
-
-function toggleFavoriteMap(id: string): void {
-  if (favoriteMapIds.has(id)) favoriteMapIds.delete(id);
-  else favoriteMapIds.add(id);
-  setSetting('favoriteMapIds', [...favoriteMapIds]);
+  return libraryFilter.isFavorite(id);
 }
 
 function getFilteredMaps(): MapEntry[] {
-  let maps = searchQuery && fuse
-    ? fuse.search(searchQuery).map(r => r.item)
-    : [...allMaps];
-
-  if (activeDiff) {
-    maps = maps.filter(m => (m.meta?.difficulty ?? '').toLowerCase() === activeDiff.toLowerCase());
-  }
-
-  if (favoritesOnly) maps = maps.filter(m => isFavoriteMap(m.id));
-
-  maps.sort((a, b) => {
-    const favoriteOrder = Number(isFavoriteMap(b.id)) - Number(isFavoriteMap(a.id));
-    if (favoriteOrder !== 0) return favoriteOrder;
-    if (activeSort === 'alpha') return (a.meta?.title ?? a.id).localeCompare(b.meta?.title ?? b.id);
-    if (activeSort === 'newest') return String(b.updatedAt ?? b.id).localeCompare(String(a.updatedAt ?? a.id));
-    if (activeSort === 'beats') return (b.beats?.length ?? 0) - (a.beats?.length ?? 0);
-    if (activeSort === 'score') {
-      const sa = getMapScoreData(a.id).best?.score ?? 0;
-      const sb = getMapScoreData(b.id).best?.score ?? 0;
-      return sb - sa;
-    }
-    return 0;
+  return libraryFilter.filter({
+    query: searchQuery,
+    difficulty: activeDiff,
+    sort: activeSort,
+    favoritesOnly,
+    getBestScore: mapId => getMapScoreData(mapId).best?.score ?? 0,
   });
-
-  return maps;
 }
 
 // ── Render: list ──────────────────────────────────────────────────────────────
@@ -393,7 +359,7 @@ function renderDetail(map: MapEntry | null): void {
 
   document.getElementById('btnFavoriteMap')?.addEventListener('click', btn => {
     const el = btn.currentTarget as HTMLButtonElement;
-    toggleFavoriteMap(el.dataset['id'] ?? '');
+    libraryFilter.toggleFavorite(el.dataset['id'] ?? '');
     renderMapList(getFilteredMaps());
     renderDetail(map);
   });
@@ -471,7 +437,7 @@ async function deleteMap(id: string, tryServer: boolean): Promise<void> {
   deleteLocalMap(id);
   await deleteLocalMapAudio(id);
   allMaps = allMaps.filter(m => m.id !== id);
-  rebuildFuse();
+  libraryFilter.setMaps(allMaps);
   if (selectedId === id) { selectedId = null; renderDetail(null); }
   renderMapList(getFilteredMaps());
   if (!serverDeleted && tryServer) showToast(t('maps.deleteServerFail'), { type: 'error' });
@@ -556,7 +522,7 @@ async function loadMaps(): Promise<void> {
 
     allScores = readLocalScores({ limit: 1000 }) as ScoreEntry[];
     allMaps   = mergeMaps(serverMaps, localMaps);
-    rebuildFuse();
+    libraryFilter.setMaps(allMaps);
 
     const serverOnline = await healthPromise;
     const offlineEl = document.getElementById('offlineNotice');
