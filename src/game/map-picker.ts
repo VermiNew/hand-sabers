@@ -3,6 +3,7 @@ import { loadLocalMapAudio, readLocalMaps, readLocalScores } from '../core/local
 import { normalizeMap } from '../core/map-format.ts';
 import { importMapLocally, importMapToServer } from '../core/map-import.ts';
 import { getSettings } from '../core/settings.ts';
+import { popFocusTrap, pushFocusTrap } from '../ui/keyboard-nav.ts';
 
 interface MapMeta {
   title?: string;
@@ -79,6 +80,7 @@ let searchQuery = '';
 let loading = false;
 let initialized = false;
 let importing = false;
+let returnFocus: HTMLElement | null = null;
 const PREVIEW_MAX_SECONDS = 30;
 let previewAudio: HTMLAudioElement | null = null;
 let previewObjectUrl: string | null = null;
@@ -573,8 +575,10 @@ async function importMapFile(file: File): Promise<void> {
 
 function openOverlay(): void {
   const overlay = element<HTMLElement>('mapPickerOverlay');
-  if (!overlay) return;
+  if (!overlay || !overlay.hidden) return;
+  returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   overlay.hidden = false;
+  pushFocusTrap(overlay);
   translateDom(overlay);
   clearImportStatus();
   if (allMaps.length === 0) void loadMaps();
@@ -587,9 +591,15 @@ function openOverlay(): void {
 
 function closeOverlay(): void {
   const overlay = element<HTMLElement>('mapPickerOverlay');
-  if (!overlay) return;
+  if (!overlay || overlay.hidden) return;
   stopPreview();
   overlay.hidden = true;
+  popFocusTrap(overlay);
+  const focusTarget = returnFocus;
+  returnFocus = null;
+  if (focusTarget?.isConnected && focusTarget.getClientRects().length > 0 && !focusTarget.matches('[hidden], :disabled')) {
+    focusTarget.focus({ preventScroll: true });
+  }
 }
 
 // -- Init --
@@ -607,7 +617,12 @@ export function initMapPickerOverlay(): void {
   // Close
   closeBtn.addEventListener('click', closeOverlay);
   overlay.addEventListener('pointerdown', e => { if (e.target === overlay) closeOverlay(); });
-  window.addEventListener('keydown', e => { if (e.key === 'Escape' && !overlay.hidden) closeOverlay(); });
+  window.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || overlay.hidden) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    closeOverlay();
+  }, { capture: true });
   window.addEventListener('pagehide', stopPreview, { once: true });
   // Search
   searchInput.addEventListener('input', () => {

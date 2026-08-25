@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import { popFocusTrap, pushFocusTrap } from '../ui/keyboard-nav.ts';
 
 interface MapSummary {
   id: string;
@@ -81,10 +82,17 @@ export function initMultiplayerMapPicker(onSelect: (mapId: string) => void): {
   let maps: MapSummary[] = [];
   let selectedId: string | null = null;
   let loading = false;
+  let returnFocus: HTMLElement | null = null;
 
   const close = () => {
+    if (overlay.hidden) return;
     overlay.hidden = true;
-    openButton.focus({ preventScroll: true });
+    popFocusTrap(overlay);
+    const focusTarget = returnFocus;
+    returnFocus = null;
+    if (focusTarget?.isConnected && focusTarget.getClientRects().length > 0 && !focusTarget.matches('[hidden], :disabled')) {
+      focusTarget.focus({ preventScroll: true });
+    }
   };
 
   const render = () => {
@@ -137,10 +145,13 @@ export function initMultiplayerMapPicker(onSelect: (mapId: string) => void): {
   };
 
   openButton.addEventListener('click', () => {
+    if (!overlay.hidden) return;
+    returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     overlay.hidden = false;
+    pushFocusTrap(overlay);
     searchInput.value = '';
     render();
-    searchInput.focus();
+    searchInput.focus({ preventScroll: true });
   });
   closeButton.addEventListener('click', close);
   overlay.addEventListener('pointerdown', event => {
@@ -148,8 +159,11 @@ export function initMultiplayerMapPicker(onSelect: (mapId: string) => void): {
   });
   searchInput.addEventListener('input', render);
   window.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !overlay.hidden) close();
-  });
+    if (event.key !== 'Escape' || overlay.hidden) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    close();
+  }, { capture: true });
 
   return {
     async load() {
