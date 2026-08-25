@@ -10,6 +10,7 @@ import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
 import { createMapPreviewController } from './preview.ts';
 import { getSetting, loadSettings, setSetting } from '../core/settings.ts';
 import { checkServerHealth, fetchJson, loadServerMaps, type MapEntry, type ScoreEntry } from './library-api.ts';
+import { getAutosaveMap, mergeMaps } from './library-sources.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -92,25 +93,6 @@ function getMapScoreData(mapId: string): MapScoreData {
   const best        = scores.reduce((a, b) => (b.score > a.score ? b : a), scores[0]!);
   const maxProgress = scores.reduce((a, b) => Math.max(a, b.progress ?? 0), 0);
   return { tries: scores.length, best, progress: maxProgress };
-}
-
-function getAutosaveMap(): MapEntry | null {
-  try {
-    const parsed = JSON.parse(localStorage.getItem('hs_autosave') ?? 'null') as MapEntry | null;
-    if (parsed?.id && Array.isArray(parsed.beats)) return { ...parsed, source: 'autosave', localOnly: true };
-  } catch {}
-  return null;
-}
-
-function mergeMaps(serverMaps: MapEntry[], localMaps: MapEntry[]): MapEntry[] {
-  const byId = new Map<string, MapEntry>();
-  for (const m of serverMaps) byId.set(m.id, { ...m, source: 'server' });
-  for (const m of localMaps)  byId.set(m.id, { ...m, source: byId.has(m.id) ? 'server+local' : 'local' });
-  return [...byId.values()].sort((a, b) => {
-    const at = a.updatedAt ?? a.meta?.title ?? a.id;
-    const bt = b.updatedAt ?? b.meta?.title ?? b.id;
-    return String(bt).localeCompare(String(at));
-  });
 }
 
 // ── Import ────────────────────────────────────────────────────────────────────

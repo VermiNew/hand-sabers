@@ -282,6 +282,7 @@
   - [x] Wydzielić stan, wygaszanie i aplikowanie drgań kamery do `src/game/camera-shake.ts`, zachowując publiczne API sceny
 - [ ] Rozbić `src/maps/maps.ts` (723 linii) na moduły
   - [x] Wydzielić typy biblioteki oraz komunikację z API map i wyników do `src/maps/library-api.ts`
+  - [x] Wydzielić odczyt autosave oraz łączenie map serwerowych i lokalnych do `src/maps/library-sources.ts`
 - [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
   - [x] Wydzielić obsługę odpowiedzi HTTP, tłumaczenie błędów, kopiowanie i budowę URL WebSocket do `src/multiplayer/client-utils.ts`
 - [ ] Rozbić `src/tracking/tracking.ts` (613 linii) na moduły
