@@ -12,7 +12,6 @@ import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks,
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, tickDevPanel, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
-import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS } from '../core/pause.ts';
@@ -54,6 +53,7 @@ import { createHandsPauseController, getMissingHandsText } from './hands-pause-c
 import { createCalibrationUI } from './calibration-ui.ts';
 import { createCalibrationController } from './calibration-controller.ts';
 import { MapTimeline } from './map-timeline.ts';
+import { initMapDrop } from './map-drop.ts';
 import { ensureCurrentMapAudio, loadMapById, tryLoadMapFromUrl } from './map-session.ts';
 import { submitScore } from './score-submission.ts';
 import { isMainMenuOpen, updateMenuAutoplay, updateSabers } from './saber-motion.ts';
@@ -644,54 +644,6 @@ function handleKeydown(e: KeyboardEvent): void {
   }
 }
 
-// ── Wczytanie mapy (drag & drop na ekranie gry) ───────────────────────────────
-function bindMapDrop(canvas: HTMLElement): void {
-  canvas.addEventListener('dragover', e => e.preventDefault());
-  canvas.addEventListener('drop', async (e: DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer?.files[0];
-    if (!file) return;
-    try {
-      const wasInGame = state.appState === S.PLAYING || state.appState === S.PAUSED || state.appState === S.GAMEOVER;
-      initAudio();
-      stopMapAudio();
-      clearMapAudio();
-      clearGameplayEntities();
-      resetMapSpawn();
-      mapTimeline.reset();
-
-      const map = await loadMapFromFile(file);
-      state.map = validateMap(map) ? map : { ...map, beats: null } as typeof state.map;
-      if (ui.dStatus) ui.dStatus.textContent = `MAP: ${map.meta?.title ?? file.name}`;
-
-      if (wasInGame) {
-        hideHandsPaused();
-        hidePauseMenu();
-        hideOverlay();
-        state.pauseReason = PAUSE_REASONS.NONE;
-        state.appState    = S.PLAYING;
-        if (ui.hud) ui.hud.style.display = 'flex';
-        if (ui.mapProgress && state.map) ui.mapProgress.style.display = 'flex';
-        mapTimeline.start(performance.now());
-        startGameplay();
-        showMapTitle(state.map?.meta?.title ?? file.name);
-      }
-    } catch (err) {
-      console.error('Map load error:', err);
-      if (ui.dStatus) ui.dStatus.textContent = `MAP ERROR: ${(err as Error).message}`;
-    }
-  });
-}
-
-function initMapDrop(): void {
-  const canvas = document.getElementById('gameCanvas');
-  if (canvas) bindMapDrop(canvas);
-  window.addEventListener('hand-sabers:renderer-canvas-replaced', event => {
-    const nextCanvas = (event as CustomEvent<HTMLCanvasElement>).detail;
-    if (nextCanvas) bindMapDrop(nextCanvas);
-  });
-}
-
 // ── Start ─────────────────────────────────────────────────────────────────────
 
 applyPauseTranslations();
@@ -816,7 +768,7 @@ setCalibAutoAdvanceHandler(() => {
 });
 initDevPanel(renderer, null);
 initCameraPanelToggle();
-initMapDrop();
+initMapDrop({ hideOverlay, mapTimeline });
 updateHUD(state);
 
 let trackingStarted = false;
