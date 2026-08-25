@@ -4,6 +4,7 @@ import { loadSettings } from '../core/settings.ts';
 import { SABER_COLORS } from '../core/saber-colors.ts';
 import { clampDpr, getAdjacentGraphicsTier, getPerformanceProfile } from '../core/performance.ts';
 import type { OneHandMode, Settings, PerformanceProfile } from '../types/index.js';
+import { applyCameraShake, triggerCameraShake } from './camera-shake.ts';
 
 export { THREE };
 
@@ -727,21 +728,12 @@ export function resizeRenderer(): void {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-let shakeIntensity  = 0;
-const shakeDecay    = 0.88;
-
 export function triggerShake(intensity = 0.06): void {
-  shakeIntensity = Math.max(shakeIntensity, intensity);
+  triggerCameraShake(intensity);
 }
 
 export function applyShake(deltaScale = 1): void {
-  if (shakeIntensity < 0.001) { shakeIntensity = 0; return; }
-  const scale = Math.max(0, Math.min(deltaScale, 3));
-  if (scale <= 0) return;
-  const impulseScale  = Math.sqrt(scale);
-  cam3d.position.x   += (Math.random() - 0.5) * shakeIntensity * impulseScale;
-  cam3d.position.y   += (Math.random() - 0.5) * shakeIntensity * 0.5 * impulseScale;
-  shakeIntensity     *= Math.pow(shakeDecay, scale);
+  applyCameraShake(cam3d, deltaScale);
 }
 
 let currentDpr           = clampDpr(window.devicePixelRatio || 1, perfProfile);
