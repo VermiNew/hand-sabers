@@ -278,6 +278,7 @@
   - [x] Wydzielić geometrię hitboxu ostrza, pomiar swingu i czułość trafień do `src/game/saber-hitbox.ts`
 - [ ] Rozbić `src/game/scene.ts` (720 linii) na moduły sceny
 - [ ] Rozbić `src/maps/maps.ts` (723 linii) na moduły
+  - [x] Wydzielić typy biblioteki oraz komunikację z API map i wyników do `src/maps/library-api.ts`
 - [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
 - [ ] Rozbić `src/tracking/tracking.ts` (613 linii) na moduły
 - [ ] Rozbić `src/creator/input.ts` (619 linii) na moduły

@@ -9,6 +9,7 @@ import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
 import { createMapPreviewController } from './preview.ts';
 import { getSetting, loadSettings, setSetting } from '../core/settings.ts';
+import { checkServerHealth, fetchJson, loadServerMaps, type MapEntry, type ScoreEntry } from './library-api.ts';
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
@@ -75,38 +76,6 @@ function withDevQuery(url: string): string {
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface MapEntry {
-  id: string;
-  source: 'server' | 'local' | 'autosave' | 'server+local';
-  localOnly?: boolean;
-  meta?: {
-    title?: string;
-    artist?: string;
-    mapper?: string;
-    difficulty?: string;
-    duration?: number;
-    bpm?: number;
-    audioFile?: string;
-    audioUrl?: string;
-    previewStartSec?: number;
-  };
-  beats?: unknown[];
-  updatedAt?: string;
-  _serverAudioPending?: boolean;
-  _localAudioPending?: boolean;
-  _audioReady?: boolean;
-}
-
-interface ScoreEntry {
-  mapId: string;
-  player: string;
-  score: number;
-  combo: number;
-  date?: string;
-  progress?: number;
-  localOnly?: boolean;
-}
-
 interface MapScoreData {
   tries: number;
   best: ScoreEntry | null;
@@ -123,42 +92,6 @@ function getMapScoreData(mapId: string): MapScoreData {
   const best        = scores.reduce((a, b) => (b.score > a.score ? b : a), scores[0]!);
   const maxProgress = scores.reduce((a, b) => Math.max(a, b.progress ?? 0), 0);
   return { tries: scores.length, best, progress: maxProgress };
-}
-
-// ── Server fetch ──────────────────────────────────────────────────────────────
-
-async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, { cache: 'no-store', credentials: 'same-origin', ...options });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-  return res.json() as Promise<T>;
-}
-
-async function checkServerHealth(): Promise<boolean> {
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    try {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 2500);
-      const response = await fetch('/api/health', {
-        cache: 'no-store',
-        credentials: 'same-origin',
-        signal: controller.signal,
-      });
-      window.clearTimeout(timeout);
-      if (response.ok) return true;
-    } catch {
-      // The server may still be starting. Retry once before showing offline UI.
-    }
-    if (attempt === 0) await new Promise(resolve => window.setTimeout(resolve, 700));
-  }
-  return false;
-}
-
-async function loadServerMaps(): Promise<MapEntry[]> {
-  const list = await fetchJson<{ id: string }[]>('/api/maps');
-  return Promise.all(list.map(async m => {
-    try { return { ...(await fetchJson<MapEntry>(`/api/maps/${encodeURIComponent(m.id)}`)), source: 'server' as const }; }
-    catch { return { id: m.id, meta: { title: m.id }, beats: [], source: 'server' as const }; }
-  }));
 }
 
 function getAutosaveMap(): MapEntry | null {
