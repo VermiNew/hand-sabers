@@ -3,12 +3,12 @@ import { normalizeCutDirection, CUT_SYMBOLS } from './cut-ui.ts';
 import { getPlayPos } from './audio.ts';
 
 export function formatTime(sec: number, showMs = false): string {
-  if (!isFinite(sec)) return '0:00';
-  const m  = Math.floor(sec / 60);
-  const s  = Math.floor(sec % 60);
-  const ms = Math.floor((sec % 1) * 10);
-  const base = `${m}:${String(s).padStart(2, '0')}`;
-  return showMs ? `${base}.${ms}` : base;
+  if (!isFinite(sec)) return showMs ? '00:00.00' : '00:00';
+  const m   = Math.floor(sec / 60);
+  const s   = Math.floor(sec % 60);
+  const ms  = showMs ? Math.floor((sec % 1) * 100) : 0;
+  const base = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return showMs ? `${base}.${String(ms).padStart(2, '0')}` : base;
 }
 
 export function renderAll(): void {

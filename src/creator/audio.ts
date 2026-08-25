@@ -176,8 +176,8 @@ export async function restoreAudioForCurrentMap(callbacks: { onDecoded: () => vo
 }
 
 function formatAudioTime(sec: number): string {
-  if (!isFinite(sec)) return '0:00';
+  if (!isFinite(sec)) return '00:00';
   const m = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
-  return `${m}:${String(s).padStart(2, '0')}`;
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
