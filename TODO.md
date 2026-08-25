@@ -295,6 +295,7 @@
 - [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
   - [x] Wydzielić obsługę odpowiedzi HTTP, tłumaczenie błędów, kopiowanie i budowę URL WebSocket do `src/multiplayer/client-utils.ts`
   - [x] Wydzielić próbki RTT, estymację offsetu i konwersję czasu serwera do `src/multiplayer/clock-sync.ts`
+  - [x] Wydzielić bezpieczne renderowanie, stan i wysyłanie czatu do `src/multiplayer/chat-view.ts`
 - [ ] Rozbić `src/tracking/tracking.ts` (613 linii) na moduły
   - [x] Wydzielić renderowanie obrazu kamery i landmarków dłoni do `src/tracking/landmark-canvas.ts`
   - [x] Wydzielić prezentację źródła kalibracji kamery/telefonu do `src/tracking/calibration-source-ui.ts`

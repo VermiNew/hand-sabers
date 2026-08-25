@@ -5,7 +5,7 @@ import { remoteTracking } from './remote-state.ts';
 import { initMultiplayerMapPicker } from './map-picker.ts';
 import { createAvatarBadge } from './avatars.ts';
 import { PROTOCOL_VERSION, parseChatMessage, parseRoomPlayer, parseRoomSnapshot } from './protocol.ts';
-import type { ChatMessage, CreateRoomResponse, JoinCodeResponse, RoomSnapshot, ServerMessage } from './protocol.ts';
+import type { CreateRoomResponse, JoinCodeResponse, RoomSnapshot, ServerMessage } from './protocol.ts';
 import {
   copyText,
   element,
@@ -16,6 +16,7 @@ import {
   websocketUrl,
 } from './client-utils.ts';
 import { recordClockPong, resetClockSync, serverTimeToPerformance } from './clock-sync.ts';
+import { createMultiplayerChatView } from './chat-view.ts';
 
 export { PROTOCOL_VERSION } from './protocol.ts';
 export { serverTimeToPerformance } from './clock-sync.ts';
@@ -104,14 +105,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const disconnectButton = element<HTMLButtonElement>('multiplayerDisconnect');
   const lobbyScores = element<HTMLElement>('multiplayerLobbyScores');
   const hudScores = element<HTMLElement>('multiplayerHudScores');
-  const chatMessages = element<HTMLElement>('multiplayerChatMessages');
-  const chatForm = element<HTMLFormElement>('multiplayerChatForm');
-  const chatInput = element<HTMLInputElement>('multiplayerChatInput');
-  const chatSend = element<HTMLButtonElement>('multiplayerChatSend');
   const copyFeedbackTimers = new Map<HTMLButtonElement, number>();
-
-  chatInput.placeholder = t('multiplayer.chatPlaceholder');
-  chatInput.setAttribute('aria-label', t('multiplayer.chatPlaceholder'));
 
   const secureHostingWarning = document.createElement('aside');
   secureHostingWarning.className = 'mp-network-warning';
@@ -122,41 +116,6 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   secureHostingWarning.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">https</span><p></p>';
   secureHostingWarning.querySelector('p')!.textContent = t('multiplayer.secureHostingWarning');
   setup.prepend(secureHostingWarning);
-
-  const resetChat = () => {
-    chatMessages.replaceChildren();
-    const empty = document.createElement('p');
-    empty.className = 'mp-chat-empty';
-    empty.textContent = t('multiplayer.chatEmpty');
-    chatMessages.append(empty);
-    chatInput.value = '';
-    chatInput.disabled = true;
-    chatSend.disabled = true;
-  };
-  const appendChatMessage = (chatMessage: ChatMessage) => {
-    chatMessages.querySelector('.mp-chat-empty')?.remove();
-    const row = document.createElement('article');
-    row.className = `mp-chat-message${chatMessage.playerId === currentPlayerId ? ' is-own' : ''}`;
-    const header = document.createElement('div');
-    header.className = 'mp-chat-header';
-    header.append(createAvatarBadge(chatMessage.avatar, 20, chatMessage.color));
-    const playerName = document.createElement('strong');
-    playerName.textContent = chatMessage.playerName;
-    playerName.style.color = chatMessage.color;
-    header.append(playerName);
-    const text = document.createElement('p');
-    text.textContent = chatMessage.text;
-    const time = document.createElement('time');
-    const timestamp = new Date(chatMessage.sentAt);
-    time.dateTime = timestamp.toISOString();
-    time.textContent = timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    row.append(header, text, time);
-    chatMessages.append(row);
-    while (chatMessages.childElementCount > 50) chatMessages.firstElementChild?.remove();
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  };
-
-  resetChat();
 
   nameInput.value = normalizePlayerName(defaultPlayerName);
 
@@ -218,7 +177,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     copyCodeButton.textContent = t('multiplayer.copyCode');
     for (const timer of copyFeedbackTimers.values()) window.clearTimeout(timer);
     copyFeedbackTimers.clear();
-    resetChat();
+    chatView.reset();
   };
   const disconnectRoom = () => {
     if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) {
@@ -235,6 +194,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       showMessage(t('multiplayer.connectionError'));
     }
   };
+  const chatView = createMultiplayerChatView({
+    canSend: () => Boolean(currentPlayerId),
+    getCurrentPlayerId: () => currentPlayerId,
+    onSend: text => sendControl({ type: 'chat', text }),
+  });
   const mapPicker = initMultiplayerMapPicker(mapId => {
     if (currentRole !== 'host') return;
     pendingPreparationMapId = '';
@@ -389,7 +353,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     announcedRoundId = 0;
     lastFinishedRoundId = 0;
     lobby.hidden = true;
-    resetChat();
+    chatView.reset();
     showRoom();
     const nextSocket = new WebSocket(websocketUrl());
     nextSocket.binaryType = 'arraybuffer';
@@ -439,8 +403,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         if (incoming.type === 'joined') {
           currentPlayerId = String(incoming.playerId || '');
           currentRole = incoming.role === 'host' ? 'host' : 'guest';
-          chatInput.disabled = false;
-          chatSend.disabled = false;
+          chatView.setConnected(true);
           status.textContent = t('multiplayer.connected');
           setBusy(false);
           const snapshot = parseRoomSnapshot(incoming.room);
@@ -466,7 +429,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
           }
         } else if (incoming.type === 'chat') {
           const chatMessage = parseChatMessage(incoming.message);
-          if (chatMessage) appendChatMessage(chatMessage);
+          if (chatMessage) chatView.append(chatMessage);
         } else if (incoming.type === 'pong') {
           recordClockPong(incoming.sentAt, incoming.serverTime, Date.now());
         } else if (incoming.type === 'error') {
@@ -584,13 +547,6 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     if (currentRole !== 'host' || !['coop', 'score-attack'].includes(modeSelect.value)) return;
     pendingPreparationMapId = '';
     sendControl({ type: 'set-mode', mode: modeSelect.value });
-  });
-  chatForm.addEventListener('submit', event => {
-    event.preventDefault();
-    const text = chatInput.value.trim();
-    if (!text || !currentPlayerId) return;
-    sendControl({ type: 'chat', text });
-    chatInput.value = '';
   });
   const sendRules = () => {
     if (currentRole !== 'host') return;
