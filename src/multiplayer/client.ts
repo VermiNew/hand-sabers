@@ -15,8 +15,10 @@ import {
   translateServerError,
   websocketUrl,
 } from './client-utils.ts';
+import { recordClockPong, resetClockSync, serverTimeToPerformance } from './clock-sync.ts';
 
 export { PROTOCOL_VERSION } from './protocol.ts';
+export { serverTimeToPerformance } from './clock-sync.ts';
 
 let socket: WebSocket | null = null;
 let activeJoinUrl = '';
@@ -24,8 +26,6 @@ let activeRoomCode = '';
 let currentPlayerId = '';
 let currentRole: 'host' | 'guest' | null = null;
 let currentRoom: RoomSnapshot | null = null;
-let serverClockOffsetMs = 0;
-const clockSamples: Array<{ offset: number; rtt: number }> = [];
 let pendingPreparationMapId = '';
 let announcedRoundId = 0;
 let lastFinishedRoundId = 0;
@@ -73,11 +73,6 @@ export function sendMultiplayerScore(payload: {
     JSON.stringify({ v: PROTOCOL_VERSION, type: 'score', ...payload }),
     'score-send',
   );
-}
-
-export function serverTimeToPerformance(serverTime: number): number {
-  const estimatedServerNow = Date.now() + serverClockOffsetMs;
-  return performance.now() + (serverTime - estimatedServerNow);
 }
 
 export function initMultiplayerOverlay(defaultPlayerName: string): void {
@@ -386,8 +381,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
 
   function connect(code: string, token: string, name: string): void {
     socket?.close(1000, 'Replaced');
-    clockSamples.length = 0;
-    serverClockOffsetMs = 0;
+    resetClockSync();
     currentPlayerId = '';
     currentRole = null;
     currentRoom = null;
@@ -474,19 +468,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
           const chatMessage = parseChatMessage(incoming.message);
           if (chatMessage) appendChatMessage(chatMessage);
         } else if (incoming.type === 'pong') {
-          const sentAt = Number(incoming.sentAt);
-          const serverTime = Number(incoming.serverTime);
-          const receivedAt = Date.now();
-          if (Number.isFinite(sentAt) && Number.isFinite(serverTime) && sentAt <= receivedAt) {
-            const rtt = receivedAt - sentAt;
-            if (rtt <= 10_000) {
-              clockSamples.push({ rtt, offset: serverTime - (sentAt + receivedAt) / 2 });
-              clockSamples.sort((left, right) => left.rtt - right.rtt);
-              if (clockSamples.length > 8) clockSamples.length = 8;
-              const bestOffsets = clockSamples.slice(0, 3).map(sample => sample.offset).sort((a, b) => a - b);
-              serverClockOffsetMs = bestOffsets[Math.floor(bestOffsets.length / 2)] ?? 0;
-            }
-          }
+          recordClockPong(incoming.sentAt, incoming.serverTime, Date.now());
         } else if (incoming.type === 'error') {
           showMessage(translateServerError(String(incoming.code || 'REQUEST_FAILED')));
         }
