@@ -1,12 +1,12 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, clearDangerPulse, showGameOver, showMultiplayerResults, showHandsPaused, hideHandsPaused, updateMapProgress, showMapTitle, showPauseMenu, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
+import { ui, updateHUD, clearDangerPulse, showGameOver, showMultiplayerResults, hideHandsPaused, updateMapProgress, showMapTitle, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
 import {
   THREE, renderer, scene, cam3d, bgMat,
   lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
-import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, hasMapAudio, clearMapAudio, setMusicVolume, applyAudioSettings } from './audio.ts';
+import { initAudio, initInterfaceSounds, stopMapAudio, hasMapAudio, clearMapAudio, setMusicVolume, applyAudioSettings } from './audio.ts';
 import { initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
@@ -41,15 +41,8 @@ import { initTrackingSettings } from './tracking-settings.ts';
 import { initDeveloperSettings } from './developer-settings.ts';
 import { initMainMenuShell, triggerMenuEnter } from './main-menu-shell.ts';
 import { initAchievementUI, renderAchievementCompactGrid, renderStatsGrid } from './achievement-ui.ts';
-import {
-  applyPauseTranslations,
-  setPauseMenuMessage,
-  syncPauseMenuActions,
-} from './pause-ui.ts';
-import { createPauseResumeGuard } from './pause-resume-guard.ts';
-import type { ResumeSource } from './pause-resume-guard.ts';
-import { createGameplayFocusProtection } from './gameplay-focus-protection.ts';
-import { createHandsPauseController, getMissingHandsText } from './hands-pause-controller.ts';
+import { applyPauseTranslations } from './pause-ui.ts';
+import { createGamePauseController } from './game-pause-controller.ts';
 import { createCalibrationUI } from './calibration-ui.ts';
 import { createCalibrationController } from './calibration-controller.ts';
 import { MapTimeline } from './map-timeline.ts';
@@ -60,7 +53,6 @@ import { isMainMenuOpen, updateMenuAutoplay, updateSabers } from './saber-motion
 import { createRuntimeReporter } from './runtime-reporter.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
-import type { PauseReason } from '../types/index.js';
 
 declare global {
   interface Window {
@@ -149,6 +141,12 @@ const calibrationController = createCalibrationController(settings, calibrationU
   },
 });
 
+const gamePauseController = createGamePauseController({
+  isMultiplayerRoundActive: () => multiplayerRoundActive,
+  mapTimeline,
+});
+const { pauseGame, resumeGame } = gamePauseController;
+
 function completeMultiplayerPreparation(): void {
   const mapId = multiplayerPreparationMapId;
   multiplayerPreparationMapId = '';
@@ -200,7 +198,7 @@ async function beginMultiplayerRound(detail: {
   }
   initAudio();
   await ensureCurrentMapAudio(settings);
-  gameplayFocusProtection.reset();
+  gamePauseController.reset();
   clearGameplayEntities();
   stopMapAudio();
   mapTimeline.reset();
@@ -215,7 +213,7 @@ async function beginMultiplayerRound(detail: {
   document.body.classList.remove('menu-open');
   if (ui.hud) ui.hud.style.display = 'flex';
   if (ui.mapProgress) ui.mapProgress.style.display = 'flex';
-  handsPauseController.reset();
+  gamePauseController.reset();
   state.pauseReason = PAUSE_REASONS.NONE;
   state.appState = S.PLAYING;
   multiplayerRoundRules = { ...detail.rules };
@@ -232,14 +230,14 @@ async function beginMultiplayerRound(detail: {
 }
 
 async function beginPlaying(): Promise<void> {
-  gameplayFocusProtection.reset();
+  gamePauseController.reset();
   calibrationUI.hidePanel();
   hideOverlay();
   if (ui.hud)                       ui.hud.style.display        = 'flex';
   if (ui.mapProgress && state.map)  ui.mapProgress.style.display = 'flex';
   hideHandsPaused();
   hidePauseMenu();
-  handsPauseController.reset();
+  gamePauseController.reset();
   state.pauseReason  = PAUSE_REASONS.NONE;
   state.appState     = S.PLAYING;
 
@@ -259,7 +257,7 @@ async function beginPlaying(): Promise<void> {
 function endGame(victory = false): void {
   const playTimeMs = state.map && mapTimeline ? mapTimeline.getTime() * 1000 : 0;
   recordGameEnd(state, victory, playTimeMs);
-  gameplayFocusProtection.reset();
+  gamePauseController.reset();
   clearDangerPulse();
   state.appState    = S.GAMEOVER;
   state.pauseReason = PAUSE_REASONS.NONE;
@@ -302,7 +300,7 @@ function restartGame(): void {
   mapTimeline.reset();
   hideHandsPaused();
   hidePauseMenu();
-  handsPauseController.reset();
+  gamePauseController.reset();
   state.pauseReason = PAUSE_REASONS.NONE;
   calibrationController.start();
 }
@@ -314,79 +312,10 @@ function restartWithoutCalib(): void {
   mapTimeline.reset();
   hideHandsPaused();
   hidePauseMenu();
-  handsPauseController.reset();
+  gamePauseController.reset();
   state.pauseReason = PAUSE_REASONS.NONE;
   runAsyncTask('game-restart', beginPlaying);
 }
-
-// ── Pauza ─────────────────────────────────────────────────────────────────────
-const pauseResumeGuard = createPauseResumeGuard();
-
-function pauseGame(reason: PauseReason, now = performance.now()): void {
-  if (state.appState !== S.PLAYING) return;
-  state.appState    = S.PAUSED;
-  state.pauseReason = reason;
-  clearDangerPulse();
-  mapTimeline.pause(now);
-  if (reason === PAUSE_REASONS.HANDS) {
-    // Hands loss has its own recovery view. It keeps the camera/ML preview and
-    // auto-resumes after stable tracking instead of showing manual-pause actions.
-    showHandsPaused(getMissingHandsText());
-    pauseResumeGuard.unlock();
-    syncPauseMenuActions(multiplayerRoundActive);
-    hidePauseMenu();
-  } else {
-    if (reason === PAUSE_REASONS.FOCUS) {
-      pauseResumeGuard.lockForFocusLoss();
-    } else {
-      pauseResumeGuard.unlock();
-    }
-    hideHandsPaused();
-    setPauseMenuMessage(reason);
-    syncPauseMenuActions(multiplayerRoundActive);
-    showPauseMenu();
-  }
-  if (ui.dStatus) ui.dStatus.textContent = reason === PAUSE_REASONS.HANDS ? t('game.pauseHands') : t('game.pause');
-}
-
-async function resumeGame(now = performance.now(), source: ResumeSource = 'ui'): Promise<boolean> {
-  if (state.appState !== S.PAUSED) return false;
-  const pausedReason = state.pauseReason;
-  if (!pauseResumeGuard.tryBeginAttempt(pausedReason, source, now)) return false;
-  try {
-    const audioReady = !hasMapAudio() || await resumeAudioContext();
-    if (!audioReady) {
-      console.warn('Gameplay resume blocked because the audio context is not running.');
-      return false;
-    }
-    if (state.appState !== S.PAUSED || state.pauseReason !== pausedReason) return false;
-
-    const syncNow = performance.now();
-    mapTimeline.resume(syncNow);
-    state.appState    = S.PLAYING;
-    state.pauseReason = PAUSE_REASONS.NONE;
-    pauseResumeGuard.resetAfterResume();
-    setPauseMenuMessage(PAUSE_REASONS.NONE);
-    hideHandsPaused();
-    hidePauseMenu();
-    if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
-    return true;
-  } finally {
-    pauseResumeGuard.finishAttempt();
-  }
-}
-
-const gameplayFocusProtection = createGameplayFocusProtection({
-  isMultiplayerRoundActive: () => multiplayerRoundActive,
-  pauseForFocus: now => pauseGame(PAUSE_REASONS.FOCUS, now),
-  resumeGuard: pauseResumeGuard,
-});
-
-const handsPauseController = createHandsPauseController({
-  isMultiplayerRoundActive: () => multiplayerRoundActive,
-  pauseForHands: now => pauseGame(PAUSE_REASONS.HANDS, now),
-  resumeFromHands: now => { void resumeGame(now, 'hands'); },
-});
 
 function publishMultiplayerScore(now: number, progress: number): void {
   if (!multiplayerRoundActive || now - lastMultiplayerScoreAt < 100) return;
@@ -444,7 +373,7 @@ function renderFrame(timestamp: number): void {
 
   const perfProfile = getScenePerformanceProfile();
   if (bgMat.uniforms['uTime']) bgMat.uniforms['uTime'].value = t;
-  handsPauseController.update(now);
+  gamePauseController.updateHands(now);
 
   const gamePhaseStart = profiling ? performance.now() : 0;
   if (isMainMenuOpen()) {
@@ -668,7 +597,7 @@ document.getElementById('pauseMaps')?.addEventListener('click', () => {
 });
 
 function returnToMainMenu(): void {
-  gameplayFocusProtection.reset();
+  gamePauseController.reset();
   clearDangerPulse();
   fadeTransition(() => {
     if (multiplayerRoundActive) {
@@ -988,7 +917,7 @@ initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
 initMapPickerOverlay();
 initProfileOnboarding();
-gameplayFocusProtection.bind();
+gamePauseController.bindFocusProtection();
 initMainMenu();
 showFirstRunWelcome();
 showProfileOnboardingIfNeeded();
