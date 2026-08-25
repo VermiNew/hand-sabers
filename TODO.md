@@ -267,6 +267,7 @@
     - [x] Wydzielić ochronę blur/focus/visibility i wariant ostrzeżenia Multiplayer do `src/game/gameplay-focus-protection.ts`
     - [x] Wydzielić timery utraty/powrotu dłoni, regułę jednej ręki i auto-resume do `src/game/hands-pause-controller.ts`
     - [x] Rozdzielić UX pauzy ręcznej od pauzy po utracie trackingu ML: ręczna pauza ma pokazywać zwykłe menu akcji, a utrata dłoni dedykowany stan z podglądem kamery/ML, informacją o brakujących dłoniach, progressem stabilizacji i auto-resume. Stan trackingu zachowuje bezpieczne wyjście do menu bez pokazywania pełnego modala pauzy.
+    - [x] Wydzielić zdarzenia pauzy/wznowienia wywoływane przez przyciski narratora do `src/game/narrator-pause-events.ts`
   - [ ] Obsługa kalibracji
     - [x] Wydzielić panel, selektor auto/manual, widoczność kroków i opcję zapamiętania do `src/game/calibration-ui.ts`
     - [x] Wydzielić stan gotowości, przebieg auto/manual, kolejne kroki i zapis zakresów do `src/game/calibration-controller.ts`

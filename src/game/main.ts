@@ -52,6 +52,7 @@ import { nextFrameTiming, resetFrameTiming, smoothProfileValue } from './frame-t
 import { initPhoneAudioEvents } from './phone-audio-events.ts';
 import { initStartupGuidance } from './startup-guidance.ts';
 import { initMapSelectionEvents } from './map-selection-events.ts';
+import { initNarratorPauseEvents } from './narrator-pause-events.ts';
 
 declare global {
   interface Window {
@@ -746,20 +747,7 @@ initMultiplayerEvents({
   },
 });
 
-// ── Narrator pause/resume — pause gameplay while narrator buttons are visible
-window.addEventListener('hand-sabers:narrator-pause', () => {
-  if (state.appState === S.PLAYING) {
-    state.appState = S.PAUSED;
-    state.pauseReason = PAUSE_REASONS.NARRATOR;
-    mapTimeline.pause(performance.now());
-    hidePauseMenu();
-  }
-});
-window.addEventListener('hand-sabers:narrator-resume', () => {
-  if (state.appState === S.PAUSED && state.pauseReason === PAUSE_REASONS.NARRATOR) {
-    void resumeGame(performance.now(), 'ui');
-  }
-});
+initNarratorPauseEvents({ mapTimeline, resumeGame });
 
 initRemoteTrackingPreviews();
 initMultiplayerOverlay(settings.playerName);
