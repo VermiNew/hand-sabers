@@ -3,9 +3,11 @@ import { t } from '../i18n/index.ts';
 import type { PauseReason } from '../types/index.js';
 
 export function applyPauseTranslations(): void {
-  document.querySelectorAll('.pause-title, .pause-menu-title').forEach(element => {
+  document.querySelectorAll('.pause-menu-title').forEach(element => {
     element.textContent = t('pause.title');
   });
+  const handsPauseTitle = document.getElementById('handsPauseTitle');
+  if (handsPauseTitle) handsPauseTitle.textContent = t('pause.trackingTitle');
   const pauseSub = document.getElementById('pauseSub');
   if (pauseSub) pauseSub.textContent = t('pause.handsLost');
 
@@ -14,6 +16,7 @@ export function applyPauseTranslations(): void {
     ['pauseRestart', 'pause.restart'],
     ['pauseMaps', 'pause.maps'],
     ['pauseQuit', 'pause.mainMenu'],
+    ['handsPauseQuit', 'pause.mainMenu'],
   ];
   for (const [id, key] of translations) {
     const element = document.getElementById(id);
@@ -45,9 +48,11 @@ export function syncPauseMenuActions(multiplayerRoundActive: boolean): void {
   const restart = document.getElementById('pauseRestart') as HTMLButtonElement | null;
   const maps = document.getElementById('pauseMaps') as HTMLButtonElement | null;
   const quit = document.getElementById('pauseQuit');
+  const handsPauseQuit = document.getElementById('handsPauseQuit');
   const title = document.querySelector('.pause-menu-title');
   if (restart) restart.hidden = multiplayerRoundActive;
   if (maps) maps.hidden = multiplayerRoundActive;
   if (quit) quit.textContent = t(multiplayerRoundActive ? 'pause.leaveRoomMenu' : 'pause.mainMenu');
+  if (handsPauseQuit) handsPauseQuit.textContent = t(multiplayerRoundActive ? 'pause.leaveRoomMenu' : 'pause.mainMenu');
   if (title) title.textContent = t(multiplayerRoundActive ? 'pause.titleMP' : 'pause.title');
 }

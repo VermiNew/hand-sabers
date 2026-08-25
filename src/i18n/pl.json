@@ -11,6 +11,7 @@
   },
   "pause": {
     "title": "PAUZA",
+    "trackingTitle": "ŚLEDZENIE WSTRZYMANE",
     "handsLost": "UTRACONO RĘCE — STAŃ PRZED KAMERĄ",
     "focusLost": "GRA WSTRZYMANA — KARTA STRACIŁA FOCUS",
     "focusResumeHint": "Wróć do tej karty, odczekaj chwilę i wznów grę, gdy będziesz gotowy.",

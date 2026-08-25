@@ -448,13 +448,12 @@ function pauseGame(reason: PauseReason, now = performance.now()): void {
   clearDangerPulse();
   mapTimeline.pause(now);
   if (reason === PAUSE_REASONS.HANDS) {
-    // Show hands banner (camera preview + resume progress) AND full pause menu
-    // so the player can manually resume, restart, or quit
+    // Hands loss has its own recovery view. It keeps the camera/ML preview and
+    // auto-resumes after stable tracking instead of showing manual-pause actions.
     showHandsPaused(getMissingHandsText());
     pauseResumeGuard.unlock();
-    setPauseMenuMessage(reason);
     syncPauseMenuActions(multiplayerRoundActive);
-    showPauseMenu();
+    hidePauseMenu();
   } else {
     if (reason === PAUSE_REASONS.FOCUS) {
       pauseResumeGuard.lockForFocusLoss();
@@ -977,6 +976,7 @@ function returnToMainMenu(): void {
 }
 
 document.getElementById('pauseQuit')?.addEventListener('click', returnToMainMenu);
+document.getElementById('handsPauseQuit')?.addEventListener('click', returnToMainMenu);
 ui.ovBtnMenu?.addEventListener('click', returnToMainMenu);
 ui.calibAbortBtn?.addEventListener('click', returnToMainMenu);
 

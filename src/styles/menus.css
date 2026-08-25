@@ -7,7 +7,7 @@
   border-radius:12px; padding:24px; text-align:center;
   display:none; box-shadow:0 0 50px var(--main-glow); backdrop-filter:blur(6px);
 }
-#pauseBanner.show { display:block; }
+#pauseBanner.show { display:block; pointer-events:auto; }
 .pause-title {
   font-family:'Oxanium',sans-serif; font-weight:900;
   letter-spacing:8px; font-size:32px; color:var(--main);
@@ -40,6 +40,8 @@
   box-shadow:0 0 14px var(--main-glow);
   transition:width .08s linear;
 }
+.hands-pause-actions { margin-top:18px; }
+.hands-pause-actions .ov-btn { min-width:220px; }
 
 /* ── PAUSE MENU (Escape) ── */
 #pauseMenu {
