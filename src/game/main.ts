@@ -6,7 +6,7 @@ import {
   animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
   applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
-import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, getMapDuration, setMusicVolume, applyAudioSettings, loadMapAudio, hasMapAudio, clearMapAudio } from './audio.ts';
+import { initAudio, initInterfaceSounds, resumeAudioContext, stopMapAudio, hasMapAudio, clearMapAudio, setMusicVolume, applyAudioSettings } from './audio.ts';
 import { initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, restoreCalibrationData } from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, updateMenuDemo, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
@@ -16,7 +16,7 @@ import { loadMapFromFile, validateMap } from './maploader.ts';
 import { loadSettings, resetSettings, setSetting } from '../core/settings.ts';
 import { getAudioOffsetSec, nearestBeats } from '../core/timing.ts';
 import { PAUSE_REASONS } from '../core/pause.ts';
-import { appendLocalScore, getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
+import { appendLocalScore } from '../core/localstore.ts';
 import { t, needsLanguageSelection, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
@@ -25,7 +25,7 @@ import { initMultiplayerOverlay, sendMultiplayerScore, getCurrentPlayerId } from
 import { parseRoomSnapshot } from '../multiplayer/protocol.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
-import { isPhoneAudioActive, preparePhoneAudio, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
+import { isPhoneAudioActive, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
 import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from './narrator.ts';
 import { initAchievements, recordGameEnd } from '../core/achievements.ts';
 import { initLanguageSettings } from '../ui/language-settings.ts';
@@ -55,6 +55,7 @@ import { createHandsPauseController, getMissingHandsText } from './hands-pause-c
 import { createCalibrationUI } from './calibration-ui.ts';
 import { createCalibrationController } from './calibration-controller.ts';
 import { MapTimeline } from './map-timeline.ts';
+import { ensureCurrentMapAudio, loadMapById, tryLoadMapFromUrl } from './map-session.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 import type { PauseReason } from '../types/index.js';
@@ -172,75 +173,6 @@ async function submitScore(progress?: number, trainingMode = settings.trainingMo
   }
 }
 
-// ── ?map= URL param ───────────────────────────────────────────────────────────
-async function loadMapById(mapId: string): Promise<boolean> {
-  if (!/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(mapId)) return false;
-  if (state.map?.id === mapId) return true;
-  try {
-    const res = await fetch(`/api/maps/${encodeURIComponent(mapId)}`);
-    if (res.ok) {
-      const map = await res.json() as Record<string, unknown>;
-      if (validateMap(map)) {
-        clearMapAudio();
-        state.map = { ...map, _serverAudioPending: true } as unknown as typeof state.map;
-        return true;
-      }
-    }
-  } catch { /* fallback to local */ }
-
-  const localMap = getLocalMapById(mapId);
-  if (validateMap(localMap)) {
-    clearMapAudio();
-    state.map = { ...localMap, _localAudioPending: true, localOnly: true } as unknown as typeof state.map;
-    return true;
-  }
-  return false;
-}
-
-async function tryLoadMapFromUrl(): Promise<void> {
-  const mapId = new URLSearchParams(location.search).get('map');
-  if (mapId) await loadMapById(mapId);
-}
-
-async function ensureCurrentMapAudio(): Promise<void> {
-  if (!state.map || hasMapAudio()) return;
-
-  if (state.map._serverAudioPending) {
-    state.map._serverAudioPending = false;
-    try {
-      const audioUrl = state.map.meta?.audioUrl ?? `/api/maps/${encodeURIComponent(state.map.id ?? '')}/audio`;
-      const res = await fetch(audioUrl);
-      if (res.ok) {
-        await loadMapAudio(await res.arrayBuffer());
-        state.map._audioReady = true;
-        const dur = getMapDuration();
-        if (dur && !state.map.meta?.duration) state.map.meta = { ...(state.map.meta ?? {}), duration: dur };
-        // Tell the phone to prepare audio if phone audio output is enabled
-        if (settings.phoneAudioOutput && state.map.id) {
-          preparePhoneAudio(audioUrl, state.map.id);
-        }
-        return;
-      }
-    } catch (err) {
-      console.warn('Server map audio restore failed:', err);
-    }
-  }
-
-  if (!state.map._localAudioPending && !state.map.localOnly) return;
-
-  try {
-    const rec = await loadLocalMapAudio(state.map.id ?? '');
-    if (!rec?.arrayBuffer) return;
-    await loadMapAudio(rec.arrayBuffer);
-    state.map._localAudioPending = false;
-    state.map._audioReady        = true;
-    const dur = getMapDuration();
-    if (dur && !state.map.meta?.duration) state.map.meta = { ...(state.map.meta ?? {}), duration: dur };
-  } catch (err) {
-    console.warn('Local map audio restore failed:', err);
-  }
-}
-
 let multiplayerRoundActive = false;
 let lastMultiplayerScoreAt = 0;
 
@@ -292,7 +224,7 @@ async function prepareMultiplayerMap(mapId: string): Promise<void> {
   try {
     initAudio();
     if (!await loadMapById(mapId)) throw new Error('MAP_NOT_FOUND');
-    await ensureCurrentMapAudio();
+    await ensureCurrentMapAudio(settings);
     if (calibrationController.isReady()) {
       completeMultiplayerPreparation();
       return;
@@ -322,7 +254,7 @@ async function beginMultiplayerRound(detail: {
     return;
   }
   initAudio();
-  await ensureCurrentMapAudio();
+  await ensureCurrentMapAudio(settings);
   gameplayFocusProtection.reset();
   clearGameplayEntities();
   stopMapAudio();
@@ -367,7 +299,7 @@ async function beginPlaying(): Promise<void> {
   state.appState     = S.PLAYING;
 
   if (state.map) {
-    await ensureCurrentMapAudio();
+    await ensureCurrentMapAudio(settings);
     resetMapSpawn();
     mapTimeline.start(performance.now());
     showMapTitle(state.map.meta?.title ?? t('game.unknownTrack'));
