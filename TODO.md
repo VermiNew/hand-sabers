@@ -394,6 +394,8 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
   - [x] Synchronizować etykietę przycisku ustawień po anulowaniu z nakładki, ukończeniu pomiaru i braku obsługi AudioContext.
   - [x] Rozdzielić licznik i komunikaty na 2 tapnięcia rozgrzewkowe oraz 8 właściwych próbek pomiarowych, bez błędu off-by-one.
   - [x] Pozostawić wynik na ekranie do decyzji użytkownika: zastosować offset, ponowić pomiar lub zamknąć bez zmian; niestabilny wynik wymaga osobnego „Zastosuj mimo to”.
+  - [x] Planować kliknięcia według zegara `AudioContext` z wyprzedzeniem zamiast dokładności timerów JavaScript; start czeka na wznowienie audio, a zamknięcie w trakcie startu anuluje żądanie.
+  - [ ] Wykonać ręczny pomiar na realnych wyjściach audio (przewodowe, Bluetooth, głośniki) i ocenić, czy zakres oraz znak zapisanego offsetu odpowiadają odczuciu w grze.
   - [x] Pokazać offset, rozrzut i liczbę użytych próbek dla wyniku stabilnego oraz niestabilnego.
   - [x] Czyścić timery animacji i stan wizualny przy anulowaniu, wyniku, zamknięciu oraz ponowieniu pomiaru.
   - [ ] Ręcznie odsłuchać i sprawdzić pełny flow w obsługiwanych przeglądarkach: start, anulowanie, stabilny wynik, niestabilny wynik, zastosowanie, zamknięcie i szybkie ponowienie.
