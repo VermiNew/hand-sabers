@@ -2,13 +2,13 @@ import { S, state } from '../core/state.ts';
 import { ui, updateHUD, clearDangerPulse, showGameOver, hideHandsPaused, updateMapProgress, showMapTitle, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
 import {
   renderer, scene, cam3d, bgMat,
-  lSaber, rSaber, lTarget, rTarget, lVel, rVel, lLight, rLight,
-  animateIdleSabers, updateArenaPulse, updateLightReflections, updateReflection, resizeRenderer, adaptRenderQuality, disposeSceneResources,
-  applyShake, setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
+  lSaber, rSaber, lTarget, rTarget, lVel, rVel,
+  animateIdleSabers, resizeRenderer, adaptRenderQuality, disposeSceneResources,
+  setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, stopMapAudio, hasMapAudio, clearMapAudio, applyAudioSettings } from './audio.ts';
 import { initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, restoreCalibrationData } from '../tracking/tracking.ts';
-import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, updateSparks, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
+import { setGameOverHandler, startGameplay, clearGameplayEntities, updateBlocks, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, tickDevPanel, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
@@ -45,7 +45,6 @@ import { createRenderLoop } from './render-loop.ts';
 import { createMultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
 import { bindComboNarrator, showFirstRunWelcome } from './narrator-prompts.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
-import { updateSaberTrails } from './saber-trails.ts';
 import { initSettingsBindings } from './settings-bindings.ts';
 import { initMultiplayerEvents, type MultiplayerRoundStart, type MultiplayerRules } from './multiplayer-events.ts';
 import { nextFrameTiming, resetFrameTiming, smoothProfileValue } from './frame-timing.ts';
@@ -54,6 +53,7 @@ import { initStartupGuidance } from './startup-guidance.ts';
 import { initMapSelectionEvents } from './map-selection-events.ts';
 import { initNarratorPauseEvents } from './narrator-pause-events.ts';
 import { updateArenaReactiveFrame } from './arena-reactive-frame.ts';
+import { updateFrameEffects } from './frame-effects.ts';
 
 declare global {
   interface Window {
@@ -408,29 +408,16 @@ function renderFrame(timestamp: number): void {
   });
   if (profiling) frameProfile.gameMs = smoothProfileValue(frameProfile.gameMs, performance.now() - gamePhaseStart);
 
-  const effectsPhaseStart = profiling ? performance.now() : 0;
-  lLight.position.set(lSaber.position.x, lSaber.position.y + 0.5, lSaber.position.z);
-  rLight.position.set(rSaber.position.x, rSaber.position.y + 0.5, rSaber.position.z);
-  updateArenaPulse(t, musicEnergy, beatPulse, visualPressure);
-  updateLightReflections(t);
-  updateSaberTrails(state.appState === S.PLAYING || isMainMenuOpen(), state.deltaSec);
-  updateSparks(state.deltaScale);
-
-  if (state.appState === S.PLAYING) {
-    cam3d.position.x = Math.sin(t * 0.15) * 0.04;
-    cam3d.position.y = 1.55 + Math.sin(t * 0.2) * 0.015;
-  }
-
-  let effectsSampleMs = profiling ? performance.now() - effectsPhaseStart : 0;
-
-  const reflectionPhaseStart = profiling ? performance.now() : 0;
-  updateReflection();
-  if (profiling) frameProfile.reflectionMs = smoothProfileValue(frameProfile.reflectionMs, performance.now() - reflectionPhaseStart);
-  const shakePhaseStart = profiling ? performance.now() : 0;
-  applyShake(state.deltaScale);
+  const effectsProfile = updateFrameEffects({
+    timeSec: t,
+    musicEnergy,
+    beatPulse,
+    visualPressure,
+    profiling,
+  });
   if (profiling) {
-    effectsSampleMs += performance.now() - shakePhaseStart;
-    frameProfile.effectsMs = smoothProfileValue(frameProfile.effectsMs, effectsSampleMs);
+    frameProfile.reflectionMs = smoothProfileValue(frameProfile.reflectionMs, effectsProfile.reflectionMs);
+    frameProfile.effectsMs = smoothProfileValue(frameProfile.effectsMs, effectsProfile.effectsMs);
   }
 
   const rStart = performance.now();
