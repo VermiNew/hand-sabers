@@ -24,7 +24,7 @@ import { parseRoomSnapshot } from '../multiplayer/protocol.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { isPhoneAudioActive, playPhoneAudio, pausePhoneAudio, stopPhoneAudio } from '../remote/host-audio.ts';
-import { narratorShow, narratorQuick, NARRATOR_SPEEDS, isNarratorVisible } from './narrator.ts';
+import { narratorShow, narratorQuick, NARRATOR_SPEEDS } from './narrator.ts';
 import { initAchievements, recordGameEnd } from '../core/achievements.ts';
 import { initLanguageSettings } from '../ui/language-settings.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
@@ -53,6 +53,7 @@ import { isMainMenuOpen, updateMenuAutoplay, updateSabers } from './saber-motion
 import { createRuntimeReporter } from './runtime-reporter.ts';
 import { createRenderLoop } from './render-loop.ts';
 import { createMultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
+import { bindComboNarrator, showFirstRunWelcome } from './narrator-prompts.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer, getCurrentBassLevel, getCurrentMidLevel, getCurrentHighLevel } from './music-visualizer.ts';
 import { updateSaberTrails } from './saber-trails.ts';
 
@@ -524,37 +525,7 @@ function handleKeydown(e: KeyboardEvent): void {
 
 applyPauseTranslations();
 
-function showFirstRunWelcome(): void {
-  const seenRaw = localStorage.getItem('hs_welcome_seen');
-  if (seenRaw === '1') return;
-  try { localStorage.setItem('hs_welcome_seen', '1'); } catch {}
-  setTimeout(() => {
-    if (document.body.classList.contains('menu-open') && state.appState === 'menu') {
-      void narratorShow({
-        text: t('narrator.welcome'),
-        buttons: [t('narrator.letsGo'), t('narrator.openTutorial')],
-        mood: 'happy',
-      }).then(choice => {
-        if (choice === 1) {
-          window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', { detail: { force: true } }));
-        }
-      });
-    }
-  }, 1200);
-}
-
-const COMBO_NARRATOR_MSGS: Record<number, { key: string; mood: 'happy' | 'excited' | 'celebrate' }> = {
-  50: { key: 'narrator.combo50', mood: 'happy' },
-  100: { key: 'narrator.combo100', mood: 'excited' },
-  200: { key: 'narrator.combo200', mood: 'celebrate' },
-};
-
-window.__narratorCombo = (combo: number) => {
-  if (isNarratorVisible()) return;
-  const msg = COMBO_NARRATOR_MSGS[combo];
-  if (!msg) return;
-  narratorQuick(t(msg.key), msg.mood, 3500);
-};
+bindComboNarrator();
 
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
 ui.ovBtnMaps?.addEventListener('click',   () => { openMapPicker(); });
