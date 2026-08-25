@@ -7,6 +7,7 @@ import { isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import type { Settings } from '../types/index.js';
 import { decodeRemoteLandmarks, sendRealtimeLandmarks, sendRealtimePose } from './realtime.ts';
 import type { DetectResult, Landmark, WorkerResult } from './realtime.ts';
+import { drawHandLandmarks, HAND_CONNECTIONS } from './landmark-canvas.ts';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
 const MODEL_URL     = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
@@ -14,15 +15,6 @@ const URL_PARAMS = new URLSearchParams(location.search);
 function isDebugVisuals(): boolean {
   return URL_PARAMS.has('dev') || URL_PARAMS.has('testing') || Boolean(getSettings().developerMode);
 }
-const HAND_CONNECTIONS: readonly [number, number][] = Object.freeze([
-  [0,1],[1,2],[2,3],[3,4],
-  [0,5],[5,6],[6,7],[7,8],
-  [0,9],[9,10],[10,11],[11,12],
-  [0,13],[13,14],[14,15],[15,16],
-  [0,17],[17,18],[18,19],[19,20],
-  [5,9],[9,13],[13,17],
-]);
-
 export interface CalibStep {
   id: 'arms' | 'zone' | 'sides' | 'confirm';
   autoMs: number;
@@ -389,52 +381,12 @@ function onWorkerMessage(e: MessageEvent<{ type: string; payload: WorkerResult }
   latestWorkerResult = e.data.payload;
 }
 
-function drawLandmarksToCanvas(
-  canvas: HTMLCanvasElement,
-  context: CanvasRenderingContext2D,
-  result: DetectResult,
-  includeVideo = true,
-): void {
-  const w = canvas.width, h = canvas.height;
-  context.clearRect(0, 0, w, h);
-
-  if (includeVideo && videoEl && videoEl.readyState >= 2) {
-    context.save();
-    context.translate(w, 0);
-    context.scale(-1, 1);
-    context.drawImage(videoEl, 0, 0, w, h);
-    context.restore();
-  } else {
-    context.fillStyle = 'rgba(5,7,13,0.9)';
-    context.fillRect(0, 0, w, h);
-  }
-
-  if (!result?.landmarks) return;
-  for (const hand of result.landmarks) {
-    context.strokeStyle = 'rgba(47,124,255,0.85)';
-    context.lineWidth   = 1.5;
-    for (const [a, b] of HAND_CONNECTIONS) {
-      const pa = hand[a]!, pb = hand[b]!;
-      context.beginPath();
-      context.moveTo((1 - pa.x) * w, pa.y * h);
-      context.lineTo((1 - pb.x) * w, pb.y * h);
-      context.stroke();
-    }
-    for (const lm of hand) {
-      context.fillStyle = '#7eb8ff';
-      context.beginPath();
-      context.arc((1 - lm.x) * w, lm.y * h, 3, 0, Math.PI * 2);
-      context.fill();
-    }
-  }
-}
-
 function drawLandmarks(result: DetectResult): void {
   if (trackCtx && trackCanvas) {
-    drawLandmarksToCanvas(trackCanvas, trackCtx, result, isDebugVisuals());
+    drawHandLandmarks(trackCanvas, trackCtx, result, isDebugVisuals() ? videoEl : null);
   }
   if (state.appState === S.PAUSED && handsPauseCtx && handsPauseCanvas) {
-    drawLandmarksToCanvas(handsPauseCanvas, handsPauseCtx, result);
+    drawHandLandmarks(handsPauseCanvas, handsPauseCtx, result, videoEl);
   }
 }
 

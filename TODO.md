@@ -284,6 +284,7 @@
 - [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
   - [x] Wydzielić obsługę odpowiedzi HTTP, tłumaczenie błędów, kopiowanie i budowę URL WebSocket do `src/multiplayer/client-utils.ts`
 - [ ] Rozbić `src/tracking/tracking.ts` (613 linii) na moduły
+  - [x] Wydzielić renderowanie obrazu kamery i landmarków dłoni do `src/tracking/landmark-canvas.ts`
 - [ ] Rozbić `src/creator/input.ts` (619 linii) na moduły
   - [x] Wydzielić historię undo/redo i kontrolę nakładania beatów do `src/creator/history.ts`
 - [ ] Każda refaktoryzacja musi zachować wszystkie funkcje i nie uszkodzić kodu — weryfikacja przez `npm run verify` po każdym kroku
