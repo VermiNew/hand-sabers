@@ -111,7 +111,7 @@
 
 ## 16. Lepsza rozgrywka
 
-- [ ] Balans trudności — krzywa nauki
+- [x] Balans trudności — krzywa nauki
 - [x] Więcej wzorców sekwencji beatów (subtelne losowe pozycje nowych beatów w kreatorze)
 - [x] Efekty trafienia bardziej satysfakcjonujące (shake, flash, dźwięk)
 
@@ -323,9 +323,9 @@
 
 ## 34. Balans trudności
 
-- [ ] Zaimplementować krzywą nauki — stopniowe zwiększanie trudności map
-- [ ] Dodać system oceny trudności mapy na podstawie gęstości beatów, tempa i wzorców
-- [ ] Dodać rekomendacje map dla graczy na podstawie ich postępów
+- [x] Zaimplementować doradczą krzywą nauki — rekomendować kolejną mapę bez blokowania pozostałej zawartości
+- [x] Dodać system oceny trudności mapy na podstawie gęstości beatów, tempa i wzorców
+- [x] Dodać rekomendacje map dla aktywnego profilu na podstawie lokalnego postępu, z sugestią startu, kontynuacji, awansu lub utrwalenia
 - [ ] Dostosować hitboxy i timing okien dla początkujących vs zaawansowanych
 
 ## 35. Panele deweloperskie, scena i eksport konfiguracji

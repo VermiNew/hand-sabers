@@ -3,6 +3,11 @@ import { loadLocalMapAudio, readLocalMaps, readLocalScores } from '../core/local
 import { normalizeMap } from '../core/map-format.ts';
 import { importMapLocally, importMapToServer } from '../core/map-import.ts';
 import { getSettings } from '../core/settings.ts';
+import {
+  recommendLearningCurveMap,
+  type LearningCurveRecommendation,
+} from '../core/learning-curve.ts';
+import type { DifficultyBeat } from '../core/map-difficulty.ts';
 import { popFocusTrap, pushFocusTrap } from '../ui/keyboard-nav.ts';
 
 interface MapMeta {
@@ -20,7 +25,7 @@ interface MapMeta {
 interface MapEntry {
   id: string;
   meta?: MapMeta;
-  beats?: unknown[];
+  beats?: DifficultyBeat[];
   updatedAt?: string;
   _serverAudioPending?: boolean;
   _localAudioPending?: boolean;
@@ -81,6 +86,7 @@ let loading = false;
 let initialized = false;
 let importing = false;
 let returnFocus: HTMLElement | null = null;
+let learningRecommendation: LearningCurveRecommendation | null = null;
 const PREVIEW_MAX_SECONDS = 30;
 let previewAudio: HTMLAudioElement | null = null;
 let previewObjectUrl: string | null = null;
@@ -367,9 +373,10 @@ function renderMapList(list: HTMLElement): void {
     return;
   }
   for (const map of maps) {
+    const isRecommended = learningRecommendation?.mapId === map.id;
     const card = document.createElement('button');
     card.type = 'button';
-    card.className = `mp-map-card${map.id === selectedId ? ' is-selected' : ''}`;
+    card.className = `mp-map-card${map.id === selectedId ? ' is-selected' : ''}${isRecommended ? ' is-recommended' : ''}`;
     card.dataset['mapId'] = map.id;
     card.setAttribute('role', 'option');
     card.setAttribute('aria-selected', String(map.id === selectedId));
@@ -380,6 +387,9 @@ function renderMapList(list: HTMLElement): void {
     content.className = 'mp-map-card-content';
     const title = document.createElement('strong');
     title.textContent = cleanText(map.meta?.title, map.id);
+    const recommendationBadge = document.createElement('span');
+    recommendationBadge.className = 'mp-map-recommended';
+    recommendationBadge.textContent = t('mapPicker.learningRecommended');
     const subtitle = document.createElement('span');
     subtitle.textContent = [cleanText(map.meta?.artist), cleanText(map.meta?.difficulty)].filter(Boolean).join(' \u00b7 ') || map.id;
     const stats = document.createElement('span');
@@ -387,7 +397,9 @@ function renderMapList(list: HTMLElement): void {
     const bpm = finitePositive(map.meta?.bpm);
     const duration = finitePositive(map.meta?.duration);
     stats.textContent = `${bpm ? `${Math.round(bpm)} BPM` : '\u2014 BPM'} \u00b7 ${formatDuration(duration)} \u00b7 ${map.beats?.length ?? 0} ${t('mapPicker.beats')}`;
-    content.append(title, subtitle, stats);
+    content.append(title);
+    if (isRecommended) content.append(recommendationBadge);
+    content.append(subtitle, stats);
     const check = document.createElement('span');
     check.className = 'material-symbols-rounded mp-map-card-check';
     check.textContent = map.id === selectedId ? 'check_circle' : 'chevron_right';
@@ -395,6 +407,28 @@ function renderMapList(list: HTMLElement): void {
     card.addEventListener('click', () => selectMap(map.id));
     list.append(card);
   }
+}
+
+function renderLearningCurveHint(recommendation: LearningCurveRecommendation): HTMLElement {
+  const hint = document.createElement('section');
+  hint.className = 'mp-learning-hint';
+  const icon = document.createElement('span');
+  icon.className = 'material-symbols-rounded';
+  icon.setAttribute('aria-hidden', 'true');
+  icon.textContent = 'route';
+  const content = document.createElement('div');
+  const title = document.createElement('strong');
+  title.textContent = t('mapPicker.learningTitle');
+  const reason = document.createElement('p');
+  reason.textContent = t(`mapPicker.learningReason${recommendation.reason[0]!.toUpperCase()}${recommendation.reason.slice(1)}`);
+  const analysis = document.createElement('small');
+  analysis.textContent = t('mapPicker.learningScore', {
+    difficulty: t(`difficulty.${recommendation.difficulty}`),
+    score: recommendation.difficultyScore,
+  });
+  content.append(title, reason, analysis);
+  hint.append(icon, content);
+  return hint;
 }
 
 function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void {
@@ -416,6 +450,10 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
   const diff = cleanText(map.meta?.difficulty).toLowerCase();
   diffBadge.className = `mp-detail-diff-badge ${diff || ''}`;
   diffBadge.textContent = diff || t('mapPicker.unknown');
+  const recommendation = learningRecommendation?.mapId === map.id
+    ? learningRecommendation
+    : null;
+  const learningHint = recommendation ? renderLearningCurveHint(recommendation) : null;
   const stats = document.createElement('div');
   stats.className = 'mp-detail-stats';
   const bpm = finitePositive(map.meta?.bpm);
@@ -439,7 +477,9 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
     stat.append(label, value);
     stats.append(stat);
   }
-  detailPane.append(title, subtitle, diffBadge, stats);
+  detailPane.append(title, subtitle, diffBadge);
+  if (learningHint) detailPane.append(learningHint);
+  detailPane.append(stats);
   // Score section
   const scoreData = getMapScoreData(map.id);
   if (scoreData.best) {
@@ -518,6 +558,13 @@ async function loadMaps(): Promise<void> {
       }
     } catch { /* server unavailable */ }
     allMaps = mergeMaps(serverMaps, normalized);
+    const currentPlayerName = cleanText(getSettings().playerName);
+    const playerScores = (readLocalScores({ limit: 1000 }) as ScoreEntry[])
+      .filter(score => !currentPlayerName || cleanText(score.player) === currentPlayerName);
+    learningRecommendation = recommendLearningCurveMap(
+      allMaps,
+      playerScores,
+    );
   } finally {
     loading = false;
     if (list) renderMapList(list);
