@@ -11,23 +11,14 @@ import { drawHandLandmarks, HAND_CONNECTIONS } from './landmark-canvas.ts';
 import { updateCalibrationSourceUI } from './calibration-source-ui.ts';
 import { loadHandLandmarker } from './mediapipe-loader.ts';
 import { createAutoFlipDetector } from './auto-flip.ts';
+import { CALIB_STEPS, renderCalibrationStep } from './calibration-step-ui.ts';
+export type { CalibStep } from './calibration-step-ui.ts';
+export { CALIB_STEPS } from './calibration-step-ui.ts';
 
 const URL_PARAMS = new URLSearchParams(location.search);
 function isDebugVisuals(): boolean {
   return URL_PARAMS.has('dev') || URL_PARAMS.has('testing') || Boolean(getSettings().developerMode);
 }
-export interface CalibStep {
-  id: 'arms' | 'zone' | 'sides' | 'confirm';
-  autoMs: number;
-}
-
-export const CALIB_STEPS: readonly CalibStep[] = [
-  { id: 'arms', autoMs: 2000 },
-  { id: 'zone', autoMs: 3000 },
-  { id: 'sides', autoMs: 1600 },
-  { id: 'confirm', autoMs: 1500 },
-];
-
 declare global {
   interface Window {
     __lastDetectMs?:     number;
@@ -141,46 +132,8 @@ export function finishCalibStep(idx: number): void {
   calibPoints = [];
 }
 
-function getCalibInstruction(step: CalibStep): string {
-  return t(`calib.steps.${step.id}.${state.oneHandMode ? 'oneHand' : 'instruction'}`);
-}
-
-function getCalibStepLabel(step: CalibStep): string {
-  return t(`calib.labels.${step.id}`);
-}
-
 export function renderCalibStep(): void {
-  const step = CALIB_STEPS[state.calibIdx];
-  if (!step) return;
-  const total = CALIB_STEPS.length;
-  const idx   = state.calibIdx;
-  const pct   = ((idx + 1) / total) * 100;
-
-  if (ui.calibStep)  ui.calibStep.textContent  = t(`calib.steps.${step.id}.title`);
-  if (ui.calibInstr) ui.calibInstr.textContent = getCalibInstruction(step);
-  if (ui.calibBar)   ui.calibBar.style.width   = `${pct}%`;
-
-  if (ui.calibStepBadge) {
-    ui.calibStepBadge.textContent = t('calib.stepBadge', { current: idx + 1, total });
-  }
-  if (ui.calibProgressLabel) {
-    ui.calibProgressLabel.textContent = `${Math.round(pct)}%`;
-  }
-
-  if (ui.calibStepsTrack) {
-    ui.calibStepsTrack.innerHTML = CALIB_STEPS.map((_, i) => {
-      const cls = i < idx ? 'is-done' : i === idx ? 'is-active' : '';
-      const connector = i < total - 1
-        ? `<div class="calib-step-connector${i < idx ? ' is-done' : ''}"></div>`
-        : '';
-      return `<div class="calib-step-dot ${cls}">
-        <div class="calib-step-num">${i < idx ? '<span class="material-symbols-rounded" style="font-size:13px">check</span>' : i + 1}</div>
-        <span class="calib-step-label">${getCalibStepLabel(CALIB_STEPS[i]!)}</span>
-      </div>${connector}`;
-    }).join('');
-  }
-
-  scheduleCalibAuto();
+  renderCalibrationStep(state.calibIdx, state.oneHandMode, scheduleCalibAuto);
 }
 
 function setupCalibFeed(): void {
