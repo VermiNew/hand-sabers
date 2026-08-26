@@ -301,6 +301,7 @@
   - [x] Wydzielić obsługę odpowiedzi HTTP, tłumaczenie błędów, kopiowanie i budowę URL WebSocket do `src/multiplayer/client-utils.ts`
   - [x] Wydzielić próbki RTT, estymację offsetu i konwersję czasu serwera do `src/multiplayer/clock-sync.ts`
   - [x] Wydzielić bezpieczne renderowanie, stan i wysyłanie czatu do `src/multiplayer/chat-view.ts`
+  - [x] Wydzielić bezpieczne renderowanie wyników coop i score attack dla lobby oraz HUD do `src/multiplayer/score-view.ts`
 - [ ] Rozbić `src/tracking/tracking.ts` (613 linii) na moduły
   - [x] Wydzielić renderowanie obrazu kamery i landmarków dłoni do `src/tracking/landmark-canvas.ts`
   - [x] Wydzielić prezentację źródła kalibracji kamery/telefonu do `src/tracking/calibration-source-ui.ts`

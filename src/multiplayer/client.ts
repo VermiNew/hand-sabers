@@ -17,6 +17,7 @@ import {
 } from './client-utils.ts';
 import { recordClockPong, resetClockSync, serverTimeToPerformance } from './clock-sync.ts';
 import { createMultiplayerChatView } from './chat-view.ts';
+import { renderMultiplayerScores } from './score-view.ts';
 
 export { PROTOCOL_VERSION } from './protocol.ts';
 export { serverTimeToPerformance } from './clock-sync.ts';
@@ -205,38 +206,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     sendControl({ type: 'set-map', mapId });
   });
 
-  const renderScoresInto = (container: HTMLElement, snapshot: RoomSnapshot) => {
-    const players = snapshot.players.filter(player => player.playing);
-    container.replaceChildren();
-    container.hidden = !snapshot.round || players.length === 0;
-    if (container.hidden) return;
-    const sorted = [...players].sort((left, right) => right.score - left.score || right.combo - left.combo);
-    if (snapshot.mode === 'coop') {
-      const team = document.createElement('div');
-      team.className = 'mp-score-row is-team';
-      const label = document.createElement('span');
-      label.textContent = t('multiplayer.teamScore');
-      const value = document.createElement('strong');
-      value.textContent = sorted.reduce((total, player) => total + player.score, 0).toLocaleString();
-      team.append(label, value);
-      container.append(team);
-    }
-    for (const player of sorted) {
-      const row = document.createElement('div');
-      row.className = 'mp-score-row';
-      const name = document.createElement('span');
-      name.textContent = player.name;
-      name.style.color = player.color;
-      const value = document.createElement('strong');
-      value.textContent = player.score.toLocaleString();
-      row.append(name, value);
-      container.append(row);
-    }
-  };
-
   const renderScores = (snapshot: RoomSnapshot) => {
-    renderScoresInto(lobbyScores, snapshot);
-    renderScoresInto(hudScores, snapshot);
+    renderMultiplayerScores([lobbyScores, hudScores], snapshot);
   };
 
   const announceRoundStarted = (snapshot: RoomSnapshot) => {
