@@ -10,6 +10,7 @@ import { checkServerHealth, fetchJson, loadServerMaps, type MapEntry, type Score
 import { getAutosaveMap, mergeMaps } from './library-sources.ts';
 import { createLibraryFilter } from './library-filter.ts';
 import { exportLibraryMap, importLibraryMap } from './library-transfer.ts';
+import { renderLibrarySkeleton, renderMapCard } from './library-list-view.ts';
 import {
   escapeAttribute as attr,
   escapeHtml as escHtml,
@@ -112,18 +113,6 @@ function getFilteredMaps(): MapEntry[] {
 
 // ── Render: list ──────────────────────────────────────────────────────────────
 
-function renderSkeleton(): string {
-  return Array.from({ length: 5 }, () => `
-    <div class="skeleton-row">
-      <div class="skeleton skeleton-icon"></div>
-      <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-        <div class="skeleton skeleton-text" style="width:60%"></div>
-        <div class="skeleton skeleton-text" style="width:38%"></div>
-      </div>
-      <div class="skeleton skeleton-badge" style="width:44px"></div>
-    </div>`).join('');
-}
-
 function renderMapList(maps: MapEntry[]): void {
   const container = document.getElementById('mapList')!;
 
@@ -149,7 +138,11 @@ function renderMapList(maps: MapEntry[]): void {
 
   container.innerHTML = `
     <div class="map-picker-stage" aria-label="Wybór map 2.5D">
-      ${maps.map((m, i) => renderMapCard(m, i, activeIndex)).join('')}
+      ${maps.map((map, index) => renderMapCard(map, index, activeIndex, {
+        favorite: isFavoriteMap(map.id),
+        score: getMapScoreData(map.id).best?.score ?? 0,
+        selected: selectedId === map.id,
+      })).join('')}
     </div>`;
 
   container.querySelectorAll<HTMLElement>('.map-card').forEach(row => {
@@ -160,55 +153,6 @@ function renderMapList(maps: MapEntry[]): void {
       else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); selectAdjacentMap(-1); }
     });
   });
-}
-
-function renderMapCard(m: MapEntry, i: number, activeIndex: number): string {
-    const title  = m.meta?.title   ?? m.id;
-    const artist = m.meta?.artist  ?? m.meta?.mapper ?? '';
-    const diff   = m.meta?.difficulty ?? '';
-    const beats  = m.beats?.length ?? 0;
-    const dur    = m.meta?.duration ? formatTime(m.meta.duration) : null;
-    const isLocal = m.source === 'local' || m.source === 'autosave';
-    const subParts = [artist, dur ? dur : null, beats ? t('maps.beatsCount', { count: beats }) : null].filter(Boolean);
-    const score = getMapScoreData(m.id).best?.score ?? 0;
-    const favorite = isFavoriteMap(m.id);
-    const offset = Math.max(-3, Math.min(3, i - activeIndex));
-    const absOffset = Math.abs(offset);
-    const depth = 1 - Math.min(absOffset, 3) * 0.09;
-    const translateX = offset * 22;
-    const rotateY = offset * -8;
-    const translateZ = (3 - absOffset) * 8;
-
-    return `
-      <div class="map-card map-item${selectedId === m.id ? ' is-selected' : ''}"
-           data-id="${attr(m.id)}"
-           tabindex="0" role="button" aria-label="${attr(title)}"
-           style="--card-offset:${offset};--card-depth:${depth.toFixed(2)};--card-x:${translateX}px;--card-ry:${rotateY}deg;--card-z:${translateZ}px;animation-delay:${i * 0.025}s">
-        <div class="map-card-glow"></div>
-        <div class="map-row-icon">
-          <span class="material-symbols-rounded">music_note</span>
-        </div>
-        <div class="map-row-info map-card-info">
-          <div class="map-row-title">${escHtml(title)}</div>
-          ${subParts.length ? `<div class="map-row-sub">${subParts.map(escHtml).join(' · ')}</div>` : ''}
-          <div class="map-card-wave" aria-hidden="true">${renderWaveBars(m.id)}</div>
-        </div>
-        <div class="map-row-badges">
-          ${favorite ? '<span class="map-favorite material-symbols-rounded" aria-hidden="true">star</span>' : ''}
-          ${diff ? `<span class="diff-badge diff-${escHtml(diff.toLowerCase())}">${escHtml(diff)}</span>` : ''}
-          ${isLocal ? `<span class="local-badge">LOCAL</span>` : ''}
-          ${score ? `<span class="score-badge">${String(score).padStart(6, '0')}</span>` : ''}
-        </div>
-      </div>`;
-}
-
-function renderWaveBars(seed: string): string {
-  let hash = 0;
-  for (const char of seed) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  return Array.from({ length: 18 }, (_, i) => {
-    const value = 18 + ((hash >> (i % 12)) + i * 17) % 46;
-    return `<span style="--h:${value}%"></span>`;
-  }).join('');
 }
 
 // ── Render: detail pane ───────────────────────────────────────────────────────
@@ -442,7 +386,7 @@ async function loadMaps(): Promise<void> {
   if (loadMapsInProgress) return;
   loadMapsInProgress = true;
   try {
-    document.getElementById('mapList')!.innerHTML = renderSkeleton();
+    document.getElementById('mapList')!.innerHTML = renderLibrarySkeleton();
     renderDetail(null);
 
     const localMaps  = (readLocalMaps() as unknown) as MapEntry[];
@@ -491,7 +435,7 @@ async function loadMaps(): Promise<void> {
 
 async function loadScores(): Promise<void> {
   const scoreList = document.getElementById('scoreList')!;
-  scoreList.innerHTML = renderSkeleton();
+  scoreList.innerHTML = renderLibrarySkeleton();
 
   const localScores = readLocalScores({ limit: 30 }) as ScoreEntry[];
   let scores: ScoreEntry[] = [];
