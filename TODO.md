@@ -313,6 +313,7 @@
   - [x] Wydzielić obliczenia i kontrolki siatki snap do `src/creator/snap.ts`, zachowując eksporty kompatybilności w `input.ts`
   - [x] Wydzielić timer, animację i sterowanie odliczaniem przed odtwarzaniem do `src/creator/precount.ts`
   - [x] Wydzielić rejestrowanie tapów, bomb i held beats, kierunek cięcia, flash oraz pętlę do `src/creator/beat-input.ts`, zachowując eksporty kompatybilności w `input.ts`
+  - [x] Wydzielić skróty klawiaturowe, blokadę auto-repeat i kończenie held beats po `keyup` do `src/creator/keyboard-input.ts`
 - [ ] Każda refaktoryzacja musi zachować wszystkie funkcje i nie uszkodzić kodu — weryfikacja przez `npm run verify` po każdym kroku
   - [x] Dodać zatwierdzony Playwright smoke głównego menu: brak krytycznych błędów strony/konsoli oraz otwarcie i zamknięcie pickera map z kontrolą focusu
 
