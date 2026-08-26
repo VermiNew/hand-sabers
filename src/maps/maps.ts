@@ -11,10 +11,9 @@ import { getAutosaveMap, mergeMaps } from './library-sources.ts';
 import { createLibraryFilter } from './library-filter.ts';
 import { exportLibraryMap, importLibraryMap } from './library-transfer.ts';
 import { renderLibrarySkeleton, renderMapCard } from './library-list-view.ts';
+import { renderLibraryDetail } from './library-detail-view.ts';
 import {
-  escapeAttribute as attr,
   escapeHtml as escHtml,
-  formatMapTime as formatTime,
   withDevQuery,
 } from './library-format.ts';
 
@@ -159,121 +158,13 @@ function renderMapList(maps: MapEntry[]): void {
 
 function renderDetail(map: MapEntry | null): void {
   const pane = document.getElementById('detailPane')!;
-
-  if (!map) {
-    pane.innerHTML = `
-      <div class="detail-empty">
-        <span class="material-symbols-rounded">arrow_back</span>
-        <div class="detail-empty-hint">${t('maps.selectFromList').replace(' ', '<br>')}</div>
-      </div>`;
-    return;
-  }
-
-  const title   = map.meta?.title   ?? map.id;
-  const artist  = [map.meta?.artist, map.meta?.mapper].filter(Boolean).join(' · ');
-  const diff    = map.meta?.difficulty ?? '';
-  const beats   = map.beats?.length ?? 0;
-  const dur     = map.meta?.duration ? formatTime(map.meta.duration) : '—';
-  const bpm     = map.meta?.bpm ? `${map.meta.bpm} BPM` : '—';
-  const isLocal = map.source === 'local' || map.source === 'autosave';
-  const canDeleteServer = map.source === 'server' || map.source === 'server+local';
-  const sd = getMapScoreData(map.id);
-  const favorite = isFavoriteMap(map.id);
-
-  const scoreSection = sd.best ? `
-    <div class="detail-score-section">
-      <div class="detail-score-label">${t('maps.bestScore')}</div>
-      <div class="detail-best-score">${String(sd.best.score).padStart(6, '0')}</div>
-      <div class="detail-score-meta">
-        <span><span class="material-symbols-rounded">cycle</span>${t('maps.triesCount', { count: sd.tries })}</span>
-        <span><span class="material-symbols-rounded">local_fire_department</span>×${sd.best.combo} combo</span>
-        ${sd.best.player ? `<span><span class="material-symbols-rounded">person</span>${escHtml(sd.best.player)}</span>` : ''}
-      </div>
-      ${sd.progress !== null ? `
-        <div class="detail-progress-wrap">
-          <div class="detail-progress-fill" style="width:${Math.round(sd.progress * 100)}%"></div>
-        </div>` : ''}
-    </div>` : `<div class="detail-no-score">${t('maps.noScoresFirst')}</div>`;
-
-  pane.innerHTML = `
-    <div class="detail-scroll">
-      <div id="detailTiltCard" class="detail-hero-card">
-        <div class="detail-card-glare" aria-hidden="true"></div>
-        <div class="detail-card-depth" aria-hidden="true"></div>
-        <div class="detail-card-content">
-          <div class="detail-title">${escHtml(title)}</div>
-          ${artist ? `<div class="detail-artist">${escHtml(artist)}</div>` : ''}
-          ${diff ? `<span class="diff-badge diff-${escHtml(diff.toLowerCase())}" style="margin-bottom:16px;display:inline-block">${escHtml(diff)}</span>` : ''}
-          <div class="preview-panel">
-          <div id="previewStatus" class="preview-status" role="status" aria-live="polite">
-            <span class="material-symbols-rounded">graphic_eq</span>
-            <span>${t('maps.previewHint')}</span>
-          </div>
-          <button id="previewToggle" class="preview-toggle" type="button">
-            <span class="material-symbols-rounded">play_arrow</span>
-            <span>${t('maps.preview')}</span>
-          </button>
-          </div>
-          <div class="preview-progress" aria-label="Postęp preview">
-            <div class="preview-progress-track">
-              <div id="previewProgressFill" class="preview-progress-fill"></div>
-            </div>
-            <div class="preview-progress-meta">
-              <span>${t('maps.previewDuration')}</span>
-              <span id="previewProgressTime">30s</span>
-            </div>
-          </div>
-          <div class="preview-volume-row">
-            <label for="previewVolume">${t('maps.previewVolume')}</label>
-            <input id="previewVolume" type="range" min="0" max="100" step="1" value="${mapPreview.getMusicPercent()}">
-            <span id="previewVolumeValue">${mapPreview.getMusicPercent()}%</span>
-          </div>
-
-          <div class="detail-stats">
-            <div class="detail-stat">
-              <div class="detail-stat-label">${t('maps.statTime')}</div>
-              <div class="detail-stat-value">${escHtml(dur)}</div>
-            </div>
-            <div class="detail-stat">
-              <div class="detail-stat-label">${t('maps.statBeats')}</div>
-              <div class="detail-stat-value">${beats}</div>
-            </div>
-            <div class="detail-stat">
-              <div class="detail-stat-label">BPM</div>
-              <div class="detail-stat-value">${escHtml(bpm)}</div>
-            </div>
-            <div class="detail-stat">
-              <div class="detail-stat-label">${t('maps.statSource')}</div>
-              <div class="detail-stat-value" style="font-size:12px">${isLocal ? t('maps.sourceLocal') : t('maps.sourceServer')}</div>
-            </div>
-          </div>
-
-          <div class="detail-divider"></div>
-          ${scoreSection}
-        </div>
-      </div>
-    </div>
-
-    <div class="detail-actions">
-      <a class="btn-play" href="${withDevQuery(`./beat-sabers-3d.html?map=${encodeURIComponent(map.id)}`)}">
-        <span class="material-symbols-rounded">play_arrow</span>${t('maps.playBtn')}
-      </a>
-      <div class="detail-secondary-actions">
-        <button class="btn-secondary favorite-toggle${favorite ? ' is-favorite' : ''}" id="btnFavoriteMap" data-id="${attr(map.id)}" type="button" aria-pressed="${favorite}" title="${attr(t(favorite ? 'maps.favoriteRemove' : 'maps.favoriteAdd'))}">
-          <span class="material-symbols-rounded">star</span>${t(favorite ? 'maps.favoriteRemove' : 'maps.favoriteAdd')}
-        </button>
-        <a class="btn-secondary" href="${withDevQuery(`./map-creator.html?id=${encodeURIComponent(map.id)}`)}">
-          <span class="material-symbols-rounded">edit</span>${t('maps.editBtn')}
-        </a>
-        <button class="btn-secondary" id="btnExport" data-id="${attr(map.id)}">
-          <span class="material-symbols-rounded">download</span>${t('maps.exportBtn')}
-        </button>
-        <button class="btn-secondary danger" id="btnDelete"
-                data-id="${attr(map.id)}" data-server="${canDeleteServer ? '1' : '0'}">
-          <span class="material-symbols-rounded">delete</span>${t('maps.deleteBtn')}
-        </button>
-      </div>
-    </div>`;
+  pane.innerHTML = renderLibraryDetail(
+    map,
+    map ? getMapScoreData(map.id) : null,
+    map ? isFavoriteMap(map.id) : false,
+    mapPreview.getMusicPercent(),
+  );
+  if (!map) return;
 
   document.getElementById('btnDelete')?.addEventListener('click', async btn => {
     const el = btn.currentTarget as HTMLButtonElement;
