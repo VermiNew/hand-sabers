@@ -280,8 +280,9 @@
   - [x] Wydzielić rejestrację zdarzeń zdalnego audio telefonu i fallback głośności PC do `src/game/phone-audio-events.ts`
   - [x] Wydzielić startowy wybór języka, rekomendację ustawień i otwieranie tutoriala do `src/game/startup-guidance.ts`
   - [x] Wydzielić zdarzenie wyboru mapy i feedback Lyry do `src/game/map-selection-events.ts`
-  - [ ] Integracja multiplayer
+  - [x] Integracja multiplayer
     - [x] Wydzielić walidację i rejestrację zdarzeń przygotowania, startu oraz wyników rundy do `src/game/multiplayer-events.ts`
+    - [x] Wydzielić stan sesji, przygotowanie mapy, start zsynchronizowanej rundy, wynik końcowy i powrót do reguł singleplayer do `src/game/multiplayer-round-session.ts`
 - [ ] Rozbić `src/game/gameplay.ts` (1015 linii) na logiczne moduły
   - [x] Wydzielić reguły prędkości nut, trybu treningowego i czasu podejścia do `src/game/gameplay-speed.ts`
   - [x] Wydzielić geometrię hitboxu ostrza, pomiar swingu i czułość trafień do `src/game/saber-hitbox.ts`

@@ -18,7 +18,7 @@ import { t, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
-import { initMultiplayerOverlay, sendMultiplayerScore } from '../multiplayer/client.ts';
+import { initMultiplayerOverlay } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
@@ -36,7 +36,7 @@ import { createCalibrationUI } from './calibration-ui.ts';
 import { createCalibrationController } from './calibration-controller.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { initMapDrop } from './map-drop.ts';
-import { ensureCurrentMapAudio, loadMapById, tryLoadMapFromUrl } from './map-session.ts';
+import { ensureCurrentMapAudio, tryLoadMapFromUrl } from './map-session.ts';
 import { submitScore } from './score-submission.ts';
 import { createRuntimeReporter } from './runtime-reporter.ts';
 import { createRenderLoop } from './render-loop.ts';
@@ -44,7 +44,7 @@ import { createMultiplayerScorePublisher } from './multiplayer-score-publisher.t
 import { bindComboNarrator, showFirstRunWelcome } from './narrator-prompts.ts';
 import { getCurrentBeatPulse, getCurrentMusicEnergy, updateMusicVisualizer } from './music-visualizer.ts';
 import { initSettingsBindings } from './settings-bindings.ts';
-import { initMultiplayerEvents, type MultiplayerRoundStart, type MultiplayerRules } from './multiplayer-events.ts';
+import { initMultiplayerEvents, type MultiplayerRoundStart } from './multiplayer-events.ts';
 import { nextFrameTiming, resetFrameTiming, smoothProfileValue } from './frame-timing.ts';
 import { initPhoneAudioEvents } from './phone-audio-events.ts';
 import { initStartupGuidance } from './startup-guidance.ts';
@@ -54,6 +54,10 @@ import { updateArenaReactiveFrame } from './arena-reactive-frame.ts';
 import { updateFrameEffects } from './frame-effects.ts';
 import { renderAndReportFrame } from './frame-renderer.ts';
 import { updateFrameGamePhase } from './frame-game-phase.ts';
+import {
+  createMultiplayerRoundSession,
+  type MultiplayerRoundSession,
+} from './multiplayer-round-session.ts';
 
 declare global {
   interface Window {
@@ -72,7 +76,6 @@ declare global {
 
 // ── Ustawienia ────────────────────────────────────────────────────────────────
 const settings = loadSettings();
-let multiplayerRoundRules: MultiplayerRules | null = null;
 
 applySaberAppearance(settings);
 window.__trackingSensitivity = settings.sensitivity;
@@ -107,12 +110,10 @@ function applyTranslations(): void {
 applyTranslations();
 initInterfaceSounds();
 
-let multiplayerRoundActive = false;
+let multiplayerRoundSession: MultiplayerRoundSession;
 
 const mapTimeline = new MapTimeline({
-  isTrainingMode: () => multiplayerRoundActive
-    ? Boolean(multiplayerRoundRules?.trainingMode)
-    : settings.trainingMode,
+  isTrainingMode: () => multiplayerRoundSession?.getTrainingMode() ?? settings.trainingMode,
 });
 
 function showOverlay(): void {
@@ -125,106 +126,33 @@ function hideOverlay(): void {
   ui.overlay.classList.remove('show', 'is-gameover', 'is-victory', 'is-defeat');
 }
 
-let multiplayerPreparationMapId = '';
 const calibrationUI = createCalibrationUI();
 const calibrationController = createCalibrationController(settings, calibrationUI, {
   async onComplete() {
-    if (multiplayerPreparationMapId) {
-      completeMultiplayerPreparation();
-      return;
-    }
+    if (multiplayerRoundSession.completePreparation()) return;
     await beginPlaying();
   },
 });
 
 const gamePauseController = createGamePauseController({
-  isMultiplayerRoundActive: () => multiplayerRoundActive,
+  isMultiplayerRoundActive: () => multiplayerRoundSession?.isActive() ?? false,
   mapTimeline,
 });
 const { pauseGame, resumeGame } = gamePauseController;
-const multiplayerScorePublisher = createMultiplayerScorePublisher(() => multiplayerRoundActive);
+const multiplayerScorePublisher = createMultiplayerScorePublisher(
+  () => multiplayerRoundSession?.isActive() ?? false,
+);
+multiplayerRoundSession = createMultiplayerRoundSession({
+  calibrationController,
+  calibrationUI,
+  gamePauseController,
+  hideOverlay,
+  mapTimeline,
+  scorePublisher: multiplayerScorePublisher,
+  settings,
+  startWithCalibration: () => startFromMainMenu({ calibrate: true }),
+});
 
-function completeMultiplayerPreparation(): void {
-  const mapId = multiplayerPreparationMapId;
-  multiplayerPreparationMapId = '';
-  calibrationUI.hidePanel();
-  hideOverlay();
-  state.appState = S.MENU;
-  const mainMenu = document.getElementById('mainMenu');
-  if (mainMenu) mainMenu.style.display = 'flex';
-  document.body.classList.add('menu-open');
-  resetMenuDemo();
-  const multiplayerOverlay = document.getElementById('multiplayerOverlay');
-  if (multiplayerOverlay) multiplayerOverlay.hidden = false;
-  window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepared', { detail: { mapId } }));
-}
-
-async function prepareMultiplayerMap(mapId: string): Promise<void> {
-  multiplayerPreparationMapId = mapId;
-  try {
-    initAudio();
-    if (!await loadMapById(mapId)) throw new Error('MAP_NOT_FOUND');
-    await ensureCurrentMapAudio(settings);
-    if (calibrationController.isReady()) {
-      completeMultiplayerPreparation();
-      return;
-    }
-    const multiplayerOverlay = document.getElementById('multiplayerOverlay');
-    if (multiplayerOverlay) multiplayerOverlay.hidden = true;
-    await startFromMainMenu({ calibrate: true });
-  } catch (error) {
-    console.error('Multiplayer preparation failed:', error);
-    multiplayerPreparationMapId = '';
-    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error'));
-  }
-}
-
-async function beginMultiplayerRound(detail: {
-  mapId: string;
-  mode: 'coop' | 'score-attack';
-  rules: MultiplayerRules;
-  saber: 'left' | 'right' | 'both';
-  startAtPerformance: number;
-}): Promise<void> {
-  if (
-    !Number.isFinite(detail.startAtPerformance)
-    || !await loadMapById(detail.mapId)
-  ) {
-    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error'));
-    return;
-  }
-  initAudio();
-  await ensureCurrentMapAudio(settings);
-  gamePauseController.reset();
-  clearGameplayEntities();
-  stopMapAudio();
-  mapTimeline.reset();
-  calibrationUI.hidePanel();
-  hideOverlay();
-  hideHandsPaused();
-  hidePauseMenu();
-  const multiplayerOverlay = document.getElementById('multiplayerOverlay');
-  if (multiplayerOverlay) multiplayerOverlay.hidden = true;
-  const mainMenu = document.getElementById('mainMenu');
-  if (mainMenu) mainMenu.style.display = 'none';
-  document.body.classList.remove('menu-open');
-  if (ui.hud) ui.hud.style.display = 'flex';
-  if (ui.mapProgress) ui.mapProgress.style.display = 'flex';
-  gamePauseController.reset();
-  state.pauseReason = PAUSE_REASONS.NONE;
-  state.appState = S.PLAYING;
-  multiplayerRoundRules = { ...detail.rules };
-  multiplayerRoundActive = true;
-  multiplayerScorePublisher.reset();
-  state.noFail = detail.rules.noFail;
-  document.body.classList.toggle('training-mode', detail.rules.trainingMode);
-  document.body.dataset['multiplayerMode'] = detail.mode;
-  resetMapSpawn();
-  mapTimeline.startAt(detail.startAtPerformance);
-  startGameplay(detail.saber);
-  showMapTitle(state.map?.meta?.title ?? t('game.unknownTrack'));
-  if (ui.dStatus) ui.dStatus.textContent = 'MULTIPLAYER';
-}
 
 async function beginPlaying(): Promise<void> {
   gamePauseController.reset();
@@ -261,31 +189,14 @@ function endGame(victory = false): void {
   const dur = mapTimeline.getDuration();
   const pos = mapTimeline.getTime();
   const progress = dur > 0 ? Math.max(0, Math.min(1, pos / dur)) : undefined;
-  const wasMultiplayerRound = multiplayerRoundActive;
-  const wasTrainingMode = wasMultiplayerRound
-    ? Boolean(multiplayerRoundRules?.trainingMode)
-    : settings.trainingMode;
-  if (wasMultiplayerRound) {
-    sendMultiplayerScore({
-      score: Math.max(0, Math.round(state.score)),
-      combo: Math.max(0, Math.round(state.combo)),
-      lives: Math.max(0, Math.round(state.lives)),
-      progress: progress ?? 0,
-      finished: true,
-    });
-  }
-  multiplayerRoundActive = false;
-  multiplayerRoundRules = null;
-  state.noFail = settings.noFail;
-  document.body.classList.toggle('training-mode', settings.trainingMode);
-  delete document.body.dataset['multiplayerMode'];
+  const { trainingMode } = multiplayerRoundSession.finish(progress);
   stopMapAudio();
   mapTimeline.reset();
   clearGameplayEntities();
   runAsyncTask('score-submit', () => submitScore({
     playerName: settings.playerName,
     progress,
-    trainingMode: wasTrainingMode,
+    trainingMode,
   }));
   fadeTransition(() => { showGameOver(state, victory); });
 }
@@ -442,13 +353,7 @@ function returnToMainMenu(): void {
   gamePauseController.reset();
   clearDangerPulse();
   fadeTransition(() => {
-    if (multiplayerRoundActive) {
-      window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));
-    }
-    multiplayerRoundActive = false;
-    multiplayerRoundRules = null;
-    state.noFail = settings.noFail;
-    document.body.classList.toggle('training-mode', settings.trainingMode);
+    multiplayerRoundSession.leave();
     stopMapAudio();
     mapTimeline.reset();
     clearGameplayEntities();
@@ -552,10 +457,7 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
     // After tracking init, if we have saved calibration, restore it and skip calibration steps
     if (calibrationController.isReady() && settings.savedCalibration) {
       restoreCalibrationData(settings.savedCalibration);
-      if (multiplayerPreparationMapId) {
-        completeMultiplayerPreparation();
-        return;
-      }
+      if (multiplayerRoundSession.completePreparation()) return;
       runAsyncTask('game-start-skip-calib', beginPlaying);
     } else {
       calibrationController.start();
@@ -647,12 +549,12 @@ registerMlAssetCache();
 initRemoteTrackingPairing();
 initMultiplayerEvents({
   onPrepare(mapId) {
-    runAsyncTask('multiplayer-prepare', () => prepareMultiplayerMap(mapId));
+    runAsyncTask('multiplayer-prepare', () => multiplayerRoundSession.prepare(mapId));
   },
   onStart(detail: MultiplayerRoundStart) {
     runAsyncTask(
       'multiplayer-round-start',
-      () => beginMultiplayerRound(detail),
+      () => multiplayerRoundSession.start(detail),
       () => window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error')),
     );
   },
