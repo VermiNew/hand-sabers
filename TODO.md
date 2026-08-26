@@ -245,7 +245,7 @@
 
 ## 33. Refaktoryzacja modułów
 
-- [ ] Rozbić `src/game/main.ts` (obecnie 1357 linii) na mniejsze moduły bez uszkadzania kodu:
+- [x] Rozbić `src/game/main.ts` (obecnie 1357 linii) na mniejsze moduły bez uszkadzania kodu:
   - [x] Wydzielić kontroler wersjonowanego eksportu/importu ustawień do `src/ui/settings-transfer.ts`
   - [x] Wydzielić kontrolki wyboru języka do `src/ui/language-settings.ts`
   - [x] Wydzielić pełną obsługę edycji profilu w ustawieniach do `src/game/profile.ts`
@@ -265,14 +265,14 @@
     - [x] Wydzielić światła, traile, odłamki, odbicia, drgania i ruch kamery do `src/game/frame-effects.ts`
     - [x] Wydzielić render WebGL, adaptive quality i raportowanie panelu dev do `src/game/frame-renderer.ts`
     - [x] Wydzielić obsługę fazy klatki dla menu, rozgrywki, pauzy i bezczynności do `src/game/frame-game-phase.ts`
-  - [ ] Obsługa pauzy
+  - [x] Obsługa pauzy
     - [x] Wydzielić komunikaty, tłumaczenia, stan przycisku wznowienia i warianty akcji SP/MP do `src/game/pause-ui.ts`
     - [x] Zamknąć timer focus guard i ochronę przed równoległym wznowieniem w `src/game/pause-resume-guard.ts`
     - [x] Wydzielić ochronę blur/focus/visibility i wariant ostrzeżenia Multiplayer do `src/game/gameplay-focus-protection.ts`
     - [x] Wydzielić timery utraty/powrotu dłoni, regułę jednej ręki i auto-resume do `src/game/hands-pause-controller.ts`
     - [x] Rozdzielić UX pauzy ręcznej od pauzy po utracie trackingu ML: ręczna pauza ma pokazywać zwykłe menu akcji, a utrata dłoni dedykowany stan z podglądem kamery/ML, informacją o brakujących dłoniach, progressem stabilizacji i auto-resume. Stan trackingu zachowuje bezpieczne wyjście do menu bez pokazywania pełnego modala pauzy.
     - [x] Wydzielić zdarzenia pauzy/wznowienia wywoływane przez przyciski narratora do `src/game/narrator-pause-events.ts`
-  - [ ] Obsługa kalibracji
+  - [x] Obsługa kalibracji
     - [x] Wydzielić panel, selektor auto/manual, widoczność kroków i opcję zapamiętania do `src/game/calibration-ui.ts`
     - [x] Wydzielić stan gotowości, przebieg auto/manual, kolejne kroki i zapis zakresów do `src/game/calibration-controller.ts`
     - [x] Zablokować przejście kroku przed wyborem trybu oraz równoległe/dwukrotne zakończenie kroku przez auto-advance, przycisk lub skrót
@@ -283,16 +283,16 @@
   - [x] Integracja multiplayer
     - [x] Wydzielić walidację i rejestrację zdarzeń przygotowania, startu oraz wyników rundy do `src/game/multiplayer-events.ts`
     - [x] Wydzielić stan sesji, przygotowanie mapy, start zsynchronizowanej rundy, wynik końcowy i powrót do reguł singleplayer do `src/game/multiplayer-round-session.ts`
-- [ ] Rozbić `src/game/gameplay.ts` (1015 linii) na logiczne moduły
+- [x] Rozbić `src/game/gameplay.ts` (1015 linii) na logiczne moduły
   - [x] Wydzielić reguły prędkości nut, trybu treningowego i czasu podejścia do `src/game/gameplay-speed.ts`
   - [x] Wydzielić geometrię hitboxu ostrza, pomiar swingu i czułość trafień do `src/game/saber-hitbox.ts`
   - [x] Wydzielić geometrie, materiały, kolory i pule bloków oraz bomb do `src/game/gameplay-block-pool.ts`, zachowując eksporty kolorów w `gameplay.ts`
   - [x] Wydzielić odłamki trafień, fallback pyłu, prewarm, animację, reset i zwalnianie efektów do `src/game/gameplay-hit-effects.ts`, zachowując eksport `updateSparks` w `gameplay.ts`
-- [ ] Rozbić `src/game/scene.ts` (720 linii) na moduły sceny
+- [x] Rozbić `src/game/scene.ts` (720 linii) na moduły sceny
   - [x] Wydzielić stan, wygaszanie i aplikowanie drgań kamery do `src/game/camera-shake.ts`, zachowując publiczne API sceny
   - [x] Wydzielić geometrię, uniformy, shadery i aplikowanie palety tła do `src/game/arena-background.ts`, zachowując publiczne `bgMat` i `applyBackgroundTheme` w scenie
   - [x] Wydzielić fabrykę geometrii mieczy, ich dane wizualne i warianty modeli do `src/game/saber-visual.ts`, zachowując publiczne API sceny
-- [ ] Rozbić `src/maps/maps.ts` (723 linii) na moduły
+- [x] Rozbić `src/maps/maps.ts` (723 linii) na moduły
   - [x] Wydzielić typy biblioteki oraz komunikację z API map i wyników do `src/maps/library-api.ts`
   - [x] Wydzielić odczyt autosave oraz łączenie map serwerowych i lokalnych do `src/maps/library-sources.ts`
   - [x] Wydzielić bezpieczne formatowanie HTML, atrybutów, czasu i linków dev do `src/maps/library-format.ts`
@@ -300,25 +300,25 @@
   - [x] Wydzielić import z fallbackiem serwer/lokalnie oraz eksport ZIP/JSON z audio do `src/maps/library-transfer.ts`
   - [x] Wydzielić czyste renderowanie szkieletu, kart map i dekoracyjnej fali do `src/maps/library-list-view.ts`
   - [x] Wydzielić czyste renderowanie panelu szczegółów mapy i wyników do `src/maps/library-detail-view.ts`, pozostawiając zdarzenia w kontrolerze
-- [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
+- [x] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
   - [x] Wydzielić obsługę odpowiedzi HTTP, tłumaczenie błędów, kopiowanie i budowę URL WebSocket do `src/multiplayer/client-utils.ts`
   - [x] Wydzielić próbki RTT, estymację offsetu i konwersję czasu serwera do `src/multiplayer/clock-sync.ts`
   - [x] Wydzielić bezpieczne renderowanie, stan i wysyłanie czatu do `src/multiplayer/chat-view.ts`
   - [x] Wydzielić bezpieczne renderowanie wyników coop i score attack dla lobby oraz HUD do `src/multiplayer/score-view.ts`
   - [x] Wydzielić bezpieczne renderowanie listy graczy, ról, szabli i stanów gotowości do `src/multiplayer/room-player-list.ts`
-- [ ] Rozbić `src/tracking/tracking.ts` (613 linii) na moduły
+- [x] Rozbić `src/tracking/tracking.ts` (613 linii) na moduły
   - [x] Wydzielić renderowanie obrazu kamery i landmarków dłoni do `src/tracking/landmark-canvas.ts`
   - [x] Wydzielić prezentację źródła kalibracji kamery/telefonu do `src/tracking/calibration-source-ui.ts`
   - [x] Wydzielić pobieranie modelu, raportowanie postępu i inicjalizację MediaPipe do `src/tracking/mediapipe-loader.ts`
   - [x] Wydzielić zbieranie próbek, głosowanie i wyliczanie pewności automatycznego odwrócenia kamery do `src/tracking/auto-flip.ts`
   - [x] Wydzielić definicje kroków oraz prezentację instrukcji, postępu i tracka kalibracji do `src/tracking/calibration-step-ui.ts`, zachowując eksporty kompatybilności
-- [ ] Rozbić `src/creator/input.ts` (619 linii) na moduły
+- [x] Rozbić `src/creator/input.ts` (619 linii) na moduły
   - [x] Wydzielić historię undo/redo i kontrolę nakładania beatów do `src/creator/history.ts`
   - [x] Wydzielić obliczenia i kontrolki siatki snap do `src/creator/snap.ts`, zachowując eksporty kompatybilności w `input.ts`
   - [x] Wydzielić timer, animację i sterowanie odliczaniem przed odtwarzaniem do `src/creator/precount.ts`
   - [x] Wydzielić rejestrowanie tapów, bomb i held beats, kierunek cięcia, flash oraz pętlę do `src/creator/beat-input.ts`, zachowując eksporty kompatybilności w `input.ts`
   - [x] Wydzielić skróty klawiaturowe, blokadę auto-repeat i kończenie held beats po `keyup` do `src/creator/keyboard-input.ts`
-- [ ] Każda refaktoryzacja musi zachować wszystkie funkcje i nie uszkodzić kodu — weryfikacja przez `npm run verify` po każdym kroku
+- [x] Każda refaktoryzacja musi zachować wszystkie funkcje i nie uszkodzić kodu — weryfikacja przez `npm run verify` po każdym kroku
   - [x] Dodać zatwierdzony Playwright smoke głównego menu: brak krytycznych błędów strony/konsoli oraz otwarcie i zamknięcie pickera map z kontrolą focusu
 
 ## 34. Balans trudności
