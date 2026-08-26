@@ -3,7 +3,6 @@ import { setSetting, getSettings } from '../core/settings.ts';
 import { decodeRealtimePacket } from './realtime.ts';
 import { remoteTracking } from './remote-state.ts';
 import { initMultiplayerMapPicker } from './map-picker.ts';
-import { createAvatarBadge } from './avatars.ts';
 import { PROTOCOL_VERSION, parseChatMessage, parseRoomPlayer, parseRoomSnapshot } from './protocol.ts';
 import type { CreateRoomResponse, JoinCodeResponse, RoomSnapshot, ServerMessage } from './protocol.ts';
 import {
@@ -18,6 +17,7 @@ import {
 import { recordClockPong, resetClockSync, serverTimeToPerformance } from './clock-sync.ts';
 import { createMultiplayerChatView } from './chat-view.ts';
 import { renderMultiplayerScores } from './score-view.ts';
+import { renderRoomPlayerList } from './room-player-list.ts';
 
 export { PROTOCOL_VERSION } from './protocol.ts';
 export { serverTimeToPerformance } from './clock-sync.ts';
@@ -244,43 +244,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     lobby.hidden = false;
     lobbyCode.textContent = snapshot.code;
     playerCount.textContent = `${snapshot.players.length} / ${snapshot.maxPlayers}`;
-    playerList.replaceChildren();
-    for (const player of snapshot.players) {
-      const row = document.createElement('div');
-      row.className = `mp-player-row${player.ready ? ' is-ready' : ''}`;
-      const identity = document.createElement('span');
-      identity.className = 'mp-player-name';
-      identity.append(createAvatarBadge(player.avatar, 18, player.color));
-      const nameText = document.createElement('span');
-      nameText.textContent = player.name;
-      nameText.style.color = player.color;
-      identity.append(nameText);
-      if (player.role === 'host') {
-        const role = document.createElement('span');
-        role.className = 'mp-player-role';
-        role.textContent = 'HOST';
-        identity.append(role);
-      }
-      if (snapshot.mode === 'coop') {
-        const saber = document.createElement('span');
-        saber.className = 'mp-player-role';
-        saber.textContent = t(`multiplayer.${player.saber}Saber`);
-        identity.append(saber);
-      }
-      const state = document.createElement('span');
-      state.className = 'mp-player-state';
-      if (snapshot.round && !player.playing) {
-        state.textContent = t('multiplayer.spectatorState');
-      } else if (player.ready) {
-        state.textContent = t('multiplayer.calibratedState');
-      } else if (player.id === currentPlayerId && pendingPreparationMapId) {
-        state.textContent = t('multiplayer.calibratingState');
-      } else {
-        state.textContent = t('multiplayer.waitingCalibrationState');
-      }
-      row.append(identity, state);
-      playerList.append(row);
-    }
+    renderRoomPlayerList(playerList, snapshot, currentPlayerId, pendingPreparationMapId);
 
     mapPicker.setSelected(snapshot.mapId);
     mapPicker.setEnabled(currentRole === 'host' && !Boolean(snapshot.round && snapshot.round.finishedAt === null));
