@@ -1,7 +1,5 @@
-import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores, loadLocalMapAudio } from '../core/localstore.ts';
-import JSZip from 'jszip';
-import { importMapLocally, importMapToServer } from '../core/map-import.ts';
-import { showAlert, showConfirm, showToast } from '../creator/dialogs.ts';
+import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores } from '../core/localstore.ts';
+import { showConfirm, showToast } from '../creator/dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initRemoteTrackingHost } from '../remote/host-session.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
@@ -11,6 +9,7 @@ import { loadSettings } from '../core/settings.ts';
 import { checkServerHealth, fetchJson, loadServerMaps, type MapEntry, type ScoreEntry } from './library-api.ts';
 import { getAutosaveMap, mergeMaps } from './library-sources.ts';
 import { createLibraryFilter } from './library-filter.ts';
+import { exportLibraryMap, importLibraryMap } from './library-transfer.ts';
 import {
   escapeAttribute as attr,
   escapeHtml as escHtml,
@@ -80,25 +79,11 @@ function getMapScoreData(mapId: string): MapScoreData {
 // ── Import ────────────────────────────────────────────────────────────────────
 
 async function importMapFile(file: File): Promise<void> {
-  mapPreview.stop(true);
-  showToast(t('maps.importing', { name: file.name }), { type: 'info' });
-  try {
-    const imported = await importMapToServer(file);
-    showToast(t('maps.importedServer', { id: imported.id, audio: imported.audio ? t('maps.withAudio') : '' }), { type: 'success' });
-    await loadMaps();
-  } catch (serverErr) {
-    try {
-      const imported = await importMapLocally(file);
-      showToast(t('maps.importedLocal', { id: imported.id, audio: imported.audio ? t('maps.withAudio') : '' }), { type: 'success' });
-      await loadMaps();
-    } catch (localErr) {
-      const msg = localErr instanceof Error ? localErr.message : String(localErr);
-      showToast(t('maps.importFailed', { message: msg }), { type: 'error' });
-      void showAlert(t('maps.importFailed', { message: msg }), { title: t('maps.importFailedTitle') })
-        .catch(error => reportMapsError('import-error-dialog', error));
-      console.error('Server import failed:', serverErr);
-    }
-  }
+  await importLibraryMap(file, {
+    reload: loadMaps,
+    reportError: reportMapsError,
+    stopPreview: () => mapPreview.stop(true),
+  });
 }
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -445,49 +430,7 @@ async function deleteMap(id: string, tryServer: boolean): Promise<void> {
 }
 
 async function exportMap(id: string): Promise<void> {
-  const map = allMaps.find(m => m.id === id) ?? null;
-  try {
-    const res = await fetch(`/api/maps/${encodeURIComponent(id)}/export.zip`);
-    if (!res.ok) throw new Error(`${res.status}`);
-    const blob = await res.blob();
-    downloadBlob(blob, `${id}.zip`);
-    showToast(t('maps.exportSuccess'), { type: 'success' });
-  } catch {
-    if (!map || (map.source !== 'local' && map.source !== 'autosave' && map.source !== 'server+local')) {
-      showToast(t('maps.exportFail'), { type: 'error' });
-      return;
-    }
-
-    try {
-      const zip = new JSZip();
-      const mapJson: Record<string, unknown> = { ...map };
-      for (const key of ['source', 'localOnly', 'updatedAt', '_serverAudioPending', '_localAudioPending', '_audioReady']) {
-        delete mapJson[key];
-      }
-
-      const audio = await loadLocalMapAudio(id).catch(() => null);
-      if (audio) {
-        mapJson['meta'] = { ...(mapJson['meta'] as Record<string, unknown> | undefined), audioFile: audio.fileName };
-        zip.file(audio.fileName || `${id}.ogg`, audio.arrayBuffer);
-      }
-
-      zip.file('map.json', JSON.stringify(mapJson, null, 2));
-      const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-      downloadBlob(blob, `${id}.zip`);
-      showToast(t('maps.exportLocalSuccess'), { type: 'success' });
-    } catch {
-      showToast(t('maps.exportLocalFail'), { type: 'error' });
-    }
-  }
-}
-
-function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href: url, download: filename });
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  await exportLibraryMap(id, allMaps.find(map => map.id === id) ?? null);
 }
 
 // ── Load maps ─────────────────────────────────────────────────────────────────

@@ -296,6 +296,7 @@
   - [x] Wydzielić odczyt autosave oraz łączenie map serwerowych i lokalnych do `src/maps/library-sources.ts`
   - [x] Wydzielić bezpieczne formatowanie HTML, atrybutów, czasu i linków dev do `src/maps/library-format.ts`
   - [x] Wydzielić wyszukiwanie Fuse, filtry, sortowanie i trwałe ulubione do `src/maps/library-filter.ts`
+  - [x] Wydzielić import z fallbackiem serwer/lokalnie oraz eksport ZIP/JSON z audio do `src/maps/library-transfer.ts`
 - [ ] Rozbić `src/multiplayer/client.ts` (599 linii) na moduły
   - [x] Wydzielić obsługę odpowiedzi HTTP, tłumaczenie błędów, kopiowanie i budowę URL WebSocket do `src/multiplayer/client-utils.ts`
   - [x] Wydzielić próbki RTT, estymację offsetu i konwersję czasu serwera do `src/multiplayer/clock-sync.ts`
