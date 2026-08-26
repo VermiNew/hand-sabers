@@ -8,7 +8,7 @@ export default defineConfig({
   reporter: 'list',
   timeout: 30_000,
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: 'http://127.0.0.1:4173',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
     video: 'off',
@@ -27,8 +27,8 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'npm run dev:client -- --host 127.0.0.1',
-      url: 'http://127.0.0.1:5173/beat-sabers-3d.html',
+      command: 'npm run dev:client -- --host 127.0.0.1 --port 4173',
+      url: 'http://127.0.0.1:4173/beat-sabers-3d.html',
       reuseExistingServer: !process.env['CI'],
       timeout: 120_000,
     },
