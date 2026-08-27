@@ -1,9 +1,9 @@
 import { createReadStream } from 'fs';
 import type { Express } from 'express';
 import { createRequire } from 'module';
-import { sanitizeMapId } from '../../src/core/map-format.js';
+import { getCanonicalMapAudioUrl, sanitizeMapId } from '../../src/core/map-format.js';
 import type { AudioStorage } from '../storage/audio.js';
-import type { MapStorage } from '../storage/maps.js';
+import type { MapStorage, StoredMap } from '../storage/maps.js';
 import { errorMessage } from '../utils.js';
 
 interface MapReadRoutesOptions {
@@ -27,6 +27,17 @@ function safeId(id: unknown): string {
   return sanitizeMapId(id, '');
 }
 
+function mapForResponse(map: StoredMap, id: string): StoredMap {
+  return {
+    ...map,
+    id,
+    meta: {
+      ...(map.meta ?? {}),
+      audioUrl: getCanonicalMapAudioUrl(id),
+    },
+  };
+}
+
 export function registerMapReadRoutes({ app, mapStorage, audioStorage }: MapReadRoutesOptions): void {
   app.get('/api/maps', async (_req, res) => {
     try {
@@ -42,8 +53,10 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage }: MapRead
       if (!title) return res.status(400).json({ error: 'Brak tytułu.' });
       const maps = await mapStorage.list();
       for (const item of maps) {
-        const map = await mapStorage.read(item.id);
-        if (map?.meta?.title?.toLowerCase() === title) return res.json(map);
+        const id = safeId(item.id);
+        if (!id) continue;
+        const map = await mapStorage.read(id);
+        if (map?.meta?.title?.toLowerCase() === title) return res.json(mapForResponse(map, id));
       }
       res.status(404).json({ error: 'Nie znaleziono.' });
     } catch (error) {
@@ -67,7 +80,7 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage }: MapRead
 
       res.attachment(`${id}.zip`);
       archive.pipe(res);
-      archive.append(JSON.stringify(data, null, 2), { name: 'map.json' });
+      archive.append(JSON.stringify(mapForResponse(data, id), null, 2), { name: 'map.json' });
 
       const audio = await audioStorage.find(id, data);
       if (audio) archive.file(audio.fullPath, { name: audio.publicName });
@@ -104,7 +117,7 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage }: MapRead
       if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
       const data = await mapStorage.read(id);
       if (!data) return res.status(404).json({ error: 'Nie znaleziono.' });
-      res.json(data);
+      res.json(mapForResponse(data, id));
     } catch {
       res.status(404).json({ error: 'Nie znaleziono.' });
     }
