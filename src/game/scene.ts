@@ -112,11 +112,34 @@ export const reflectTarget = new THREE.WebGLRenderTarget(REFLECT_SIZE, REFLECT_S
   depthBuffer: true,
 });
 export const reflectCam = new THREE.PerspectiveCamera(68, 1, 0.1, 30);
+const reflectionTextureMatrix = new THREE.Matrix4();
 
-const floorReflectMat = new THREE.MeshBasicMaterial({
-  map:         reflectTarget.texture,
+const floorReflectMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uReflection: { value: reflectTarget.texture },
+    uTextureMatrix: { value: reflectionTextureMatrix },
+    uOpacity: { value: 0.18 },
+  },
+  vertexShader: `
+    uniform mat4 uTextureMatrix;
+    varying vec4 vReflectionUv;
+    void main() {
+      vReflectionUv = uTextureMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform sampler2D uReflection;
+    uniform float uOpacity;
+    varying vec4 vReflectionUv;
+    void main() {
+      vec3 reflection = texture2DProj(uReflection, vReflectionUv).rgb;
+      gl_FragColor = vec4(reflection, uOpacity);
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+    }
+  `,
   transparent: true,
-  opacity:     0.28,
   depthWrite:  false,
   blending:    THREE.AdditiveBlending,
 });
@@ -325,22 +348,46 @@ export function animateIdleSabers(t: number): void {
 }
 
 let reflectFrame = 0;
+const reflectedLookTarget = new THREE.Vector3();
 export function updateReflection(): void {
   if (!perfProfile.reflections) return;
   reflectFrame++;
   if (reflectFrame % 4 !== 0) return;
-  reflectCam.position.set(cam3d.position.x, -cam3d.position.y + 0.01, cam3d.position.z);
-  reflectCam.lookAt(0, -1.1, -5);
-  reflectCam.fov    = cam3d.fov;
-  reflectCam.aspect = 1;
+  cam3d.getWorldDirection(reflectedLookTarget);
+  reflectedLookTarget.add(cam3d.position);
+  reflectedLookTarget.y *= -1;
+  reflectCam.position.copy(cam3d.position);
+  reflectCam.position.y *= -1;
+  reflectCam.up.copy(cam3d.up);
+  reflectCam.up.y *= -1;
+  reflectCam.lookAt(reflectedLookTarget);
+  reflectCam.fov = cam3d.fov;
+  reflectCam.aspect = cam3d.aspect;
+  reflectCam.near = cam3d.near;
+  reflectCam.far = cam3d.far;
   reflectCam.updateProjectionMatrix();
-  const previousTarget  = renderer.getRenderTarget();
-  const reflectVisible  = floorReflect.visible;
-  floorReflect.visible  = false;
-  renderer.setRenderTarget(reflectTarget);
-  renderer.render(scene, reflectCam);
-  renderer.setRenderTarget(previousTarget);
-  floorReflect.visible  = reflectVisible;
+  reflectCam.updateMatrixWorld();
+  floorReflect.updateMatrixWorld();
+  reflectionTextureMatrix.set(
+    0.5, 0,   0, 0.5,
+    0,   0.5, 0, 0.5,
+    0,   0,   0.5, 0.5,
+    0,   0,   0, 1,
+  );
+  reflectionTextureMatrix.multiply(reflectCam.projectionMatrix);
+  reflectionTextureMatrix.multiply(reflectCam.matrixWorldInverse);
+  reflectionTextureMatrix.multiply(floorReflect.matrixWorld);
+  const previousTarget = renderer.getRenderTarget();
+  const floorLayers = [floorReflect, floorSheen, gridH, lReflection, rReflection, lBlobShadow, rBlobShadow];
+  const floorLayerVisibility = floorLayers.map(layer => layer.visible);
+  for (const layer of floorLayers) layer.visible = false;
+  try {
+    renderer.setRenderTarget(reflectTarget);
+    renderer.render(scene, reflectCam);
+  } finally {
+    renderer.setRenderTarget(previousTarget);
+    floorLayers.forEach((layer, index) => { layer.visible = floorLayerVisibility[index] ?? false; });
+  }
 }
 
 export function updateArenaPulse(
@@ -364,7 +411,12 @@ export function updateArenaPulse(
 
   floorMat.opacity = THREE.MathUtils.clamp(0.28 + energy * 0.035 + beat * 0.025, 0.24, 0.42);
   if (perfProfile.reflections) {
-    floorReflectMat.opacity = THREE.MathUtils.clamp(0.22 + energy * 0.06 + beat * 0.045, 0.18, 0.38);
+    const reflectionQuality = THREE.MathUtils.clamp(detail, 0.45, 1);
+    floorReflectMat.uniforms['uOpacity']!.value = THREE.MathUtils.clamp(
+      (0.16 + energy * 0.055 + beat * 0.04) * reflectionQuality * readability,
+      0.08,
+      0.32,
+    );
   }
 }
 
