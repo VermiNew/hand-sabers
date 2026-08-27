@@ -47,6 +47,8 @@ interface HitQualityOptions {
   deltaMs?: unknown;
   centerDistance?: unknown;
   perfectRadius?: number;
+  perfectTimingMs?: number;
+  goodTimingMs?: number;
   cutOk?: boolean;
 }
 
@@ -136,16 +138,18 @@ export function classifyHitQuality({
   deltaMs = Infinity,
   centerDistance = Infinity,
   perfectRadius = 0.22,
+  perfectTimingMs = 70,
+  goodTimingMs = 150,
   cutOk = true,
   gameMode = 'normal',
 }: HitQualityOptions & { gameMode?: GameMode } = {}): HitQuality {
   const absDelta = Math.abs(Number(deltaMs));
   const center = Number(centerDistance);
   if (!cutOk && gameMode !== 'no-arrows') return { label: 'BAD', basePoints: 25, advancesCombo: false, strong: false, reason: 'cut' };
-  if (Number.isFinite(absDelta) && absDelta <= 70 && Number.isFinite(center) && center <= perfectRadius) {
+  if (Number.isFinite(absDelta) && absDelta <= perfectTimingMs && Number.isFinite(center) && center <= perfectRadius) {
     return { label: 'PERFECT', basePoints: 150, advancesCombo: true, strong: true, reason: 'perfect' };
   }
-  if (Number.isFinite(absDelta) && absDelta <= 150) {
+  if (Number.isFinite(absDelta) && absDelta <= goodTimingMs) {
     if (gameMode === 'pro') {
       return { label: 'BAD', basePoints: 25, advancesCombo: false, strong: false, reason: 'timing' };
     }
