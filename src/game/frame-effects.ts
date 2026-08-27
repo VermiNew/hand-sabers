@@ -38,7 +38,7 @@ export function updateFrameEffects({
   lLight.position.set(lSaber.position.x, lSaber.position.y + 0.5, lSaber.position.z);
   rLight.position.set(rSaber.position.x, rSaber.position.y + 0.5, rSaber.position.z);
   updateArenaPulse(timeSec, musicEnergy, beatPulse, visualPressure);
-  updateLightReflections(timeSec);
+  updateLightReflections(timeSec, musicEnergy, beatPulse, visualPressure);
   updateSaberTrails(state.appState === S.PLAYING || isMainMenuOpen(), state.deltaSec);
   updateSparks(state.deltaScale);
 

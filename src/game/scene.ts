@@ -368,7 +368,12 @@ export function updateArenaPulse(
   }
 }
 
-export function updateLightReflections(t: number): void {
+export function updateLightReflections(
+  t: number,
+  musicEnergy: number,
+  beatPulse: number,
+  visualPressure = 0,
+): void {
   const lMotion = THREE.MathUtils.clamp(lVel.length() * 12, 0, 1);
   const rMotion = THREE.MathUtils.clamp(rVel.length() * 12, 0, 1);
   const trailIntensity = THREE.MathUtils.clamp(perfProfile.saberTrailIntensity || 0, 0, 1.25);
@@ -376,14 +381,21 @@ export function updateLightReflections(t: number): void {
   (lSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + lMotion * motionGlow;
   (rSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + rMotion * motionGlow;
   if (!perfProfile.floorGlows && !perfProfile.saberGlints) return;
-  const pulse = 0.85 + Math.sin(t * 6) * 0.15;
+  const energy = THREE.MathUtils.clamp(musicEnergy, 0, 1.5);
+  const beat = THREE.MathUtils.clamp(beatPulse, 0, 1.5);
+  const pressure = THREE.MathUtils.clamp(visualPressure, 0, 1);
+  const detail = THREE.MathUtils.clamp(perfProfile.arenaDetail, 0, 1.25);
+  const idlePulse = 0.5 + Math.sin(t * 2.2) * 0.5;
+  const sharedGlow = (0.12 + idlePulse * 0.012 + energy * 0.055 + beat * 0.075)
+    * (0.72 + detail * 0.28)
+    * (1 - pressure * 0.48);
   if (perfProfile.floorGlows) {
     lReflection.position.set(lSaber.position.x, 0.012, lSaber.position.z - 0.12);
     rReflection.position.set(rSaber.position.x, 0.012, rSaber.position.z - 0.12);
     lReflection.scale.set(0.85 + Math.abs(lVel.x) * 1.8, 1.0 + Math.abs(lVel.y) * 0.7, 1);
     rReflection.scale.set(0.85 + Math.abs(rVel.x) * 1.8, 1.0 + Math.abs(rVel.y) * 0.7, 1);
-    lReflection.material.opacity = 0.20 * pulse;
-    rReflection.material.opacity = 0.20 * (1.7 - pulse);
+    lReflection.material.opacity = THREE.MathUtils.clamp(sharedGlow + lMotion * 0.035, 0.08, 0.32);
+    rReflection.material.opacity = THREE.MathUtils.clamp(sharedGlow + rMotion * 0.035, 0.08, 0.32);
   }
 
   lBlobShadow.position.set(lSaber.position.x, 0.002, lSaber.position.z);
