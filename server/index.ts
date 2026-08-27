@@ -24,6 +24,7 @@ import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
 import { TrackingSessionRegistry } from './realtime/tracking-session-registry.js';
 import { registerRemoteTrackingServer } from './realtime/remote-tracking-socket.js';
+import { createUploadConcurrencyGate } from './upload-concurrency.js';
 
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE_PROJECT_ROOT = path.resolve(SERVER_DIR, '..');
@@ -70,6 +71,7 @@ const upload = multer({
     else cb(new Error('Nieobsługiwany typ pliku. Dozwolone: .json, .zip i audio.'));
   },
 });
+const uploadConcurrency = createUploadConcurrencyGate();
 
 const app = express();
 if (process.env.HAND_SABERS_TRUST_PROXY === '1') app.set('trust proxy', 1);
@@ -120,6 +122,8 @@ registerMapWriteRoutes({
   audioStorage,
   uploadAudio: upload.single('audio'),
   uploadFile: upload.single('file'),
+  uploadConcurrency: uploadConcurrency.middleware,
+  releaseUploadConcurrency: uploadConcurrency.release,
   parseJson: express.json({ limit: MAX_MAP_JSON_BYTES }),
   rateLimit,
 });
@@ -136,7 +140,8 @@ registerScoreRoutes({
 registerRoomRoutes({ app, rooms, rateLimit });
 registerTrackingSessionRoutes({ app, sessions: trackingSessions, rateLimit });
 
-const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+  uploadConcurrency.release(req);
   if (err?.code === 'LIMIT_FILE_SIZE') {
     const limitMb = Math.round(MAX_IMPORT_BYTES / 1024 / 1024);
     return res.status(413).json({ error: `Plik jest za duży. Limit: ${limitMb} MB.` });

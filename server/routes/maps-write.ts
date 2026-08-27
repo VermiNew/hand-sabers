@@ -1,6 +1,6 @@
 import path from 'path';
 import { readFile, unlink } from 'fs/promises';
-import type { Express, RequestHandler } from 'express';
+import type { Express, Request, RequestHandler } from 'express';
 import JSZip from 'jszip';
 import {
   MAX_BEATS_EXTENDED,
@@ -22,6 +22,8 @@ interface MapWriteRoutesOptions {
   audioStorage: AudioStorage;
   uploadAudio: RequestHandler;
   uploadFile: RequestHandler;
+  uploadConcurrency: RequestHandler;
+  releaseUploadConcurrency(req: Request): void;
   parseJson: RequestHandler;
   rateLimit: RateLimiter;
 }
@@ -79,6 +81,8 @@ export function registerMapWriteRoutes({
   audioStorage,
   uploadAudio,
   uploadFile,
+  uploadConcurrency,
+  releaseUploadConcurrency,
   parseJson,
   rateLimit,
 }: MapWriteRoutesOptions): void {
@@ -95,17 +99,19 @@ export function registerMapWriteRoutes({
     'Za dużo importów. Spróbuj ponownie za chwilę.',
   );
 
-  app.post('/api/maps', limitMapSave, parseJson, async (req, res) => {
+  app.post('/api/maps', limitMapSave, uploadConcurrency, parseJson, async (req, res) => {
     try {
       const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
       await mapStorage.write(map);
       res.json({ ok: true, id: map.id, beats: map.beats.length, storage: 'beatdata' });
     } catch (error) {
       res.status(400).json({ error: errorMessage(error) });
+    } finally {
+      releaseUploadConcurrency(req);
     }
   });
 
-  app.post('/api/maps/save', limitMapSave, parseJson, uploadAudio, async (req, res) => {
+  app.post('/api/maps/save', limitMapSave, uploadConcurrency, parseJson, uploadAudio, async (req, res) => {
     try {
       const rawBody = req.body?.map ? parseJsonSafe(req.body.map) : req.body;
       const map = normalizeMap(rawBody, { requireBeats: false, maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
@@ -131,10 +137,11 @@ export function registerMapWriteRoutes({
       res.status(400).json({ error: errorMessage(error) });
     } finally {
       await removeUploadedFile(req.file);
+      releaseUploadConcurrency(req);
     }
   });
 
-  app.post('/api/maps/import', limitMapImport, uploadFile, async (req, res) => {
+  app.post('/api/maps/import', limitMapImport, uploadConcurrency, uploadFile, async (req, res) => {
     try {
       if (!req.file) return res.status(400).json({ error: 'Brak pliku.' });
       assertFileSize(req.file);
@@ -176,6 +183,7 @@ export function registerMapWriteRoutes({
       res.status(400).json({ error: errorMessage(error) });
     } finally {
       await removeUploadedFile(req.file);
+      releaseUploadConcurrency(req);
     }
   });
 
