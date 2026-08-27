@@ -1,4 +1,5 @@
 import { loadLocalMapAudio } from '../core/localstore.ts';
+import { getCanonicalMapAudioUrl } from '../core/map-format.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
 import { t } from '../i18n/index.ts';
 
@@ -14,7 +15,6 @@ export interface MapPreviewEntry {
   id: string;
   source: 'server' | 'local' | 'autosave' | 'server+local';
   meta?: {
-    audioUrl?: string;
     previewStartSec?: number;
   };
 }
@@ -250,11 +250,13 @@ export function createMapPreviewController({ reportError }: MapPreviewOptions): 
 
   async function loadSource(map: MapPreviewEntry): Promise<{ url: string } | null> {
     if (map.source === 'server' || map.source === 'server+local') {
-      const audioUrl = map.meta?.audioUrl ?? `/api/maps/${encodeURIComponent(map.id)}/audio`;
-      try {
-        const response = await fetch(audioUrl);
-        if (response.ok) return { url: URL.createObjectURL(await response.blob()) };
-      } catch {}
+      const audioUrl = getCanonicalMapAudioUrl(map.id);
+      if (audioUrl) {
+        try {
+          const response = await fetch(audioUrl);
+          if (response.ok) return { url: URL.createObjectURL(await response.blob()) };
+        } catch {}
+      }
     }
     const local = await loadLocalMapAudio(map.id).catch(() => null);
     if (!local?.arrayBuffer) return null;

@@ -1,5 +1,6 @@
 import { state } from '../core/state.ts';
 import { getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
+import { getCanonicalMapAudioUrl } from '../core/map-format.ts';
 import type { Settings } from '../types/index.js';
 import { clearMapAudio, getMapDuration, hasMapAudio, loadMapAudio } from './audio.ts';
 import { validateMap } from './maploader.ts';
@@ -42,9 +43,9 @@ export async function ensureCurrentMapAudio(settings: Pick<Settings, 'phoneAudio
   if (state.map._serverAudioPending) {
     state.map._serverAudioPending = false;
     try {
-      const audioUrl = state.map.meta?.audioUrl ?? `/api/maps/${encodeURIComponent(state.map.id ?? '')}/audio`;
-      const res = await fetch(audioUrl);
-      if (res.ok) {
+      const audioUrl = getCanonicalMapAudioUrl(state.map.id);
+      const res = audioUrl ? await fetch(audioUrl) : null;
+      if (res?.ok) {
         await loadMapAudio(await res.arrayBuffer());
         state.map._audioReady = true;
         const duration = getMapDuration();

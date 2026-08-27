@@ -1,6 +1,7 @@
 import { MAP_ID, state } from './state.ts';
 import { validateAudioFile, validateDecodedAudio } from '../core/audio-validation.ts';
 import { saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.ts';
+import { getCanonicalMapAudioUrl } from '../core/map-format.ts';
 import { t } from '../i18n/index.ts';
 
 export const CREATOR_VOLUME_KEY = 'hs_creator_song_volume';
@@ -158,7 +159,8 @@ export async function restoreAudioForCurrentMap(callbacks: { onDecoded: () => vo
   }
 
   try {
-    const audioUrl = state.map.meta?.audioUrl ?? `/api/maps/${encodeURIComponent(state.map.id)}/audio`;
+    const audioUrl = getCanonicalMapAudioUrl(state.map.id);
+    if (!audioUrl) return false;
     const res = await fetch(audioUrl);
     if (!res.ok) return false;
     await decodeAndAttachAudio(await res.arrayBuffer(), {

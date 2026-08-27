@@ -1,6 +1,6 @@
 import { t, translateDom } from '../i18n/index.ts';
 import { loadLocalMapAudio, readLocalMaps, readLocalScores } from '../core/localstore.ts';
-import { normalizeMap } from '../core/map-format.ts';
+import { getCanonicalMapAudioUrl, normalizeMap } from '../core/map-format.ts';
 import { importMapLocally, importMapToServer } from '../core/map-import.ts';
 import { getSettings } from '../core/settings.ts';
 import {
@@ -18,7 +18,6 @@ interface MapMeta {
   duration?: number;
   bpm?: number;
   audioFile?: string;
-  audioUrl?: string;
   previewStartSec?: number;
 }
 
@@ -185,11 +184,13 @@ function startPreviewTimers(ui: PreviewUi, token: number): void {
 
 async function loadPreviewSource(map: MapEntry): Promise<string | null> {
   if (!map.localOnly) {
-    const audioUrl = map.meta?.audioUrl ?? `/api/maps/${encodeURIComponent(map.id)}/audio`;
-    try {
-      const response = await fetch(audioUrl, { credentials: 'same-origin' });
-      if (response.ok) return URL.createObjectURL(await response.blob());
-    } catch { /* local audio is a valid fallback */ }
+    const audioUrl = getCanonicalMapAudioUrl(map.id);
+    if (audioUrl) {
+      try {
+        const response = await fetch(audioUrl, { credentials: 'same-origin' });
+        if (response.ok) return URL.createObjectURL(await response.blob());
+      } catch { /* local audio is a valid fallback */ }
+    }
   }
   const local = await loadLocalMapAudio(map.id).catch(() => null);
   if (!local?.arrayBuffer) return null;
