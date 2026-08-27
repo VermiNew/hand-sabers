@@ -79,9 +79,13 @@ function bladeDistanceSquared(point: THREE.Vector3, cache: BladeHitbox): number 
   return best;
 }
 
-export function bladeHits(mesh: THREE.Object3D, cache: BladeHitbox): boolean {
+export function bladeHits(mesh: THREE.Object3D, cache: BladeHitbox, radiusMultiplier = 1): boolean {
   if (!cache.hasCurrent) return false;
-  return bladeDistanceSquared(mesh.position, cache) <= cache.radius * cache.radius;
+  const safeMultiplier = Number.isFinite(radiusMultiplier)
+    ? THREE.MathUtils.clamp(radiusMultiplier, 0.5, 1.5)
+    : 1;
+  const radius = cache.radius * safeMultiplier;
+  return bladeDistanceSquared(mesh.position, cache) <= radius * radius;
 }
 
 export function getSwingSpeed(cache: BladeHitbox): number {
