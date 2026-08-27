@@ -48,6 +48,10 @@ import {
   prewarmHitEffects,
   shatterBlock,
 } from './gameplay-hit-effects.ts';
+import {
+  getDifficultyHitProfile,
+  type DifficultyHitProfile,
+} from './difficulty-hit-profile.ts';
 
 interface ActiveBlock {
   mesh: PoolMesh;
@@ -86,10 +90,6 @@ const BLOCK_CAP_MS = 1000 / 60;
 const STARTING_LIVES      = 10;
 const REGEN_EVERY_HITS    = 8;
 const MENU_DEMO_BEAT_MS   = 540;
-const HELD_MISS_GRACE_SEC = 0.45;
-
-// Perfect hit: środek ostrza (25% długości od centrum)
-const PERFECT_RADIUS = 0.22;
 const COMBO_MILESTONES = new Set([10, 25, 50, 100, 200]);
 const SPAWN_Z             = -22;
 const HIT_Z               = 1.5;
@@ -97,6 +97,8 @@ const BLOCK_SPEED_PER_MS  = (HIT_Z - SPAWN_Z) / APPROACH_TIME_MS;
 const MENU_DEMO_HIT_Z     = HIT_Z - 0.15;
 
 let activeSabers: SaberSide | 'both' = 'both';
+let activeHitProfile: DifficultyHitProfile = getDifficultyHitProfile(null);
+let activeHeldRadius = activeHitProfile.heldRadius;
 
 function isSaberActive(side: SaberSide): boolean {
   return activeSabers === 'both' || activeSabers === side;
@@ -183,6 +185,10 @@ function publishGameplayStats() {
 
 export function startGameplay(sabers: SaberSide | 'both' = 'both') {
   activeSabers = sabers;
+  const settings = getSettings();
+  activeHitProfile = getDifficultyHitProfile(state.map, settings);
+  const hitboxSensitivity = THREE.MathUtils.clamp(Number(settings.hitboxSensitivity) || 1, 0.82, 1.2);
+  activeHeldRadius = activeHitProfile.heldRadius * hitboxSensitivity;
   state.score       = 0;
   state.combo       = 0;
   state.maxCombo    = 0;
@@ -325,7 +331,15 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
   const cutOk = gameMode === 'no-arrows' ? true : isCutDirectionMatch(entry.cut, swingVector);
   const deltaMs = getHitDeltaMs(entry);
   const centerDistance = centerDistanceToBlade(entry.mesh, cache);
-  const quality = classifyHitQuality({ deltaMs, centerDistance, perfectRadius: PERFECT_RADIUS, cutOk, gameMode });
+  const quality = classifyHitQuality({
+    deltaMs,
+    centerDistance,
+    perfectRadius: activeHitProfile.perfectRadius,
+    perfectTimingMs: activeHitProfile.perfectTimingMs,
+    goodTimingMs: activeHitProfile.goodTimingMs,
+    cutOk,
+    gameMode,
+  });
   const comboBefore = state.combo;
   const points = scoreForHit(quality.basePoints, comboBefore);
 
@@ -394,7 +408,7 @@ function bladeInsideHeld(entry: ActiveBlock, cache: BladeHitbox): boolean {
   const by = entry.mesh.position.y;
   const zFront = entry.mesh.position.z + 0.19;
   const zBack  = entry.mesh.position.z - entry.heldLen - 0.19;
-  const HIT_R  = 0.55;
+  const hitRadius = activeHeldRadius;
 
   const checkPoint = (start: THREE.Vector3, end: THREE.Vector3): boolean => {
     // Project blade segment onto XY plane to find closest point in XY,
@@ -407,7 +421,7 @@ function bladeInsideHeld(entry: ActiveBlock, cache: BladeHitbox): boolean {
     const cx = start.x + t * lx, cy = start.y + t * ly;
     const cz = start.z + t * (end.z - start.z);
     const dx = cx - bx, dy = cy - by;
-    return dx * dx + dy * dy <= HIT_R * HIT_R && cz >= zBack && cz <= zFront;
+    return dx * dx + dy * dy <= hitRadius * hitRadius && cz >= zBack && cz <= zFront;
   };
 
   if (checkPoint(cache.currentStart, cache.currentEnd)) return true;
@@ -418,7 +432,7 @@ function bladeInsideHeld(entry: ActiveBlock, cache: BladeHitbox): boolean {
 function isPastRemovalPoint(entry: ActiveBlock, mapTimeSec: number): boolean {
   if (!entry.isHeld) return entry.mesh.position.z > 4.5;
   if (entry.mapBeat && Number.isFinite(entry.hitTimeSec) && Number.isFinite(mapTimeSec)) {
-    return mapTimeSec > entry.hitTimeSec! + entry.heldDuration + HELD_MISS_GRACE_SEC;
+    return mapTimeSec > entry.hitTimeSec! + entry.heldDuration + activeHitProfile.heldMissGraceSec;
   }
   return entry.mesh.position.z - entry.heldLen - 0.19 > 4.5;
 }
@@ -428,6 +442,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
   captureBladeHitbox(rSaber, bladeHitboxes.right);
   const lSpeed = getSwingSpeed(bladeHitboxes.left);
   const rSpeed = getSwingSpeed(bladeHitboxes.right);
+  const minimumSwingSpeed = MIN_SWING_SPEED * activeHitProfile.minimumSwingMultiplier;
 
   for (let i = activeBlocks.length - 1; i >= 0; i--) {
     const entry = activeBlocks[i]!;
@@ -506,9 +521,9 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
       continue;
     }
 
-    if ((oneHandMode === 'left' || entry.side === 'left') && useLeft && bladeHits(entry.mesh, bladeHitboxes.left) && lSpeed > MIN_SWING_SPEED) {
+    if ((oneHandMode === 'left' || entry.side === 'left') && useLeft && bladeHits(entry.mesh, bladeHitboxes.left, activeHitProfile.hitRadiusMultiplier) && lSpeed > minimumSwingSpeed) {
       hitBlock(entry, getCurrentBlockColor('left'),  lLight, bladeHitboxes.left);  swapRemoveActiveBlock(i);
-    } else if ((oneHandMode === 'right' || entry.side === 'right') && useRight && bladeHits(entry.mesh, bladeHitboxes.right) && rSpeed > MIN_SWING_SPEED) {
+    } else if ((oneHandMode === 'right' || entry.side === 'right') && useRight && bladeHits(entry.mesh, bladeHitboxes.right, activeHitProfile.hitRadiusMultiplier) && rSpeed > minimumSwingSpeed) {
       hitBlock(entry, getCurrentBlockColor('right'), rLight, bladeHitboxes.right); swapRemoveActiveBlock(i);
     }
   }

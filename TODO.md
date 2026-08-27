@@ -326,7 +326,7 @@
 - [x] Zaimplementować doradczą krzywą nauki — rekomendować kolejną mapę bez blokowania pozostałej zawartości
 - [x] Dodać system oceny trudności mapy na podstawie gęstości beatów, tempa i wzorców
 - [x] Dodać rekomendacje map dla aktywnego profilu na podstawie lokalnego postępu, z sugestią startu, kontynuacji, awansu lub utrwalenia
-- [ ] Dostosować hitboxy i timing okien dla początkujących vs zaawansowanych
+- [x] Dostosować hitboxy, wymagany swing, okna `PERFECT/GOOD` oraz held beats dla poziomów Easy–Expert; trening korzysta z profilu Easy, `speed-trials` co najmniej Hard, `pro` z Expert, a ręczna czułość hitboxu pozostaje respektowana
 
 ## 35. Panele deweloperskie, scena i eksport konfiguracji
 
