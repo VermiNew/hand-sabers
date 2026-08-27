@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {
   getCurrentBassLevel,
   getCurrentHighLevel,
+  getCurrentMusicIntensity,
   getCurrentMidLevel,
 } from './music-visualizer.ts';
 
@@ -31,9 +32,10 @@ export function updateArenaReactiveFrame({
       0.12,
     );
   }
-  if (material.uniforms['uBass']) material.uniforms['uBass'].value = getCurrentBassLevel();
-  if (material.uniforms['uMid']) material.uniforms['uMid'].value = getCurrentMidLevel();
-  if (material.uniforms['uHigh']) material.uniforms['uHigh'].value = getCurrentHighLevel();
+  const musicIntensity = getCurrentMusicIntensity();
+  if (material.uniforms['uBass']) material.uniforms['uBass'].value = getCurrentBassLevel() * musicIntensity;
+  if (material.uniforms['uMid']) material.uniforms['uMid'].value = getCurrentMidLevel() * musicIntensity;
+  if (material.uniforms['uHigh']) material.uniforms['uHigh'].value = getCurrentHighLevel() * musicIntensity;
   if (material.uniforms['uBeatFlash']) {
     const flashTarget = Math.min(1, beatPulse);
     material.uniforms['uBeatFlash'].value = THREE.MathUtils.lerp(
