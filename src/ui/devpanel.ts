@@ -66,8 +66,9 @@ declare global {
 
 interface TweakpaneInstance {
   element: HTMLElement;
-  hidden: boolean;
+  expanded: boolean;
   addTab(opts: { pages: Array<{ title: string }> }): { pages: TweakpaneFolder[] };
+  on(event: 'fold', cb: (ev: { expanded: boolean }) => void): void;
   refresh(): void;
   dispose(): void;
 }
@@ -325,22 +326,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
     if (!Pane || !isDev) return;
     const initialExpanded = loadDevPanelExpanded();
     pane = new Pane({ title: 'HAND SABERS DEV', expanded: initialExpanded });
-
-    // Persist expanded/collapsed state. Tweakpane v4 exposes the fold toggle as the root view
-    // button (.tp-rotv_b); clicking it flips pane.hidden. Watch both the button click and root
-    // view class changes so we capture folds triggered by any input method.
-    pane.element.addEventListener('click', (e) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('.tp-rotv_b') || target.closest('.tp-btnv_b')) {
-        // The fold state changes after the click, so use a microtask.
-        queueMicrotask(() => {
-          if (pane) saveDevPanelExpanded(!pane.hidden);
-        });
-      }
-    });
-    // Belt-and-suspenders: observe root view class mutations (covers keyboard toggle etc.).
-    const foldObserver = new MutationObserver(() => saveDevPanelExpanded(!pane?.hidden));
-    foldObserver.observe(pane.element, { attributes: true, attributeFilter: ['class'] });
+    pane.on('fold', event => saveDevPanelExpanded(event.expanded));
 
     const tabs = pane.addTab({ pages: [
       { title: 'PERF' },
