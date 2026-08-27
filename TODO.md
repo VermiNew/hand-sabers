@@ -350,7 +350,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
   - [ ] Ograniczyć pamięć akceptowanego importu ZIP/JSON: obecny `JSZip` oraz `readFile` wciąż wczytują zaakceptowany plik do 64 MB RAM; pełne rozwiązanie wymaga parsera strumieniowego albo innej zaakceptowanej architektury.
   - [ ] Dodać limity współbieżności, byte-rate oraz globalne/per-user quota dysku dla katalogu uploadów.
     - [x] Ograniczyć aktywne zapisy/importy map przed parserami i Multerem do 4 globalnie oraz 2 per IP; slot obejmuje całe przetwarzanie i wraca po sprzątnięciu uploadu lub błędzie middleware.
-    - [ ] Dodać minimalny byte-rate z okresem ochronnym i poprawnym przerwaniem wolnego uploadu bez pozostawiania pliku tymczasowego.
+    - [x] Dodać minimalny byte-rate 32 KiB/s po 10 s okresu ochronnego, sprawdzany w oknach 5 s; wolny upload kończy się 408, sprzątnięciem pliku tymczasowego i zwolnieniem slotu.
     - [x] Dodać globalną quota 256 MB katalogu `.uploads`: każdy multipart rezerwuje pełne 64 MB przed Multerem, istniejące i niesprzątnięte pliki pomniejszają dostępny budżet, a przekroczenie zwraca 507.
     - [ ] Dodać quota per-user po zdefiniowaniu i uwierzytelnieniu tożsamości użytkownika (IP jest tylko przybliżeniem per-client).
   - [x] Zastąpić globalny `express.json({ limit: '100mb' })` limitami per trasa: 25 MB dla zapisu map i 4 KB dla scores, wykonywanymi dopiero po rate limiterze; endpointy bez body nie uruchamiają parsera JSON.
