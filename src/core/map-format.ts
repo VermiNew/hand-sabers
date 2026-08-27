@@ -74,6 +74,11 @@ export function sanitizeMapId(id: unknown, fallback = 'custom-map'): string {
   return cleaned || fallback;
 }
 
+export function getCanonicalMapAudioUrl(id: unknown): string {
+  const safeId = sanitizeMapId(id, '');
+  return safeId ? `/api/maps/${encodeURIComponent(safeId)}/audio` : '';
+}
+
 export function isPlainObject(value: unknown): value is UnknownRecord {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -166,6 +171,7 @@ export function upgradeMapFormat(rawMap: unknown, options: NormalizeMapOptions =
 
   const meta: MapMeta = { ...metaSource };
   const id = sanitizeMapId(rawMap.id || meta.title || rawMap.title || options.fallbackId || 'custom-map');
+  delete meta.audioUrl;
   const audioOffsetMs = Number(meta.audioOffsetMs ?? rawMap.audioOffsetMs ?? 0);
   meta.audioOffsetMs = Number.isFinite(audioOffsetMs) ? Math.max(-1000, Math.min(1000, audioOffsetMs)) : 0;
   meta.title = normalizeMetaText(meta.title ?? rawMap.title, id) || id;
