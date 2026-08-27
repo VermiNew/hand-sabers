@@ -43,6 +43,9 @@ const MAP_UPLOAD_DIR = path.join(MAPS_DIR, '.uploads');
 const MAX_MAP_JSON_BYTES = 25 * 1024 * 1024;
 const MAX_SCORE_JSON_BYTES = 4 * 1024;
 const MAX_UPLOAD_TEMP_BYTES = MAX_IMPORT_BYTES * 4;
+const MIN_UPLOAD_BYTES_PER_SECOND = 32 * 1024;
+const UPLOAD_RATE_GRACE_MS = 10_000;
+const UPLOAD_RATE_WINDOW_MS = 5_000;
 
 for (const dir of [MAPS_DIR, MAP_BEATDATA_DIR, MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_DIR, MAP_UPLOAD_DIR]) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
@@ -88,8 +91,11 @@ const upload = multer({
   },
 });
 const uploadConcurrency = createUploadConcurrencyGate({
+  byteRateGraceMs: UPLOAD_RATE_GRACE_MS,
+  byteRateWindowMs: UPLOAD_RATE_WINDOW_MS,
   initialUsedBytes: getUploadDirectoryBytes(),
   maxTempBytes: MAX_UPLOAD_TEMP_BYTES,
+  minBytesPerSecond: MIN_UPLOAD_BYTES_PER_SECOND,
   reservationBytes: MAX_IMPORT_BYTES,
 });
 
@@ -162,6 +168,10 @@ registerTrackingSessionRoutes({ app, sessions: trackingSessions, rateLimit });
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   uploadConcurrency.release(req);
+  if (res.headersSent) {
+    res.end();
+    return;
+  }
   if (err?.code === 'LIMIT_FILE_SIZE') {
     const limitMb = Math.round(MAX_IMPORT_BYTES / 1024 / 1024);
     return res.status(413).json({ error: `Plik jest za duży. Limit: ${limitMb} MB.` });

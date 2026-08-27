@@ -3,10 +3,13 @@ import type { Request, RequestHandler } from 'express';
 import { getIp } from './utils.js';
 
 interface UploadConcurrencyOptions {
+  byteRateGraceMs: number;
+  byteRateWindowMs: number;
   initialUsedBytes: number;
   maxGlobal?: number;
   maxPerIp?: number;
   maxTempBytes: number;
+  minBytesPerSecond: number;
   reservationBytes: number;
 }
 
@@ -19,14 +22,18 @@ interface UploadConcurrencyGate {
 interface UploadLease {
   ip: string;
   reservedBytes: number;
+  stopRateMonitor: (() => void) | null;
   tempPath: string | null;
 }
 
 export function createUploadConcurrencyGate({
+  byteRateGraceMs,
+  byteRateWindowMs,
   initialUsedBytes,
   maxGlobal = 4,
   maxPerIp = 2,
   maxTempBytes,
+  minBytesPerSecond,
   reservationBytes,
 }: UploadConcurrencyOptions): UploadConcurrencyGate {
   let activeGlobal = 0;
@@ -39,6 +46,7 @@ export function createUploadConcurrencyGate({
     const lease = leases.get(req);
     if (!lease) return;
     leases.delete(req);
+    lease.stopRateMonitor?.();
     activeGlobal = Math.max(0, activeGlobal - 1);
     reservedTempBytes = Math.max(0, reservedTempBytes - lease.reservedBytes);
     const activeForIp = Math.max(0, (activeByIp.get(lease.ip) ?? 0) - 1);
@@ -83,7 +91,53 @@ export function createUploadConcurrencyGate({
     activeGlobal++;
     reservedTempBytes += requestReservation;
     activeByIp.set(ip, activeForIp + 1);
-    leases.set(req, { ip, reservedBytes: requestReservation, tempPath: null });
+    const lease: UploadLease = {
+      ip,
+      reservedBytes: requestReservation,
+      stopRateMonitor: null,
+      tempPath: null,
+    };
+    leases.set(req, lease);
+
+    const startedAt = Date.now();
+    let lastCheckAt = startedAt;
+    let windowBytes = 0;
+    const onData = (chunk: Buffer): void => { windowBytes += chunk.byteLength; };
+    const stopRateMonitor = (): void => {
+      clearInterval(rateTimer);
+      req.off('data', onData);
+      req.off('end', stopRateMonitor);
+      req.off('aborted', stopRateMonitor);
+      req.off('error', stopRateMonitor);
+    };
+    const rateTimer = setInterval(() => {
+      const now = Date.now();
+      const elapsedMs = Math.max(1, now - lastCheckAt);
+      if (now - startedAt < byteRateGraceMs) {
+        windowBytes = 0;
+        lastCheckAt = now;
+        return;
+      }
+      const bytesPerSecond = windowBytes * 1000 / elapsedMs;
+      windowBytes = 0;
+      lastCheckAt = now;
+      if (bytesPerSecond >= minBytesPerSecond || req.readableEnded || req.destroyed) return;
+
+      stopRateMonitor();
+      const error = new Error('Upload jest przesyłany zbyt wolno.');
+      if (!res.headersSent && !res.writableEnded) {
+        res.once('finish', () => req.destroy(error));
+        res.set('Connection', 'close').status(408).json({ error: error.message });
+      } else {
+        req.destroy(error);
+      }
+    }, byteRateWindowMs);
+    rateTimer.unref();
+    lease.stopRateMonitor = stopRateMonitor;
+    req.on('data', onData);
+    req.once('end', stopRateMonitor);
+    req.once('aborted', stopRateMonitor);
+    req.once('error', stopRateMonitor);
     next();
   };
 
