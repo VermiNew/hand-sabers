@@ -3,7 +3,7 @@ import type { ErrorRequestHandler, Request } from 'express';
 import multer from 'multer';
 import { createServer as createHttpServer } from 'http';
 import { createServer as createHttpsServer } from 'https';
-import { existsSync, mkdirSync, readFileSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'fs';
 import { randomUUID } from 'crypto';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -42,9 +42,21 @@ const LEGACY_MAP_AUDIO_DIR = path.join(MAPS_DIR, '_audio');
 const MAP_UPLOAD_DIR = path.join(MAPS_DIR, '.uploads');
 const MAX_MAP_JSON_BYTES = 25 * 1024 * 1024;
 const MAX_SCORE_JSON_BYTES = 4 * 1024;
+const MAX_UPLOAD_TEMP_BYTES = MAX_IMPORT_BYTES * 4;
 
 for (const dir of [MAPS_DIR, MAP_BEATDATA_DIR, MAP_AUDIO_DIR, LEGACY_MAP_AUDIO_DIR, MAP_UPLOAD_DIR]) {
   if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+}
+
+function getUploadDirectoryBytes(): number {
+  return readdirSync(MAP_UPLOAD_DIR, { withFileTypes: true }).reduce((total, entry) => {
+    if (!entry.isFile()) return total;
+    try {
+      return total + Math.max(0, statSync(path.join(MAP_UPLOAD_DIR, entry.name)).size);
+    } catch {
+      return total;
+    }
+  }, 0);
 }
 
 const HIDDEN_TEST_MAP_IDS = new Set(['smoke-map', 'creator-smoke', 'zip-smoke', 'bad-map']);
@@ -61,7 +73,11 @@ const audioStorage = createAudioStorage({
 const upload = multer({
   storage: multer.diskStorage({
     destination: MAP_UPLOAD_DIR,
-    filename: (_req, _file, callback) => callback(null, randomUUID()),
+    filename: (req, _file, callback) => {
+      const fileName = randomUUID();
+      uploadConcurrency.trackFile(req, path.join(MAP_UPLOAD_DIR, fileName));
+      callback(null, fileName);
+    },
   }),
   limits: { fileSize: MAX_IMPORT_BYTES },
   fileFilter(_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) {
@@ -71,7 +87,11 @@ const upload = multer({
     else cb(new Error('Nieobsługiwany typ pliku. Dozwolone: .json, .zip i audio.'));
   },
 });
-const uploadConcurrency = createUploadConcurrencyGate();
+const uploadConcurrency = createUploadConcurrencyGate({
+  initialUsedBytes: getUploadDirectoryBytes(),
+  maxTempBytes: MAX_UPLOAD_TEMP_BYTES,
+  reservationBytes: MAX_IMPORT_BYTES,
+});
 
 const app = express();
 if (process.env.HAND_SABERS_TRUST_PROXY === '1') app.set('trust proxy', 1);
