@@ -154,7 +154,17 @@ export function createArenaBackground(scene: THREE.Scene, arenaDetail: number): 
         float horizon = exp(-pow((uv.y - 0.16) * 12.0, 2.0));
         color += uHorizon * horizon * detailStep * (0.065 + music * 0.045 + beat * 0.11 + flash * 0.10);
 
-        // ── Layer 5: star field (parallax + high-band twinkle) ────────────────
+        // ── Layer 5: perspective frames (depth cue outside gameplay lane) ────
+        float architecture = smoothstep(0.12, 0.72, detail) * (1.0 - pressure * 0.58);
+        float frameFade = smoothstep(0.12, 0.28, uv.y) * smoothstep(1.02, 0.72, uv.y);
+        float corridorEdge = 0.17 + max(0.0, uv.y - 0.16) * 0.72;
+        float innerFrame = 1.0 - smoothstep(0.010, 0.030, abs(abs(p.x) - corridorEdge));
+        float outerFrame = 1.0 - smoothstep(0.012, 0.038, abs(abs(p.x) - corridorEdge - 0.18));
+        float frames = (innerFrame + outerFrame * 0.46) * frameFade;
+        color += mix(uHorizon, uAccent, 0.48) * frames * architecture
+          * (0.028 + bass * 0.030 + beat * 0.018);
+
+        // ── Layer 6: star field (parallax + high-band twinkle) ────────────────
         vec2 starUV = uv + par * 0.55;
         float stars = starLayer(starUV + vec2(motion * 0.08, 0.0), vec2(42.0, 17.0), 0.945, 0.090);
         stars += starLayer(starUV - vec2(motion * 0.035, 0.0), vec2(71.0, 29.0), 0.978, 0.070) * 0.72;
@@ -163,13 +173,13 @@ export function createArenaBackground(scene: THREE.Scene, arenaDetail: number): 
         float starTwk = (0.48 + music * 0.16 + beat * 0.08 + high * 0.22);
         color += uStar * stars * detailStep * starTwk;
 
-        // ── Layer 6: lane darkening for block readability ──────────────────────
+        // ── Layer 7: lane darkening for block readability ──────────────────────
         float gameplayLane = exp(-pow(p.x * 1.72, 2.0)) * smoothstep(0.02, 0.66, uv.y);
         vec3 laneMask = mix(color, uLane, 1.0);
         color = mix(color, laneMask, gameplayLane * (0.17 + pressure * 0.30));
         color *= 1.0 - pressure * smoothstep(0.12, 0.82, uv.y) * 0.12;
 
-        // ── Layer 7: vignette + subtle beat flash ──────────────────────────────
+        // ── Layer 8: vignette + subtle beat flash ──────────────────────────────
         float vignette = smoothstep(1.28, 0.22, length(p * vec2(0.78, 1.0)));
         color *= 0.56 + vignette * 0.44;
         color += uHorizon * flash * 0.05 * detailStep;
