@@ -3,7 +3,6 @@
 export interface AudioPrepareCommand {
   v: 1;
   type: 'audio-prepare';
-  audioUrl: string;
   mapId: string;
   latencyMs: number;
 }

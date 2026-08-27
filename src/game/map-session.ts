@@ -50,7 +50,7 @@ export async function ensureCurrentMapAudio(settings: Pick<Settings, 'phoneAudio
         state.map._audioReady = true;
         const duration = getMapDuration();
         if (duration && !state.map.meta?.duration) state.map.meta = { ...(state.map.meta ?? {}), duration };
-        if (settings.phoneAudioOutput && state.map.id) preparePhoneAudio(audioUrl, state.map.id);
+        if (settings.phoneAudioOutput && state.map.id) preparePhoneAudio(state.map.id);
         return;
       }
     } catch (error) {

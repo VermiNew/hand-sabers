@@ -53,10 +53,10 @@ export function onPhoneAudioError(): void {
   restorePcAudio();
 }
 
-/** Prepare phone for audio playback with a map's audio URL. */
-export function preparePhoneAudio(audioUrl: string, mapId: string): boolean {
+/** Prepare phone for audio playback using the map's canonical server endpoint. */
+export function preparePhoneAudio(mapId: string): boolean {
   const latencyMs = getSettings().phoneAudioLatencyMs ?? 0;
-  return sendAudioCommand({ v: 1, type: 'audio-prepare', audioUrl, mapId, latencyMs });
+  return sendAudioCommand({ v: 1, type: 'audio-prepare', mapId, latencyMs });
 }
 
 /** Tell phone to start playing at a given offset. */

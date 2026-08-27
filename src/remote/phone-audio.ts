@@ -1,4 +1,5 @@
 ﻿import { t } from '../i18n/index.ts';
+import { getCanonicalMapAudioUrl } from '../core/map-format.ts';
 import type { AudioCommand } from './audio-protocol.ts';
 import { isAudioCommand } from './audio-protocol.ts';
 
@@ -31,8 +32,14 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
     const cmd = raw as AudioCommand;
 
     if (cmd.type === 'audio-prepare') {
+      const audioUrl = getCanonicalMapAudioUrl(cmd.mapId);
+      if (!audioUrl) {
+        enabled = false;
+        onError('INVALID_AUDIO_URL');
+        return;
+      }
       const el = ensureAudioElement();
-      el.src = cmd.audioUrl;
+      el.src = audioUrl;
       el.load();
       // Apply latency compensation from host settings
       if (typeof cmd.latencyMs === 'number') setLatencyMs(cmd.latencyMs);
