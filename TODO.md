@@ -330,8 +330,8 @@
 
 ## 35. Panele deweloperskie, scena i eksport konfiguracji
 
-- [ ] Zapamiętywać w `localStorage`, czy panel `Hand Sabers Dev` jest zwinięty czy rozwinięty; przy pierwszym uruchomieniu panel ma być widoczny
-- [ ] Dodać możliwość minimalizacji panelu `KAMERA RAW / ŚLEDZENIE ML` w prawym dolnym rogu i zapamiętywać jego stan; przy pierwszym uruchomieniu panel ma być widoczny
+- [x] Zapamiętywać w `localStorage`, czy panel `Hand Sabers Dev` jest zwinięty czy rozwinięty; przy pierwszym uruchomieniu panel ma być widoczny
+- [x] Dodać możliwość minimalizacji panelu `KAMERA RAW / ŚLEDZENIE ML` w prawym dolnym rogu i zapamiętywać jego stan; przy pierwszym uruchomieniu panel ma być widoczny
 - [ ] Poprawić tło mapy/areny, aby było czytelniejsze, nowocześniejsze i spójne z efektami reagującymi na muzykę
 - [ ] Poprawić odbicia świetlne na podłodze — usunąć nienaturalne zachowanie i zsynchronizować je ze światłami oraz ustawieniami jakości grafiki
 - [x] Dodać w ustawieniach eksport konfiguracji do wersjonowanego pliku JSON (m.in. kolory i modele mieczy, audio, rozgrywka, grafika, profil oraz kalibracja), bez danych sesji, tokenów i innych danych tymczasowych
