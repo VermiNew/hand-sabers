@@ -69,11 +69,14 @@ export async function exportLibraryMap(id: string, map: MapEntry | null): Promis
       for (const key of ['source', 'localOnly', 'updatedAt', '_serverAudioPending', '_localAudioPending', '_audioReady']) {
         delete mapJson[key];
       }
+      const exportedMeta = { ...(map.meta ?? {}) };
+      delete exportedMeta.audioUrl;
+      mapJson['meta'] = exportedMeta;
 
       const audio = await loadLocalMapAudio(id).catch(() => null);
       if (audio) {
         mapJson['meta'] = {
-          ...(mapJson['meta'] as Record<string, unknown> | undefined),
+          ...exportedMeta,
           audioFile: audio.fileName,
         };
         zip.file(audio.fileName || `${id}.ogg`, audio.arrayBuffer);
