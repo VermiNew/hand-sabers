@@ -7,6 +7,8 @@ import type { TrackingSessionRegistry } from './tracking-session-registry.js';
 const PROTOCOL_VERSION = 1;
 const JOIN_TIMEOUT_MS = 10_000;
 const MAX_CONNECTIONS = 64;
+const MAX_PENDING_HANDSHAKES = 8;
+const MAX_PENDING_HANDSHAKES_PER_IP = 2;
 const MAX_PACKETS_PER_SECOND = 60;
 const MAX_OUTGOING_BUFFER_BYTES = 64 * 1024;
 
@@ -73,6 +75,15 @@ export function registerRemoteTrackingServer(
 ): { close(): void } {
   const webSocketServer = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
   const peers = new Map<WebSocket, Peer>();
+  const pendingHandshakes = new Map<WebSocket, string>();
+
+  const pendingHandshakesForIp = (ip: string): number => {
+    let count = 0;
+    for (const pendingIp of pendingHandshakes.values()) {
+      if (pendingIp === ip) count++;
+    }
+    return count;
+  };
 
   const peerFor = (sessionId: string, role: Peer['role']): WebSocket | null => {
     for (const [socket, peer] of peers) {
@@ -103,14 +114,11 @@ export function registerRemoteTrackingServer(
     send(phone, { type: 'peer-connected', peer: 'host' });
   };
 
-  webSocketServer.on('connection', socket => {
+  webSocketServer.on('connection', (socket, request) => {
+    pendingHandshakes.set(socket, request.socket.remoteAddress || 'unknown');
     const joinTimer = setTimeout(() => {
-      try {
-        socket.close(1008, 'Join timeout');
-      } catch (error) {
-        console.error('Remote tracking join timeout close failed:', error);
-        socket.terminate();
-      }
+      pendingHandshakes.delete(socket);
+      socket.terminate();
     }, JOIN_TIMEOUT_MS);
     joinTimer.unref();
 
@@ -170,11 +178,17 @@ export function registerRemoteTrackingServer(
         if (value['v'] !== PROTOCOL_VERSION || value['type'] !== 'join' || (role !== 'host' && role !== 'phone')) {
           throw new Error('INVALID_JOIN');
         }
+        if (peers.size >= MAX_CONNECTIONS) {
+          send(socket, { type: 'error', code: 'SERVER_BUSY' });
+          socket.close(1013, 'Server busy');
+          return;
+        }
         const status = role === 'host'
           ? sessions.authenticateHost(sessionId, token)
           : sessions.authenticatePhone(sessionId, token);
         if (!status) throw new Error('UNAUTHORIZED');
         clearTimeout(joinTimer);
+        pendingHandshakes.delete(socket);
         peers.set(socket, {
           sessionId,
           role,
@@ -191,6 +205,7 @@ export function registerRemoteTrackingServer(
 
     socket.once('close', () => {
       clearTimeout(joinTimer);
+      pendingHandshakes.delete(socket);
       const peer = peers.get(socket);
       peers.delete(socket);
       if (!peer) return;
@@ -205,7 +220,13 @@ export function registerRemoteTrackingServer(
     try {
       const url = new URL(request.url || '/', 'http://localhost');
       if (url.pathname !== '/tracking-ws') return;
-      if (!isAllowedOrigin(request) || webSocketServer.clients.size >= MAX_CONNECTIONS) {
+      const ip = request.socket.remoteAddress || 'unknown';
+      if (
+        !isAllowedOrigin(request)
+        || peers.size >= MAX_CONNECTIONS
+        || pendingHandshakes.size >= MAX_PENDING_HANDSHAKES
+        || pendingHandshakesForIp(ip) >= MAX_PENDING_HANDSHAKES_PER_IP
+      ) {
         socket.destroy();
         return;
       }
@@ -223,7 +244,7 @@ export function registerRemoteTrackingServer(
     close() {
       server.off('upgrade', handleUpgrade);
       stopListeningForInvalidation();
-      for (const socket of peers.keys()) {
+      for (const socket of webSocketServer.clients) {
         try {
           socket.close(1001, 'Server shutdown');
         } catch (error) {
@@ -232,6 +253,7 @@ export function registerRemoteTrackingServer(
         }
       }
       peers.clear();
+      pendingHandshakes.clear();
       try {
         webSocketServer.close();
       } catch (error) {
