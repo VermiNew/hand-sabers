@@ -12,7 +12,7 @@ import {
 } from '../../src/core/map-format.js';
 import type { AudioStorage, ZipAudioEntry } from '../storage/audio.js';
 import type { MapStorage } from '../storage/maps.js';
-import { errorMessage, getIp, parseJsonSafe } from '../utils.js';
+import { errorMessage, getIp, KeyedMutex, parseJsonSafe } from '../utils.js';
 
 type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
 
@@ -86,6 +86,15 @@ export function registerMapWriteRoutes({
   parseJson,
   rateLimit,
 }: MapWriteRoutesOptions): void {
+  const mapLocks = new KeyedMutex();
+  const withMapLock = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
+    const release = await mapLocks.acquire(id);
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
+  };
   const limitMapSave = createWriteRateLimit(
     rateLimit,
     'maps-save',
@@ -102,7 +111,7 @@ export function registerMapWriteRoutes({
   app.post('/api/maps', limitMapSave, uploadConcurrency, parseJson, async (req, res) => {
     try {
       const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-      await mapStorage.write(map);
+      await withMapLock(map.id, () => mapStorage.write(map));
       res.json({ ok: true, id: map.id, beats: map.beats.length, storage: 'beatdata' });
     } catch (error) {
       res.status(400).json({ error: errorMessage(error) });
@@ -115,23 +124,24 @@ export function registerMapWriteRoutes({
     try {
       const rawBody = req.body?.map ? parseJsonSafe(req.body.map) : req.body;
       const map = normalizeMap(rawBody, { requireBeats: false, maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-      let audio = null;
-
-      if (req.file) {
-        assertFileSize(req.file);
-        audio = await audioStorage.persistFile(map, req.file.path, req.file.originalname);
-      } else {
-        const existingAudio = await audioStorage.find(map.id, map);
-        if (existingAudio) {
-          map.meta = {
-            ...(map.meta ?? {}),
-            serverAudioFile: existingAudio.fileName,
-            audioUrl: `/api/maps/${encodeURIComponent(map.id)}/audio`,
-          };
+      const audio = await withMapLock(map.id, async () => {
+        let persistedAudio = null;
+        if (req.file) {
+          assertFileSize(req.file);
+          persistedAudio = await audioStorage.persistFile(map, req.file.path, req.file.originalname);
+        } else {
+          const existingAudio = await audioStorage.find(map.id, map);
+          if (existingAudio) {
+            map.meta = {
+              ...(map.meta ?? {}),
+              serverAudioFile: existingAudio.fileName,
+              audioUrl: `/api/maps/${encodeURIComponent(map.id)}/audio`,
+            };
+          }
         }
-      }
-
-      await mapStorage.write(map);
+        await mapStorage.write(map);
+        return persistedAudio;
+      });
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio?.originalName ?? null, storage: 'beatdata', map });
     } catch (error) {
       res.status(400).json({ error: errorMessage(error) });
@@ -166,8 +176,11 @@ export function registerMapWriteRoutes({
         }
         const rawMap = parseJsonSafe(rawMapText);
         const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-        const audio = await audioStorage.persistZip(entries, map);
-        await mapStorage.write(map);
+        const audio = await withMapLock(map.id, async () => {
+          const persistedAudio = await audioStorage.persistZip(entries, map);
+          await mapStorage.write(map);
+          return persistedAudio;
+        });
         return res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio?.originalName ?? null, storage: 'beatdata', map });
       }
 
@@ -177,7 +190,7 @@ export function registerMapWriteRoutes({
 
       const rawMap = parseJsonSafe(uploadedBytes.toString('utf8'));
       const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-      await mapStorage.write(map);
+      await withMapLock(map.id, () => mapStorage.write(map));
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: null, storage: 'beatdata', map });
     } catch (error) {
       res.status(400).json({ error: errorMessage(error) });
@@ -195,12 +208,15 @@ export function registerMapWriteRoutes({
       }
       const id = sanitizeMapId(req.params['id'], '');
       if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
-      const deleted = await mapStorage.delete(id);
-      try {
-        await audioStorage.remove(id);
-      } catch {
-        // Audio removal failure is non-fatal
-      }
+      const deleted = await withMapLock(id, async () => {
+        const removed = await mapStorage.delete(id);
+        try {
+          await audioStorage.remove(id);
+        } catch {
+          // Audio removal failure is non-fatal
+        }
+        return removed;
+      });
       if (!deleted) return res.status(404).json({ error: 'Nie znaleziono.' });
       res.json({ ok: true });
     } catch {

@@ -28,6 +28,29 @@ export class FileMutex {
   }
 }
 
+export class KeyedMutex {
+  private readonly entries = new Map<string, { mutex: FileMutex; users: number }>();
+
+  async acquire(key: string): Promise<() => void> {
+    let entry = this.entries.get(key);
+    if (!entry) {
+      entry = { mutex: new FileMutex(), users: 0 };
+      this.entries.set(key, entry);
+    }
+    entry.users++;
+    const releaseMutex = await entry.mutex.acquire();
+    let released = false;
+
+    return () => {
+      if (released) return;
+      released = true;
+      releaseMutex();
+      entry.users--;
+      if (entry.users === 0 && this.entries.get(key) === entry) this.entries.delete(key);
+    };
+  }
+}
+
 // Rate limiter in-memory z automatycznym sprzątaniem
 export class RateLimiter {
   private readonly map = new Map<string, number[]>();
