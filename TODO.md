@@ -362,7 +362,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [ ] Nie ufać wynikom podawanym przez klienta. Powiązać leaderboard i wyniki Multiplayer z uwierzytelnionym graczem, mapą oraz wydaną przez serwer rundą; obecnie można przesłać dowolny wynik i combo.
 - [ ] Ograniczyć niezalogowane połączenia `/tracking-ws` per IP i wydzielić małą pulę handshake. Obecnie 64 połączenia czekające po 10 s mogą zająć cały globalny limit.
 - [x] Egzekwować pięciominutowe wygaśnięcie sesji remote tracking również dla już połączonych socketów: zamykać je przy expiry/revoke i sprawdzać aktywność sesji przed relayem.
-- [ ] Usunąć zmienny skrypt Lucide `@latest` z `beat-sabers-3d.html`: bundle/self-host bibliotekę albo przypiąć niezmienną wersję z SRI. Obecny skrypt wykonuje się z uprawnieniami originu aplikacji bez kontroli wersji.
+- [x] Usunąć zmienny skrypt Lucide `@latest` z `beat-sabers-3d.html`: nieużywany skrypt CDN został usunięty, a ikony nadal korzystają z Material Symbols.
 - [x] Nie zachowywać arbitralnego `meta.audioUrl` z importowanej mapy. URL jest wyliczany z walidowanego ID także na telefonie; zewnętrzne adresy audio nie są obsługiwane.
 - [ ] Zapewnić atomowość zapisu mapy i audio.
   - [x] Zapisać/przenieść nowe audio przed usuwaniem starego rozszerzenia, aby błąd zapisu nie kasował poprzedniego pliku.
