@@ -363,7 +363,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [ ] Ograniczyć niezalogowane połączenia `/tracking-ws` per IP i wydzielić małą pulę handshake. Obecnie 64 połączenia czekające po 10 s mogą zająć cały globalny limit.
 - [x] Egzekwować pięciominutowe wygaśnięcie sesji remote tracking również dla już połączonych socketów: zamykać je przy expiry/revoke i sprawdzać aktywność sesji przed relayem.
 - [ ] Usunąć zmienny skrypt Lucide `@latest` z `beat-sabers-3d.html`: bundle/self-host bibliotekę albo przypiąć niezmienną wersję z SRI. Obecny skrypt wykonuje się z uprawnieniami originu aplikacji bez kontroli wersji.
-- [ ] Nie zachowywać arbitralnego `meta.audioUrl` z importowanej mapy. Wyliczać URL z walidowanego ID; jeśli zewnętrzne audio jest wymagane, dopuścić tylko `https:` i jawnie dozwolone originy także na telefonie.
+- [x] Nie zachowywać arbitralnego `meta.audioUrl` z importowanej mapy. URL jest wyliczany z walidowanego ID także na telefonie; zewnętrzne adresy audio nie są obsługiwane.
 - [ ] Zapewnić atomowość zapisu mapy i audio.
   - [x] Zapisać/przenieść nowe audio przed usuwaniem starego rozszerzenia, aby błąd zapisu nie kasował poprzedniego pliku.
   - [ ] Dodać blokadę per map ID i rollback/commit całej operacji mapy oraz audio, aby równoległe zapisy nie mogły pozostawić niespójnego stanu.
