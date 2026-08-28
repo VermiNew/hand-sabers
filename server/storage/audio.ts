@@ -1,5 +1,6 @@
-import { readdir, rename, stat, unlink, writeFile } from 'fs/promises';
+import { copyFile, readdir, rename, stat, unlink, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
+import { randomUUID } from 'crypto';
 import path from 'path';
 import { AUDIO_EXT_RE, MAX_IMPORT_BYTES, findPreferredAudioEntry, sanitizeMapId } from '../../src/core/map-format.js';
 import type { StoredMap } from './maps.js';
@@ -22,9 +23,15 @@ export interface PersistedAudio {
   size: number;
 }
 
+export interface AudioMutation {
+  commit(): Promise<void>;
+  rollback(): Promise<void>;
+}
+
 export interface AudioStorage {
   mimeForFile(fileName: string): string;
   find(id: string, map?: StoredMap | null): Promise<StoredAudio | null>;
+  beginMutation(id: string): Promise<AudioMutation>;
   remove(id: string, keepFullPath?: string | null): Promise<number>;
   persistBuffer(map: StoredMap, buffer: Uint8Array, originalName?: string): Promise<PersistedAudio>;
   persistFile(map: StoredMap, sourcePath: string, originalName?: string): Promise<PersistedAudio>;
@@ -50,6 +57,27 @@ function safeStoredAudioName(name: unknown): string {
 
 export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOptions): AudioStorage {
   const directories = [audioDir, legacyAudioDir];
+
+  const matchingPaths = async (id: string): Promise<string[]> => {
+    const safeId = sanitizeMapId(id, '');
+    if (!safeId) return [];
+    const matches: string[] = [];
+    for (const dir of directories) {
+      let files: string[];
+      try {
+        files = await readdir(dir);
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') continue;
+        throw error;
+      }
+      for (const fileName of files) {
+        if (fileName.startsWith(`${safeId}.`) && AUDIO_EXT_RE.test(fileName)) {
+          matches.push(path.resolve(dir, fileName));
+        }
+      }
+    }
+    return matches;
+  };
 
   const storage: AudioStorage = {
     mimeForFile(fileName: string): string {
@@ -90,25 +118,45 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
       return null;
     },
 
+    async beginMutation(id: string): Promise<AudioMutation> {
+      const backups: Array<{ originalPath: string; backupPath: string }> = [];
+      try {
+        for (const originalPath of await matchingPaths(id)) {
+          const backupPath = `${originalPath}.${process.pid}.${randomUUID()}.rollback`;
+          await copyFile(originalPath, backupPath);
+          backups.push({ originalPath, backupPath });
+        }
+      } catch (error) {
+        await Promise.all(backups.map(backup => unlink(backup.backupPath).catch(() => undefined)));
+        throw error;
+      }
+
+      let finished = false;
+      return {
+        async commit(): Promise<void> {
+          if (finished) return;
+          finished = true;
+          await Promise.all(backups.map(backup => unlink(backup.backupPath).catch(() => undefined)));
+        },
+        async rollback(): Promise<void> {
+          if (finished) return;
+          for (const currentPath of await matchingPaths(id)) await unlink(currentPath);
+          for (const backup of backups) await rename(backup.backupPath, backup.originalPath);
+          finished = true;
+        },
+      };
+    },
+
     async remove(id: string, keepFullPath: string | null = null): Promise<number> {
       const safeId = sanitizeMapId(id, '');
       if (!safeId) return 0;
       let removed = 0;
       const keep = keepFullPath ? path.resolve(keepFullPath) : null;
 
-      for (const dir of directories) {
-        try {
-          const files = await readdir(dir);
-          for (const fileName of files) {
-            if (!fileName.startsWith(`${safeId}.`) || !AUDIO_EXT_RE.test(fileName)) continue;
-            const fullPath = path.resolve(dir, fileName);
-            if (keep && fullPath === keep) continue;
-            try {
-              await unlink(fullPath);
-              removed++;
-            } catch {}
-          }
-        } catch {}
+      for (const fullPath of await matchingPaths(safeId)) {
+        if (keep && fullPath === keep) continue;
+        await unlink(fullPath);
+        removed++;
       }
 
       return removed;

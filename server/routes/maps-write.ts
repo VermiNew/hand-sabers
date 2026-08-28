@@ -95,6 +95,22 @@ export function registerMapWriteRoutes({
       release();
     }
   };
+  const withAudioRollback = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
+    const mutation = await audioStorage.beginMutation(id);
+    try {
+      const result = await operation();
+      await mutation.commit();
+      return result;
+    } catch (error) {
+      try {
+        await mutation.rollback();
+      } catch (rollbackError) {
+        console.error(`Map audio rollback failed for ${id}:`, rollbackError);
+        throw new Error(`Nie udało się przywrócić audio mapy ${id}.`, { cause: error });
+      }
+      throw error;
+    }
+  };
   const limitMapSave = createWriteRateLimit(
     rateLimit,
     'maps-save',
@@ -128,7 +144,12 @@ export function registerMapWriteRoutes({
         let persistedAudio = null;
         if (req.file) {
           assertFileSize(req.file);
-          persistedAudio = await audioStorage.persistFile(map, req.file.path, req.file.originalname);
+          persistedAudio = await withAudioRollback(map.id, async () => {
+            const audio = await audioStorage.persistFile(map, req.file!.path, req.file!.originalname);
+            await mapStorage.write(map);
+            return audio;
+          });
+          return persistedAudio;
         } else {
           const existingAudio = await audioStorage.find(map.id, map);
           if (existingAudio) {
@@ -176,11 +197,11 @@ export function registerMapWriteRoutes({
         }
         const rawMap = parseJsonSafe(rawMapText);
         const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-        const audio = await withMapLock(map.id, async () => {
+        const audio = await withMapLock(map.id, () => withAudioRollback(map.id, async () => {
           const persistedAudio = await audioStorage.persistZip(entries, map);
           await mapStorage.write(map);
           return persistedAudio;
-        });
+        }));
         return res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio?.originalName ?? null, storage: 'beatdata', map });
       }
 
