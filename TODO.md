@@ -360,7 +360,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 
 - [x] Naprawić pipeline testów: usunięto osieroczone oczekiwanie wobec nieistniejącego `findClosestSaberColor`; test pokrywa faktyczny kontrakt eksportowanych presetów, a `npm run unit` przechodzi 31/31.
 - [ ] Nie ufać wynikom podawanym przez klienta. Powiązać leaderboard i wyniki Multiplayer z uwierzytelnionym graczem, mapą oraz wydaną przez serwer rundą; obecnie można przesłać dowolny wynik i combo.
-- [ ] Ograniczyć niezalogowane połączenia `/tracking-ws` per IP i wydzielić małą pulę handshake. Obecnie 64 połączenia czekające po 10 s mogą zająć cały globalny limit.
+- [x] Ograniczyć niezalogowane połączenia `/tracking-ws` per IP i wydzielić małą pulę handshake: maksymalnie 8 oczekujących globalnie, 2 per adres transportowy, zwalniane twardo po 10 s; limit 64 pozostaje dla uwierzytelnionych peerów.
 - [x] Egzekwować pięciominutowe wygaśnięcie sesji remote tracking również dla już połączonych socketów: zamykać je przy expiry/revoke i sprawdzać aktywność sesji przed relayem.
 - [x] Usunąć zmienny skrypt Lucide `@latest` z `beat-sabers-3d.html`: nieużywany skrypt CDN został usunięty, a ikony nadal korzystają z Material Symbols.
 - [x] Nie zachowywać arbitralnego `meta.audioUrl` z importowanej mapy. URL jest wyliczany z walidowanego ID także na telefonie; zewnętrzne adresy audio nie są obsługiwane.
