@@ -115,6 +115,33 @@ const uploadConcurrency = createUploadConcurrencyGate({
 const app = express();
 if (process.env.HAND_SABERS_TRUST_PROXY === '1') app.set('trust proxy', 1);
 
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "connect-src 'self' https://cdn.jsdelivr.net https://storage.googleapis.com ws: wss:",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "frame-src 'none'",
+  "img-src 'self' data: blob:",
+  "manifest-src 'self'",
+  "media-src 'self' blob:",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://mrdoob.github.io",
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "worker-src 'self' blob:",
+].join('; ');
+
+app.use((req, res, next) => {
+  res.setHeader('Content-Security-Policy', CONTENT_SECURITY_POLICY);
+  res.setHeader('Permissions-Policy', 'camera=(self), fullscreen=(self), geolocation=(), microphone=(), payment=(), usb=()');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  if (req.secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  next();
+});
+
 const limiter = new RateLimiter();
 const mapAssetLocks = new KeyedMutex(id => caseInsensitiveMapIds ? id.toLowerCase() : id);
 const mapCatalogLock = new FileMutex();
