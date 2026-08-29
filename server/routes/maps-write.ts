@@ -12,7 +12,7 @@ import {
 } from '../../src/core/map-format.js';
 import type { AudioMutation, AudioStorage, ZipAudioEntry } from '../storage/audio.js';
 import type { MapStorage } from '../storage/maps.js';
-import { errorMessage, getIp, KeyedMutex, parseJsonSafe } from '../utils.js';
+import { errorMessage, getIp, parseJsonSafe, type KeyedMutex } from '../utils.js';
 
 type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
 
@@ -20,6 +20,7 @@ interface MapWriteRoutesOptions {
   app: Express;
   mapStorage: MapStorage;
   audioStorage: AudioStorage;
+  mapAssetLocks: KeyedMutex;
   uploadAudio: RequestHandler;
   uploadFile: RequestHandler;
   uploadConcurrency: RequestHandler;
@@ -79,6 +80,7 @@ export function registerMapWriteRoutes({
   app,
   mapStorage,
   audioStorage,
+  mapAssetLocks,
   uploadAudio,
   uploadFile,
   uploadConcurrency,
@@ -86,9 +88,8 @@ export function registerMapWriteRoutes({
   parseJson,
   rateLimit,
 }: MapWriteRoutesOptions): void {
-  const mapLocks = new KeyedMutex();
   const withMapLock = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
-    const release = await mapLocks.acquire(id.toLowerCase());
+    const release = await mapAssetLocks.acquire(id.toLowerCase());
     try {
       return await operation();
     } finally {

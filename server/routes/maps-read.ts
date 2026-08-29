@@ -1,15 +1,16 @@
 import { createReadStream } from 'fs';
-import type { Express } from 'express';
+import type { Express, Response } from 'express';
 import { createRequire } from 'module';
 import { getCanonicalMapAudioUrl, sanitizeMapId } from '../../src/core/map-format.js';
 import type { AudioStorage } from '../storage/audio.js';
 import type { MapStorage, StoredMap } from '../storage/maps.js';
-import { errorMessage } from '../utils.js';
+import { errorMessage, type KeyedMutex } from '../utils.js';
 
 interface MapReadRoutesOptions {
   app: Express;
   mapStorage: MapStorage;
   audioStorage: AudioStorage;
+  mapAssetLocks: KeyedMutex;
 }
 
 interface ArchiveLike {
@@ -38,7 +39,25 @@ function mapForResponse(map: StoredMap, id: string): StoredMap {
   };
 }
 
-export function registerMapReadRoutes({ app, mapStorage, audioStorage }: MapReadRoutesOptions): void {
+export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetLocks }: MapReadRoutesOptions): void {
+  const withMapLock = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
+    const release = await mapAssetLocks.acquire(id.toLowerCase());
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
+  };
+  const waitForResponse = (res: Response): Promise<void> => new Promise(resolve => {
+    let settled = false;
+    const settle = (): void => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+    res.once('finish', settle);
+    res.once('close', settle);
+  });
   app.get('/api/maps', async (_req, res) => {
     try {
       res.json(await mapStorage.list());
@@ -68,24 +87,31 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage }: MapRead
     const id = safeId(req.params['id']);
     if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
     try {
-      const data = await mapStorage.read(id);
-      if (!data) return res.status(404).json({ error: 'Nie znaleziono.' });
+      await withMapLock(id, async () => {
+        const data = await mapStorage.read(id);
+        if (!data) {
+          res.status(404).json({ error: 'Nie znaleziono.' });
+          return;
+        }
 
-      const archive = new archiver.ZipArchive({ zlib: { level: 6 } });
+        const archive = new archiver.ZipArchive({ zlib: { level: 6 } });
+        const responseComplete = waitForResponse(res);
 
-      archive.on('error', err => {
-        if (!res.headersSent) res.status(500).json({ error: err.message });
-        else res.destroy(err);
+        archive.on('error', err => {
+          if (!res.headersSent) res.status(500).json({ error: err.message });
+          else res.destroy(err);
+        });
+
+        res.attachment(`${id}.zip`);
+        archive.pipe(res);
+        archive.append(JSON.stringify(mapForResponse(data, id), null, 2), { name: 'map.json' });
+
+        const audio = await audioStorage.find(id, data);
+        if (audio) archive.file(audio.fullPath, { name: audio.publicName });
+
+        await archive.finalize();
+        await responseComplete;
       });
-
-      res.attachment(`${id}.zip`);
-      archive.pipe(res);
-      archive.append(JSON.stringify(mapForResponse(data, id), null, 2), { name: 'map.json' });
-
-      const audio = await audioStorage.find(id, data);
-      if (audio) archive.file(audio.fullPath, { name: audio.publicName });
-
-      await archive.finalize();
     } catch (error) {
       if (!res.headersSent) res.status(500).json({ error: errorMessage(error) });
     }
@@ -95,17 +121,27 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage }: MapRead
     try {
       const id = safeId(req.params['id']);
       if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
-      const map = await mapStorage.read(id);
-      if (!map) return res.status(404).json({ error: 'Mapa nie znaleziona.' });
-      const audio = await audioStorage.find(id, map);
-      if (!audio) return res.status(404).json({ error: 'Audio nie znalezione.' });
-      res.type(audioStorage.mimeForFile(audio.publicName || audio.fileName));
-      createReadStream(audio.fullPath)
-        .on('error', err => {
-          if (!res.headersSent) res.status(500).json({ error: err.message });
-          else res.destroy(err);
-        })
-        .pipe(res);
+      await withMapLock(id, async () => {
+        const map = await mapStorage.read(id);
+        if (!map) {
+          res.status(404).json({ error: 'Mapa nie znaleziona.' });
+          return;
+        }
+        const audio = await audioStorage.find(id, map);
+        if (!audio) {
+          res.status(404).json({ error: 'Audio nie znalezione.' });
+          return;
+        }
+        const responseComplete = waitForResponse(res);
+        res.type(audioStorage.mimeForFile(audio.publicName || audio.fileName));
+        createReadStream(audio.fullPath)
+          .on('error', err => {
+            if (!res.headersSent) res.status(500).json({ error: err.message });
+            else res.destroy(err);
+          })
+          .pipe(res);
+        await responseComplete;
+      });
     } catch (error) {
       res.status(500).json({ error: errorMessage(error) });
     }
@@ -115,9 +151,14 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage }: MapRead
     try {
       const id = safeId(req.params['id']);
       if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
-      const data = await mapStorage.read(id);
-      if (!data) return res.status(404).json({ error: 'Nie znaleziono.' });
-      res.json(mapForResponse(data, id));
+      await withMapLock(id, async () => {
+        const data = await mapStorage.read(id);
+        if (!data) {
+          res.status(404).json({ error: 'Nie znaleziono.' });
+          return;
+        }
+        res.json(mapForResponse(data, id));
+      });
     } catch {
       res.status(404).json({ error: 'Nie znaleziono.' });
     }
