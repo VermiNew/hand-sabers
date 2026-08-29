@@ -12,6 +12,12 @@ import {
   validateMap as validateMapShape,
   validateZipEntryNames,
 } from '../core/map-format.ts';
+import {
+  assertZipDeclaredLimits,
+  createZipOutputBudget,
+  readZipEntryArrayBuffer,
+  readZipEntryText,
+} from '../core/zip-limits.ts';
 
 interface BeatLimitOptions {
   fallbackId?: string;
@@ -68,18 +74,21 @@ export async function loadMapFromFile(file: File): Promise<LoadedMap> {
 
 async function loadMapFromZip(file: File): Promise<GameMap & Record<string, unknown>> {
   const zip = await JSZip.loadAsync(await file.arrayBuffer());
-  validateZipEntryNames(Object.values(zip.files));
+  const entries = Object.values(zip.files);
+  validateZipEntryNames(entries);
+  assertZipDeclaredLimits(entries);
+  const outputBudget = createZipOutputBudget();
 
   const jsonFile = zip.file('map.json');
   if (!jsonFile) throw new Error('Brak map.json w archiwum');
   const mapData = normalizeMap(
-    JSON.parse(await jsonFile.async('string')) as unknown,
+    JSON.parse(await readZipEntryText(jsonFile, outputBudget)) as unknown,
     beatLimitOptions({ fallbackId: file.name.replace(/\.[^.]+$/, '') }),
   );
 
-  const audioFile = findPreferredAudioEntry(Object.values(zip.files), mapData.meta?.audioFile);
+  const audioFile = findPreferredAudioEntry(entries, mapData.meta?.audioFile);
   if (audioFile) {
-    const ab = await audioFile.async('arraybuffer');
+    const ab = await readZipEntryArrayBuffer(audioFile, outputBudget);
     await loadMapAudio(ab.slice ? ab.slice(0) : ab);
     mapData.audioBuffer = ab;
     mapData.meta = { ...(mapData.meta || {}), audioFile: audioFile.name.split('/').pop() ?? audioFile.name };
