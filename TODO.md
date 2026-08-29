@@ -364,9 +364,9 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Egzekwować pięciominutowe wygaśnięcie sesji remote tracking również dla już połączonych socketów: zamykać je przy expiry/revoke i sprawdzać aktywność sesji przed relayem.
 - [x] Usunąć zmienny skrypt Lucide `@latest` z `beat-sabers-3d.html`: nieużywany skrypt CDN został usunięty, a ikony nadal korzystają z Material Symbols.
 - [x] Nie zachowywać arbitralnego `meta.audioUrl` z importowanej mapy. URL jest wyliczany z walidowanego ID także na telefonie; zewnętrzne adresy audio nie są obsługiwane.
-- [ ] Zapewnić atomowość zapisu mapy i audio.
+- [x] Zapewnić atomowość zapisu mapy i audio.
   - [x] Zapisać/przenieść nowe audio przed usuwaniem starego rozszerzenia, aby błąd zapisu nie kasował poprzedniego pliku.
-  - [ ] Dodać blokadę per map ID i rollback/commit całej operacji mapy oraz audio, aby równoległe zapisy nie mogły pozostawić niespójnego stanu.
+  - [x] Dodać blokadę per map ID i rollback/commit całej operacji mapy oraz audio, aby równoległe zapisy nie mogły pozostawić niespójnego stanu. — odczyty i mutacje współdzielą blokady zgodne z semantyką filesystemu, usuwanie izoluje katalog, a dyskowe backupy przywracają mapę i audio po błędzie; gwarancja dotyczy jednego procesu serwera, bez crash journala.
 - [x] Naprawić logikę osiągnięć w `src/core/achievements.ts`: `no_miss_game` zależy od dożywotniej liczby pudeł, `five_streak`/`fifteen_streak` sprawdzają combo 30/75 zamiast serii zwycięstw, a `maps_10` liczy powtórzenia i przegrane zamiast dziesięciu różnych ukończonych map. — nowe metryki nie mogą być wiarygodnie odtworzone ze starych zbiorczych danych, więc zaczynają się od zera po migracji.
 - [x] Zatrzymywać MediaStream, czyścić `video.srcObject` i anulować pętlę detekcji po rozłączeniu hosta/wygaśnięciu sesji telefonu oraz po błędzie inicjalizacji trackingu PC już po uzyskaniu kamery. — naprawione w kodzie; wymaga jeszcze ręcznej próby na urządzeniu z kamerą.
 - [x] Dodać import `.zip`/`.json` bezpośrednio do używanego w grze `mapPickerOverlay`. Import istnieje na osobnej stronie `maps.html`, ale normalne wejścia z menu, pauzy i game over otwierają `src/game/map-picker.ts`, gdzie nie ma przycisku ani obsługi importu. Współdzielić jedną implementację importu zamiast kopiować logikę.
