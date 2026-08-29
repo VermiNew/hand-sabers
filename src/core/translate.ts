@@ -7,6 +7,9 @@ export type CoreMessageKey =
   | 'audioDecodeFailed'
   | 'fileTooLarge'
   | 'unsafeZipPath'
+  | 'zipTooManyEntries'
+  | 'zipEntryTooLarge'
+  | 'zipExpandedTooLarge'
   | 'mapMustBeObject'
   | 'mapTooLong'
   | 'tooManyBeats'
@@ -22,6 +25,9 @@ const messages: Record<CoreLang, Record<CoreMessageKey, string>> = {
     audioDecodeFailed: 'Nie udało się poprawnie zdekodować audio.',
     fileTooLarge: 'Plik jest za duży ({{size}} MB). Limit: {{limit}} MB.',
     unsafeZipPath: 'Niebezpieczna ścieżka w ZIP: {{name}}',
+    zipTooManyEntries: 'Archiwum ZIP zawiera zbyt wiele wpisów ({{count}}). Limit: {{limit}}.',
+    zipEntryTooLarge: 'Wpis ZIP {{name}} jest za duży po rozpakowaniu. Limit: {{limit}} MB.',
+    zipExpandedTooLarge: 'Archiwum ZIP jest za duże po rozpakowaniu. Limit: {{limit}} MB.',
     mapMustBeObject: 'Mapa musi być obiektem JSON.',
     mapTooLong: 'Mapa jest dłuższa niż dozwolone 24 godziny.',
     tooManyBeats: 'Mapa zawiera zbyt wiele beatów ({{count}}). Limit: {{limit}}.',
@@ -36,6 +42,9 @@ const messages: Record<CoreLang, Record<CoreMessageKey, string>> = {
     audioDecodeFailed: 'The audio could not be decoded correctly.',
     fileTooLarge: 'The file is too large ({{size}} MB). Limit: {{limit}} MB.',
     unsafeZipPath: 'Unsafe path in ZIP: {{name}}',
+    zipTooManyEntries: 'The ZIP archive contains too many entries ({{count}}). Limit: {{limit}}.',
+    zipEntryTooLarge: 'ZIP entry {{name}} is too large after extraction. Limit: {{limit}} MB.',
+    zipExpandedTooLarge: 'The ZIP archive is too large after extraction. Limit: {{limit}} MB.',
     mapMustBeObject: 'The map must be a JSON object.',
     mapTooLong: 'The map is longer than the allowed 24 hours.',
     tooManyBeats: 'The map contains too many beats ({{count}}). Limit: {{limit}}.',
