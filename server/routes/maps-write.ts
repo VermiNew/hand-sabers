@@ -88,7 +88,7 @@ export function registerMapWriteRoutes({
 }: MapWriteRoutesOptions): void {
   const mapLocks = new KeyedMutex();
   const withMapLock = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
-    const release = await mapLocks.acquire(id);
+    const release = await mapLocks.acquire(id.toLowerCase());
     try {
       return await operation();
     } finally {

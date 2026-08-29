@@ -57,6 +57,12 @@ function safeStoredAudioName(name: unknown): string {
 
 export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOptions): AudioStorage {
   const directories = [audioDir, legacyAudioDir];
+  const matchesId = (fileName: string, id: string): boolean => {
+    const prefix = `${id}.`;
+    return process.platform === 'win32'
+      ? fileName.toLowerCase().startsWith(prefix.toLowerCase())
+      : fileName.startsWith(prefix);
+  };
 
   const matchingPaths = async (id: string): Promise<string[]> => {
     const safeId = sanitizeMapId(id, '');
@@ -71,7 +77,7 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
         throw error;
       }
       for (const fileName of files) {
-        if (fileName.startsWith(`${safeId}.`) && AUDIO_EXT_RE.test(fileName)) {
+        if (matchesId(fileName, safeId) && AUDIO_EXT_RE.test(fileName)) {
           matches.push(path.resolve(dir, fileName));
         }
       }
@@ -88,7 +94,7 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
       const stored = safeStoredAudioName(map?.meta?.serverAudioFile);
       const candidates: Array<{ dir: string; fileName: string }> = [];
 
-      if (stored && stored.startsWith(`${id}.`)) {
+      if (stored && matchesId(stored, id)) {
         candidates.push({ dir: audioDir, fileName: stored });
         candidates.push({ dir: legacyAudioDir, fileName: stored });
       }
@@ -97,7 +103,7 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
         try {
           const files = await readdir(dir);
           for (const fileName of files) {
-            if (fileName.startsWith(`${id}.`) && AUDIO_EXT_RE.test(fileName)) {
+            if (matchesId(fileName, id) && AUDIO_EXT_RE.test(fileName)) {
               candidates.push({ dir, fileName });
             }
           }
