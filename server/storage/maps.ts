@@ -158,7 +158,9 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [], caseIns
           seen.add(idKey(id));
           files.push({ id, filename: fileName, storage: 'beatdata' });
         }
-      } catch {}
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
 
       try {
         for (const fileName of (await readdir(mapsDir)).filter(isMapFile)) {
@@ -166,7 +168,9 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [], caseIns
           if (seen.has(idKey(id)) || isHidden(id)) continue;
           files.push({ id, filename: fileName, storage: 'legacy' });
         }
-      } catch {}
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
 
       files.sort((a, b) => a.id.localeCompare(b.id));
       return files;
