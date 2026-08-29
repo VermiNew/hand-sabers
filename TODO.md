@@ -373,7 +373,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 
 ### P2 — poprawność i odporność
 
-- [ ] Nie wygaszać aktywnego pokoju Multiplayer wyłącznie 30 minut po jego utworzeniu. Odświeżać TTL aktywnością albo zamknąć sockety kontrolowanym zdarzeniem; dziś registry może usunąć pokój w trakcie rozgrywki.
+- [x] Nie wygaszać aktywnego pokoju Multiplayer wyłącznie 30 minut po jego utworzeniu. TTL jest odświeżany przez join, uwierzytelnione wiadomości, pakiety realtime i heartbeat; socket jest kontrolowanie zamykany, jeśli pokój zdążył wygasnąć.
 - [ ] Wzmocnić ręczne parowanie telefonu przeciw przejęciu widocznego kodu (shoulder surfing/race), np. potwierdzeniem po stronie hosta. Nie traktować tego jako realnego brute-force: kod ma około 30 bitów entropii, TTL 5 minut, single-use i limit 6 prób/min/IP.
 - [ ] Dodać allowlistę typów, limity wiadomości/częstotliwości i kontrolę `bufferedAmount` dla tekstowego kanału remote tracking. Pojedyncza wiadomość ma już limit 1024 B, ale brakuje ograniczenia tempa i backpressure obecnych w ścieżce binarnej.
 - [ ] Dodać limity liczby wpisów, pojedynczego wpisu, łącznego rozmiaru i rzeczywistego outputu po dekompresji ZIP w trzech ścieżkach klienckich: gra (`src/game/maploader.ts`), biblioteka (`src/maps/maps.ts`) i kreator (`src/creator/storage.ts`). Jest to user-assisted self-DoS karty; serwer ma już limit deklarowanego łącznego rozmiaru po dekompresji, lecz nadal powinien limitować liczbę wpisów i rzeczywisty output.
