@@ -1,5 +1,11 @@
 import JSZip from 'jszip';
 import { assertFileSize, normalizeMap, validateZipEntryNames, findPreferredAudioEntry } from '../core/map-format.ts';
+import {
+  assertZipDeclaredLimits,
+  createZipOutputBudget,
+  readZipEntryArrayBuffer,
+  readZipEntryText,
+} from '../core/zip-limits.ts';
 import { sortBeatsByTime } from '../core/creator-rules.ts';
 import { saveLocalMap, saveLocalMapAudio } from '../core/localstore.ts';
 import { showAlert, showConfirm, showToast } from './dialogs.ts';
@@ -148,10 +154,13 @@ export async function loadZipFile(
 ): Promise<void> {
   assertFileSize(file);
   const zip       = await JSZip.loadAsync(await file.arrayBuffer());
-  validateZipEntryNames(Object.values(zip.files));
+  const entries  = Object.values(zip.files);
+  validateZipEntryNames(entries);
+  assertZipDeclaredLimits(entries);
+  const outputBudget = createZipOutputBudget();
   const jsonFile  = zip.file('map.json');
   if (!jsonFile) throw new Error('Archiwum ZIP nie zawiera pliku map.json');
-  const loadedMap = JSON.parse(await jsonFile.async('string')) as Record<string, unknown>;
+  const loadedMap = JSON.parse(await readZipEntryText(jsonFile, outputBudget)) as Record<string, unknown>;
   state.map = normalizeMap(
     { id: (loadedMap['id'] as string | undefined) || MAP_ID(), ...loadedMap },
     { fallbackId: MAP_ID(), requireBeats: false },
@@ -160,10 +169,10 @@ export async function loadZipFile(
   sortBeatsByTime(state.map.beats);
   state.selectedBeats.clear();
 
-  const audioFile = findPreferredAudioEntry(Object.values(zip.files), state.map.meta?.audioFile);
+  const audioFile = findPreferredAudioEntry(entries, state.map.meta?.audioFile);
   if (audioFile) {
     await decodeAndAttachAudio(
-      await audioFile.async('arraybuffer') as ArrayBuffer,
+      await readZipEntryArrayBuffer(audioFile, outputBudget),
       {
         fileName:    audioFile.name.split('/').pop() ?? audioFile.name,
         mimeType:    'application/octet-stream',
