@@ -4,7 +4,7 @@ import { createRequire } from 'module';
 import { getCanonicalMapAudioUrl, sanitizeMapId } from '../../src/core/map-format.js';
 import type { AudioStorage } from '../storage/audio.js';
 import type { MapStorage, StoredMap } from '../storage/maps.js';
-import { errorMessage, mapAssetLockKey, type KeyedMutex } from '../utils.js';
+import { errorMessage, type KeyedMutex } from '../utils.js';
 
 interface MapReadRoutesOptions {
   app: Express;
@@ -41,7 +41,7 @@ function mapForResponse(map: StoredMap, id: string): StoredMap {
 
 export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetLocks }: MapReadRoutesOptions): void {
   const withMapLock = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
-    const release = await mapAssetLocks.acquire(mapAssetLockKey(id));
+    const release = await mapAssetLocks.acquire(id);
     try {
       return await operation();
     } finally {

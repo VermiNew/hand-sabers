@@ -63,14 +63,27 @@ function getUploadDirectoryBytes(): number {
 }
 
 const HIDDEN_TEST_MAP_IDS = new Set(['smoke-map', 'creator-smoke', 'zip-smoke', 'bad-map']);
+const alternatePathCaseExists = (directory: string): boolean => {
+  const resolved = path.resolve(directory);
+  for (let index = resolved.length - 1; index >= 0; index--) {
+    const character = resolved[index]!;
+    if (!/[a-z]/i.test(character)) continue;
+    const alternate = character === character.toLowerCase() ? character.toUpperCase() : character.toLowerCase();
+    return existsSync(`${resolved.slice(0, index)}${alternate}${resolved.slice(index + 1)}`);
+  }
+  return false;
+};
+const caseInsensitiveMapIds = alternatePathCaseExists(MAPS_DIR);
 const mapStorage = createMapStorage({
   mapsDir: MAPS_DIR,
   beatdataDir: MAP_BEATDATA_DIR,
   hiddenIds: HIDDEN_TEST_MAP_IDS,
+  caseInsensitiveIds: caseInsensitiveMapIds,
 });
 const audioStorage = createAudioStorage({
   audioDir: MAP_AUDIO_DIR,
   legacyAudioDir: LEGACY_MAP_AUDIO_DIR,
+  caseInsensitiveIds: caseInsensitiveMapIds,
 });
 
 const upload = multer({
@@ -103,7 +116,7 @@ const app = express();
 if (process.env.HAND_SABERS_TRUST_PROXY === '1') app.set('trust proxy', 1);
 
 const limiter = new RateLimiter();
-const mapAssetLocks = new KeyedMutex();
+const mapAssetLocks = new KeyedMutex(id => caseInsensitiveMapIds ? id.toLowerCase() : id);
 const rooms = new RoomRegistry();
 const trackingSessions = new TrackingSessionRegistry();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>

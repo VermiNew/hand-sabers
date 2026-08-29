@@ -28,6 +28,7 @@ interface MapStorageOptions {
   mapsDir: string;
   beatdataDir: string;
   hiddenIds?: Iterable<string>;
+  caseInsensitiveIds?: boolean;
 }
 
 function isMapFile(name: string): boolean {
@@ -49,9 +50,10 @@ async function readJsonFile(filePath: string): Promise<StoredMap | null> {
   }
 }
 
-export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [] }: MapStorageOptions): MapStorage {
-  const hiddenMapIds = new Set(hiddenIds);
-  const isHidden = (id: string): boolean => hiddenMapIds.has(id) || id.startsWith('__smoke-');
+export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [], caseInsensitiveIds = false }: MapStorageOptions): MapStorage {
+  const idKey = (id: string): string => caseInsensitiveIds ? id.toLowerCase() : id;
+  const hiddenMapIds = new Set(Array.from(hiddenIds, idKey));
+  const isHidden = (id: string): boolean => hiddenMapIds.has(idKey(id)) || idKey(id).startsWith('__smoke-');
   const mapFilePath = (id: string): string => path.join(beatdataDir, `${id}.json`);
   const legacyMapFilePath = (id: string): string => path.join(mapsDir, `${id}.json`);
 
@@ -153,7 +155,7 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [] }: MapSt
         for (const fileName of (await readdir(beatdataDir)).filter(isMapFile)) {
           const id = fileName.replace('.json', '');
           if (isHidden(id)) continue;
-          seen.add(id);
+          seen.add(idKey(id));
           files.push({ id, filename: fileName, storage: 'beatdata' });
         }
       } catch {}
@@ -161,7 +163,7 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [] }: MapSt
       try {
         for (const fileName of (await readdir(mapsDir)).filter(isMapFile)) {
           const id = fileName.replace('.json', '');
-          if (seen.has(id) || isHidden(id)) continue;
+          if (seen.has(idKey(id)) || isHidden(id)) continue;
           files.push({ id, filename: fileName, storage: 'legacy' });
         }
       } catch {}

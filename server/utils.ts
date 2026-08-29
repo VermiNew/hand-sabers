@@ -30,8 +30,14 @@ export class FileMutex {
 
 export class KeyedMutex {
   private readonly entries = new Map<string, { mutex: FileMutex; users: number }>();
+  private readonly normalizeKey: (key: string) => string;
+
+  constructor(normalizeKey: (key: string) => string = key => key) {
+    this.normalizeKey = normalizeKey;
+  }
 
   async acquire(key: string): Promise<() => void> {
+    key = this.normalizeKey(key);
     let entry = this.entries.get(key);
     if (!entry) {
       entry = { mutex: new FileMutex(), users: 0 };
@@ -49,10 +55,6 @@ export class KeyedMutex {
       if (entry.users === 0 && this.entries.get(key) === entry) this.entries.delete(key);
     };
   }
-}
-
-export function mapAssetLockKey(id: string): string {
-  return process.platform === 'win32' ? id.toLowerCase() : id;
 }
 
 // Rate limiter in-memory z automatycznym sprzątaniem

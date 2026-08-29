@@ -41,6 +41,7 @@ export interface AudioStorage {
 interface AudioStorageOptions {
   audioDir: string;
   legacyAudioDir: string;
+  caseInsensitiveIds?: boolean;
 }
 
 const AUDIO_MIME_BY_EXT = new Map([
@@ -55,11 +56,11 @@ function safeStoredAudioName(name: unknown): string {
   return /^[a-zA-Z0-9_-]+\.(mp3|ogg|wav|flac)$/i.test(base) ? base : '';
 }
 
-export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOptions): AudioStorage {
+export function createAudioStorage({ audioDir, legacyAudioDir, caseInsensitiveIds = false }: AudioStorageOptions): AudioStorage {
   const directories = [audioDir, legacyAudioDir];
   const matchesId = (fileName: string, id: string): boolean => {
     const prefix = `${id}.`;
-    return process.platform === 'win32'
+    return caseInsensitiveIds
       ? fileName.toLowerCase().startsWith(prefix.toLowerCase())
       : fileName.startsWith(prefix);
   };
@@ -166,7 +167,7 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
           if (finished) return;
           const rollbackErrors: unknown[] = [];
           const blockedPaths = new Set<string>();
-          const pathKey = (filePath: string): string => process.platform === 'win32' ? filePath.toLowerCase() : filePath;
+          const pathKey = (filePath: string): string => caseInsensitiveIds ? filePath.toLowerCase() : filePath;
           for (const currentPath of await matchingPaths(id)) {
             try {
               await unlink(currentPath);
