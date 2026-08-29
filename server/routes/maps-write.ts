@@ -267,8 +267,9 @@ export function registerMapWriteRoutes({
       if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
       const deleted = await withMapLock(id, () => withAssetRollback(id, async () => {
         const removed = await mapStorage.delete(id);
+        if (!removed) return false;
         await audioStorage.remove(id);
-        return removed;
+        return true;
       }));
       if (!deleted) return res.status(404).json({ error: 'Nie znaleziono.' });
       res.json({ ok: true });
