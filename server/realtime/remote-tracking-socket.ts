@@ -10,6 +10,9 @@ const MAX_CONNECTIONS = 64;
 const MAX_PENDING_HANDSHAKES = 8;
 const MAX_PENDING_HANDSHAKES_PER_IP = 2;
 const MAX_PACKETS_PER_SECOND = 60;
+const MAX_TEXT_MESSAGES_PER_SECOND = 20;
+const MAX_TEXT_BURST_MESSAGES = 40;
+const MAX_TEXT_RATE_VIOLATIONS = 10;
 const MAX_OUTGOING_BUFFER_BYTES = 64 * 1024;
 
 interface Peer {
@@ -17,6 +20,9 @@ interface Peer {
   role: 'host' | 'phone';
   tokens: number;
   tokensUpdatedAt: number;
+  textTokens: number;
+  textTokensUpdatedAt: number;
+  textRateViolations: number;
 }
 
 function validateTrackingPacket(packet: Buffer): void {
@@ -48,6 +54,52 @@ function consumeToken(peer: Peer, now = Date.now()): boolean {
   return true;
 }
 
+function consumeTextToken(peer: Peer, now = Date.now()): boolean {
+  const elapsed = Math.max(0, now - peer.textTokensUpdatedAt) / 1000;
+  peer.textTokens = Math.min(
+    MAX_TEXT_BURST_MESSAGES,
+    peer.textTokens + elapsed * MAX_TEXT_MESSAGES_PER_SECOND,
+  );
+  peer.textTokensUpdatedAt = now;
+  if (peer.textTokens < 1) return false;
+  peer.textTokens--;
+  return true;
+}
+
+function finiteInRange(value: unknown, min: number, max: number): boolean {
+  return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
+}
+
+function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): boolean {
+  if (value['v'] !== PROTOCOL_VERSION || typeof value['type'] !== 'string') return false;
+  const type = value['type'];
+  if (peer.role === 'phone') {
+    return type === 'audio-ready'
+      || (type === 'audio-error' && typeof value['code'] === 'string' && /^[A-Z0-9_]{1,64}$/.test(value['code']));
+  }
+  if (type === 'tracking-options') {
+    const options = value['options'];
+    if (!options || typeof options !== 'object') return false;
+    const settings = options as Record<string, unknown>;
+    return finiteInRange(settings['handDetectionConfidence'], 0, 1)
+      && finiteInRange(settings['handPresenceConfidence'], 0, 1)
+      && finiteInRange(settings['handTrackingConfidence'], 0, 1);
+  }
+  if (type === 'audio-prepare') {
+    return typeof value['mapId'] === 'string'
+      && /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(value['mapId'])
+      && finiteInRange(value['latencyMs'], 0, 1_000);
+  }
+  if (type === 'audio-play') {
+    return finiteInRange(value['offsetSec'], 0, 86_400)
+      && finiteInRange(value['serverTime'], 0, Number.MAX_SAFE_INTEGER)
+      && finiteInRange(value['playbackRate'], 0.5, 1.5);
+  }
+  if (type === 'audio-seek') return finiteInRange(value['offsetSec'], 0, 86_400);
+  if (type === 'audio-volume') return finiteInRange(value['volume'], 0, 1);
+  return type === 'audio-pause' || type === 'audio-stop';
+}
+
 function isAllowedOrigin(request: IncomingMessage): boolean {
   const origin = request.headers.origin;
   if (!origin) return true;
@@ -60,6 +112,10 @@ function isAllowedOrigin(request: IncomingMessage): boolean {
 
 function send(socket: WebSocket, payload: object): void {
   if (socket.readyState === WebSocket.OPEN) {
+    if (socket.bufferedAmount > MAX_OUTGOING_BUFFER_BYTES) {
+      socket.close(1013, 'Backpressure');
+      return;
+    }
     try {
       socket.send(JSON.stringify({ v: PROTOCOL_VERSION, ...payload }));
     } catch (error) {
@@ -152,18 +208,23 @@ export function registerRemoteTrackingServer(
         return;
       }
       if (peers.has(socket)) {
-        // Relay text messages (audio commands) between host and phone
         try {
           const value = JSON.parse(data.toString()) as Record<string, unknown>;
-          if (value['v'] !== PROTOCOL_VERSION || typeof value['type'] !== 'string') {
+          const peer = peers.get(socket)!;
+          if (!isAllowedRelayMessage(peer, value)) {
             socket.close(1008, 'Invalid message');
             return;
           }
-          const peer = peers.get(socket)!;
           if (!sessions.isActive(peer.sessionId)) return;
+          if (!consumeTextToken(peer)) {
+            peer.textRateViolations++;
+            if (peer.textRateViolations > MAX_TEXT_RATE_VIOLATIONS) socket.close(1008, 'Text rate limit');
+            return;
+          }
+          peer.textRateViolations = Math.max(0, peer.textRateViolations - 1);
           const counterpart = peerFor(peer.sessionId, peer.role === 'host' ? 'phone' : 'host');
           if (counterpart && counterpart.readyState === WebSocket.OPEN) {
-            counterpart.send(data.toString());
+            send(counterpart, value);
           }
         } catch {
           socket.close(1008, 'Invalid message');
@@ -194,6 +255,9 @@ export function registerRemoteTrackingServer(
           role,
           tokens: MAX_PACKETS_PER_SECOND,
           tokensUpdatedAt: Date.now(),
+          textTokens: MAX_TEXT_BURST_MESSAGES,
+          textTokensUpdatedAt: Date.now(),
+          textRateViolations: 0,
         });
         send(socket, { type: 'joined', role, expiresAt: status.expiresAt });
         notifyPair(sessionId);
