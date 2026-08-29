@@ -1,13 +1,19 @@
-import express from 'express';
-import multer from 'multer';
-import { createRequire } from 'module';
-import JSZip from 'jszip';
-import { createServer } from 'http';
-import { readdir, readFile, writeFile, unlink } from 'fs/promises';
-import { existsSync, mkdirSync } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import {
+console.error(
+  'Legacy server.js jest zablokowany. Uruchom wspierany serwer TypeScript przez "npm run dev:server" albo "npm start".',
+);
+process.exit(1);
+
+// The legacy implementation remains below for history, but is unreachable by design.
+const { default: express } = await import('express');
+const { default: multer } = await import('multer');
+const { createRequire } = await import('module');
+const { default: JSZip } = await import('jszip');
+const { createServer } = await import('http');
+const { readdir, readFile, writeFile, unlink } = await import('fs/promises');
+const { existsSync, mkdirSync } = await import('fs');
+const { default: path } = await import('path');
+const { fileURLToPath } = await import('url');
+const {
   AUDIO_EXT_RE,
   MAX_BEATS_EXTENDED,
   MAX_IMPORT_BYTES,
@@ -15,7 +21,7 @@ import {
   normalizeMap,
   sanitizeMapId,
   validateZipEntryNames,
-} from './src/core/map-format.ts';
+} = await import('./src/core/map-format.ts');
 
 const require = createRequire(import.meta.url);
 const archiver = require('archiver');
