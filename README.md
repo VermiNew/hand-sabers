@@ -36,8 +36,10 @@ This builds the Vite frontend, compiles `server.ts` to `dist-server/` and starts
 The easiest way to run both the backend and Vite together:
 
 ```bash
-npm run dev:vite
+npm run dev
 ```
+
+`npm run dev:vite` is an equivalent legacy alias.
 
 URLs:
 
@@ -51,8 +53,8 @@ Vite proxies all `/api` requests to Express.
 You can also run them separately:
 
 ```bash
-npm run server   # build frontend + backend, then start Express on port 3000
-npm run dev      # Vite only (no backend — some features fall back to browser storage)
+npm run dev:server   # compile and start Express on port 3000
+npm run dev:client   # start Vite only; its API proxy expects the backend on port 3000
 ```
 
 ## URLs
@@ -70,11 +72,14 @@ In Vite mode use the same paths on port `5173`.
 
 | Command | Description |
 | --- | --- |
+| `npm run dev` | Start the backend and Vite development server together |
+| `npm run dev:server` | Compile and start the backend on port 3000 |
+| `npm run dev:client` | Start only Vite on port 5173 |
 | `npm run build` | TypeScript check + production Vite build |
 | `npm run typecheck` | TypeScript check (frontend) |
 | `npm run typecheck:server` | TypeScript check (server) |
 | `npm run server:build` | Compile `server.ts` → `dist-server/` |
-| `npm run check` / `npm run lint` | JS syntax check |
+| `npm run check` / `npm run lint` | JS syntax, frontend/server TypeScript and static i18n-key checks |
 | `npm run unit` | Unit tests |
 | `npm run smoke` | Smoke test: start compiled server, check API + homepage |
 | `npm test` | Core test suite |

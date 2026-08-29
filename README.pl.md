@@ -36,8 +36,10 @@ To buduje frontend Vite, kompiluje `server.ts` do `dist-server/` i uruchamia sko
 Najwygodniej uruchomić backend i Vite razem:
 
 ```bash
-npm run dev:vite
+npm run dev
 ```
+
+`npm run dev:vite` pozostaje równoważnym aliasem legacy.
 
 Adresy:
 
@@ -51,8 +53,8 @@ Vite proxy przekazuje wszystkie żądania `/api` do Expressa.
 Można też uruchomić osobno:
 
 ```bash
-npm run server   # buduje frontend + backend, uruchamia Express na porcie 3000
-npm run dev      # tylko Vite (bez backendu — część funkcji przejdzie w fallback)
+npm run dev:server   # kompiluje i uruchamia Express na porcie 3000
+npm run dev:client   # uruchamia tylko Vite; proxy API oczekuje backendu na porcie 3000
 ```
 
 ## Przydatne adresy
@@ -70,11 +72,14 @@ W trybie Vite użyj tych samych ścieżek na porcie `5173`.
 
 | Komenda | Opis |
 | --- | --- |
+| `npm run dev` | Uruchomienie backendu i serwera developerskiego Vite razem |
+| `npm run dev:server` | Kompilacja i uruchomienie backendu na porcie 3000 |
+| `npm run dev:client` | Uruchomienie tylko Vite na porcie 5173 |
 | `npm run build` | Sprawdzenie TypeScript + produkcyjny build Vite |
 | `npm run typecheck` | Sprawdzenie TypeScript (frontend) |
 | `npm run typecheck:server` | Sprawdzenie TypeScript (serwer) |
 | `npm run server:build` | Kompilacja `server.ts` → `dist-server/` |
-| `npm run check` / `npm run lint` | Sprawdzenie składni JS |
+| `npm run check` / `npm run lint` | Składnia JS, TypeScript frontendu/serwera i statyczne klucze i18n |
 | `npm run unit` | Testy jednostkowe |
 | `npm run smoke` | Smoke test: uruchom skompilowany serwer, sprawdź API i stronę główną |
 | `npm test` | Podstawowy zestaw testów |
