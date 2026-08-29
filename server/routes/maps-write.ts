@@ -12,7 +12,7 @@ import {
 } from '../../src/core/map-format.js';
 import type { AudioMutation, AudioStorage, ZipAudioEntry } from '../storage/audio.js';
 import type { MapStorage } from '../storage/maps.js';
-import { errorMessage, getIp, parseJsonSafe, type KeyedMutex } from '../utils.js';
+import { errorMessage, getIp, parseJsonSafe, type FileMutex, type KeyedMutex } from '../utils.js';
 
 type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
 
@@ -21,6 +21,7 @@ interface MapWriteRoutesOptions {
   mapStorage: MapStorage;
   audioStorage: AudioStorage;
   mapAssetLocks: KeyedMutex;
+  mapCatalogLock: FileMutex;
   uploadAudio: RequestHandler;
   uploadFile: RequestHandler;
   uploadConcurrency: RequestHandler;
@@ -89,6 +90,7 @@ export function registerMapWriteRoutes({
   mapStorage,
   audioStorage,
   mapAssetLocks,
+  mapCatalogLock,
   uploadAudio,
   uploadFile,
   uploadConcurrency,
@@ -263,12 +265,18 @@ export function registerMapWriteRoutes({
       }
       const id = sanitizeMapId(req.params['id'], '');
       if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
-      const deleted = await withMapLock(id, () => withAssetRollback(id, async () => {
-        const removed = await mapStorage.delete(id);
-        if (!removed) return false;
-        await audioStorage.remove(id);
-        return true;
-      }));
+      const releaseCatalog = await mapCatalogLock.acquire();
+      let deleted: boolean;
+      try {
+        deleted = await withMapLock(id, () => withAssetRollback(id, async () => {
+          const removed = await mapStorage.delete(id);
+          if (!removed) return false;
+          await audioStorage.remove(id);
+          return true;
+        }));
+      } finally {
+        releaseCatalog();
+      }
       if (!deleted) return res.status(404).json({ error: 'Nie znaleziono.' });
       res.json({ ok: true });
     } catch (error) {

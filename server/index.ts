@@ -19,7 +19,7 @@ import { registerMapReadRoutes } from './routes/maps-read.js';
 import { registerMapWriteRoutes } from './routes/maps-write.js';
 import { registerRoomRoutes } from './routes/room-routes.js';
 import { registerTrackingSessionRoutes } from './routes/tracking-session-routes.js';
-import { KeyedMutex, RateLimiter } from './utils.js';
+import { FileMutex, KeyedMutex, RateLimiter } from './utils.js';
 import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
 import { TrackingSessionRegistry } from './realtime/tracking-session-registry.js';
@@ -117,6 +117,7 @@ if (process.env.HAND_SABERS_TRUST_PROXY === '1') app.set('trust proxy', 1);
 
 const limiter = new RateLimiter();
 const mapAssetLocks = new KeyedMutex(id => caseInsensitiveMapIds ? id.toLowerCase() : id);
+const mapCatalogLock = new FileMutex();
 const rooms = new RoomRegistry();
 const trackingSessions = new TrackingSessionRegistry();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
@@ -154,13 +155,14 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, name: 'hand-sabers', time: new Date().toISOString(), maxImportBytes: MAX_IMPORT_BYTES });
 });
 
-registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetLocks });
+registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetLocks, mapCatalogLock });
 
 registerMapWriteRoutes({
   app,
   mapStorage,
   audioStorage,
   mapAssetLocks,
+  mapCatalogLock,
   uploadAudio: upload.single('audio'),
   uploadFile: upload.single('file'),
   uploadConcurrency: uploadConcurrency.middleware,

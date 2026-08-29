@@ -4,13 +4,14 @@ import { createRequire } from 'module';
 import { getCanonicalMapAudioUrl, sanitizeMapId } from '../../src/core/map-format.js';
 import type { AudioStorage } from '../storage/audio.js';
 import type { MapStorage, StoredMap } from '../storage/maps.js';
-import { errorMessage, type KeyedMutex } from '../utils.js';
+import { errorMessage, type FileMutex, type KeyedMutex } from '../utils.js';
 
 interface MapReadRoutesOptions {
   app: Express;
   mapStorage: MapStorage;
   audioStorage: AudioStorage;
   mapAssetLocks: KeyedMutex;
+  mapCatalogLock: FileMutex;
 }
 
 interface ArchiveLike {
@@ -39,7 +40,7 @@ function mapForResponse(map: StoredMap, id: string): StoredMap {
   };
 }
 
-export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetLocks }: MapReadRoutesOptions): void {
+export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetLocks, mapCatalogLock }: MapReadRoutesOptions): void {
   const withMapLock = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
     const release = await mapAssetLocks.acquire(id);
     try {
@@ -58,9 +59,17 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
     res.once('finish', settle);
     res.once('close', settle);
   });
+  const withCatalogLock = async <T>(operation: () => Promise<T>): Promise<T> => {
+    const release = await mapCatalogLock.acquire();
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
+  };
   app.get('/api/maps', async (_req, res) => {
     try {
-      res.json(await mapStorage.list());
+      res.json(await withCatalogLock(() => mapStorage.list()));
     } catch (error) {
       res.status(500).json({ error: errorMessage(error) });
     }
@@ -70,13 +79,17 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
     try {
       const title = String(req.params['title'] ?? '').toLowerCase();
       if (!title) return res.status(400).json({ error: 'Brak tytułu.' });
-      const maps = await mapStorage.list();
-      for (const item of maps) {
-        const id = safeId(item.id);
-        if (!id) continue;
-        const map = await mapStorage.read(id);
-        if (map?.meta?.title?.toLowerCase() === title) return res.json(mapForResponse(map, id));
-      }
+      const found = await withCatalogLock(async () => {
+        const maps = await mapStorage.list();
+        for (const item of maps) {
+          const id = safeId(item.id);
+          if (!id) continue;
+          const map = await withMapLock(id, () => mapStorage.read(id));
+          if (map?.meta?.title?.toLowerCase() === title) return { map, id };
+        }
+        return null;
+      });
+      if (found) return res.json(mapForResponse(found.map, found.id));
       res.status(404).json({ error: 'Nie znaleziono.' });
     } catch (error) {
       res.status(500).json({ error: errorMessage(error) });
