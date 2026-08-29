@@ -226,7 +226,7 @@ export function registerMapWriteRoutes({
         const rawMap = parseJsonSafe(rawMapText);
         const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
         const audio = await withMapLock(map.id, () => withAudioRollback(map.id, async () => {
-          const persistedAudio = await audioStorage.persistZip(entries, map);
+          const persistedAudio = await audioStorage.persistZip(entries, map, outputBudget);
           await mapStorage.write(map);
           return persistedAudio;
         }));

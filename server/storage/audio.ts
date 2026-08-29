@@ -3,6 +3,7 @@ import { existsSync } from 'fs';
 import { randomUUID } from 'crypto';
 import path from 'path';
 import { AUDIO_EXT_RE, MAX_IMPORT_BYTES, findPreferredAudioEntry, sanitizeMapId } from '../../src/core/map-format.js';
+import { readZipEntryBytes, type ZipOutputBudget } from '../../src/core/zip-limits.js';
 import type { StoredMap } from './maps.js';
 
 export interface StoredAudio {
@@ -35,7 +36,7 @@ export interface AudioStorage {
   remove(id: string, keepFullPath?: string | null): Promise<number>;
   persistBuffer(map: StoredMap, buffer: Uint8Array, originalName?: string): Promise<PersistedAudio>;
   persistFile(map: StoredMap, sourcePath: string, originalName?: string): Promise<PersistedAudio>;
-  persistZip(entries: ZipAudioEntry[], map: StoredMap): Promise<PersistedAudio | null>;
+  persistZip(entries: ZipAudioEntry[], map: StoredMap, outputBudget: ZipOutputBudget): Promise<PersistedAudio | null>;
 }
 
 interface AudioStorageOptions {
@@ -269,12 +270,12 @@ export function createAudioStorage({ audioDir, legacyAudioDir, caseInsensitiveId
       return { originalName: cleanName, storedFile, size };
     },
 
-    async persistZip(entries: ZipAudioEntry[], map: StoredMap): Promise<PersistedAudio | null> {
+    async persistZip(entries: ZipAudioEntry[], map: StoredMap, outputBudget: ZipOutputBudget): Promise<PersistedAudio | null> {
       const audioFile = findPreferredAudioEntry(entries, map.meta?.audioFile);
       if (!audioFile) return null;
 
       const originalName = path.posix.basename(audioFile.name);
-      const audioBytes = Buffer.from(await audioFile.async('uint8array'));
+      const audioBytes = await readZipEntryBytes(audioFile, outputBudget);
       return await storage.persistBuffer(map, audioBytes, originalName);
     },
   };
