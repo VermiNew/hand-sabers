@@ -79,7 +79,7 @@ export function playAudio(fromSec: number, onEnded: () => void): void {
   state.audioSource.start(0, fromSec);
   state.isPlaying = true;
   const btnPlay = document.getElementById('btnPlay') as HTMLButtonElement | null;
-  if (btnPlay) btnPlay.innerHTML = `<span class="material-symbols-rounded inline-icon">pause</span>${t('pause.pause')}`;
+  if (btnPlay) btnPlay.innerHTML = `<span class="material-symbols-rounded inline-icon">pause</span>${t('game.pause')}`;
 }
 
 export function pauseAudio(): void {

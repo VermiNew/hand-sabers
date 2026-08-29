@@ -274,6 +274,8 @@
       "backgroundShader": "Shader tła",
       "fog": "Mgła",
       "grid": "Siatka podłogi",
+      "arenaTheme": "Motyw areny",
+      "arenaThemeLabel": "Wygląd areny",
       "hitShards": "Liczba odłamków",
       "renderScale": "Skala renderu"
     },
