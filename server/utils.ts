@@ -51,6 +51,10 @@ export class KeyedMutex {
   }
 }
 
+export function mapAssetLockKey(id: string): string {
+  return process.platform === 'win32' ? id.toLowerCase() : id;
+}
+
 // Rate limiter in-memory z automatycznym sprzątaniem
 export class RateLimiter {
   private readonly map = new Map<string, number[]>();
