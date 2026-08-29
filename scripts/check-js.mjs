@@ -27,4 +27,19 @@ for (const file of files) {
   }
 }
 
+const typecheckCommands = [
+  ['Frontend TypeScript', ['--noEmit']],
+  ['Server TypeScript', ['-p', 'tsconfig.server.json', '--noEmit']],
+];
+const tscPath = join('node_modules', 'typescript', 'bin', 'tsc');
+for (const [label, args] of typecheckCommands) {
+  const res = spawnSync(process.execPath, [tscPath, ...args], { stdio: 'pipe', encoding: 'utf8' });
+  if (res.status !== 0) {
+    failed = true;
+    console.error(`\n✗ ${label}\n${res.stderr || res.stdout}`);
+  } else {
+    console.log(`✓ ${label}`);
+  }
+}
+
 process.exit(failed ? 1 : 0);
