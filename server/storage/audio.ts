@@ -174,9 +174,13 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
 
       const storedFile = `${map.id}${ext}`;
       const storedPath = path.join(audioDir, storedFile);
-      const tmpPath = `${storedPath}.${process.pid}.${Date.now()}.tmp`;
-      await writeFile(tmpPath, Buffer.from(buffer));
-      await rename(tmpPath, storedPath);
+      const tmpPath = `${storedPath}.${process.pid}.${randomUUID()}.tmp`;
+      try {
+        await writeFile(tmpPath, Buffer.from(buffer));
+        await rename(tmpPath, storedPath);
+      } finally {
+        await unlink(tmpPath).catch(() => undefined);
+      }
       await storage.remove(map.id, storedPath);
 
       map.meta = {

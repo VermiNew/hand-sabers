@@ -94,9 +94,13 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [] }: MapSt
 
     async write(map: StoredMap): Promise<void> {
       const finalPath = mapFilePath(map.id);
-      const tmpPath = `${finalPath}.${process.pid}.${Date.now()}.tmp`;
-      await writeFile(tmpPath, JSON.stringify(map, null, 2));
-      await rename(tmpPath, finalPath);
+      const tmpPath = `${finalPath}.${process.pid}.${randomUUID()}.tmp`;
+      try {
+        await writeFile(tmpPath, JSON.stringify(map, null, 2));
+        await rename(tmpPath, finalPath);
+      } finally {
+        await unlink(tmpPath).catch(() => undefined);
+      }
     },
 
     async list(): Promise<StoredMapFile[]> {
