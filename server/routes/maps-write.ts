@@ -4,12 +4,16 @@ import type { Express, Request, RequestHandler } from 'express';
 import JSZip from 'jszip';
 import {
   MAX_BEATS_EXTENDED,
-  MAX_IMPORT_BYTES,
   assertFileSize,
   normalizeMap,
   sanitizeMapId,
   validateZipEntryNames,
 } from '../../src/core/map-format.js';
+import {
+  assertZipDeclaredLimits,
+  createZipOutputBudget,
+  readZipEntryText,
+} from '../../src/core/zip-limits.js';
 import type { AudioMutation, AudioStorage, ZipAudioEntry } from '../storage/audio.js';
 import type { MapStorage } from '../storage/maps.js';
 import { errorMessage, getIp, parseJsonSafe, type FileMutex, type KeyedMutex } from '../utils.js';
@@ -32,8 +36,6 @@ interface MapWriteRoutesOptions {
 
 const ZIP_TIMEOUT_MS = 15_000;
 
-type SizedZipEntry = ZipAudioEntry & { _data?: { uncompressedSize?: number } };
-
 function createWriteRateLimit(
   rateLimit: RateLimiter,
   key: string,
@@ -47,18 +49,6 @@ function createWriteRateLimit(
     }
     next();
   };
-}
-
-function zipUncompressedSize(entry: SizedZipEntry): number {
-  const size = Number(entry._data?.uncompressedSize ?? 0);
-  return Number.isFinite(size) && size > 0 ? size : 0;
-}
-
-function assertZipUncompressedLimit(entries: SizedZipEntry[]): void {
-  const total = entries.reduce((sum, entry) => sum + zipUncompressedSize(entry), 0);
-  if (total > MAX_IMPORT_BYTES) {
-    throw new Error(`ZIP po rozpakowaniu jest za duży. Limit: ${Math.round(MAX_IMPORT_BYTES / 1024 / 1024)} MB.`);
-  }
 }
 
 function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
@@ -222,15 +212,17 @@ export function registerMapWriteRoutes({
           ZIP_TIMEOUT_MS,
           'Parsowanie ZIP'
         );
-        const entries = Object.values(zip.files) as SizedZipEntry[];
+        const entries = Object.values(zip.files) as ZipAudioEntry[];
         validateZipEntryNames(entries);
-        assertZipUncompressedLimit(entries);
+        assertZipDeclaredLimits(entries);
+        const outputBudget = createZipOutputBudget();
         const jsonFile = zip.file('map.json');
         if (!jsonFile) return res.status(400).json({ error: 'Brak map.json w ZIP.' });
-        const rawMapText = await jsonFile.async('string');
-        if (Buffer.byteLength(rawMapText, 'utf8') > MAX_IMPORT_BYTES) {
-          throw new Error(`map.json jest za duży. Limit: ${Math.round(MAX_IMPORT_BYTES / 1024 / 1024)} MB.`);
-        }
+        const rawMapText = await withTimeout(
+          readZipEntryText(jsonFile, outputBudget),
+          ZIP_TIMEOUT_MS,
+          'Rozpakowywanie map.json',
+        );
         const rawMap = parseJsonSafe(rawMapText);
         const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
         const audio = await withMapLock(map.id, () => withAudioRollback(map.id, async () => {

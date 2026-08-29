@@ -1,5 +1,5 @@
-import { MAX_IMPORT_BYTES } from './map-format.ts';
-import { coreT } from './translate.ts';
+import { MAX_IMPORT_BYTES } from './map-format.js';
+import { coreT } from './translate.js';
 
 export const MAX_ZIP_ENTRIES = 128;
 export const MAX_ZIP_ENTRY_BYTES = MAX_IMPORT_BYTES;
