@@ -35,10 +35,17 @@ function isMapFile(name: string): boolean {
 }
 
 async function readJsonFile(filePath: string): Promise<StoredMap | null> {
+  let source: string;
   try {
-    return JSON.parse(await readFile(filePath, 'utf8')) as StoredMap;
-  } catch {
-    return null;
+    source = await readFile(filePath, 'utf8');
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    throw error;
+  }
+  try {
+    return JSON.parse(source) as StoredMap;
+  } catch (error) {
+    throw new Error(`Nieprawidłowy plik mapy ${path.basename(filePath)}.`, { cause: error });
   }
 }
 

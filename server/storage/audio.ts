@@ -107,7 +107,9 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
               candidates.push({ dir, fileName });
             }
           }
-        } catch {}
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        }
       }
 
       for (const candidate of candidates) {

@@ -159,8 +159,8 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
         }
         res.json(mapForResponse(data, id));
       });
-    } catch {
-      res.status(404).json({ error: 'Nie znaleziono.' });
+    } catch (error) {
+      res.status(500).json({ error: errorMessage(error) });
     }
   });
 }
