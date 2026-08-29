@@ -135,7 +135,15 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
           backups.push({ originalPath, backupPath });
         }
       } catch (error) {
-        await Promise.all(backups.map(backup => unlink(backup.backupPath).catch(() => undefined)));
+        const cleanupErrors: unknown[] = [];
+        for (const backup of backups) {
+          try {
+            await unlink(backup.backupPath);
+          } catch (cleanupError) {
+            if ((cleanupError as NodeJS.ErrnoException).code !== 'ENOENT') cleanupErrors.push(cleanupError);
+          }
+        }
+        if (cleanupErrors.length) console.error(`Audio backup cleanup failed for ${id}:`, cleanupErrors);
         throw error;
       }
 

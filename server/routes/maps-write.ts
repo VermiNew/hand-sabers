@@ -30,9 +30,6 @@ interface MapWriteRoutesOptions {
 }
 
 const ZIP_TIMEOUT_MS = 15_000;
-const STORAGE_ERROR_CODES = new Set([
-  'EACCES', 'EBUSY', 'EDQUOT', 'EIO', 'EMFILE', 'ENFILE', 'ENOENT', 'ENOSPC', 'ENOTDIR', 'EPERM', 'EROFS',
-]);
 
 type SizedZipEntry = ZipAudioEntry & { _data?: { uncompressedSize?: number } };
 
@@ -75,7 +72,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
 function mapWriteErrorStatus(error: unknown): 400 | 500 {
   if (!(error instanceof Error)) return 400;
   if (error.message.startsWith('Nie udało się przywrócić')) return 500;
-  if (STORAGE_ERROR_CODES.has(String((error as NodeJS.ErrnoException).code ?? ''))) return 500;
+  const code = (error as NodeJS.ErrnoException).code;
+  if (typeof code === 'string' && code.startsWith('E')) return 500;
   return error.cause ? mapWriteErrorStatus(error.cause) : 400;
 }
 
