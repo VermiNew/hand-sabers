@@ -10,7 +10,7 @@ import {
   sanitizeMapId,
   validateZipEntryNames,
 } from '../../src/core/map-format.js';
-import type { AudioStorage, ZipAudioEntry } from '../storage/audio.js';
+import type { AudioMutation, AudioStorage, ZipAudioEntry } from '../storage/audio.js';
 import type { MapStorage } from '../storage/maps.js';
 import { errorMessage, getIp, KeyedMutex, parseJsonSafe } from '../utils.js';
 
@@ -107,6 +107,31 @@ export function registerMapWriteRoutes({
       } catch (rollbackError) {
         console.error(`Map audio rollback failed for ${id}:`, rollbackError);
         throw new Error(`Nie udało się przywrócić audio mapy ${id}.`, { cause: error });
+      }
+      throw error;
+    }
+  };
+  const withAssetRollback = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
+    const mapMutation = await mapStorage.beginMutation(id);
+    let audioMutation: AudioMutation;
+    try {
+      audioMutation = await audioStorage.beginMutation(id);
+    } catch (error) {
+      await mapMutation.commit();
+      throw error;
+    }
+    try {
+      const result = await operation();
+      await mapMutation.commit();
+      await audioMutation.commit();
+      return result;
+    } catch (error) {
+      const rollbackErrors: unknown[] = [];
+      try { await mapMutation.rollback(); } catch (rollbackError) { rollbackErrors.push(rollbackError); }
+      try { await audioMutation.rollback(); } catch (rollbackError) { rollbackErrors.push(rollbackError); }
+      if (rollbackErrors.length) {
+        console.error(`Map asset rollback failed for ${id}:`, rollbackErrors);
+        throw new Error(`Nie udało się przywrócić plików mapy ${id}.`, { cause: error });
       }
       throw error;
     }
@@ -229,19 +254,16 @@ export function registerMapWriteRoutes({
       }
       const id = sanitizeMapId(req.params['id'], '');
       if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
-      const deleted = await withMapLock(id, async () => {
+      const deleted = await withMapLock(id, () => withAssetRollback(id, async () => {
         const removed = await mapStorage.delete(id);
-        try {
-          await audioStorage.remove(id);
-        } catch {
-          // Audio removal failure is non-fatal
-        }
+        await audioStorage.remove(id);
         return removed;
-      });
+      }));
       if (!deleted) return res.status(404).json({ error: 'Nie znaleziono.' });
       res.json({ ok: true });
-    } catch {
-      res.status(404).json({ error: 'Nie znaleziono.' });
+    } catch (error) {
+      console.error('Map deletion failed:', error);
+      res.status(500).json({ error: errorMessage(error) });
     }
   });
 }

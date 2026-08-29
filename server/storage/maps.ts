@@ -1,4 +1,5 @@
-import { readdir, readFile, rename, unlink, writeFile } from 'fs/promises';
+import { copyFile, readdir, readFile, rename, unlink, writeFile } from 'fs/promises';
+import { randomUUID } from 'crypto';
 import path from 'path';
 import type { GameMap } from '../../src/types/index.js';
 
@@ -10,8 +11,14 @@ export interface StoredMapFile {
   storage: 'beatdata' | 'legacy';
 }
 
+export interface MapMutation {
+  commit(): Promise<void>;
+  rollback(): Promise<void>;
+}
+
 export interface MapStorage {
   read(id: string): Promise<StoredMap | null>;
+  beginMutation(id: string): Promise<MapMutation>;
   write(map: StoredMap): Promise<void>;
   list(): Promise<StoredMapFile[]>;
   delete(id: string): Promise<boolean>;
@@ -44,6 +51,45 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [] }: MapSt
   return {
     async read(id: string): Promise<StoredMap | null> {
       return await readJsonFile(mapFilePath(id)) || await readJsonFile(legacyMapFilePath(id));
+    },
+
+    async beginMutation(id: string): Promise<MapMutation> {
+      const backups: Array<{ originalPath: string; backupPath: string }> = [];
+      try {
+        for (const originalPath of [mapFilePath(id), legacyMapFilePath(id)]) {
+          const backupPath = `${originalPath}.${process.pid}.${randomUUID()}.rollback`;
+          try {
+            await copyFile(originalPath, backupPath);
+            backups.push({ originalPath, backupPath });
+          } catch (error) {
+            if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+          }
+        }
+      } catch (error) {
+        await Promise.all(backups.map(backup => unlink(backup.backupPath).catch(() => undefined)));
+        throw error;
+      }
+
+      let finished = false;
+      return {
+        async commit(): Promise<void> {
+          if (finished) return;
+          finished = true;
+          await Promise.all(backups.map(backup => unlink(backup.backupPath).catch(() => undefined)));
+        },
+        async rollback(): Promise<void> {
+          if (finished) return;
+          for (const currentPath of [mapFilePath(id), legacyMapFilePath(id)]) {
+            try {
+              await unlink(currentPath);
+            } catch (error) {
+              if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+            }
+          }
+          for (const backup of backups) await rename(backup.backupPath, backup.originalPath);
+          finished = true;
+        },
+      };
     },
 
     async write(map: StoredMap): Promise<void> {
@@ -84,7 +130,9 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [] }: MapSt
         try {
           await unlink(filePath);
           deleted = true;
-        } catch {}
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        }
       }
       return deleted;
     },
