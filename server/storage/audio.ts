@@ -141,14 +141,42 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
       return {
         async commit(): Promise<void> {
           if (finished) return;
+          const cleanupErrors: unknown[] = [];
+          for (const backup of backups) {
+            try {
+              await unlink(backup.backupPath);
+            } catch (error) {
+              if ((error as NodeJS.ErrnoException).code !== 'ENOENT') cleanupErrors.push(error);
+            }
+          }
           finished = true;
-          await Promise.all(backups.map(backup => unlink(backup.backupPath).catch(() => undefined)));
+          if (cleanupErrors.length) console.error(`Audio backup cleanup failed for ${id}:`, cleanupErrors);
         },
         async rollback(): Promise<void> {
           if (finished) return;
-          for (const currentPath of await matchingPaths(id)) await unlink(currentPath);
-          for (const backup of backups) await rename(backup.backupPath, backup.originalPath);
+          const rollbackErrors: unknown[] = [];
+          const blockedPaths = new Set<string>();
+          const pathKey = (filePath: string): string => process.platform === 'win32' ? filePath.toLowerCase() : filePath;
+          for (const currentPath of await matchingPaths(id)) {
+            try {
+              await unlink(currentPath);
+            } catch (error) {
+              rollbackErrors.push(error);
+              blockedPaths.add(pathKey(currentPath));
+            }
+          }
+          for (const backup of backups) {
+            if (blockedPaths.has(pathKey(backup.originalPath))) continue;
+            try {
+              await rename(backup.backupPath, backup.originalPath);
+            } catch (error) {
+              rollbackErrors.push(error);
+            }
+          }
           finished = true;
+          if (rollbackErrors.length) {
+            throw new AggregateError(rollbackErrors, `Nie udało się w pełni przywrócić audio mapy ${id}.`);
+          }
         },
       };
     },
@@ -185,7 +213,11 @@ export function createAudioStorage({ audioDir, legacyAudioDir }: AudioStorageOpt
         await writeFile(tmpPath, Buffer.from(buffer));
         await rename(tmpPath, storedPath);
       } finally {
-        await unlink(tmpPath).catch(() => undefined);
+        await unlink(tmpPath).catch(error => {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+            console.error(`Audio temporary file cleanup failed for ${map.id}:`, error);
+          }
+        });
       }
       await storage.remove(map.id, storedPath);
 

@@ -74,20 +74,43 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [] }: MapSt
       return {
         async commit(): Promise<void> {
           if (finished) return;
+          const cleanupErrors: unknown[] = [];
+          for (const backup of backups) {
+            try {
+              await unlink(backup.backupPath);
+            } catch (error) {
+              if ((error as NodeJS.ErrnoException).code !== 'ENOENT') cleanupErrors.push(error);
+            }
+          }
           finished = true;
-          await Promise.all(backups.map(backup => unlink(backup.backupPath).catch(() => undefined)));
+          if (cleanupErrors.length) console.error(`Map backup cleanup failed for ${id}:`, cleanupErrors);
         },
         async rollback(): Promise<void> {
           if (finished) return;
+          const rollbackErrors: unknown[] = [];
+          const backupsByPath = new Map(backups.map(backup => [backup.originalPath, backup]));
           for (const currentPath of [mapFilePath(id), legacyMapFilePath(id)]) {
             try {
               await unlink(currentPath);
             } catch (error) {
-              if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+              if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+                rollbackErrors.push(error);
+                continue;
+              }
+            }
+            const backup = backupsByPath.get(currentPath);
+            if (backup) {
+              try {
+                await rename(backup.backupPath, backup.originalPath);
+              } catch (error) {
+                rollbackErrors.push(error);
+              }
             }
           }
-          for (const backup of backups) await rename(backup.backupPath, backup.originalPath);
           finished = true;
+          if (rollbackErrors.length) {
+            throw new AggregateError(rollbackErrors, `Nie udało się w pełni przywrócić plików mapy ${id}.`);
+          }
         },
       };
     },
@@ -99,7 +122,11 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [] }: MapSt
         await writeFile(tmpPath, JSON.stringify(map, null, 2));
         await rename(tmpPath, finalPath);
       } finally {
-        await unlink(tmpPath).catch(() => undefined);
+        await unlink(tmpPath).catch(error => {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+            console.error(`Map temporary file cleanup failed for ${map.id}:`, error);
+          }
+        });
       }
     },
 
