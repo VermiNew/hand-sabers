@@ -1,6 +1,12 @@
 import JSZip from 'jszip';
 import { saveLocalMap, saveLocalMapAudio } from './localstore.ts';
 import { assertFileSize, findPreferredAudioEntry, normalizeMap, validateZipEntryNames } from './map-format.ts';
+import {
+  assertZipDeclaredLimits,
+  createZipOutputBudget,
+  readZipEntryArrayBuffer,
+  readZipEntryText,
+} from './zip-limits.ts';
 import { t } from '../i18n/index.ts';
 
 export interface ImportedMap {
@@ -41,14 +47,16 @@ export async function importMapLocally(file: File): Promise<ImportedMap> {
     const zip = await JSZip.loadAsync(await file.arrayBuffer());
     const entries = Object.values(zip.files);
     validateZipEntryNames(entries);
+    assertZipDeclaredLimits(entries);
+    const outputBudget = createZipOutputBudget();
     const jsonFile = zip.file('map.json');
     if (!jsonFile) throw new Error(t('maps.importJsonMissing'));
-    map = normalizeMap(JSON.parse(await jsonFile.async('string')), { fallbackId: file.name.replace(/\.[^.]+$/, '') }) as unknown as LocalMap;
+    map = normalizeMap(JSON.parse(await readZipEntryText(jsonFile, outputBudget)), { fallbackId: file.name.replace(/\.[^.]+$/, '') }) as unknown as LocalMap;
     const audioFile = findPreferredAudioEntry(entries, map.meta?.audioFile);
     if (audioFile) {
       audioName = audioFile.name.split('/').pop() ?? null;
       if (map.meta && audioName) map.meta.audioFile = audioName;
-      await saveLocalMapAudio(map.id, await audioFile.async('arraybuffer'), {
+      await saveLocalMapAudio(map.id, await readZipEntryArrayBuffer(audioFile, outputBudget), {
         fileName: audioName ?? '',
         mimeType: 'application/octet-stream',
       });
