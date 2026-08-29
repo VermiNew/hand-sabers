@@ -117,6 +117,10 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
     }
     validateRealtimePacket(packet);
     const now = Date.now();
+    if (!rooms.touch(client.roomCode, client.playerId, now)) {
+      sender.close(1008, 'Room expired');
+      return;
+    }
     if (!consumeRealtimeToken(client, now)) {
       client.realtimeViolations++;
       if (client.realtimeViolations > 30) sender.close(1008, 'Realtime rate limit');
@@ -202,10 +206,18 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
         }
 
         if (type === 'ping') {
+          if (client.roomCode && client.playerId && !rooms.touch(client.roomCode, client.playerId, now)) {
+            socket.close(1008, 'Room expired');
+            return;
+          }
           send(socket, { type: 'pong', sentAt: message.sentAt, serverTime: Date.now() });
           return;
         }
         if (!client.roomCode || !client.playerId) throw new Error('JOIN_REQUIRED');
+        if (!rooms.touch(client.roomCode, client.playerId, now)) {
+          socket.close(1008, 'Room expired');
+          return;
+        }
 
         if (type === 'chat') {
           const text = sanitizeChatText(message.text);
@@ -289,6 +301,9 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
 
     socket.on('pong', () => {
       client.alive = true;
+      if (client.roomCode && client.playerId && !rooms.touch(client.roomCode, client.playerId)) {
+        socket.close(1008, 'Room expired');
+      }
     });
     socket.once('close', () => {
       clearTimeout(joinTimeout);

@@ -230,8 +230,17 @@ export class RoomRegistry {
       playing: false,
     };
     room.players.push(player);
+    this.refreshExpiry(room);
     room.revision++;
     return { player: { ...player }, snapshot: this.snapshot(room) };
+  }
+
+  touch(code: string, playerId: string, now = Date.now()): boolean {
+    this.deleteExpired(now);
+    const room = this.rooms.get(normalizeRoomCode(code));
+    if (!room || !room.players.some(player => player.id === playerId)) return false;
+    this.refreshExpiry(room, now);
+    return true;
   }
 
   leave(code: string, playerId: string): RoomSnapshot | null {
@@ -424,6 +433,10 @@ export class RoomRegistry {
     const room = this.rooms.get(normalizeRoomCode(code));
     if (!room) throw new RoomError('ROOM_NOT_FOUND');
     return room;
+  }
+
+  private refreshExpiry(room: RoomRecord, now = Date.now()): void {
+    room.expiresAt = new Date(now + ROOM_TTL_MS).toISOString();
   }
 
   private snapshot(room: RoomRecord): RoomSnapshot {
