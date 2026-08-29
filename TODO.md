@@ -382,7 +382,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Rozszerzyć hit-test bloków held na cały pasek czasu trwania, nie tylko punkt startowy (`src/creator/timeline.ts`), aby dało się zaznaczyć środek długiego bloku.
 - [x] Ograniczać czas wklejanych/duplikowanych beatów oraz końce held beats do `[0, map.meta.duration]`; grupy wklejane przy końcu utworu są przesuwane maksymalnie do tyłu zamiast wychodzić poza mapę.
 - [x] Uodpornić autosave kreatora: poza debounce 5 s dodać maksymalny interwał zapisu lub flush na `visibilitychange/pagehide`, a błędów `localStorage` (zwłaszcza quota exceeded) nie połykać bez komunikatu. Mapa jest zapisywana synchronicznie; audio w IndexedDB przy zamknięciu strony pozostaje best-effort.
-- [ ] Usunąć lub jednoznacznie zablokować legacy `server.js`. Uruchomiony ręcznie serwuje katalog projektu ze słabszymi zabezpieczeniami niż wspierany serwer TypeScript i może ujawniać źródła/dokumentację.
+- [x] Usunąć lub jednoznacznie zablokować legacy `server.js`. — plik i historyczna implementacja pozostają w repo, ale entrypoint kończy się natychmiast kodem 1 z instrukcją użycia `npm run dev:server`/`npm start`; nie ładuje zależności, nie dotyka dysku i nie otwiera portu.
 - [ ] Dodać produkcyjne nagłówki bezpieczeństwa: CSP, `X-Content-Type-Options`, ochronę przed framingiem, `Permissions-Policy` oraz HSTS na warstwie HTTPS/reverse proxy.
 - [x] Dodać i commitować lockfile zależności; wersje z `^` bez `package-lock.json` nie dają reprodukowalnego builda produkcyjnego.
 - [ ] Poprawić narzędzia kontroli: `scripts/check-js.mjs` nie analizuje kodu TypeScript, a `scripts/check-i18n-keys.mjs` wbrew opisowi skanuje tylko HTML i nie jest włączony do skryptów npm.
