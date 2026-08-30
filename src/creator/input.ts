@@ -1,7 +1,7 @@
 import { state } from './state.ts';
 import { removeBeatByReference, sortBeatsByTime } from '../core/creator-rules.ts';
 import { playAudio, stopAudio } from './audio.ts';
-import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, formatTime, getLabelWidth, xToTime } from './timeline.ts';
+import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, getLabelWidth, xToTime } from './timeline.ts';
 import { scheduleAutosave } from './storage.ts';
 import { TimelineDragSelection } from './drag-selection.ts';
 import { TimelineContextMenu } from './timeline-context-menu.ts';
@@ -236,5 +236,4 @@ export function bindTimelineEvents(callbacks: {
 
   // ── Held blocks: keyup ends them ──
 
-  void formatTime;
 }

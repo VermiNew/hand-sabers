@@ -3,6 +3,7 @@ import { validateAudioFile, validateDecodedAudio } from '../core/audio-validatio
 import { saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.ts';
 import { getCanonicalMapAudioUrl } from '../core/map-format.ts';
 import { t } from '../i18n/index.ts';
+import { formatCreatorTime } from './time-format.ts';
 
 export const CREATOR_VOLUME_KEY = 'hs_creator_song_volume';
 
@@ -118,7 +119,7 @@ export async function decodeAndAttachAudio(
   const songNameEl = document.getElementById('songName');
   const songDurEl  = document.getElementById('songDuration');
   if (songNameEl) songNameEl.textContent = state.map.meta.title || fileName;
-  if (songDurEl)  songDurEl.textContent  = formatAudioTime(state.audioBuffer.duration);
+  if (songDurEl)  songDurEl.textContent  = formatCreatorTime(state.audioBuffer.duration);
 
   callbacks.onDecoded();
 
@@ -175,11 +176,4 @@ export async function restoreAudioForCurrentMap(callbacks: { onDecoded: () => vo
     console.warn('Server audio restore failed:', e);
     return false;
   }
-}
-
-function formatAudioTime(sec: number): string {
-  if (!isFinite(sec)) return '00:00';
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }

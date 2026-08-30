@@ -1,15 +1,7 @@
 import { state } from './state.ts';
 import { normalizeCutDirection, CUT_SYMBOLS } from './cut-ui.ts';
 import { getPlayPos } from './audio.ts';
-
-export function formatTime(sec: number, showMs = false): string {
-  if (!isFinite(sec)) return showMs ? '00:00.00' : '00:00';
-  const m   = Math.floor(sec / 60);
-  const s   = Math.floor(sec % 60);
-  const ms  = showMs ? Math.floor((sec % 1) * 100) : 0;
-  const base = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-  return showMs ? `${base}.${String(ms).padStart(2, '0')}` : base;
-}
+import { formatCreatorTime } from './time-format.ts';
 
 export function renderAll(): void {
   state.timelineDirty = false;
@@ -62,7 +54,7 @@ export function renderRuler(): void {
           ctx.fillStyle = 'rgba(255,200,80,0.7)';
           ctx.font      = '8px JetBrains Mono';
           ctx.textAlign = 'center';
-          ctx.fillText(formatTime(t), x, h - 12);
+          ctx.fillText(formatCreatorTime(t), x, h - 12);
         }
       }
       t += beatSec;
@@ -85,7 +77,7 @@ export function renderRuler(): void {
       const x = Math.round(LABEL_W + (t - state.viewStart) * state.pxPerSec);
       if (x > LABEL_W && x <= w) {
         ctx.beginPath(); ctx.moveTo(x, h - 6); ctx.lineTo(x, h); ctx.stroke();
-        ctx.fillText(formatTime(t), x, h - 8);
+        ctx.fillText(formatCreatorTime(t), x, h - 8);
       }
       t += interval;
     }
@@ -369,7 +361,7 @@ export function renderPlayhead(): void {
 
 export function updateTimecode(): void {
   const timecodeEl = document.getElementById('timecode');
-  if (timecodeEl) timecodeEl.textContent = formatTime(getPlayPos(), true);
+  if (timecodeEl) timecodeEl.textContent = formatCreatorTime(getPlayPos(), true);
 }
 
 export function updateStatus(): void {
