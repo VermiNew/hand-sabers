@@ -50,6 +50,7 @@ import {
 } from './input.ts';
 
 import { initKeybindsUI } from './keybinds-ui.ts';
+import { formatCreatorTime } from './time-format.ts';
 
 let lastCreatorError = '';
 let lastCreatorErrorAt = 0;
@@ -201,7 +202,7 @@ async function handleFile(file: File): Promise<void> {
       if (songNameEl) songNameEl.textContent = state.map.meta?.title ?? file.name;
       if (songDurEl) {
         const dur = state.map.meta?.duration ?? 0;
-        songDurEl.textContent = `${Math.floor(dur / 60)}:${String(Math.floor(dur % 60)).padStart(2, '0')}`;
+        songDurEl.textContent = formatCreatorTime(dur);
       }
       const restored = await restoreAudioForCurrentMap(audioCallbacks);
       if (!restored) {

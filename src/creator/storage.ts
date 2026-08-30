@@ -13,6 +13,7 @@ import { restoreAudioForCurrentMap, decodeAndAttachAudio } from './audio.ts';
 import { t } from '../i18n/index.ts';
 import { state, MAP_ID } from './state.ts';
 import type { CreatorMap } from './state.ts';
+import { formatCreatorTime } from './time-format.ts';
 
 const AUTOSAVE_DEBOUNCE_MS = 5_000;
 const AUTOSAVE_MAX_INTERVAL_MS = 30_000;
@@ -190,8 +191,7 @@ export async function loadZipFile(
   if (songNameEl) songNameEl.textContent = state.map.meta?.title ?? file.name;
   if (songDurEl) {
     const dur = state.map.meta?.duration ?? state.audioBuffer?.duration ?? 0;
-    const m = Math.floor(dur / 60), s = Math.floor(dur % 60);
-    songDurEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+    songDurEl.textContent = formatCreatorTime(dur);
   }
   saveLocalMap(state.map as unknown as Parameters<typeof saveLocalMap>[0]);
 }
@@ -225,8 +225,7 @@ export async function loadInitialMap(callbacks: {
         if (songNameEl) songNameEl.textContent = state.map.meta?.title ?? '—';
         if (songDurEl) {
           const dur = state.map.meta?.duration ?? 0;
-          const m = Math.floor(dur / 60), s = Math.floor(dur % 60);
-          songDurEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+          songDurEl.textContent = formatCreatorTime(dur);
         }
         await restoreAudioForCurrentMap(callbacks);
         callbacks.onMapLoaded();
@@ -257,8 +256,7 @@ export async function loadInitialMap(callbacks: {
           if (songNameEl) songNameEl.textContent = state.map.meta?.title ?? '—';
           if (songDurEl) {
             const dur = state.map.meta?.duration ?? 0;
-            const m = Math.floor(dur / 60), s = Math.floor(dur % 60);
-            songDurEl.textContent = `${m}:${String(s).padStart(2, '0')}`;
+            songDurEl.textContent = formatCreatorTime(dur);
           }
           await restoreAudioForCurrentMap(callbacks);
           callbacks.onMapLoaded();
