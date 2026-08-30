@@ -28,7 +28,7 @@ export function cycleSnap(): void {
   const button = document.getElementById('btnSnap');
   const status = document.getElementById('stSnap');
   if (button) {
-    button.textContent = label ? `SNAP: ${label}` : t('creator.snapOff');
+    button.textContent = label ? t('creator.snapOn', { value: label }) : t('creator.snapOff');
     button.classList.toggle('active', Boolean(label));
   }
   if (status) status.textContent = label ?? t('creator.off');

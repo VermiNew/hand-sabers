@@ -489,7 +489,7 @@
     "difficultySuggestionEmpty": "SUGGESTION: add beats",
     "undo": "UNDO",
     "redo": "REDO",
-    "snapOn": "SNAP: ON",
+    "snapOn": "SNAP: {{value}}",
     "snapOff": "SNAP: OFF",
     "off": "off",
     "loopOn": "LOOP: ON",
