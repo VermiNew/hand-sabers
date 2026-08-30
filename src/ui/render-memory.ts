@@ -1,10 +1,27 @@
-import * as THREE from 'three';
+import {
+  FloatType,
+  HalfFloatType,
+  IntType,
+  LinearMipmapLinearFilter,
+  LinearMipmapNearestFilter,
+  NearestMipmapLinearFilter,
+  NearestMipmapNearestFilter,
+  RGBAFormat,
+  RGFormat,
+  RGBFormat,
+  ShortType,
+  Texture,
+  UnsignedIntType,
+  UnsignedShort4444Type,
+  UnsignedShort5551Type,
+  UnsignedShortType,
+  Vector2,
+} from 'three';
+import type { BufferGeometry, Mesh, Object3D, Scene, WebGLRenderer } from 'three';
 import { reflectTarget, scene } from '../game/scene.ts';
 
-const THREE_RT = THREE;
-
 const BYTES_PER_MB = 1024 * 1024;
-const drawingBufferSize = new THREE_RT.Vector2();
+const drawingBufferSize = new Vector2();
 
 function mb(bytes: number): number {
   return +(Math.max(0, bytes) / BYTES_PER_MB).toFixed(2);
@@ -24,7 +41,7 @@ function attributeBytes(attr: BufferAttr | null | undefined, seenArrays: Set<obj
   return array.byteLength || 0;
 }
 
-function geometryBytes(geometry: THREE.BufferGeometry | null | undefined): number {
+function geometryBytes(geometry: BufferGeometry | null | undefined): number {
   if (!geometry) return 0;
   const seenArrays = new Set<object>();
   let bytes = attributeBytes(geometry.index as unknown as BufferAttr, seenArrays);
@@ -37,15 +54,15 @@ function geometryBytes(geometry: THREE.BufferGeometry | null | undefined): numbe
   return bytes;
 }
 
-function collectSceneTextures(root: THREE.Scene): Set<THREE.Texture> {
-  const textures = new Set<THREE.Texture>();
+function collectSceneTextures(root: Scene): Set<Texture> {
+  const textures = new Set<Texture>();
   const addTexture = (value: unknown) => {
-    if (value instanceof THREE_RT.Texture) textures.add(value);
+    if (value instanceof Texture) textures.add(value);
   };
-  if (root.background instanceof THREE_RT.Texture) textures.add(root.background);
-  if (root.environment instanceof THREE_RT.Texture) textures.add(root.environment);
-  root.traverse((obj: THREE.Object3D) => {
-    const mesh = obj as THREE.Mesh;
+  if (root.background instanceof Texture) textures.add(root.background);
+  if (root.environment instanceof Texture) textures.add(root.environment);
+  root.traverse((obj: Object3D) => {
+    const mesh = obj as Mesh;
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     for (const mat of materials) {
       if (!mat) continue;
@@ -56,22 +73,22 @@ function collectSceneTextures(root: THREE.Scene): Set<THREE.Texture> {
 }
 
 function textureChannelCount(format: number): number {
-  if (format === THREE_RT.RGBAFormat) return 4;
-  if (format === THREE_RT.RGBFormat)  return 3;
-  if (format === 1024 /* LuminanceAlphaFormat, removed in r152 */ || format === THREE_RT.RGFormat) return 2;
+  if (format === RGBAFormat) return 4;
+  if (format === RGBFormat)  return 3;
+  if (format === 1024 /* LuminanceAlphaFormat, removed in r152 */ || format === RGFormat) return 2;
   return 1;
 }
 
 function textureBytesPerChannel(type: number): number {
-  if (type === THREE_RT.FloatType || type === THREE_RT.UnsignedIntType || type === THREE_RT.IntType) return 4;
-  if (type === THREE_RT.HalfFloatType || type === THREE_RT.ShortType || type === THREE_RT.UnsignedShortType) return 2;
+  if (type === FloatType || type === UnsignedIntType || type === IntType) return 4;
+  if (type === HalfFloatType || type === ShortType || type === UnsignedShortType) return 2;
   return 1;
 }
 
-function texturePixelBytes(texture: THREE.Texture): number {
+function texturePixelBytes(texture: Texture): number {
   const packed16Bit =
-    texture.type === THREE_RT.UnsignedShort4444Type ||
-    texture.type === THREE_RT.UnsignedShort5551Type ||
+    texture.type === UnsignedShort4444Type ||
+    texture.type === UnsignedShort5551Type ||
     (texture.type as number) === 35633; /* UnsignedShort565Type, removed in r152 */
   if (packed16Bit) return 2;
   return textureChannelCount(texture.format) * textureBytesPerChannel(texture.type);
@@ -79,7 +96,7 @@ function texturePixelBytes(texture: THREE.Texture): number {
 
 interface ImageLike { width?: number; height?: number; videoWidth?: number; videoHeight?: number; naturalWidth?: number; naturalHeight?: number; }
 
-function textureDimensions(texture: THREE.Texture): { width: number; height: number; faces: number } {
+function textureDimensions(texture: Texture): { width: number; height: number; faces: number } {
   const image = texture.image as ImageLike | ImageLike[] | null | undefined;
   if (Array.isArray(image) && image.length) {
     const first = image[0] ?? {};
@@ -97,33 +114,33 @@ function textureDimensions(texture: THREE.Texture): { width: number; height: num
   };
 }
 
-function usesMipmaps(texture: THREE.Texture): boolean {
+function usesMipmaps(texture: Texture): boolean {
   return texture.generateMipmaps !== false && ([
-    THREE_RT.NearestMipmapNearestFilter,
-    THREE_RT.NearestMipmapLinearFilter,
-    THREE_RT.LinearMipmapNearestFilter,
-    THREE_RT.LinearMipmapLinearFilter,
+    NearestMipmapNearestFilter,
+    NearestMipmapLinearFilter,
+    LinearMipmapNearestFilter,
+    LinearMipmapLinearFilter,
   ] as number[]).includes(texture.minFilter);
 }
 
-function textureBytes(texture: THREE.Texture): number {
+function textureBytes(texture: Texture): number {
   const { width, height, faces } = textureDimensions(texture);
   if (!width || !height) return 0;
   const baseBytes = width * height * faces * texturePixelBytes(texture);
   return usesMipmaps(texture) ? baseBytes * 1.333 : baseBytes;
 }
 
-function estimateRenderBufferBytes(renderer: THREE.WebGLRenderer): number {
+function estimateRenderBufferBytes(renderer: WebGLRenderer): number {
   renderer.getDrawingBufferSize(drawingBufferSize);
   const defaultFramebufferBytes = drawingBufferSize.x * drawingBufferSize.y * 8;
   const reflectDepthBytes = reflectTarget.depthBuffer ? reflectTarget.width * reflectTarget.height * 4 : 0;
   return defaultFramebufferBytes + reflectDepthBytes;
 }
 
-export function sampleGpuMemory(renderer: THREE.WebGLRenderer): { geoMem: number; texMem: number; vramMem: number } {
-  const geometries = new Set<THREE.BufferGeometry>();
-  scene.traverse((obj: THREE.Object3D) => {
-    const mesh = obj as THREE.Mesh;
+export function sampleGpuMemory(renderer: WebGLRenderer): { geoMem: number; texMem: number; vramMem: number } {
+  const geometries = new Set<BufferGeometry>();
+  scene.traverse((obj: Object3D) => {
+    const mesh = obj as Mesh;
     if (mesh.geometry) geometries.add(mesh.geometry);
   });
 
