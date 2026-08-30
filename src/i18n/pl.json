@@ -547,7 +547,7 @@
     "kbTabList": "LISTA",
     "kbTabEdit": "EDYTUJ",
     "kbResetAll": "PRZYWRÓĆ DOMYŚLNE",
-    "kbResetOne": "RESET",
+    "kbResetOne": "PRZYWRÓĆ",
     "kbSearchPlaceholder": "Filtruj akcję, grupę albo klawisz…",
     "kbNoMatches": "Brak pasujących skrótów.",
     "kbRecording": "naciśnij klawisz…",
@@ -555,7 +555,7 @@
     "kbConflictHint": "Konflikt z: {{actions}}",
     "kbResetConfirm": "Przywrócić domyślne skróty klawiszowe?",
     "kbGroups": {
-      "Transport": "Transport",
+      "Transport": "Odtwarzanie",
       "Tapping": "Wstawianie",
       "Nawigacja": "Nawigacja",
       "Loop": "Pętla",
