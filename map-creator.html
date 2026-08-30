@@ -14,12 +14,12 @@
 
 <!-- TOP BAR -->
 <div id="topBar">
-  <div class="top-title" data-i18n="creator.title">MAP CREATOR</div>
+  <div class="top-title" data-i18n="creator.title">KREATOR MAP</div>
   <div class="top-sep"></div>
   <div id="songName" data-i18n="creator.noFile">— brak pliku —</div>
   <div id="songDuration">00:00</div>
   <div class="top-spacer"></div>
-  <span id="autosaveLabel"><span data-i18n="creator.autoSave">autosave:</span> —</span>
+  <span id="autosaveLabel"><span data-i18n="creator.autoSave">autozapis:</span> —</span>
   <button id="btnSave" data-i18n="creator.save">ZAPISZ</button>
   <button id="btnExport" data-i18n="creator.exportZip">EKSPORT ZIP</button>
   <button id="btnTest"><span class="material-symbols-rounded inline-icon">play_arrow</span><span data-i18n="creator.test">TEST</span></button>
@@ -29,7 +29,7 @@
 <div id="transport">
   <button class="transport-btn play-stop" id="btnPlayStop">
     <span class="material-symbols-rounded" id="btnPlayStopIcon">play_arrow</span>
-    <span id="btnPlayStopLabel" data-i18n="creator.play">PLAY</span>
+    <span id="btnPlayStopLabel" data-i18n="creator.play">ODTWÓRZ</span>
   </button>
   <!-- hidden stop kept for JS compat -->
   <button id="btnStop" style="display:none"></button>
@@ -73,11 +73,11 @@
 
   <div class="transport-sep"></div>
   <button class="transport-btn" id="btnSnap" data-i18n="creator.snapOff">SNAP: OFF</button>
-  <button class="transport-btn" id="btnLoop" data-i18n="creator.loopOff">LOOP: OFF</button>
+  <button class="transport-btn" id="btnLoop" data-i18n="creator.loopOff">PĘTLA: WYŁ</button>
 
   <div class="transport-sep"></div>
   <div class="zoom-group">
-    <span class="zoom-label" data-i18n="creator.zoom">ZOOM</span>
+    <span class="zoom-label" data-i18n="creator.zoom">SKALA</span>
     <button class="transport-btn" id="zoomOut">−</button>
     <button class="transport-btn" id="zoomIn">+</button>
   </div>
@@ -235,7 +235,7 @@
   <!-- Drop zone -->
   <div id="dropZone">
     <div class="drop-title">HAND SABERS</div>
-    <div class="drop-sub" data-i18n="creator.title">MAP CREATOR</div>
+    <div class="drop-sub" data-i18n="creator.title">KREATOR MAP</div>
     <div class="drop-box" id="dropBox">
       <div class="drop-icon material-symbols-rounded">music_note</div>
       <div data-i18n="creator.dropAudio">Przeciągnij plik MP3 / OGG / WAV</div>
@@ -278,7 +278,7 @@
     <span class="status-val" id="stBombs">0</span>
   </div>
   <div class="status-item">
-    <span class="status-key" data-i18n="creator.statZoom">ZOOM</span>
+    <span class="status-key" data-i18n="creator.statZoom">SKALA</span>
     <span class="status-val" id="stZoom">10s</span>
   </div>
   <div class="status-item">
