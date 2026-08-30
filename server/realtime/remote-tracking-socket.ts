@@ -15,6 +15,10 @@ const MAX_TEXT_BURST_MESSAGES = 40;
 const MAX_TEXT_RATE_VIOLATIONS = 10;
 const MAX_OUTGOING_BUFFER_BYTES = 64 * 1024;
 
+export function isRemoteTrackingBufferAvailable(bufferedAmount: number): boolean {
+  return bufferedAmount <= MAX_OUTGOING_BUFFER_BYTES;
+}
+
 interface Peer {
   sessionId: string;
   role: 'host' | 'phone';
@@ -112,7 +116,7 @@ function isAllowedOrigin(request: IncomingMessage): boolean {
 
 function send(socket: WebSocket, payload: object): void {
   if (socket.readyState === WebSocket.OPEN) {
-    if (socket.bufferedAmount > MAX_OUTGOING_BUFFER_BYTES) {
+    if (!isRemoteTrackingBufferAvailable(socket.bufferedAmount)) {
       socket.close(1013, 'Backpressure');
       return;
     }
@@ -197,7 +201,7 @@ export function registerRemoteTrackingServer(
         }
         if (!consumeToken(peer)) return;
         const host = peerFor(peer.sessionId, 'host');
-        if (host && host.bufferedAmount <= MAX_OUTGOING_BUFFER_BYTES) {
+        if (host && isRemoteTrackingBufferAvailable(host.bufferedAmount)) {
           try {
             host.send(packet, { binary: true });
           } catch (error) {
