@@ -4,11 +4,10 @@ import { applyTrackingSettings } from '../tracking/tracking.ts';
 import { setVolume, setMusicVolume, setSfxVolume, setSoundVolume } from '../game/audio.ts';
 import { getPerformanceMode, getPerformanceModes } from '../core/performance.ts';
 import { getScenePerformanceProfile, setScenePerformanceProfile, setWireframeVisible } from '../game/scene.ts';
-import * as THREE from 'three';
+import { Vector2 } from 'three';
+import type { WebGLRenderer } from 'three';
 import type { PerformanceMode, Settings } from '../types/index.js';
 import { sampleGpuMemory } from './render-memory.ts';
-
-const THREE_RT = THREE;
 
 // ── Typy ──────────────────────────────────────────────────────────────────────
 interface GameStats {
@@ -169,7 +168,7 @@ export function initCameraPanelToggle(): void {
   });
 }
 let initStarted   = false;
-let lastRenderer: THREE.WebGLRenderer | null = null;
+let lastRenderer: WebGLRenderer | null = null;
 
 const devData: DevData = {
   fps: 0, avgFps: 0, frameMs: 0, deltaMs: 0, deltaScale: 1, renderMs: 0, detectMs: 0, latMs: 0, conf: 0,
@@ -218,7 +217,7 @@ export function isDeveloperPanelEnabled(): boolean {
   return isDev;
 }
 
-export function setDeveloperPanelEnabled(renderer: THREE.WebGLRenderer | null = lastRenderer, enabled = true): void {
+export function setDeveloperPanelEnabled(renderer: WebGLRenderer | null = lastRenderer, enabled = true): void {
   setSetting('developerMode', Boolean(enabled));
   devData.developerMode = Boolean(enabled);
 
@@ -250,10 +249,10 @@ function addSeparator(folder: TweakpaneFolder): void {
   else folder.addBlade?.({ view: 'separator' });
 }
 
-const drawingBufferSize = new THREE_RT.Vector2();
+const drawingBufferSize = new Vector2();
 let lastMemorySampleMs = 0;
 
-function getGpuRendererLabel(renderer: THREE.WebGLRenderer): string {
+function getGpuRendererLabel(renderer: WebGLRenderer): string {
   try {
     const gl = renderer.getContext() as WebGLRenderingContext | null;
     if (!gl) return 'WebGL —';
@@ -266,7 +265,7 @@ function getGpuRendererLabel(renderer: THREE.WebGLRenderer): string {
   }
 }
 
-function updateRenderingDiagnostics(renderer: THREE.WebGLRenderer): void {
+function updateRenderingDiagnostics(renderer: WebGLRenderer): void {
   const profile = getScenePerformanceProfile();
   const canvas  = renderer.domElement;
   const gl      = renderer.getContext() as WebGLRenderingContext;
@@ -283,7 +282,7 @@ function updateRenderingDiagnostics(renderer: THREE.WebGLRenderer): void {
   if (devData.gpuRenderer === '—') devData.gpuRenderer = getGpuRendererLabel(renderer);
 }
 
-export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, options: { force?: boolean } = {}): void {
+export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { force?: boolean } = {}): void {
   lastRenderer = renderer ?? lastRenderer;
   isDev = options.force ? Boolean(getSettings().developerMode) || isDevModeRequested() : isDevModeRequested();
   document.body.classList.toggle('dev-tools', isDev);
@@ -506,7 +505,7 @@ export function initDevPanel(renderer: THREE.WebGLRenderer, _unused: null, optio
 let lastPaneRefreshMs = 0;
 
 export function tickDevPanel(
-  renderer: THREE.WebGLRenderer,
+  renderer: WebGLRenderer,
   now: number,
   renderMs: number,
   detectMs: number,
