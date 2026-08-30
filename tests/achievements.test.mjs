@@ -90,3 +90,22 @@ test('win streak achievements use consecutive wins instead of combo', () => {
   assert.equal(isUnlocked('fifteen_streak'), true);
   assert.equal(getStats().bestWinStreak, 15);
 });
+
+test('maps_10 counts unique won maps instead of repeats or losses', () => {
+  resetAchievements();
+
+  for (let index = 0; index < 10; index++) {
+    recordGameEnd(gameState({ hits: 1, mapId: 'repeat-map' }), true, 1_000);
+  }
+  recordGameEnd(gameState({ hits: 1, mapId: 'lost-map' }), false, 1_000);
+  assert.equal(getStats().mapsCompleted, 1);
+  assert.deepEqual(getStats().completedMapIds, ['repeat-map']);
+  assert.equal(isUnlocked('maps_10'), false);
+
+  for (let index = 1; index < 10; index++) {
+    recordGameEnd(gameState({ hits: 1, mapId: `unique-map-${index}` }), true, 1_000);
+  }
+  assert.equal(getStats().mapsCompleted, 10);
+  assert.equal(new Set(getStats().completedMapIds).size, 10);
+  assert.equal(isUnlocked('maps_10'), true);
+});
