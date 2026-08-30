@@ -50,7 +50,6 @@ import {
 } from './input.ts';
 
 import { initKeybindsUI } from './keybinds-ui.ts';
-import { initCreatorPreview3d } from './preview-3d.ts';
 
 let lastCreatorError = '';
 let lastCreatorErrorAt = 0;
@@ -68,6 +67,19 @@ function reportCreatorError(context: string, error: unknown): void {
 
 function runCreatorTask(context: string, task: () => Promise<unknown>): void {
   void Promise.resolve().then(task).catch(error => reportCreatorError(context, error));
+}
+
+function scheduleCreatorPreview3d(): void {
+  const loadPreview = (): void => {
+    void import('./preview-3d.ts')
+      .then(({ initCreatorPreview3d }) => initCreatorPreview3d())
+      .catch(error => reportCreatorError('3d-preview-load', error));
+  };
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(loadPreview, { timeout: 1_500 });
+  } else {
+    setTimeout(loadPreview, 0);
+  }
 }
 
 initPageInterfaceSounds();
@@ -405,7 +417,7 @@ bindMetronome();
 bindShortcutsPanel();
 bindWaveformScroll();
 initKeybindsUI();
-initCreatorPreview3d();
+scheduleCreatorPreview3d();
 initAudioCtx();
 resizeCanvases();
 drawWaveform();
