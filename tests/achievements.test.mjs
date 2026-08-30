@@ -65,3 +65,28 @@ test('no_miss_game requires a won game with hits and no misses', () => {
   assert.equal(isUnlocked('no_miss_game'), true);
   assert.equal(getStats().noMissGames, 1);
 });
+
+test('win streak achievements use consecutive wins instead of combo', () => {
+  resetAchievements();
+
+  recordGameEnd(gameState({ hits: 100, maxCombo: 100 }), true, 1_000);
+  assert.equal(isUnlocked('five_streak'), false);
+  assert.equal(isUnlocked('fifteen_streak'), false);
+
+  for (let index = 0; index < 4; index++) {
+    recordGameEnd(gameState({ hits: 1, mapId: `streak-${index}` }), true, 1_000);
+  }
+  assert.equal(isUnlocked('five_streak'), true);
+  assert.equal(getStats().currentWinStreak, 5);
+  assert.equal(getStats().bestWinStreak, 5);
+
+  recordGameEnd(gameState({ hits: 1 }), false, 1_000);
+  assert.equal(getStats().currentWinStreak, 0);
+  assert.equal(getStats().bestWinStreak, 5);
+
+  for (let index = 0; index < 15; index++) {
+    recordGameEnd(gameState({ hits: 1, mapId: `long-streak-${index}` }), true, 1_000);
+  }
+  assert.equal(isUnlocked('fifteen_streak'), true);
+  assert.equal(getStats().bestWinStreak, 15);
+});
