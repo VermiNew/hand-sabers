@@ -39,3 +39,25 @@ test('tracking session expires after five minutes and reports invalidation', () 
     registry.destroy();
   }
 });
+
+test('tracking session keeps host and phone credentials role-specific', () => {
+  const registry = new TrackingSessionRegistry();
+
+  try {
+    const session = registry.create();
+
+    assert.equal(registry.authenticateHost(session.id, session.phoneToken), null);
+    assert.equal(registry.authenticatePhone(session.id, session.hostToken), null);
+    assert.equal(registry.authenticateHost(session.id, 'invalid-token'), null);
+
+    assert.equal(registry.authenticateHost(session.id, session.hostToken)?.hostConnected, true);
+    assert.equal(registry.authenticateHost(session.id, session.hostToken), null);
+    registry.setDisconnected(session.id, 'host');
+    assert.equal(registry.authenticateHost(session.id, session.hostToken)?.hostConnected, true);
+
+    assert.equal(registry.authenticatePhone(session.id, session.phoneToken)?.phoneConnected, true);
+    assert.equal(registry.authenticatePhone(session.id, session.phoneToken), null);
+  } finally {
+    registry.destroy();
+  }
+});
