@@ -473,7 +473,7 @@ export const contestTranslations = {
         deselectAll: 'Odznacz wszystko',
         contextMenu: 'Otwórz menu kontekstowe',
         loopMarker: 'Przesuń znacznik pętli',
-        zoomCursor: 'Zoom przy kursorze',
+        zoomCursor: 'Skaluj przy kursorze',
         panTimeline: 'Przesuń oś czasu',
         deleteBeat: 'Usuń blok',
       },
