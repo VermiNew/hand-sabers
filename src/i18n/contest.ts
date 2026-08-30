@@ -454,7 +454,7 @@ export const contestTranslations = {
       coachTap: 'Wystukuj bloki w rytmie',
       coachHeld: 'Przytrzymaj klawisze dla długich nut',
       coachHelp: 'Otwórz pełną listę skrótów',
-      dropPreview: 'Space uruchamia podgląd · F/J stawiają bloki',
+      dropPreview: 'Spacja uruchamia podgląd · F/J stawiają bloki',
       overlapWarning: 'Niektóre bloki są zbyt blisko siebie',
       unsupportedFile: 'Nieobsługiwany format pliku: {{name}}. Obsługiwane: audio (.mp3, .ogg, .wav), .json, .zip',
       audioDecodeError: 'Przeglądarka nie potrafi zdekodować tego pliku audio.',

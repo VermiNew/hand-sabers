@@ -40,7 +40,7 @@
   <span id="timecode">00:00.00</span>
   <div class="transport-sep"></div>
 
-  <div class="creator-volume" title="Song volume" data-i18n-title="creator.volumeTitle">
+  <div class="creator-volume" title="Głośność utworu" data-i18n-title="creator.volumeTitle">
     <label for="songVolume" data-i18n="creator.track">UTWÓR</label>
     <input id="songVolume" type="range" min="0" max="100" value="50" step="1">
     <span id="songVolumeValue">50%</span>
@@ -49,18 +49,18 @@
   <div class="transport-sep"></div>
   <div class="bpm-group">
     <label for="bpmInput" class="bpm-label">BPM</label>
-    <input id="bpmInput" type="number" min="20" max="400" step="0.5" placeholder="—" title="Beats per minute" data-i18n-title="creator.bpmTitle">
-    <button class="transport-btn" id="btnTapTempo" title="Tap tempo" data-i18n-title="creator.tapTempoTitle">TAP</button>
+    <input id="bpmInput" type="number" min="20" max="400" step="0.5" placeholder="—" title="Uderzenia na minutę" data-i18n-title="creator.bpmTitle">
+    <button class="transport-btn" id="btnTapTempo" title="Wystukaj tempo" data-i18n-title="creator.tapTempoTitle">TAP</button>
     <!-- #14 Metronome: ticks at the BPM entered above (preview helper, not the calibration one) -->
-    <button class="transport-btn metro-btn" id="btnMetronome" title="Metronome" data-i18n-title="creator.metronomeTitle" aria-pressed="false">
-      <span class="metro-text" data-i18n="creator.metronomeOff">METRO: OFF</span>
+    <button class="transport-btn metro-btn" id="btnMetronome" title="Metronom" data-i18n-title="creator.metronomeTitle" aria-pressed="false">
+      <span class="metro-text" data-i18n="creator.metronomeOff">METRO: WYŁ</span>
     </button>
   </div>
 
   <div class="transport-sep"></div>
   <div class="difficulty-group">
     <label for="difficultyInput" class="difficulty-label" data-i18n="creator.difficulty">TRUDNOŚĆ</label>
-    <select id="difficultyInput" title="Map difficulty" data-i18n-title="creator.difficultyTitle">
+    <select id="difficultyInput" title="Poziom trudności mapy" data-i18n-title="creator.difficultyTitle">
       <option value="" data-i18n="creator.difficultyUnset">NIE USTAWIONO</option>
       <option value="easy" data-i18n="difficulty.easy">Łatwy</option>
       <option value="medium" data-i18n="difficulty.medium">Średni</option>
@@ -83,8 +83,8 @@
   </div>
 
   <div class="transport-sep"></div>
-  <button class="transport-btn" id="btnUndo"><span aria-hidden="true">↩</span> <span data-i18n="creator.undo">UNDO</span></button>
-  <button class="transport-btn" id="btnRedo"><span aria-hidden="true">↪</span> <span data-i18n="creator.redo">REDO</span></button>
+  <button class="transport-btn" id="btnUndo"><span aria-hidden="true">↩</span> <span data-i18n="creator.undo">COFNIJ</span></button>
+  <button class="transport-btn" id="btnRedo"><span aria-hidden="true">↪</span> <span data-i18n="creator.redo">PONÓW</span></button>
   <div class="cut-dir-wrap">
     <button class="transport-btn" id="btnCutDirection">CIĘCIE: •</button>
     <div id="cutDirPanel" class="cut-dir-panel" role="tooltip">
@@ -106,10 +106,10 @@
 
   <div class="transport-spacer"></div>
   <!-- #17 Back to menu: takes the user back to the game menu -->
-  <a class="transport-btn back-menu-btn" id="btnBackMenu" href="./beat-sabers-3d.html" title="Back to menu" data-i18n-title="creator.backMenuTitle">
+  <a class="transport-btn back-menu-btn" id="btnBackMenu" href="./beat-sabers-3d.html" title="Wróć do menu" data-i18n-title="creator.backMenuTitle">
     <span data-i18n="creator.backMenu">MENU</span>
   </a>
-  <button class="transport-btn" id="btnShortcuts" title="Keyboard shortcuts" data-i18n-title="creator.kbTitle">?</button>
+  <button class="transport-btn" id="btnShortcuts" title="Skróty klawiszowe" data-i18n-title="creator.kbTitle">?</button>
 
   <!-- Tap flash indicator -->
   <div id="tapFlash"></div>
@@ -138,7 +138,7 @@
 <!-- SHORTCUTS PANEL -->
 <div id="shortcutsPanel" class="shortcuts-panel hidden">
   <div class="shortcuts-header">
-    <span data-i18n="creator.kbTitle">KEYBOARD SHORTCUTS</span>
+    <span data-i18n="creator.kbTitle">SKRÓTY KLAWISZOWE</span>
     <button id="btnShortcutsClose">✕</button>
   </div>
 
@@ -226,7 +226,7 @@
     </div>
   </div>
 
-  <aside id="creatorPreview3d" aria-label="3D preview of upcoming blocks" data-i18n-aria-label="creator.previewAria">
+  <aside id="creatorPreview3d" aria-label="Podgląd 3D nadchodzących bloków" data-i18n-aria-label="creator.previewAria">
     <div class="creator-preview-title">
       <span data-i18n="creator.preview3d">PODGLĄD 3D</span>
       <span data-i18n="creator.previewWindow">NAJBLIŻSZE 4 SEKUNDY</span>
@@ -243,9 +243,9 @@
       <div data-i18n="creator.dropAudio">Przeciągnij plik MP3 / OGG / WAV</div>
       <div class="drop-hint" data-i18n="creator.dropAudioSub">lub kliknij aby wybrać</div>
       <div class="drop-mini-guide">
-        <span data-i18n="creator.dropPreview">Space previews playback · F/J place blocks</span>
+        <span data-i18n="creator.dropPreview">Spacja uruchamia podgląd · F/J stawiają bloki</span>
         
-        <span><kbd>Ctrl+S</kbd> SAVE</span>
+        <span><kbd>Ctrl+S</kbd> <span data-i18n="creator.save">ZAPISZ</span></span>
       </div>
     </div>
     <input type="file" id="fileInput" accept="audio/*,.json,.zip">
