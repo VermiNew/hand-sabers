@@ -50,7 +50,7 @@
   <div class="bpm-group">
     <label for="bpmInput" class="bpm-label">BPM</label>
     <input id="bpmInput" type="number" min="20" max="400" step="0.5" placeholder="—" title="Uderzenia na minutę" data-i18n-title="creator.bpmTitle">
-    <button class="transport-btn" id="btnTapTempo" title="Wystukaj tempo" data-i18n-title="creator.tapTempoTitle">TAP</button>
+    <button class="transport-btn" id="btnTapTempo" title="Wystukaj tempo" data-i18n-title="creator.tapTempoTitle" data-i18n="creator.tapTempo">WYSTUKAJ</button>
     <!-- #14 Metronome: ticks at the BPM entered above (preview helper, not the calibration one) -->
     <button class="transport-btn metro-btn" id="btnMetronome" title="Metronom" data-i18n-title="creator.metronomeTitle" aria-pressed="false">
       <span class="metro-text" data-i18n="creator.metronomeOff">METRO: WYŁ</span>
@@ -156,8 +156,8 @@
         <div class="shortcut-row"><kbd>Shift+R</kbd><span data-i18n="creator.kbActions.stop">Zatrzymaj (wróć na początek)</span></div>
         <div class="shortcut-row"><kbd>Home</kbd><span data-i18n="creator.kbActions.jumpStart">Skocz na początek</span></div>
         <div class="shortcut-row"><kbd>End</kbd><span data-i18n="creator.kbActions.jumpEnd">Skocz na koniec</span></div>
-        <div class="shortcut-row"><kbd>Tab</kbd><span data-i18n="creator.kbActions.nextBeat">Następny beat</span></div>
-        <div class="shortcut-row"><kbd>Shift+Tab</kbd><span data-i18n="creator.kbActions.prevBeat">Poprzedni beat</span></div>
+        <div class="shortcut-row"><kbd>Tab</kbd><span data-i18n="creator.kbActions.nextBeat">Następny blok</span></div>
+        <div class="shortcut-row"><kbd>Shift+Tab</kbd><span data-i18n="creator.kbActions.prevBeat">Poprzedni blok</span></div>
       </div>
       <div class="shortcuts-col">
         <div class="shortcuts-section" data-i18n="creator.kbGroups.Tapping">WSTAWIANIE</div>
