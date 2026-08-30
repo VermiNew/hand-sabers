@@ -600,6 +600,17 @@
       "cutDir8": "Cut 8: ↑ up",
       "cutDir9": "Cut 9: ↗ up-right"
     },
+    "cutLabels": {
+      "upLeft": "7 ↖ up-left",
+      "up": "8 ↑ up",
+      "upRight": "9 ↗ up-right",
+      "left": "4 ← left",
+      "any": "5 • any",
+      "right": "6 → right",
+      "downLeft": "1 ↙ down-left",
+      "down": "2 ↓ down",
+      "downRight": "3 ↘ down-right"
+    },
     "kbHints": {
       "heldLeft": "hold during recording",
       "heldRight": "hold during recording"

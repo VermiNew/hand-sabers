@@ -594,11 +594,22 @@
       "cutDir2": "Cięcie 2: ↓ dół",
       "cutDir3": "Cięcie 3: ↘ prawo-dół",
       "cutDir4": "Cięcie 4: ← lewo",
-      "cutDir5": "Cięcie 5: • any",
+      "cutDir5": "Cięcie 5: • dowolne",
       "cutDir6": "Cięcie 6: → prawo",
       "cutDir7": "Cięcie 7: ↖ lewo-góra",
       "cutDir8": "Cięcie 8: ↑ góra",
       "cutDir9": "Cięcie 9: ↗ prawo-góra"
+    },
+    "cutLabels": {
+      "upLeft": "7 ↖ lewo-góra",
+      "up": "8 ↑ góra",
+      "upRight": "9 ↗ prawo-góra",
+      "left": "4 ← lewo",
+      "any": "5 • dowolne",
+      "right": "6 → prawo",
+      "downLeft": "1 ↙ lewo-dół",
+      "down": "2 ↓ dół",
+      "downRight": "3 ↘ prawo-dół"
     },
     "kbHints": {
       "heldLeft": "trzymaj podczas nagrywania",
