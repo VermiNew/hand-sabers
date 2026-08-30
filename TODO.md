@@ -391,7 +391,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 
 ### P3 — jakość produkcyjna
 
-- [ ] Ograniczyć rozmiar początkowego bundla Three.js (około 723 kB / 184 kB gzip) przez świadome ładowanie ekranów/modułów i budżet rozmiaru w CI.
+- [x] Ograniczyć rozmiar początkowego bundla Three.js (około 723 kB / 184 kB gzip) przez świadome ładowanie ekranów/modułów i budżet rozmiaru w CI. — jawne importy diagnostyki umożliwiły tree-shaking do około 528 kB / 132 kB gzip, podgląd 3D kreatora ładuje się leniwie bez `modulepreload`, a każdy build egzekwuje budżet 550 KiB raw / 140 KiB gzip i brak ponownego preloadu.
 - [ ] Ujednolicić polskie teksty UI, diakrytykę oraz format czasu w kreatorze; dodać rzeczywisty check kompletności i18n dla wywołań `t()`.
 - [x] Dodać `SECURITY.md` z zakresem wsparcia, kanałem zgłoszeń i właściwościami bezpieczeństwa wymaganymi dla wdrożenia publicznego. — rootowa polityka wskazuje prywatne GitHub Security Advisories, granice zaufania, invariants, kontekst severity, wymagania przed wdrożeniem publicznym oraz znane i zaakceptowane ograniczenia bez blanket suppression.
 
