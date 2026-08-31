@@ -332,7 +332,7 @@ applyPauseTranslations();
 bindComboNarrator();
 
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
-ui.ovBtnMaps?.addEventListener('click',   () => { openMapPicker(); });
+ui.ovBtnMaps?.addEventListener('click',   () => { openMapPicker(ui.ovBtnMaps); });
 ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
 ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', () => calibrationController.advance()); });
 ui.calibBtnRetry?.addEventListener('click', () => { initAudio(); restartGame(); });
@@ -344,8 +344,9 @@ document.getElementById('pauseRestart')?.addEventListener('click', () => {
   hidePauseMenu();
   restartWithoutCalib();
 });
-document.getElementById('pauseMaps')?.addEventListener('click', () => {
-  openMapPicker();
+const pauseMapsButton = document.getElementById('pauseMaps');
+pauseMapsButton?.addEventListener('click', () => {
+  openMapPicker(pauseMapsButton);
 });
 
 function returnToMainMenu(): void {
@@ -483,7 +484,7 @@ function initMainMenu(): void {
           text: t('narrator.selectMap'),
           buttons: [t('narrator.openMaps'), t('narrator.cancel')],
         });
-        if (choice === 0) openMapPicker();
+        if (choice === 0) openMapPicker(document.getElementById('mainStart'));
       });
       return;
     }
@@ -505,7 +506,7 @@ function initMainMenu(): void {
     runAsyncTask('calibration-start', () => startFromMainMenu({ calibrate: true }));
   });
   menuShell.bindAction('mainMaps', () => {
-    openMapPicker();
+    openMapPicker(document.getElementById('mainMaps'));
   });
 
   const settingsBindingsController = initSettingsBindings({

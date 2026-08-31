@@ -621,10 +621,11 @@ async function importMapFile(file: File): Promise<void> {
 
 // -- Overlay control --
 
-function openOverlay(): void {
+function openOverlay(returnFocusTo?: HTMLElement | null): void {
   const overlay = element<HTMLElement>('mapPickerOverlay');
   if (!overlay || !overlay.hidden) return;
-  returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  returnFocus = returnFocusTo
+    ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
   overlay.hidden = false;
   pushFocusTrap(overlay);
   translateDom(overlay);
@@ -702,6 +703,6 @@ export function initMapPickerOverlay(): void {
   });
 }
 
-export function openMapPicker(): void {
-  openOverlay();
+export function openMapPicker(returnFocusTo?: HTMLElement | null): void {
+  openOverlay(returnFocusTo);
 }
