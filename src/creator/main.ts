@@ -271,6 +271,7 @@ function setBpm(bpm: number): void {
   state.map.meta.bpm = bpm > 0 ? bpm : 120;
   const input = document.getElementById('bpmInput') as HTMLInputElement | null;
   if (input) input.value = String(state.map.meta.bpm);
+  scheduleAutosave();
   renderAll();
 }
 
@@ -284,6 +285,7 @@ function bindBpm(): void {
       const v = parseFloat(bpmInput.value);
       if (isFinite(v) && v >= 20 && v <= 400) {
         state.map.meta.bpm = v;
+        scheduleAutosave();
         renderAll();
       }
     });
