@@ -2,7 +2,7 @@ import { t, translateDom } from '../i18n/index.ts';
 import { loadLocalMapAudio, readLocalMaps, readLocalScores } from '../core/localstore.ts';
 import { getCanonicalMapAudioUrl, normalizeMap } from '../core/map-format.ts';
 import { importMapLocally, importMapToServer } from '../core/map-import.ts';
-import { getSettings } from '../core/settings.ts';
+import { getSettings, setSetting } from '../core/settings.ts';
 import {
   recommendLearningCurveMap,
   type LearningCurveRecommendation,
@@ -80,6 +80,7 @@ let allMaps: MapEntry[] = [];
 let selectedId: string | null = null;
 let activeDiff = 'all';
 let activeSort = 'newest';
+let favoritesOnly = false;
 let searchQuery = '';
 let loading = false;
 let initialized = false;
@@ -339,6 +340,7 @@ function mergeMaps(server: MapEntry[], local: MapEntry[]): MapEntry[] {
 
 function getFilteredMaps(): MapEntry[] {
   let maps = [...allMaps];
+  const favoriteIds = new Set(getSettings().favoriteMapIds);
   const query = searchQuery.trim().toLocaleLowerCase();
   if (query) {
     maps = maps.filter(m => {
@@ -352,15 +354,15 @@ function getFilteredMaps(): MapEntry[] {
   if (activeDiff !== 'all') {
     maps = maps.filter(m => (m.meta?.difficulty ?? '').toLowerCase() === activeDiff);
   }
-  if (activeSort === 'alpha') {
-    maps.sort((a, b) => (a.meta?.title ?? a.id).localeCompare(b.meta?.title ?? b.id));
-  } else if (activeSort === 'beats') {
-    maps.sort((a, b) => (b.beats?.length ?? 0) - (a.beats?.length ?? 0));
-  } else if (activeSort === 'score') {
-    maps.sort((a, b) => (getMapScoreData(b.id).best?.score ?? 0) - (getMapScoreData(a.id).best?.score ?? 0));
-  } else {
-    maps.sort((a, b) => (b.updatedAt ?? '').localeCompare(a.updatedAt ?? ''));
-  }
+  if (favoritesOnly) maps = maps.filter(map => favoriteIds.has(map.id));
+  maps.sort((a, b) => {
+    const favoriteOrder = Number(favoriteIds.has(b.id)) - Number(favoriteIds.has(a.id));
+    if (favoriteOrder !== 0) return favoriteOrder;
+    if (activeSort === 'alpha') return (a.meta?.title ?? a.id).localeCompare(b.meta?.title ?? b.id);
+    if (activeSort === 'beats') return (b.beats?.length ?? 0) - (a.beats?.length ?? 0);
+    if (activeSort === 'score') return (getMapScoreData(b.id).best?.score ?? 0) - (getMapScoreData(a.id).best?.score ?? 0);
+    return (b.updatedAt ?? '').localeCompare(a.updatedAt ?? '');
+  });
   return maps;
 }
 
@@ -376,6 +378,7 @@ function renderMapList(list: HTMLElement): void {
   }
   for (const map of maps) {
     const isRecommended = learningRecommendation?.mapId === map.id;
+    const isFavorite = getSettings().favoriteMapIds.includes(map.id);
     const card = document.createElement('button');
     card.type = 'button';
     card.className = `mp-map-card${map.id === selectedId ? ' is-selected' : ''}${isRecommended ? ' is-recommended' : ''}`;
@@ -405,7 +408,15 @@ function renderMapList(list: HTMLElement): void {
     const check = document.createElement('span');
     check.className = 'material-symbols-rounded mp-map-card-check';
     check.textContent = map.id === selectedId ? 'check_circle' : 'chevron_right';
-    card.append(icon, content, check);
+    card.append(icon, content);
+    if (isFavorite) {
+      const favorite = document.createElement('span');
+      favorite.className = 'material-symbols-rounded mp-map-card-favorite';
+      favorite.setAttribute('aria-label', t('maps.favorite'));
+      favorite.textContent = 'star';
+      card.append(favorite);
+    }
+    card.append(check);
     card.addEventListener('click', () => selectMap(map.id, { openDetail: true }));
     list.append(card);
   }
@@ -514,6 +525,26 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
   // Play button
   const actions = document.createElement('div');
   actions.className = 'mp-detail-actions';
+  const favoriteBtn = document.createElement('button');
+  favoriteBtn.className = 'mp-detail-favorite';
+  favoriteBtn.type = 'button';
+  const syncFavoriteButton = (): void => {
+    const favorite = getSettings().favoriteMapIds.includes(map.id);
+    favoriteBtn.classList.toggle('is-favorite', favorite);
+    favoriteBtn.setAttribute('aria-pressed', String(favorite));
+    favoriteBtn.setAttribute('aria-label', t(favorite ? 'maps.favoriteRemove' : 'maps.favoriteAdd'));
+    favoriteBtn.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">star</span>';
+  };
+  syncFavoriteButton();
+  favoriteBtn.addEventListener('click', () => {
+    const favoriteIds = new Set(getSettings().favoriteMapIds);
+    if (favoriteIds.has(map.id)) favoriteIds.delete(map.id);
+    else favoriteIds.add(map.id);
+    setSetting('favoriteMapIds', [...favoriteIds]);
+    syncFavoriteButton();
+    const list = element<HTMLElement>('mpMapList');
+    if (list) renderMapList(list);
+  });
   const playBtn = document.createElement('button');
   playBtn.className = 'mp-detail-play';
   playBtn.type = 'button';
@@ -522,7 +553,7 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
     window.dispatchEvent(new CustomEvent('hand-sabers:map-selected', { detail: { mapId: map.id } }));
     closeOverlay();
   });
-  actions.append(playBtn);
+  actions.append(favoriteBtn, playBtn);
   detailPane.append(actions);
 }
 
@@ -699,6 +730,7 @@ export function initMapPickerOverlay(): void {
   const sortSelect = element<HTMLSelectElement>('mpSort');
   const importButton = element<HTMLButtonElement>('mpImport');
   const importInput = element<HTMLInputElement>('mpImportInput');
+  const favoritesButton = element<HTMLButtonElement>('mpFavorites');
   if (!overlay || !closeBtn || !searchInput || !sortSelect) return;
   // Close
   closeBtn.addEventListener('click', closeOverlay);
@@ -729,14 +761,21 @@ export function initMapPickerOverlay(): void {
     importInput.value = '';
   });
   // Difficulty filters
-  document.querySelectorAll<HTMLElement>('.mp-diff-chip').forEach(chip => {
+  document.querySelectorAll<HTMLElement>('.mp-diff-chip[data-diff]').forEach(chip => {
     chip.addEventListener('click', () => {
-      document.querySelectorAll('.mp-diff-chip').forEach(c => c.classList.remove('is-active'));
+      document.querySelectorAll('.mp-diff-chip[data-diff]').forEach(c => c.classList.remove('is-active'));
       chip.classList.add('is-active');
       activeDiff = chip.dataset['diff'] ?? 'all';
       const list = element<HTMLElement>('mpMapList');
       if (list) renderMapList(list);
     });
+  });
+  favoritesButton?.addEventListener('click', () => {
+    favoritesOnly = !favoritesOnly;
+    favoritesButton.classList.toggle('is-active', favoritesOnly);
+    favoritesButton.setAttribute('aria-pressed', String(favoritesOnly));
+    const list = element<HTMLElement>('mpMapList');
+    if (list) renderMapList(list);
   });
 }
 
