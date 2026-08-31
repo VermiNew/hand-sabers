@@ -1,4 +1,5 @@
 import { state } from './state.ts';
+import { formatCreatorTime } from './time-format.ts';
 
 export function drawWaveform(): void {
   const canvas = document.getElementById('waveCanvas') as HTMLCanvasElement | null;
@@ -133,13 +134,11 @@ function redrawWaveformWithCursor(canvas: HTMLCanvasElement, hoverX: number): vo
 
     // Time tooltip
     const t = (hoverX / w) * state.audioBuffer.duration;
-    const m = Math.floor(t / 60);
-    const s = (t % 60).toFixed(1);
     ctx.fillStyle    = 'rgba(226,232,240,0.75)';
     ctx.font         = '9px JetBrains Mono';
     ctx.textBaseline = 'top';
     ctx.textAlign    = hoverX > w * 0.8 ? 'right' : 'left';
-    ctx.fillText(`${m}:${String(Math.floor(Number(s))).padStart(2,'0')}.${s.slice(-1)}`, hoverX + (hoverX > w * 0.8 ? -4 : 4), 3);
+    ctx.fillText(formatCreatorTime(t, true), hoverX + (hoverX > w * 0.8 ? -4 : 4), 3);
     ctx.textBaseline = 'alphabetic';
   }
 }
