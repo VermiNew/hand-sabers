@@ -405,7 +405,7 @@ function renderMapList(list: HTMLElement): void {
     check.className = 'material-symbols-rounded mp-map-card-check';
     check.textContent = map.id === selectedId ? 'check_circle' : 'chevron_right';
     card.append(icon, content, check);
-    card.addEventListener('click', () => selectMap(map.id));
+    card.addEventListener('click', () => selectMap(map.id, { openDetail: true }));
     list.append(card);
   }
 }
@@ -441,6 +441,20 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
     detailPane.append(empty);
     return;
   }
+  const backButton = document.createElement('button');
+  backButton.className = 'mp-detail-back';
+  backButton.type = 'button';
+  backButton.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>';
+  const backLabel = document.createElement('span');
+  backLabel.textContent = t('mapPicker.backToList');
+  backButton.append(backLabel);
+  backButton.addEventListener('click', () => {
+    element<HTMLElement>('mapPickerOverlay')?.querySelector('.mp-overlay-body')?.classList.remove('is-detail-open');
+    const selectedCard = Array.from(document.querySelectorAll<HTMLButtonElement>('#mpMapList .mp-map-card'))
+      .find(card => card.dataset['mapId'] === map.id);
+    selectedCard?.focus({ preventScroll: true });
+  });
+  detailPane.append(backButton);
   const title = document.createElement('div');
   title.className = 'mp-detail-title';
   title.textContent = cleanText(map.meta?.title, map.id);
@@ -511,7 +525,7 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
   detailPane.append(actions);
 }
 
-function selectMap(mapId: string): void {
+function selectMap(mapId: string, { openDetail = false } = {}): void {
   stopPreview();
   selectedId = mapId;
   const list = element<HTMLElement>('mpMapList');
@@ -520,6 +534,12 @@ function selectMap(mapId: string): void {
   if (detailPane) {
     const map = allMaps.find(m => m.id === mapId);
     renderDetail(detailPane, map);
+  }
+  const body = element<HTMLElement>('mapPickerOverlay')?.querySelector('.mp-overlay-body');
+  const shouldOpenDetail = openDetail && window.matchMedia('(max-width: 700px)').matches;
+  body?.classList.toggle('is-detail-open', shouldOpenDetail);
+  if (shouldOpenDetail) {
+    requestAnimationFrame(() => detailPane?.querySelector<HTMLButtonElement>('.mp-detail-back')?.focus({ preventScroll: true }));
   }
 }
 
@@ -608,7 +628,7 @@ async function importMapFile(file: File): Promise<void> {
       }
     }
     await loadMaps();
-    selectMap(importedId);
+    selectMap(importedId, { openDetail: true });
     const source = importSource === 'server' ? 'mapPicker.importedServer' : 'mapPicker.importedLocal';
     const message = t(source, { id: importedId });
     showImportStatus(importedWithAudio ? `${message} ${t('mapPicker.importedAudio')}` : message, 'success');
@@ -626,6 +646,7 @@ function openOverlay(returnFocusTo?: HTMLElement | null): void {
   if (!overlay || !overlay.hidden) return;
   returnFocus = returnFocusTo
     ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+  overlay.querySelector('.mp-overlay-body')?.classList.remove('is-detail-open');
   overlay.hidden = false;
   pushFocusTrap(overlay);
   translateDom(overlay);
@@ -642,6 +663,7 @@ function closeOverlay(): void {
   const overlay = element<HTMLElement>('mapPickerOverlay');
   if (!overlay || overlay.hidden) return;
   stopPreview();
+  overlay.querySelector('.mp-overlay-body')?.classList.remove('is-detail-open');
   overlay.hidden = true;
   popFocusTrap(overlay);
   const focusTarget = returnFocus;
