@@ -162,28 +162,54 @@ export async function loadZipFile(
   const jsonFile  = zip.file('map.json');
   if (!jsonFile) throw new Error('Archiwum ZIP nie zawiera pliku map.json');
   const loadedMap = JSON.parse(await readZipEntryText(jsonFile, outputBudget)) as Record<string, unknown>;
-  state.map = normalizeMap(
+  const nextMap = normalizeMap(
     { id: (loadedMap['id'] as string | undefined) || MAP_ID(), ...loadedMap },
     { fallbackId: MAP_ID(), requireBeats: false },
   ) as unknown as CreatorMap;
+  sortBeatsByTime(nextMap.beats);
+
+  const audioFile = findPreferredAudioEntry(entries, nextMap.meta?.audioFile);
+  const audioData = audioFile ? await readZipEntryArrayBuffer(audioFile, outputBudget) : null;
+  const previousState = {
+    map: state.map,
+    selectedBeats: [...state.selectedBeats],
+    undoStack: [...state.undoStack],
+    redoStack: [...state.redoStack],
+    audioBuffer: state.audioBuffer,
+    audioArrayBuffer: state.audioArrayBuffer,
+    audioFileName: state.audioFileName,
+    audioMimeType: state.audioMimeType,
+  };
+
+  state.map = nextMap;
   state.undoStack.length = 0;
   state.redoStack.length = 0;
-
-  sortBeatsByTime(state.map.beats);
   state.selectedBeats.clear();
 
-  const audioFile = findPreferredAudioEntry(entries, state.map.meta?.audioFile);
-  if (audioFile) {
-    await decodeAndAttachAudio(
-      await readZipEntryArrayBuffer(audioFile, outputBudget),
-      {
-        fileName:    audioFile.name.split('/').pop() ?? audioFile.name,
-        mimeType:    'application/octet-stream',
-        updateTitle: false,
-        keepMapId:   true,
-      },
-      callbacks,
-    );
+  try {
+    if (audioFile && audioData) {
+      await decodeAndAttachAudio(
+        audioData,
+        {
+          fileName:    audioFile.name.split('/').pop() ?? audioFile.name,
+          mimeType:    'application/octet-stream',
+          updateTitle: false,
+          keepMapId:   true,
+        },
+        callbacks,
+      );
+    }
+  } catch (error) {
+    state.map = previousState.map;
+    state.selectedBeats.clear();
+    previousState.selectedBeats.forEach(beat => state.selectedBeats.add(beat));
+    state.undoStack.splice(0, state.undoStack.length, ...previousState.undoStack);
+    state.redoStack.splice(0, state.redoStack.length, ...previousState.redoStack);
+    state.audioBuffer = previousState.audioBuffer;
+    state.audioArrayBuffer = previousState.audioArrayBuffer;
+    state.audioFileName = previousState.audioFileName;
+    state.audioMimeType = previousState.audioMimeType;
+    throw error;
   }
 
   const dropZone   = document.getElementById('dropZone');
