@@ -345,7 +345,6 @@ document.getElementById('pauseRestart')?.addEventListener('click', () => {
   restartWithoutCalib();
 });
 document.getElementById('pauseMaps')?.addEventListener('click', () => {
-  hidePauseMenu();
   openMapPicker();
 });
 
