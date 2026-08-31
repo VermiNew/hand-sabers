@@ -16,7 +16,13 @@ const trapStack: HTMLElement[] = [];
 
 function getFocusable(root: HTMLElement): HTMLElement[] {
   return Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter(
-    el => !el.closest('[hidden]') && getComputedStyle(el).display !== 'none',
+    el => {
+      const style = getComputedStyle(el);
+      return !el.closest('[hidden]')
+        && style.display !== 'none'
+        && style.visibility !== 'hidden'
+        && el.getClientRects().length > 0;
+    },
   );
 }
 
