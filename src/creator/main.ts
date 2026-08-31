@@ -1,7 +1,7 @@
 import { AUDIO_EXT_RE, assertFileSize, normalizeMap } from '../core/map-format.ts';
 import { validateAudioFile } from '../core/audio-validation.ts';
 import { sortBeatsByTime } from '../core/creator-rules.ts';
-import { getLocalMapById, saveLocalMap } from '../core/localstore.ts';
+import { getLocalMapById } from '../core/localstore.ts';
 import { showAlert, showToast } from './dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initRemoteTrackingHost } from '../remote/host-session.ts';
@@ -39,6 +39,7 @@ import {
   exportZip,
   loadZipFile,
   loadInitialMap,
+  saveCreatorMapLocally,
 } from './storage.ts';
 
 import {
@@ -211,7 +212,7 @@ async function handleFile(file: File): Promise<void> {
         const warningMsg = document.getElementById('warningMsg');
         if (warningMsg) warningMsg.textContent = t('creator.noAudioWarning');
       }
-      saveLocalMap(state.map as unknown as Parameters<typeof saveLocalMap>[0]);
+      saveCreatorMapLocally();
       renderAll();
       showToast(t('creator.mapJsonLoaded'), { type: 'success' });
     } else if (lowerName.endsWith('.zip')) {

@@ -25,6 +25,18 @@ function clearAutosaveTimers(): void {
   state.autosaveMaxTimer = null;
 }
 
+export function saveCreatorMapLocally(mapToSave: CreatorMap = state.map): boolean {
+  try {
+    saveLocalMap(mapToSave as unknown as Parameters<typeof saveLocalMap>[0]);
+    return true;
+  } catch (error) {
+    console.warn('Local map save failed:', error);
+    const autosaveLabel = document.getElementById('autosaveLabel');
+    if (autosaveLabel) autosaveLabel.textContent = t('creator.autosaveFailed');
+    return false;
+  }
+}
+
 export function scheduleAutosave(onAutosaved?: () => void): void {
   if (state.autosaveTimer) clearTimeout(state.autosaveTimer);
   state.autosaveTimer = setTimeout(() => { autoSaveToLocalStorage(onAutosaved); }, AUTOSAVE_DEBOUNCE_MS);
@@ -93,7 +105,7 @@ function downloadMapJsonFallback(mapToDownload: CreatorMap): void {
 
 export async function saveMap(): Promise<void> {
   state.map = normalizeMap(state.map, { fallbackId: state.map.id, requireBeats: false }) as unknown as CreatorMap;
-  saveLocalMap(state.map as unknown as Parameters<typeof saveLocalMap>[0]);
+  saveCreatorMapLocally();
   if (state.audioArrayBuffer) {
     try {
       await saveLocalMapAudio(state.map.id, state.audioArrayBuffer!.slice(0) as ArrayBuffer, {
@@ -109,7 +121,7 @@ export async function saveMap(): Promise<void> {
     const saved = await saveMapToServer(state.map);
     if (saved?.['map']) {
       state.map = normalizeMap(saved['map'] as object, { fallbackId: state.map.id, requireBeats: false }) as unknown as CreatorMap;
-      saveLocalMap(state.map as unknown as Parameters<typeof saveLocalMap>[0]);
+      saveCreatorMapLocally();
     }
     state.lastSavedAt = new Date();
     if (autosaveLbl) autosaveLbl.textContent = `${t('creator.autosaveServer')}: ${state.lastSavedAt.toLocaleTimeString()} (${String(saved['id'] ?? '')})`;
@@ -221,7 +233,7 @@ export async function loadZipFile(
     const dur = state.map.meta?.duration ?? state.audioBuffer?.duration ?? 0;
     songDurEl.textContent = formatCreatorTime(dur);
   }
-  saveLocalMap(state.map as unknown as Parameters<typeof saveLocalMap>[0]);
+  saveCreatorMapLocally();
 }
 
 export async function loadInitialMap(callbacks: {
