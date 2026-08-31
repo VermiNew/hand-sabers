@@ -190,6 +190,8 @@ async function handleFile(file: File): Promise<void> {
         { id: (loaded['id'] as string | undefined) || MAP_ID(), ...loaded },
         { fallbackId: MAP_ID(), requireBeats: false },
       ) as unknown as CreatorMap;
+      state.undoStack.length = 0;
+      state.redoStack.length = 0;
       syncDifficultyInput();
       updateDifficultySuggestion();
       sortBeatsByTime(state.map.beats);

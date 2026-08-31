@@ -166,6 +166,8 @@ export async function loadZipFile(
     { id: (loadedMap['id'] as string | undefined) || MAP_ID(), ...loadedMap },
     { fallbackId: MAP_ID(), requireBeats: false },
   ) as unknown as CreatorMap;
+  state.undoStack.length = 0;
+  state.redoStack.length = 0;
 
   sortBeatsByTime(state.map.beats);
   state.selectedBeats.clear();
