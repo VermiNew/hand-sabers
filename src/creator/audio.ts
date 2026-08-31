@@ -126,7 +126,13 @@ export async function decodeAndAttachAudio(
   const dropZone = document.getElementById('dropZone');
   if (dropZone) dropZone.classList.add('hidden');
 
-  await saveLocalMapAudio(state.map.id, state.audioArrayBuffer!.slice(0) as ArrayBuffer, { fileName, mimeType });
+  try {
+    await saveLocalMapAudio(state.map.id, state.audioArrayBuffer!.slice(0) as ArrayBuffer, { fileName, mimeType });
+  } catch (error) {
+    console.warn('Local audio save failed:', error);
+    const autosaveLabel = document.getElementById('autosaveLabel');
+    if (autosaveLabel) autosaveLabel.textContent = t('creator.autosaveAudioFailed');
+  }
 }
 
 export async function loadAudioFile(file: File, callbacks: { onDecoded: () => void }): Promise<void> {
