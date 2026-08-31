@@ -1,6 +1,7 @@
 import { markOverlaps, sortBeatsByTime } from '../core/creator-rules.ts';
 import { t } from '../i18n/index.ts';
 import { state } from './state.ts';
+import { scheduleAutosave } from './storage.ts';
 import { renderAll } from './timeline.ts';
 
 const MAX_UNDO = 60;
@@ -29,6 +30,7 @@ export function undo(): void {
   state.selectedBeats.clear();
   checkOverlaps();
   renderAll();
+  scheduleAutosave();
 }
 
 export function redo(): void {
@@ -38,4 +40,5 @@ export function redo(): void {
   state.selectedBeats.clear();
   checkOverlaps();
   renderAll();
+  scheduleAutosave();
 }
