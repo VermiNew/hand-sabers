@@ -5,11 +5,19 @@ import { formatCreatorTime } from './time-format.ts';
 
 export function renderAll(): void {
   state.timelineDirty = false;
+  updateHistoryControls();
   renderRuler();
   renderTimeline();
   renderPlayhead();
   updateTimecode();
   updateStatus();
+}
+
+function updateHistoryControls(): void {
+  const undoButton = document.getElementById('btnUndo') as HTMLButtonElement | null;
+  const redoButton = document.getElementById('btnRedo') as HTMLButtonElement | null;
+  if (undoButton) undoButton.disabled = state.undoStack.length === 0;
+  if (redoButton) redoButton.disabled = state.redoStack.length === 0;
 }
 
 export function requestTimelineRender(): void {

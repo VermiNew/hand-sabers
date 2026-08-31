@@ -156,6 +156,7 @@ body {
 .transport-btn:hover  { border-color:rgba(47,124,255,0.5); color:rgba(210,225,255,0.9); background:rgba(47,124,255,0.05); }
 .transport-btn.active { border-color:rgba(54,242,161,0.5); color:var(--accent); background:rgba(54,242,161,0.07); }
 .transport-btn:focus-visible { outline:2px solid rgba(47,124,255,0.5); outline-offset:1px; }
+.transport-btn:disabled { opacity:0.38; cursor:not-allowed; }
 
 .transport-btn.play-stop {
   border-color:rgba(47,124,255,0.55); color:var(--main);
