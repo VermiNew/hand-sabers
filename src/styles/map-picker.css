@@ -3,6 +3,12 @@
 #mapPickerOverlay{position:fixed;inset:0;z-index:9000;display:flex;align-items:stretch;justify-content:center;background:rgba(3,5,10,0.82);backdrop-filter:blur(10px);animation:mp-fade-in .22s ease}
 #mapPickerOverlay[hidden]{display:none!important}
 @keyframes mp-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes mp-fade-out{from{opacity:1}to{opacity:0}}
+#mapPickerOverlay.is-closing{pointer-events:none;animation:mp-fade-out .16s ease forwards}
+
+@media(prefers-reduced-motion:reduce){
+  #mapPickerOverlay,#mapPickerOverlay.is-closing{animation:none}
+}
 
 #mapPickerOverlay .mp-overlay-panel{width:min(100%,920px);height:min(100%,720px);margin:auto;display:flex;flex-direction:column;background:var(--panel,rgba(7,17,29,0.96));border:1px solid var(--border,rgba(148,163,184,0.14));border-radius:14px;overflow:hidden}
 

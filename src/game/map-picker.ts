@@ -85,6 +85,7 @@ let loading = false;
 let initialized = false;
 let importing = false;
 let returnFocus: HTMLElement | null = null;
+let closeTimer: number | null = null;
 let learningRecommendation: LearningCurveRecommendation | null = null;
 const PREVIEW_MAX_SECONDS = 30;
 let previewAudio: HTMLAudioElement | null = null;
@@ -644,6 +645,9 @@ async function importMapFile(file: File): Promise<void> {
 function openOverlay(returnFocusTo?: HTMLElement | null): void {
   const overlay = element<HTMLElement>('mapPickerOverlay');
   if (!overlay || !overlay.hidden) return;
+  if (closeTimer !== null) window.clearTimeout(closeTimer);
+  closeTimer = null;
+  overlay.classList.remove('is-closing');
   returnFocus = returnFocusTo
     ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
   overlay.querySelector('.mp-overlay-body')?.classList.remove('is-detail-open');
@@ -659,17 +663,28 @@ function openOverlay(returnFocusTo?: HTMLElement | null): void {
   element<HTMLInputElement>('mpSearch')?.focus({ preventScroll: true });
 }
 
-function closeOverlay(): void {
-  const overlay = element<HTMLElement>('mapPickerOverlay');
-  if (!overlay || overlay.hidden) return;
-  stopPreview();
-  overlay.querySelector('.mp-overlay-body')?.classList.remove('is-detail-open');
+function finishClosingOverlay(overlay: HTMLElement): void {
+  closeTimer = null;
   overlay.hidden = true;
+  overlay.classList.remove('is-closing');
   popFocusTrap(overlay);
   const focusTarget = returnFocus;
   returnFocus = null;
   if (focusTarget?.isConnected && focusTarget.getClientRects().length > 0 && !focusTarget.matches('[hidden], :disabled')) {
     focusTarget.focus({ preventScroll: true });
+  }
+}
+
+function closeOverlay(): void {
+  const overlay = element<HTMLElement>('mapPickerOverlay');
+  if (!overlay || overlay.hidden || overlay.classList.contains('is-closing')) return;
+  stopPreview();
+  overlay.querySelector('.mp-overlay-body')?.classList.remove('is-detail-open');
+  overlay.classList.add('is-closing');
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    finishClosingOverlay(overlay);
+  } else {
+    closeTimer = window.setTimeout(() => finishClosingOverlay(overlay), 180);
   }
 }
 
