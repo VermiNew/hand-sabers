@@ -33,6 +33,7 @@ globalThis.localStorage = new MemoryStorage();
 globalThis.window = new EventTarget();
 
 const {
+  getAllAchievements,
   getStats,
   initAchievements,
   isUnlocked,
@@ -177,4 +178,57 @@ test('perfect_accuracy requires both accuracy and a meaningful sample', () => {
 
   updateStats({ totalHits: 50, perfectHits: 25 });
   assert.equal(isUnlocked('perfect_accuracy'), true);
+});
+
+test('every achievement has a regression-tested locked and unlocked boundary', () => {
+  resetAchievements();
+  const emptyStats = getStats();
+  const boundaryCases = [
+    ['first_game', 'totalGames', 1],
+    ['ten_games', 'totalGames', 10],
+    ['fifty_games', 'totalGames', 50],
+    ['first_hit', 'totalHits', 1],
+    ['hundred_hits', 'totalHits', 100],
+    ['thousand_hits', 'totalHits', 1_000],
+    ['combo_50', 'maxCombo', 50],
+    ['combo_100', 'maxCombo', 100],
+    ['combo_250', 'maxCombo', 250],
+    ['combo_500', 'maxCombo', 500],
+    ['first_win', 'gamesWon', 1],
+    ['ten_wins', 'gamesWon', 10],
+    ['no_miss_game', 'noMissGames', 1],
+    ['bomb_hitter', 'bombHits', 10],
+    ['five_streak', 'bestWinStreak', 5],
+    ['fifteen_streak', 'bestWinStreak', 15],
+    ['maps_10', 'mapsCompleted', 10],
+    ['play_1h', 'totalPlayTimeMs', 3_600_000],
+    ['play_10h', 'totalPlayTimeMs', 36_000_000],
+    ['score_100k', 'totalScore', 100_000],
+    ['score_500k', 'totalScore', 500_000],
+    ['score_1m', 'totalScore', 1_000_000],
+    ['mp_first_game', 'multiplayerGamesPlayed', 1],
+    ['mp_ten_games', 'multiplayerGamesPlayed', 10],
+    ['mp_first_win', 'multiplayerWins', 1],
+    ['mp_coop_master', 'coopWins', 5],
+    ['mp_high_scorer', 'bestScoreAttackScore', 100_000],
+    ['creator_first', 'mapsCreated', 1],
+    ['creator_five', 'mapsCreated', 5],
+    ['creator_prolific', 'mapsCreated', 20],
+    ['social_connected', 'phoneConnected', 1],
+    ['social_perfect_run', 'perfectGames', 1],
+  ];
+  const definitions = getAllAchievements();
+  const testedIds = [...boundaryCases.map(([id]) => id), 'perfect_accuracy'].sort();
+  assert.deepEqual(definitions.map(definition => definition.id).sort(), testedIds);
+
+  for (const [id, field, target] of boundaryCases) {
+    const definition = definitions.find(candidate => candidate.id === id);
+    assert.ok(definition, `missing definition: ${id}`);
+    assert.equal(definition.target, target, `unexpected target: ${id}`);
+    const lockedStats = { ...emptyStats, [field]: target - 1 };
+    const unlockedStats = { ...emptyStats, [field]: target };
+    assert.equal(definition.check(lockedStats), false, `should remain locked below target: ${id}`);
+    assert.equal(definition.check(unlockedStats), true, `should unlock at target: ${id}`);
+    assert.equal(definition.progress(unlockedStats), target, `progress mismatch at target: ${id}`);
+  }
 });
