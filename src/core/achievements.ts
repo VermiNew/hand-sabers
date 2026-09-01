@@ -10,6 +10,8 @@ export interface AchievementDef {
   icon: string;
   category: AchievementCategory;
   tier: AchievementTier;
+  target: number;
+  progress: (stats: AchievementStats) => number;
   check: (stats: AchievementStats) => boolean;
 }
 
@@ -40,40 +42,58 @@ export interface AchievementStats {
   createdMapIds: string[];
 }
 
+function defineAchievement(
+  id: string,
+  icon: string,
+  category: AchievementCategory,
+  tier: AchievementTier,
+  target: number,
+  progress: (stats: AchievementStats) => number,
+): AchievementDef {
+  return { id, icon, category, tier, target, progress, check: stats => progress(stats) >= target };
+}
+
+const perfectAccuracyProgress = (stats: AchievementStats): number => {
+  if (stats.totalHits <= 0) return 0;
+  const sampleProgress = stats.totalHits / 50;
+  const accuracyProgress = (stats.perfectHits / stats.totalHits) / 0.5;
+  return Math.max(0, Math.min(sampleProgress, accuracyProgress) * 50);
+};
+
 const ACHIEVEMENTS: AchievementDef[] = [
-  { id: 'first_game', icon: 'play_circle', category: 'gameplay', tier: 'bronze', check: s => s.totalGames >= 1 },
-  { id: 'ten_games', icon: 'repeat', category: 'gameplay', tier: 'bronze', check: s => s.totalGames >= 10 },
-  { id: 'fifty_games', icon: 'stars', category: 'gameplay', tier: 'silver', check: s => s.totalGames >= 50 },
-  { id: 'first_hit', icon: 'check_circle', category: 'gameplay', tier: 'bronze', check: s => s.totalHits >= 1 },
-  { id: 'hundred_hits', icon: 'trackpad', category: 'gameplay', tier: 'bronze', check: s => s.totalHits >= 100 },
-  { id: 'thousand_hits', icon: 'flash_on', category: 'gameplay', tier: 'silver', check: s => s.totalHits >= 1000 },
-  { id: 'combo_50', icon: 'social_leaderboard', category: 'gameplay', tier: 'silver', check: s => s.maxCombo >= 50 },
-  { id: 'combo_100', icon: 'emoji_events', category: 'gameplay', tier: 'gold', check: s => s.maxCombo >= 100 },
-  { id: 'combo_250', icon: 'military_tech', category: 'gameplay', tier: 'gold', check: s => s.maxCombo >= 250 },
-  { id: 'combo_500', icon: 'workspace_premium', category: 'gameplay', tier: 'diamond', check: s => s.maxCombo >= 500 },
-  { id: 'first_win', icon: 'celebration', category: 'gameplay', tier: 'bronze', check: s => s.gamesWon >= 1 },
-  { id: 'ten_wins', icon: 'trophy', category: 'gameplay', tier: 'silver', check: s => s.gamesWon >= 10 },
-  { id: 'perfect_accuracy', icon: 'target', category: 'gameplay', tier: 'gold', check: s => s.totalHits >= 50 && s.perfectHits / s.totalHits >= 0.5 },
-  { id: 'no_miss_game', icon: 'verified', category: 'gameplay', tier: 'gold', check: s => s.noMissGames >= 1 },
-  { id: 'bomb_hitter', icon: 'report', category: 'gameplay', tier: 'bronze', check: s => s.bombHits >= 10 },
-  { id: 'five_streak', icon: 'whatshot', category: 'gameplay', tier: 'bronze', check: s => s.bestWinStreak >= 5 },
-  { id: 'fifteen_streak', icon: 'local_fire_department', category: 'gameplay', tier: 'silver', check: s => s.bestWinStreak >= 15 },
-  { id: 'maps_10', icon: 'library_music', category: 'gameplay', tier: 'silver', check: s => s.mapsCompleted >= 10 },
-  { id: 'play_1h', icon: 'schedule', category: 'gameplay', tier: 'silver', check: s => s.totalPlayTimeMs >= 3600000 },
-  { id: 'play_10h', icon: 'nightlight', category: 'gameplay', tier: 'diamond', check: s => s.totalPlayTimeMs >= 36000000 },
-  { id: 'score_100k', icon: 'score', category: 'gameplay', tier: 'silver', check: s => s.totalScore >= 100000 },
-  { id: 'score_500k', icon: 'leaderboard', category: 'gameplay', tier: 'gold', check: s => s.totalScore >= 500000 },
-  { id: 'score_1m', icon: 'diamond', category: 'gameplay', tier: 'diamond', check: s => s.totalScore >= 1000000 },
-  { id: 'mp_first_game', icon: 'groups', category: 'multiplayer', tier: 'bronze', check: s => s.multiplayerGamesPlayed >= 1 },
-  { id: 'mp_ten_games', icon: 'group_add', category: 'multiplayer', tier: 'silver', check: s => s.multiplayerGamesPlayed >= 10 },
-  { id: 'mp_first_win', icon: 'emoji_events', category: 'multiplayer', tier: 'silver', check: s => s.multiplayerWins >= 1 },
-  { id: 'mp_coop_master', icon: 'handshake', category: 'multiplayer', tier: 'gold', check: s => s.coopWins >= 5 },
-  { id: 'mp_high_scorer', icon: 'military_tech', category: 'multiplayer', tier: 'gold', check: s => s.bestScoreAttackScore >= 100000 },
-  { id: 'creator_first', icon: 'edit_note', category: 'creator', tier: 'bronze', check: s => s.mapsCreated >= 1 },
-  { id: 'creator_five', icon: 'map', category: 'creator', tier: 'silver', check: s => s.mapsCreated >= 5 },
-  { id: 'creator_prolific', icon: 'collections_bookmark', category: 'creator', tier: 'gold', check: s => s.mapsCreated >= 20 },
-  { id: 'social_connected', icon: 'phone_iphone', category: 'social', tier: 'bronze', check: s => s.phoneConnected >= 1 },
-  { id: 'social_perfect_run', icon: 'verified', category: 'social', tier: 'diamond', check: s => s.perfectGames >= 1 && s.totalHits >= 50 },
+  defineAchievement('first_game', 'play_circle', 'gameplay', 'bronze', 1, s => s.totalGames),
+  defineAchievement('ten_games', 'repeat', 'gameplay', 'bronze', 10, s => s.totalGames),
+  defineAchievement('fifty_games', 'stars', 'gameplay', 'silver', 50, s => s.totalGames),
+  defineAchievement('first_hit', 'check_circle', 'gameplay', 'bronze', 1, s => s.totalHits),
+  defineAchievement('hundred_hits', 'trackpad', 'gameplay', 'bronze', 100, s => s.totalHits),
+  defineAchievement('thousand_hits', 'flash_on', 'gameplay', 'silver', 1000, s => s.totalHits),
+  defineAchievement('combo_50', 'social_leaderboard', 'gameplay', 'silver', 50, s => s.maxCombo),
+  defineAchievement('combo_100', 'emoji_events', 'gameplay', 'gold', 100, s => s.maxCombo),
+  defineAchievement('combo_250', 'military_tech', 'gameplay', 'gold', 250, s => s.maxCombo),
+  defineAchievement('combo_500', 'workspace_premium', 'gameplay', 'diamond', 500, s => s.maxCombo),
+  defineAchievement('first_win', 'celebration', 'gameplay', 'bronze', 1, s => s.gamesWon),
+  defineAchievement('ten_wins', 'trophy', 'gameplay', 'silver', 10, s => s.gamesWon),
+  defineAchievement('perfect_accuracy', 'target', 'gameplay', 'gold', 50, perfectAccuracyProgress),
+  defineAchievement('no_miss_game', 'verified', 'gameplay', 'gold', 1, s => s.noMissGames),
+  defineAchievement('bomb_hitter', 'report', 'gameplay', 'bronze', 10, s => s.bombHits),
+  defineAchievement('five_streak', 'whatshot', 'gameplay', 'bronze', 5, s => s.bestWinStreak),
+  defineAchievement('fifteen_streak', 'local_fire_department', 'gameplay', 'silver', 15, s => s.bestWinStreak),
+  defineAchievement('maps_10', 'library_music', 'gameplay', 'silver', 10, s => s.mapsCompleted),
+  defineAchievement('play_1h', 'schedule', 'gameplay', 'silver', 3_600_000, s => s.totalPlayTimeMs),
+  defineAchievement('play_10h', 'nightlight', 'gameplay', 'diamond', 36_000_000, s => s.totalPlayTimeMs),
+  defineAchievement('score_100k', 'score', 'gameplay', 'silver', 100_000, s => s.totalScore),
+  defineAchievement('score_500k', 'leaderboard', 'gameplay', 'gold', 500_000, s => s.totalScore),
+  defineAchievement('score_1m', 'diamond', 'gameplay', 'diamond', 1_000_000, s => s.totalScore),
+  defineAchievement('mp_first_game', 'groups', 'multiplayer', 'bronze', 1, s => s.multiplayerGamesPlayed),
+  defineAchievement('mp_ten_games', 'group_add', 'multiplayer', 'silver', 10, s => s.multiplayerGamesPlayed),
+  defineAchievement('mp_first_win', 'emoji_events', 'multiplayer', 'silver', 1, s => s.multiplayerWins),
+  defineAchievement('mp_coop_master', 'handshake', 'multiplayer', 'gold', 5, s => s.coopWins),
+  defineAchievement('mp_high_scorer', 'military_tech', 'multiplayer', 'gold', 100_000, s => s.bestScoreAttackScore),
+  defineAchievement('creator_first', 'edit_note', 'creator', 'bronze', 1, s => s.mapsCreated),
+  defineAchievement('creator_five', 'map', 'creator', 'silver', 5, s => s.mapsCreated),
+  defineAchievement('creator_prolific', 'collections_bookmark', 'creator', 'gold', 20, s => s.mapsCreated),
+  defineAchievement('social_connected', 'phone_iphone', 'social', 'bronze', 1, s => s.phoneConnected),
+  defineAchievement('social_perfect_run', 'verified', 'social', 'diamond', 1, s => s.perfectGames),
 ];
 
 let unlocked = new Set<string>();
