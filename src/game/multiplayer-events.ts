@@ -2,6 +2,7 @@ import { S, state } from '../core/state.ts';
 import { showMultiplayerResults } from '../ui/ui.ts';
 import { getCurrentPlayerId } from '../multiplayer/client.ts';
 import { parseRoomSnapshot } from '../multiplayer/protocol.ts';
+import { recordMultiplayerGame } from '../core/achievements.ts';
 
 export interface MultiplayerRules {
   trainingMode: boolean;
@@ -67,6 +68,17 @@ export function initMultiplayerEvents({ onPrepare, onStart }: MultiplayerEventsO
     const value = snapshot as Record<string, unknown>;
     if (!Array.isArray(value['players']) || !value['round']) return;
     const parsed = parseRoomSnapshot(snapshot);
-    if (parsed) showMultiplayerResults(parsed, localPlayerId);
+    if (!parsed) return;
+    const playingPlayers = parsed.players.filter(player => player.playing);
+    const localPlayer = playingPlayers.find(player => player.id === localPlayerId);
+    if (localPlayer) {
+      const won = parsed.mode === 'coop'
+        ? playingPlayers.length === 2 && playingPlayers.every(player => player.finished)
+        : playingPlayers.length >= 2
+          && localPlayer.finished
+          && localPlayer.score === Math.max(...playingPlayers.map(player => player.score));
+      recordMultiplayerGame(won, localPlayer.score, parsed.mode);
+    }
+    showMultiplayerResults(parsed, localPlayerId);
   });
 }

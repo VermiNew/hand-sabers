@@ -36,6 +36,7 @@ const {
   getStats,
   isUnlocked,
   recordGameEnd,
+  recordMultiplayerGame,
   resetAchievements,
 } = await import('../src/core/achievements.ts');
 
@@ -108,4 +109,26 @@ test('maps_10 counts unique won maps instead of repeats or losses', () => {
   assert.equal(getStats().mapsCompleted, 10);
   assert.equal(new Set(getStats().completedMapIds).size, 10);
   assert.equal(isUnlocked('maps_10'), true);
+});
+
+test('multiplayer achievements distinguish co-op wins from score-attack results', () => {
+  resetAchievements();
+
+  recordMultiplayerGame(false, 200_000, 'coop');
+  assert.equal(getStats().multiplayerGamesPlayed, 1);
+  assert.equal(getStats().bestScoreAttackScore, 0);
+  assert.equal(isUnlocked('mp_first_game'), true);
+  assert.equal(isUnlocked('mp_first_win'), false);
+  assert.equal(isUnlocked('mp_high_scorer'), false);
+
+  recordMultiplayerGame(true, 100_000, 'score-attack');
+  assert.equal(getStats().multiplayerWins, 1);
+  assert.equal(getStats().coopWins, 0);
+  assert.equal(getStats().bestScoreAttackScore, 100_000);
+  assert.equal(isUnlocked('mp_first_win'), true);
+  assert.equal(isUnlocked('mp_high_scorer'), true);
+
+  for (let index = 0; index < 5; index++) recordMultiplayerGame(true, 10_000, 'coop');
+  assert.equal(getStats().coopWins, 5);
+  assert.equal(isUnlocked('mp_coop_master'), true);
 });

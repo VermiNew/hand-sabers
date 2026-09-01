@@ -28,6 +28,7 @@ export interface AchievementStats {
   gamesLost: number;
   multiplayerGamesPlayed: number;
   multiplayerWins: number;
+  coopWins: number;
   mapsCreated: number;
   bestScoreAttackScore: number;
   perfectGames: number;
@@ -65,7 +66,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'mp_first_game', icon: 'groups', category: 'multiplayer', tier: 'bronze', check: s => s.multiplayerGamesPlayed >= 1 },
   { id: 'mp_ten_games', icon: 'group_add', category: 'multiplayer', tier: 'silver', check: s => s.multiplayerGamesPlayed >= 10 },
   { id: 'mp_first_win', icon: 'emoji_events', category: 'multiplayer', tier: 'silver', check: s => s.multiplayerWins >= 1 },
-  { id: 'mp_coop_master', icon: 'handshake', category: 'multiplayer', tier: 'gold', check: s => s.multiplayerWins >= 5 },
+  { id: 'mp_coop_master', icon: 'handshake', category: 'multiplayer', tier: 'gold', check: s => s.coopWins >= 5 },
   { id: 'mp_high_scorer', icon: 'military_tech', category: 'multiplayer', tier: 'gold', check: s => s.bestScoreAttackScore >= 100000 },
   { id: 'creator_first', icon: 'edit_note', category: 'creator', tier: 'bronze', check: s => s.mapsCreated >= 1 },
   { id: 'creator_five', icon: 'map', category: 'creator', tier: 'silver', check: s => s.mapsCreated >= 5 },
@@ -129,6 +130,7 @@ function createEmptyStats(): AchievementStats {
     gamesLost: 0,
     multiplayerGamesPlayed: 0,
     multiplayerWins: 0,
+    coopWins: 0,
     mapsCreated: 0,
     bestScoreAttackScore: 0,
     perfectGames: 0,
@@ -220,10 +222,15 @@ export function recordGameEnd(state: GameState, won: boolean, playTimeMs: number
   checkAchievements();
 }
 
-export function recordMultiplayerGame(won: boolean, score: number): void {
+export function recordMultiplayerGame(won: boolean, score: number, mode: 'coop' | 'score-attack'): void {
   _stats.multiplayerGamesPlayed++;
-  if (won) _stats.multiplayerWins++;
-  _stats.bestScoreAttackScore = Math.max(_stats.bestScoreAttackScore, score);
+  if (won) {
+    _stats.multiplayerWins++;
+    if (mode === 'coop') _stats.coopWins++;
+  }
+  if (mode === 'score-attack') {
+    _stats.bestScoreAttackScore = Math.max(_stats.bestScoreAttackScore, score);
+  }
   saveStats(_stats);
   checkAchievements();
 }
