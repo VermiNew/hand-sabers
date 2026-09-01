@@ -415,7 +415,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 
 ### Osiągnięcia, narrator i profil
 
-- [ ] Dopracować cały system osiągnięć po naprawieniu błędnej semantyki: warunki, progres, prezentację, nagrody, czytelność i testy regresyjne każdego osiągnięcia.
+- [x] Dopracować cały system osiągnięć po naprawieniu błędnej semantyki: warunki, progres, prezentację, nagrody, czytelność i testy regresyjne każdego osiągnięcia. — podłączono zdarzenia telefonu, multiplayera i kreatora; rozdzielono zwycięstwa co-op/score-attack, unikalne mapy oraz bezpieczną migrację; wszystkie 33 definicje mają wspólny model progresu i test granicy, a panel pokazuje kategorie, tiery, opisy i dostępne paski postępu. Nagrody wizualne są kolejkowane zamiast nadpisywane, zapisane odblokowania są zachowywane, reset odświeża statystyki i karty, a smoke objął desktop oraz mobile.
 - [x] Poprawić layout statystyki „ŁĄCZNY WYNIK”: bardzo duże liczby nie mogą wychodzić poza kontener; zastosować osobne szersze pole, format skrócony lub responsywną typografię z pełną wartością dostępną w tooltipie/ARIA.
 - [ ] Dopracować kontener rozmowy Lyry: stabilny rozmiar, brak skoków layoutu, poprawne zawijanie i przewijanie, responsywność, animacje znaków/przycisków oraz prawidłowe zachowanie dla długiego tekstu.
 - [ ] Poprawić flow tworzenia profilu użytkownika: walidacja i komunikaty błędów, wybór nazwy i avatara, podgląd, nawigacja klawiaturą, responsywność oraz spójna późniejsza edycja profilu.
