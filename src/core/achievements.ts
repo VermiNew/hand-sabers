@@ -96,7 +96,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
   defineAchievement('social_perfect_run', 'verified', 'social', 'diamond', 1, s => s.perfectGames),
 ];
 
-let unlocked = new Set<string>();
+let unlocked = loadUnlocked();
 
 function loadUnlocked(): Set<string> {
   try {

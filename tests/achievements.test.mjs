@@ -31,6 +31,7 @@ if (typeof globalThis.CustomEvent === 'undefined') {
 }
 globalThis.localStorage = new MemoryStorage();
 globalThis.window = new EventTarget();
+localStorage.setItem('hs_achievements', JSON.stringify(['perfect_accuracy']));
 
 const {
   getAllAchievements,
@@ -43,6 +44,10 @@ const {
   resetAchievements,
   updateStats,
 } = await import('../src/core/achievements.ts');
+
+test('loads stored unlocks before explicit game initialization', () => {
+  assert.equal(isUnlocked('perfect_accuracy'), true);
+});
 
 function gameState({ hits = 0, misses = 0, maxCombo = 0, mapId = 'test-map' } = {}) {
   return {
