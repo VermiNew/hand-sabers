@@ -7,6 +7,7 @@ import {
   readZipEntryText,
 } from '../core/zip-limits.ts';
 import { sortBeatsByTime } from '../core/creator-rules.ts';
+import { recordMapCreated } from '../core/achievements.ts';
 import { saveLocalMap, saveLocalMapAudio } from '../core/localstore.ts';
 import { showAlert, showConfirm, showToast } from './dialogs.ts';
 import { restoreAudioForCurrentMap, decodeAndAttachAudio } from './audio.ts';
@@ -105,7 +106,7 @@ function downloadMapJsonFallback(mapToDownload: CreatorMap): void {
 
 export async function saveMap(): Promise<void> {
   state.map = normalizeMap(state.map, { fallbackId: state.map.id, requireBeats: false }) as unknown as CreatorMap;
-  saveCreatorMapLocally();
+  let persisted = saveCreatorMapLocally();
   if (state.audioArrayBuffer) {
     try {
       await saveLocalMapAudio(state.map.id, state.audioArrayBuffer!.slice(0) as ArrayBuffer, {
@@ -123,6 +124,7 @@ export async function saveMap(): Promise<void> {
       state.map = normalizeMap(saved['map'] as object, { fallbackId: state.map.id, requireBeats: false }) as unknown as CreatorMap;
       saveCreatorMapLocally();
     }
+    persisted = true;
     state.lastSavedAt = new Date();
     if (autosaveLbl) autosaveLbl.textContent = `${t('creator.autosaveServer')}: ${state.lastSavedAt.toLocaleTimeString()} (${String(saved['id'] ?? '')})`;
     showToast(t('creator.savedServer'), { type: 'success' });
@@ -132,6 +134,7 @@ export async function saveMap(): Promise<void> {
     if (autosaveLbl) autosaveLbl.textContent = `${t('creator.autosaveLocal')}: ${state.lastSavedAt.toLocaleTimeString()} — ${(err as Error).message}`;
     showToast(t('creator.savedLocal'), { type: 'error' });
   }
+  if (persisted && state.map.beats.length > 0) recordMapCreated(state.map.id);
 }
 
 export async function exportZip(callbacks: { onDecoded: () => void }): Promise<void> {

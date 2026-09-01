@@ -34,8 +34,10 @@ globalThis.window = new EventTarget();
 
 const {
   getStats,
+  initAchievements,
   isUnlocked,
   recordGameEnd,
+  recordMapCreated,
   recordMultiplayerGame,
   resetAchievements,
 } = await import('../src/core/achievements.ts');
@@ -131,4 +133,34 @@ test('multiplayer achievements distinguish co-op wins from score-attack results'
   for (let index = 0; index < 5; index++) recordMultiplayerGame(true, 10_000, 'coop');
   assert.equal(getStats().coopWins, 5);
   assert.equal(isUnlocked('mp_coop_master'), true);
+});
+
+test('creator achievements count unique saved map ids', () => {
+  resetAchievements();
+
+  recordMapCreated('creator-map-1');
+  recordMapCreated('creator-map-1');
+  recordMapCreated('   ');
+  assert.equal(getStats().mapsCreated, 1);
+  assert.deepEqual(getStats().createdMapIds, ['creator-map-1']);
+  assert.equal(isUnlocked('creator_first'), true);
+  assert.equal(isUnlocked('creator_five'), false);
+
+  for (let index = 2; index <= 5; index++) recordMapCreated(`creator-map-${index}`);
+  assert.equal(getStats().mapsCreated, 5);
+  assert.equal(isUnlocked('creator_five'), true);
+});
+
+test('creator map id migration preserves legacy progress', () => {
+  resetAchievements();
+  localStorage.setItem('hs_stats', JSON.stringify({ mapsCreated: 3 }));
+
+  initAchievements();
+
+  assert.equal(getStats().mapsCreated, 3);
+  assert.deepEqual(getStats().createdMapIds, [
+    'legacy-created-map-1',
+    'legacy-created-map-2',
+    'legacy-created-map-3',
+  ]);
 });

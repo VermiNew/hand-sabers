@@ -37,6 +37,7 @@ export interface AchievementStats {
   currentWinStreak: number;
   bestWinStreak: number;
   completedMapIds: string[];
+  createdMapIds: string[];
 }
 
 const ACHIEVEMENTS: AchievementDef[] = [
@@ -102,7 +103,20 @@ function loadStats(): AchievementStats {
       const completedMapIds = Array.isArray(stats.completedMapIds)
         ? [...new Set(stats.completedMapIds.filter(id => typeof id === 'string' && id.length > 0))].slice(0, 1000)
         : [];
-      return { ...stats, completedMapIds, mapsCompleted: completedMapIds.length };
+      const createdMapIds = Array.isArray(stats.createdMapIds)
+        ? [...new Set(stats.createdMapIds.filter(id => typeof id === 'string' && id.length > 0))].slice(0, 1000)
+        : [];
+      const legacyCreatedCount = Math.min(1000, Math.max(0, Math.floor(Number(stats.mapsCreated) || 0)));
+      for (let index = createdMapIds.length; index < legacyCreatedCount; index++) {
+        createdMapIds.push(`legacy-created-map-${index + 1}`);
+      }
+      return {
+        ...stats,
+        completedMapIds,
+        mapsCompleted: completedMapIds.length,
+        createdMapIds,
+        mapsCreated: createdMapIds.length,
+      };
     }
   } catch { /* ignore */ }
   return createEmptyStats();
@@ -139,6 +153,7 @@ function createEmptyStats(): AchievementStats {
     currentWinStreak: 0,
     bestWinStreak: 0,
     completedMapIds: [],
+    createdMapIds: [],
   };
 }
 
@@ -235,8 +250,12 @@ export function recordMultiplayerGame(won: boolean, score: number, mode: 'coop' 
   checkAchievements();
 }
 
-export function recordMapCreated(): void {
-  _stats.mapsCreated++;
+export function recordMapCreated(mapId: string): void {
+  const normalizedId = mapId.trim();
+  if (!normalizedId || _stats.createdMapIds.includes(normalizedId)) return;
+  _stats.createdMapIds.push(normalizedId);
+  _stats.createdMapIds = _stats.createdMapIds.slice(-1000);
+  _stats.mapsCreated = _stats.createdMapIds.length;
   saveStats(_stats);
   checkAchievements();
 }
