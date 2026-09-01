@@ -22,7 +22,7 @@ import { initMultiplayerOverlay } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
-import { initAchievements, recordGameEnd } from '../core/achievements.ts';
+import { initAchievements, recordGameEnd, recordPhoneConnected } from '../core/achievements.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, showProfileOnboardingIfNeeded } from './profile.ts';
@@ -93,6 +93,10 @@ setHitPlaneVisible(Boolean(settings.developerMode) || isDeveloperPanelEnabled())
 prewarmGameplayResources();
 initAchievements();
 initAchievementUI();
+window.addEventListener('hand-sabers:remote-tracking-state', event => {
+  const connected = (event as CustomEvent<{ connected?: unknown }>).detail?.connected;
+  if (connected === true) recordPhoneConnected();
+});
 setSaberTargetSetter((side, pos) => {
   if (side === 'left') lTarget.set(pos.x, pos.y, pos.z);
   else                 rTarget.set(pos.x, pos.y, pos.z);
