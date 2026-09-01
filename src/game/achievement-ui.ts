@@ -109,19 +109,64 @@ export function renderAchievementCompactGrid(): void {
   const grid = document.getElementById('achCompactGrid');
   if (!grid) return;
   const unlocked = getUnlockedSet();
-  grid.innerHTML = '';
+  const stats = getStats();
+  grid.replaceChildren();
 
-  for (const achievement of getAllAchievements()) {
-    const card = document.createElement('div');
-    card.className = `ach-compact-card${unlocked.has(achievement.id) ? '' : ' is-locked'}`;
-    const icon = document.createElement('span');
-    icon.className = 'material-symbols-rounded';
-    icon.textContent = achievement.icon;
-    const name = document.createElement('span');
-    name.className = 'ach-compact-name';
-    name.textContent = t(`achievements.names.${achievement.id}`);
-    card.append(icon, name);
-    grid.appendChild(card);
+  const achievements = getAllAchievements();
+  const categories = ['gameplay', 'multiplayer', 'creator', 'social'] as const;
+  for (const category of categories) {
+    const categoryAchievements = achievements.filter(achievement => achievement.category === category);
+    if (!categoryAchievements.length) continue;
+    const heading = document.createElement('h3');
+    heading.className = 'ach-category-header';
+    heading.textContent = t(`achievements.categories.${category}`);
+    grid.append(heading);
+
+    for (const achievement of categoryAchievements) {
+      const isUnlocked = unlocked.has(achievement.id);
+      const rawProgress = achievement.progress(stats);
+      const progress = Number.isFinite(rawProgress) ? Math.max(0, Math.min(rawProgress, achievement.target)) : 0;
+      const progressPercent = achievement.target > 0 ? Math.round((progress / achievement.target) * 100) : 0;
+      const card = document.createElement('div');
+      card.className = `ach-compact-card ach-card-tier-${achievement.tier}${isUnlocked ? ' is-unlocked' : ' is-locked'}`;
+      const icon = document.createElement('span');
+      icon.className = `material-symbols-rounded ach-tier-${achievement.tier}`;
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = achievement.icon;
+      const body = document.createElement('div');
+      body.className = 'ach-compact-body';
+      const titleRow = document.createElement('div');
+      titleRow.className = 'ach-compact-title-row';
+      const name = document.createElement('span');
+      name.className = 'ach-compact-name';
+      name.textContent = t(`achievements.names.${achievement.id}`);
+      const tier = document.createElement('span');
+      tier.className = `ach-compact-tier ach-tier-${achievement.tier}`;
+      tier.textContent = t(`achievements.tiers.${achievement.tier}`);
+      const description = document.createElement('p');
+      description.className = 'ach-compact-description';
+      description.textContent = t(`achievements.descriptions.${achievement.id}`);
+      const progressRow = document.createElement('div');
+      progressRow.className = 'ach-compact-progress-row';
+      const progressText = document.createElement('span');
+      progressText.textContent = isUnlocked ? t('achievements.unlocked') : `${progressPercent}%`;
+      const progressTrack = document.createElement('span');
+      progressTrack.className = 'ach-compact-progress-track';
+      progressTrack.setAttribute('role', 'progressbar');
+      progressTrack.setAttribute('aria-valuemin', '0');
+      progressTrack.setAttribute('aria-valuemax', '100');
+      progressTrack.setAttribute('aria-valuenow', String(progressPercent));
+      progressTrack.setAttribute('aria-label', t(`achievements.names.${achievement.id}`));
+      const progressFill = document.createElement('span');
+      progressFill.className = 'ach-compact-progress-fill';
+      progressFill.style.width = `${progressPercent}%`;
+      progressTrack.append(progressFill);
+      titleRow.append(name, tier);
+      progressRow.append(progressTrack, progressText);
+      body.append(titleRow, description, progressRow);
+      card.append(icon, body);
+      grid.appendChild(card);
+    }
   }
 
   const progressText = document.getElementById('achProgressText');

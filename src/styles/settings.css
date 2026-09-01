@@ -1,7 +1,7 @@
 /* ── SETTINGS PANEL (sidebar layout) ── */
 
 .main-settings-backdrop {
-  position:absolute; inset:0; z-index:8;
+  position:absolute; inset:0; z-index:9001;
   display:none; place-items:center;
   padding:clamp(16px,3vw,40px);
   background:rgba(2,4,10,0.82);
@@ -9,6 +9,11 @@
 }
 .main-settings-backdrop.show { display:grid; }
 .main-settings-backdrop[hidden] { display:none !important; }
+
+body.settings-modal-open #camPanel {
+  visibility:hidden;
+  pointer-events:none;
+}
 
 .main-settings-card,
 .main-settings-card.show {
@@ -446,6 +451,76 @@
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 .profile-saved-status.is-visible { opacity: 1; transform: translateY(0); }
+
+@media (max-width: 640px) {
+  .main-settings-backdrop {
+    padding:12px;
+  }
+
+  .main-settings-card,
+  .main-settings-card.show {
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr);
+    width:calc(100vw - 24px);
+    height:calc(100vh - 24px);
+    max-height:none;
+  }
+
+  .sp-nav {
+    flex-direction:row;
+    gap:4px;
+    min-width:0;
+    padding:8px;
+    overflow-x:auto;
+    border-right:0;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    scrollbar-width:thin;
+  }
+
+  .sp-nav-title {
+    display:none;
+  }
+
+  .sp-nav-item {
+    flex:0 0 auto;
+    min-height:38px;
+    padding:8px 11px;
+    border-bottom:2px solid transparent;
+    border-left:0;
+    white-space:nowrap;
+  }
+
+  .sp-nav-item:hover,
+  .sp-nav-item:focus-visible,
+  .sp-nav-item.is-active {
+    border-left-color:transparent;
+    border-bottom-color:#00d4ff;
+  }
+
+  .sp-reset,
+  .sp-close {
+    flex:0 0 auto;
+    margin:0;
+  }
+
+  .sp-reset {
+    min-width:132px;
+  }
+
+  .sp-close {
+    width:40px;
+    height:38px;
+  }
+
+  .sp-body {
+    min-width:0;
+    padding:20px 16px 18px;
+  }
+
+  .sp-tab-title {
+    margin-bottom:18px;
+  }
+}
 
 @media (max-width: 640px) {
   .profile-settings-hero { align-items: flex-start; padding: 16px; }

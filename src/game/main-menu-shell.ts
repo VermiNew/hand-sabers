@@ -61,6 +61,7 @@ export function initMainMenuShell({ onAchievementsOpen }: MainMenuShellOptions):
   }
 
   function setSettingsVisible(visible: boolean): void {
+    document.body.classList.toggle('settings-modal-open', visible);
     if (settingsBackdrop) {
       settingsBackdrop.hidden = !visible;
       settingsBackdrop.classList.toggle('show', visible);
