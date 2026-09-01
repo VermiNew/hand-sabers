@@ -35,6 +35,12 @@ test('achievement settings show categories, tiers and accessible progress on des
   await expect(grid.locator('[role="progressbar"]').first()).toHaveAttribute('aria-valuenow', '100');
   await expect(grid.locator('[role="progressbar"]').nth(1)).toHaveAttribute('aria-valuenow', '50');
   await expect(grid.locator('.ach-compact-tier').first()).toHaveText('Brąz');
+  await page.evaluate(() => {
+    window.dispatchEvent(new CustomEvent('hand-sabers:achievement', { detail: { id: 'ten_games' } }));
+    window.dispatchEvent(new CustomEvent('hand-sabers:achievement', { detail: { id: 'fifty_games' } }));
+  });
+  await expect(page.locator('#achToastTitle')).toHaveText('Rozkręcam Się');
+  await expect(page.locator('#achToastTitle')).toHaveText('Oddany Gracz', { timeout: 6_000 });
   await page.setViewportSize({ width: 390, height: 844 });
   await expect.poll(() => grid.evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length)).toBe(1);
   expect(await grid.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);

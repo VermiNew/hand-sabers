@@ -13,10 +13,13 @@ interface AchievementToastElement extends HTMLElement {
   _timer?: ReturnType<typeof setTimeout>;
 }
 
+const achievementToastQueue: string[] = [];
+let achievementToastVisible = false;
+
 export function initAchievementUI(): void {
   window.addEventListener('hand-sabers:achievement', event => {
     const { id } = (event as CustomEvent<{ id: string }>).detail;
-    showAchievementToast(id);
+    queueAchievementToast(id);
   });
 
   document.getElementById('achResetBtn')?.addEventListener('click', () => {
@@ -26,14 +29,30 @@ export function initAchievementUI(): void {
   });
 }
 
-function showAchievementToast(id: string): void {
+function queueAchievementToast(id: string): void {
+  if (!getDefinition(id)) return;
+  achievementToastQueue.push(id);
+  showNextAchievementToast();
+}
+
+function showNextAchievementToast(): void {
+  if (achievementToastVisible) return;
+  const id = achievementToastQueue.shift();
+  if (!id) return;
   const definition = getDefinition(id);
-  if (!definition) return;
+  if (!definition) {
+    showNextAchievementToast();
+    return;
+  }
   const toast = document.getElementById('achievementToast') as AchievementToastElement | null;
   const icon = document.getElementById('achToastIcon');
   const title = document.getElementById('achToastTitle');
-  if (!toast || !icon || !title) return;
+  if (!toast || !icon || !title) {
+    achievementToastQueue.length = 0;
+    return;
+  }
 
+  achievementToastVisible = true;
   icon.textContent = definition.icon;
   icon.className = `material-symbols-rounded ach-toast-icon ach-tier-${definition.tier}`;
   title.textContent = t(`achievements.names.${id}`);
@@ -53,7 +72,11 @@ function showAchievementToast(id: string): void {
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => {
     toast.classList.remove('is-visible');
-    setTimeout(() => { toast.hidden = true; }, 350);
+    setTimeout(() => {
+      toast.hidden = true;
+      achievementToastVisible = false;
+      showNextAchievementToast();
+    }, 350);
   }, 4000);
 }
 
