@@ -852,7 +852,7 @@
       "combo_500": "Reach a 500-hit combo.",
       "first_win": "Win your first game.",
       "ten_wins": "Win 10 games.",
-      "perfect_accuracy": "Achieve 50% perfect hits overall.",
+      "perfect_accuracy": "Achieve at least 50% perfect hits across a minimum of 50 hits.",
       "no_miss_game": "Complete a game with zero misses.",
       "bomb_hitter": "Hit 10 bombs.",
       "five_streak": "Achieve a 5-game win streak.",

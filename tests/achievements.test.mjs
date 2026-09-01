@@ -40,6 +40,7 @@ const {
   recordMapCreated,
   recordMultiplayerGame,
   resetAchievements,
+  updateStats,
 } = await import('../src/core/achievements.ts');
 
 function gameState({ hits = 0, misses = 0, maxCombo = 0, mapId = 'test-map' } = {}) {
@@ -163,4 +164,17 @@ test('creator map id migration preserves legacy progress', () => {
     'legacy-created-map-2',
     'legacy-created-map-3',
   ]);
+});
+
+test('perfect_accuracy requires both accuracy and a meaningful sample', () => {
+  resetAchievements();
+
+  updateStats({ totalHits: 1, perfectHits: 1 });
+  assert.equal(isUnlocked('perfect_accuracy'), false);
+
+  updateStats({ totalHits: 50, perfectHits: 24 });
+  assert.equal(isUnlocked('perfect_accuracy'), false);
+
+  updateStats({ totalHits: 50, perfectHits: 25 });
+  assert.equal(isUnlocked('perfect_accuracy'), true);
 });

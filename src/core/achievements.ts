@@ -53,7 +53,7 @@ const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'combo_500', icon: 'workspace_premium', category: 'gameplay', tier: 'diamond', check: s => s.maxCombo >= 500 },
   { id: 'first_win', icon: 'celebration', category: 'gameplay', tier: 'bronze', check: s => s.gamesWon >= 1 },
   { id: 'ten_wins', icon: 'trophy', category: 'gameplay', tier: 'silver', check: s => s.gamesWon >= 10 },
-  { id: 'perfect_accuracy', icon: 'target', category: 'gameplay', tier: 'gold', check: s => s.totalHits > 0 && s.perfectHits / s.totalHits >= 0.5 },
+  { id: 'perfect_accuracy', icon: 'target', category: 'gameplay', tier: 'gold', check: s => s.totalHits >= 50 && s.perfectHits / s.totalHits >= 0.5 },
   { id: 'no_miss_game', icon: 'verified', category: 'gameplay', tier: 'gold', check: s => s.noMissGames >= 1 },
   { id: 'bomb_hitter', icon: 'report', category: 'gameplay', tier: 'bronze', check: s => s.bombHits >= 10 },
   { id: 'five_streak', icon: 'whatshot', category: 'gameplay', tier: 'bronze', check: s => s.bestWinStreak >= 5 },
