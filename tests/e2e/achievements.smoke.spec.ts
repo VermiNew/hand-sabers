@@ -41,6 +41,13 @@ test('achievement settings show categories, tiers and accessible progress on des
   });
   await expect(page.locator('#achToastTitle')).toHaveText('Rozkręcam Się');
   await expect(page.locator('#achToastTitle')).toHaveText('Oddany Gracz', { timeout: 6_000 });
+  page.once('dialog', async dialog => {
+    expect(dialog.message()).toBe('Zresetować wszystkie osiągnięcia i powiązane statystyki gracza?');
+    await dialog.accept();
+  });
+  await page.locator('#achResetBtn').click();
+  await expect(page.locator('#statsGrid .stat-value').first()).toHaveText('0');
+  await expect(grid.locator('.ach-compact-card.is-unlocked')).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect.poll(() => grid.evaluate(element => getComputedStyle(element).gridTemplateColumns.split(' ').length)).toBe(1);
   expect(await grid.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);

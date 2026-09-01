@@ -23,8 +23,9 @@ export function initAchievementUI(): void {
   });
 
   document.getElementById('achResetBtn')?.addEventListener('click', () => {
-    if (!confirm(t('settings.resetConfirm'))) return;
+    if (!confirm(t('achievements.resetConfirm'))) return;
     resetAchievements();
+    renderStatsGrid();
     renderAchievementCompactGrid();
   });
 }

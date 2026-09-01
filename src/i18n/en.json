@@ -802,6 +802,7 @@
     "title": "ACHIEVEMENTS",
     "unlocked": "ACHIEVEMENT UNLOCKED",
     "reset": "RESET ACHIEVEMENTS",
+    "resetConfirm": "Reset all achievements and related player statistics?",
     "settingsHint": "Achievements unlock automatically during gameplay.",
     "allAchievements": "All Achievements",
     "names": {

@@ -802,6 +802,7 @@
     "title": "OSIĄGNIĘCIA",
     "unlocked": "OSIĄGNIĘCIE ODBLOKOWANE",
     "reset": "RESETUJ OSIAGNIECIA",
+    "resetConfirm": "Zresetować wszystkie osiągnięcia i powiązane statystyki gracza?",
     "settingsHint": "Osiągnięcia odblokowują się automatycznie podczas gry.",
     "allAchievements": "Wszystkie osiągnięcia",
     "names": {
