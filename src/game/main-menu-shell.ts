@@ -1,3 +1,5 @@
+import { createModalTransition } from '../ui/modal-transition.ts';
+
 interface MainMenuShellOptions {
   onAchievementsOpen(): void;
 }
@@ -41,13 +43,26 @@ export function initMainMenuShell({ onAchievementsOpen }: MainMenuShellOptions):
   const settingsPanel = document.getElementById('mainSettingsPanel');
   const settingsButton = document.getElementById('mainSettings');
   const settingsClose = document.getElementById('mainSettingsClose');
+  const settingsModal = settingsBackdrop && settingsPanel
+    ? createModalTransition({
+        overlay: settingsBackdrop,
+        panel: settingsPanel,
+        visibleClass: 'show',
+        trapFocus: false,
+        closeOnEscape: false,
+        onAfterClose: () => {
+          document.body.classList.remove('settings-modal-open');
+          settingsPanel.classList.remove('show');
+        },
+      })
+    : null;
 
   function selectItem(item: Element): void {
     navItems.forEach(element => element.classList.toggle('is-selected', element === item));
   }
 
   function isSettingsVisible(): boolean {
-    return Boolean(settingsBackdrop && !settingsBackdrop.hidden);
+    return settingsModal?.isOpen() ?? false;
   }
 
   function switchSettingsTab(tabName: string): void {
@@ -61,19 +76,16 @@ export function initMainMenuShell({ onAchievementsOpen }: MainMenuShellOptions):
   }
 
   function setSettingsVisible(visible: boolean): void {
-    document.body.classList.toggle('settings-modal-open', visible);
-    if (settingsBackdrop) {
-      settingsBackdrop.hidden = !visible;
-      settingsBackdrop.classList.toggle('show', visible);
-    }
-    settingsPanel?.classList.toggle('show', visible);
     settingsButton?.setAttribute('aria-expanded', String(visible));
     if (visible) {
-      requestAnimationFrame(() => {
-        (settingsPanel?.querySelector('input,button,summary') as HTMLElement | null)?.focus();
+      document.body.classList.add('settings-modal-open');
+      settingsPanel?.classList.add('show');
+      settingsModal?.open({
+        initialFocus: settingsPanel?.querySelector<HTMLElement>('input,button,summary') ?? null,
+        returnFocusTo: settingsButton,
       });
     } else {
-      (settingsButton as HTMLElement | null)?.focus({ preventScroll: true });
+      settingsModal?.close();
     }
   }
 
