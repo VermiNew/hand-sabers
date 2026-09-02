@@ -13,13 +13,24 @@ export interface DeveloperSettingsController {
 export function initDeveloperSettings(settings: Settings): DeveloperSettingsController {
   const enabledInput = document.getElementById('menuDeveloperMode') as HTMLInputElement | null;
   const accentInput = document.getElementById('menuDevAccent') as HTMLSelectElement | null;
+  const quickToggle = document.getElementById('mainDevMode') as HTMLButtonElement | null;
+
+  function syncEnabledState(enabled: boolean): void {
+    if (enabledInput) enabledInput.checked = enabled;
+    quickToggle?.setAttribute('aria-pressed', String(enabled));
+  }
+
+  function applyEnabledState(enabled: boolean): void {
+    settings.developerMode = enabled;
+    syncEnabledState(enabled);
+    setDeveloperPanelEnabled(renderer, enabled);
+    setHitPlaneVisible(enabled);
+  }
 
   if (enabledInput) {
-    enabledInput.checked = Boolean(settings.developerMode) || isDeveloperPanelEnabled();
+    syncEnabledState(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
     enabledInput.addEventListener('change', () => {
-      settings.developerMode = enabledInput.checked;
-      setDeveloperPanelEnabled(renderer, enabledInput.checked);
-      setHitPlaneVisible(enabledInput.checked);
+      applyEnabledState(enabledInput.checked);
     });
   }
 
@@ -31,16 +42,22 @@ export function initDeveloperSettings(settings: Settings): DeveloperSettingsCont
     });
   }
 
-  document.getElementById('mainDevMode')?.addEventListener('click', () => {
-    const query = new URLSearchParams(location.search);
-    if (!query.has('dev')) query.set('dev', '');
-    const serialized = query.toString().replace(/=(?=&|$)/g, '');
-    location.href = `${location.pathname}${serialized ? `?${serialized}` : ''}${location.hash}`;
+  quickToggle?.addEventListener('click', () => {
+    const enabled = !isDeveloperPanelEnabled();
+    if (!enabled) {
+      const url = new URL(location.href);
+      url.searchParams.delete('dev');
+      url.searchParams.delete('testing');
+      history.replaceState(history.state, '', url);
+    }
+    applyEnabledState(enabled);
   });
+
+  syncEnabledState(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
 
   return {
     sync(): void {
-      if (enabledInput) enabledInput.checked = settings.developerMode;
+      syncEnabledState(settings.developerMode);
       setDeveloperPanelEnabled(renderer, settings.developerMode);
       setHitPlaneVisible(settings.developerMode);
 
