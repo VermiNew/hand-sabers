@@ -242,11 +242,11 @@ body[data-multiplayer-mode] .mp-game-chat { display:block; }
 /* ── Multiplayer — player hand previews (always visible during gameplay) ──── */
 #multiplayerCameras {
   position: fixed;
-  top: 50px;
-  left: 50px;
+  bottom: 80px;
+  left: 18px;
   z-index: 210; /* above HUD (200) but below overlays */
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 120px);
   gap: 6px;
   pointer-events: none;
 }
@@ -265,12 +265,13 @@ body[data-multiplayer-mode] .mp-game-chat { display:block; }
   opacity: 1;
 }
 
+.remote-ml-preview.is-stale { opacity:.3; }
+
 @media (max-width: 700px) {
   #multiplayerCameras {
-    flex-direction: row;
-    top: auto;
-    bottom: 80px;
-    left: 50px;
+    grid-template-columns: repeat(2, 88px);
+    bottom: 72px;
+    left: 12px;
   }
 
   #multiplayerCameras .cam-box {

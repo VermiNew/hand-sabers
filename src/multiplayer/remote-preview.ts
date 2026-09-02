@@ -30,6 +30,8 @@ interface PlayerInfo {
 
 const playerInfo = new Map<number, PlayerInfo>();
 const previews = new Map<number, HTMLElement>();
+const previewTimers = new Map<number, number>();
+const PREVIEW_STALE_MS = 1_000;
 
 function updateOverlayVisibility(): void {
   const overlay = document.getElementById('multiplayerCameras');
@@ -118,6 +120,21 @@ function renderLandmarks(packet: RemoteLandmarkPacket): void {
   context.clearRect(0, 0, width, height);
   context.fillStyle = '#03060f';
   context.fillRect(0, 0, width, height);
+  preview.element.classList.remove('is-stale');
+  const previousTimer = previewTimers.get(packet.streamId);
+  if (previousTimer !== undefined) window.clearTimeout(previousTimer);
+  previewTimers.set(packet.streamId, window.setTimeout(() => {
+    previewTimers.delete(packet.streamId);
+    const current = previews.get(packet.streamId);
+    const currentCanvas = current?.querySelector<HTMLCanvasElement>('canvas');
+    const currentContext = currentCanvas?.getContext('2d');
+    if (currentCanvas && currentContext) {
+      currentContext.clearRect(0, 0, currentCanvas.width, currentCanvas.height);
+      currentContext.fillStyle = '#03060f';
+      currentContext.fillRect(0, 0, currentCanvas.width, currentCanvas.height);
+    }
+    current?.classList.add('is-stale');
+  }, PREVIEW_STALE_MS));
   const color = playerInfo.get(packet.streamId)?.color;
   if (!color) return;
   if (packet.left) drawHand(context, packet.left, width, height, color);
@@ -138,6 +155,9 @@ function updatePlayers(detail: RoomStateDetail | null): void {
   for (const [streamId, preview] of previews) {
     const info = playerInfo.get(streamId);
     if (!info) {
+      const timer = previewTimers.get(streamId);
+      if (timer !== undefined) window.clearTimeout(timer);
+      previewTimers.delete(streamId);
       preview.remove();
       previews.delete(streamId);
       continue;

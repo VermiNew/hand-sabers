@@ -81,9 +81,9 @@ body.dev-tools #camPanel {
   padding:7px;
 }
 
-body:not(.dev-tools) .cam-box:first-child { display:none; }
-body.dev-tools .cam-feeds { grid-template-columns:repeat(2,minmax(0,1fr)); }
-body.dev-tools .cam-box:first-child { display:block; }
+body:not(.dev-tools) #camPanel .cam-box:first-child { display:none; }
+body.dev-tools #camPanel .cam-feeds { grid-template-columns:repeat(2,minmax(0,1fr)); }
+body.dev-tools #camPanel .cam-box:first-child { display:block; }
 
 /* ── Camera / canvas box ─────────────────────────────────────────────────── */
 .cam-box {
