@@ -163,7 +163,7 @@
 
 - [x] Wstępne wizualizacje reaktywne na muzykę (pulsowanie tunelu, areny)
 - [ ] Podnieść jakość wizualną do efektu "Wow" — cel: wygląd zbliżony do Unreal Engine, nie "basic"
-- [ ] Elementy wizualne reagujące na muzykę, częstotliwości i beaty (zgodne z tym, co użytkownik mapuje w kreatorze)
+- [x] Elementy wizualne reagujące na muzykę, częstotliwości i beaty (zgodne z tym, co użytkownik mapuje w kreatorze) — analizator FFT rozdziela bas/środek/górę, a posortowane czasy beatów mapy sterują impulsami portali, tła i efektów trafień.
 - [ ] Nowe gamemode'y urozmaicające i udoskonalające rozgrywkę — [brak pomysłów, do burzy mózgów]
 
 ## 23. Bugi UI / build
@@ -458,7 +458,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Naprawić efekt krytycznego HP: pulsujące czerwone obramowanie musi zostać wyłączone lub zamrożone przy pauzie oraz zawsze wyczyszczone po game over, wyjściu do menu, restarcie i zmianie trybu — nie dopiero przy rozpoczęciu nowej gry.
 - [ ] Dodać więcej ustawień graficznych z podglądem na żywo i bezpiecznymi presetami: osobne sterowanie detalem areny, podłogą/odbiciami, tłem, mgłą, światłami, shaderami, efektami trafień i wizualizacjami muzycznymi.
 - [ ] Przebudować tło areny i podłogę: poprawić czytelność, głębię, odbicia, materiały i zachowanie na różnych profilach wydajności.
-- [ ] Dodać dodatkowe, opcjonalne efekty reagujące na muzykę i pasma częstotliwości, z kontrolą intensywności, ograniczeniem wpływu na czytelność bloków oraz możliwością całkowitego wyłączenia.
+- [x] Dodać dodatkowe, opcjonalne efekty reagujące na muzykę i pasma częstotliwości, z kontrolą intensywności, ograniczeniem wpływu na czytelność bloków oraz możliwością całkowitego wyłączenia. — portal/tunel, warstwy tła, gwiazdy i odłamki korzystają z energii pasm oraz beatów; ustawienia udostępniają wyłączenie, Auto i ręczne `0–1.5×`, a `gameplayVisualPressure` osłabia dekoracje przy blokach blisko gracza.
 - [ ] Dodać tryb gry z przestrzennie losowymi pozycjami bloków zamiast stałych wysokości. Wykrywać grupy multi-cube (więcej niż 3 bloki w oknie około 0,5 s) i zachowywać dla nich wspólny/przechodni układ, aby sekwencja pozostała fizycznie możliwa do wykonania. Generator musi sprawdzać reachability i kolizje czasowo-przestrzenne.
 - [x] Dodać więcej subtelnych mikroanimacji tekstów, nagłówków, przycisków i zmian stanu, z obsługą `prefers-reduced-motion` i bez pogarszania wydajności/czytelności. — krótkie wejścia obejmują nagłówki i sekcje ustawień/modali, komunikaty stanu mają dyskretny pop, a przyciski delikatny feedback `scale`; efekty używają wyłącznie `opacity`/`transform`/`scale`, są ograniczone do UI i wyłączane przy redukcji ruchu.
 
