@@ -2,6 +2,14 @@ import type { OneHandMode, PerformanceMode, Settings, TrackingSourcePreference }
 import { DEFAULT_PROFILE_COLOR, sanitizeProfileColor } from './profile-color.js';
 
 const KEY = 'hs_settings';
+export const SETTINGS_CHANGED_EVENT = 'hand-sabers:settings-changed';
+export type SettingsChangeSource = 'ui' | 'devpanel' | 'reset' | 'replace';
+
+export interface SettingsChangedDetail {
+  changedKeys: Array<keyof Settings>;
+  settings: Settings;
+  source: SettingsChangeSource;
+}
 const DEFAULT_PERFORMANCE_MODE: PerformanceMode = 'auto';
 const PERFORMANCE_MODES: PerformanceMode[] = [
   DEFAULT_PERFORMANCE_MODE,
@@ -190,6 +198,17 @@ function replaceInMemorySettings(value: Settings): void {
   Object.assign(_settings, value);
 }
 
+function notifySettingsChanged(changedKeys: Array<keyof Settings>, source: SettingsChangeSource): void {
+  const runtime = globalThis as unknown as {
+    CustomEvent?: new <T>(type: string, init: { detail: T }) => unknown;
+    dispatchEvent?: (event: unknown) => boolean;
+  };
+  if (!runtime.CustomEvent || !runtime.dispatchEvent) return;
+  runtime.dispatchEvent(new runtime.CustomEvent<SettingsChangedDetail>(SETTINGS_CHANGED_EVENT, {
+    detail: { changedKeys, settings: _settings, source },
+  }));
+}
+
 export function loadSettings(): Settings {
   let loaded: Partial<Settings> = _settings;
   try {
@@ -212,6 +231,7 @@ export function saveSettings(): void {
 export function resetSettings(): Settings {
   replaceInMemorySettings(normalizeSettings(DEFAULTS));
   saveSettings();
+  notifySettingsChanged(Object.keys(DEFAULTS) as Array<keyof Settings>, 'reset');
   return _settings;
 }
 
@@ -219,6 +239,7 @@ export function replaceSettings(value: Settings): Settings {
   const normalized = normalizeSettings(value);
   localStorage.setItem(KEY, JSON.stringify(normalized));
   replaceInMemorySettings(normalized);
+  notifySettingsChanged(Object.keys(DEFAULTS) as Array<keyof Settings>, 'replace');
   return _settings;
 }
 
@@ -226,9 +247,14 @@ export function getSetting<K extends keyof Settings>(key: K): Settings[K] {
   return _settings[key];
 }
 
-export function setSetting<K extends keyof Settings>(key: K, value: Settings[K]): void {
+export function setSetting<K extends keyof Settings>(
+  key: K,
+  value: Settings[K],
+  source: SettingsChangeSource = 'ui',
+): void {
   _settings[key] = value;
   saveSettings();
+  notifySettingsChanged([key], source);
 }
 
 export function getSettings(): Settings {

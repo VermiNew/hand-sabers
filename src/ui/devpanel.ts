@@ -1,5 +1,10 @@
 import { state } from '../core/state.ts';
-import { setSetting, getSettings } from '../core/settings.ts';
+import {
+  SETTINGS_CHANGED_EVENT,
+  setSetting,
+  getSettings,
+  type SettingsChangedDetail,
+} from '../core/settings.ts';
 import { applyTrackingSettings } from '../tracking/tracking.ts';
 import { setVolume, setMusicVolume, setSfxVolume, setSoundVolume } from '../game/audio.ts';
 import { getPerformanceMode, getPerformanceModes } from '../core/performance.ts';
@@ -91,6 +96,7 @@ interface StatsInstance {
 let pane:         TweakpaneInstance | null = null;
 let statsJS:      StatsInstance | null = null;
 let isDev         = false;
+let settingsSyncBound = false;
 
 // localStorage keys
 const DEV_PANEL_EXPANDED_KEY = 'hs_devpanel_expanded';
@@ -187,6 +193,36 @@ const devData: DevData = {
   mapTitle: '—', mapArtist: '—', mapDifficulty: '—', mapBpm: '—', mapDuration: '—', mapBeats: 0,
   appState: '—',
 };
+
+function syncDevDataFromSettings(settings: Settings): void {
+  devData.sensitivity = settings.sensitivity;
+  devData.flipCamera = settings.flipCamera;
+  devData.noFail = settings.noFail;
+  devData.volume = settings.volume;
+  devData.musicVolume = settings.musicVolume;
+  devData.sfxVolume = settings.sfxVolume;
+  devData.hitSoundVolume = settings.hitSoundVolume;
+  devData.comboSoundVolume = settings.comboSoundVolume;
+  devData.missSoundVolume = settings.missSoundVolume;
+  devData.bombSoundVolume = settings.bombSoundVolume;
+  devData.beatSoundVolume = settings.beatSoundVolume;
+  devData.milestoneSoundVolume = settings.milestoneSoundVolume;
+  devData.audioOffsetMs = settings.audioOffsetMs;
+  devData.oneHandMode = settings.oneHandMode ?? 'both';
+  devData.performanceMode = getPerformanceMode(settings);
+  devData.developerMode = Boolean(settings.developerMode) || isDev;
+}
+
+function bindSettingsSync(): void {
+  if (settingsSyncBound) return;
+  settingsSyncBound = true;
+  window.addEventListener(SETTINGS_CHANGED_EVENT, event => {
+    const detail = (event as CustomEvent<SettingsChangedDetail>).detail;
+    if (!detail || detail.source === 'devpanel') return;
+    syncDevDataFromSettings(detail.settings);
+    pane?.refresh();
+  });
+}
 
 const DEV_ACCENTS: Record<string, string> = {
   green:  '54, 242, 161',
@@ -292,16 +328,8 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
   initStarted = true;
 
   const settings = getSettings();
-  devData.sensitivity   = settings.sensitivity;
-  devData.flipCamera    = settings.flipCamera;
-  devData.noFail        = settings.noFail;
-  devData.volume        = settings.volume;
-  for (const key of ['musicVolume','sfxVolume','hitSoundVolume','comboSoundVolume','missSoundVolume','bombSoundVolume','beatSoundVolume','milestoneSoundVolume'] as const) {
-    devData[key] = settings[key] ?? devData[key];
-  }
-  devData.audioOffsetMs   = settings.audioOffsetMs ?? 0;
-  devData.performanceMode = getPerformanceMode(settings);
-  devData.developerMode   = Boolean(settings.developerMode) || isDev;
+  syncDevDataFromSettings(settings);
+  bindSettingsSync();
   applyDevAccent(settings.devAccent || 'green');
   updateRenderingDiagnostics(lastRenderer!);
 
@@ -426,18 +454,18 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
     hand.addMonitor(devData, 'latMs',         { label: 'Latency', view: 'graph', min: 0, max: 80, interval: 500 });
     addSeparator(hand);
     hand.addInput(devData, 'sensitivity', { label: 'Sensitivity', min: 0.5, max: 2.0, step: 0.05 }).on('change', ev => {
-      setSetting('sensitivity', Number(ev.value));
+      setSetting('sensitivity', Number(ev.value), 'devpanel');
       notifyTrackingSettings({ sensitivity: Number(ev.value) });
     });
     hand.addInput(devData, 'flipCamera', { label: 'Flip kamera' }).on('change', ev => {
-      setSetting('flipCamera', Boolean(ev.value));
+      setSetting('flipCamera', Boolean(ev.value), 'devpanel');
       notifyTrackingSettings({ flipCamera: Boolean(ev.value) });
     });
 
     // ── SND ──
     const sound = tabs.pages[6]!;
     sound.addInput(devData, 'volume', { label: 'Master', min: 0, max: 1, step: 0.05 }).on('change', ev => {
-      setSetting('volume', Number(ev.value));
+      setSetting('volume', Number(ev.value), 'devpanel');
       setVolume(Number(ev.value));
     });
     const audioControls: Array<[keyof DevData, string]> = [
@@ -452,14 +480,14 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
     ];
     for (const [key, label] of audioControls) {
       sound.addInput(devData, key, { label, min: 0, max: 1, step: 0.05 }).on('change', ev => {
-        setSetting(key as keyof Settings, Number(ev.value) as never); // 'as never' — Tweakpane zwraca unknown, setSetting wymaga konkretnych typów
+        setSetting(key as keyof Settings, Number(ev.value) as never, 'devpanel'); // 'as never' — Tweakpane zwraca unknown, setSetting wymaga konkretnych typów
         if (key === 'musicVolume')    setMusicVolume(Number(ev.value));
         else if (key === 'sfxVolume') setSfxVolume(Number(ev.value));
         else setSoundVolume(key, Number(ev.value));
       });
     }
     sound.addInput(devData, 'audioOffsetMs', { label: 'Audio offset ms', min: -500, max: 500, step: 10 }).on('change', ev => {
-      setSetting('audioOffsetMs', Number(ev.value));
+      setSetting('audioOffsetMs', Number(ev.value), 'devpanel');
     });
 
     // ── CFG ──
@@ -469,7 +497,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
     });
     cfg.addInput(devData, 'noFail', { label: 'No Fail' }).on('change', ev => {
       state.noFail = Boolean(ev.value);
-      setSetting('noFail', Boolean(ev.value));
+      setSetting('noFail', Boolean(ev.value), 'devpanel');
     });
     cfg.addInput(devData, 'oneHandMode', {
       label: 'One hand',
@@ -478,7 +506,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
       const val = ev.value === 'both' ? null : ev.value as string;
       state.oneHandMode = val as ('left' | 'right' | null);
       (window as Window & { __oneHandMode?: string }).__oneHandMode = String(val ?? 'both');
-      setSetting('oneHandMode', val as ('left' | 'right' | null));
+      setSetting('oneHandMode', val as ('left' | 'right' | null), 'devpanel');
       notifyTrackingSettings({ oneHandMode: val });
     });
     addSeparator(cfg);
@@ -487,7 +515,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
       options: Object.fromEntries(getPerformanceModes().map(mode => [mode.label, mode.value])),
     }).on('change', ev => {
       const value = String(ev.value);
-      setSetting('performanceMode', value as PerformanceMode);
+      setSetting('performanceMode', value as PerformanceMode, 'devpanel');
       setScenePerformanceProfile({ ...getSettings(), performanceMode: value as PerformanceMode });
       notifyTrackingSettings({ performanceMode: value });
       devData.performanceMode = getPerformanceMode({ performanceMode: value });
