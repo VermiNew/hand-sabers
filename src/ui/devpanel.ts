@@ -8,7 +8,12 @@ import {
 import { applyTrackingSettings } from '../tracking/tracking.ts';
 import { setVolume, setMusicVolume, setSfxVolume, setSoundVolume } from '../game/audio.ts';
 import { getPerformanceMode, getPerformanceModes } from '../core/performance.ts';
-import { getScenePerformanceProfile, setScenePerformanceProfile, setWireframeVisible } from '../game/scene.ts';
+import {
+  getScenePerformanceProfile,
+  setHitPlaneVisible,
+  setScenePerformanceProfile,
+  setWireframeVisible,
+} from '../game/scene.ts';
 import { Vector2 } from 'three';
 import type { WebGLRenderer } from 'three';
 import type { PerformanceMode, Settings } from '../types/index.js';
@@ -97,6 +102,8 @@ let pane:         TweakpaneInstance | null = null;
 let statsJS:      StatsInstance | null = null;
 let isDev         = false;
 let settingsSyncBound = false;
+let initGeneration = 0;
+let panelInteractionController: AbortController | null = null;
 
 // localStorage keys
 const DEV_PANEL_EXPANDED_KEY = 'hs_devpanel_expanded';
@@ -264,8 +271,14 @@ export function setDeveloperPanelEnabled(renderer: WebGLRenderer | null = lastRe
 
   isDev = false;
   initStarted = false;
+  initGeneration++;
+  panelInteractionController?.abort();
+  panelInteractionController = null;
   document.body.classList.remove('dev-tools');
   setCameraPanelInlineVisibility(false);
+  setWireframeVisible(false);
+  setHitPlaneVisible(false);
+  devData.wireframe = false;
   if (pane?.dispose) pane.dispose();
   pane = null;
   if (statsJS?.dom?.parentNode) statsJS.dom.parentNode.removeChild(statsJS.dom);
@@ -326,6 +339,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
   if (!isDev) return;
   if (pane || initStarted) return;
   initStarted = true;
+  const generation = ++initGeneration;
 
   const settings = getSettings();
   syncDevDataFromSettings(settings);
@@ -334,7 +348,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
   updateRenderingDiagnostics(lastRenderer!);
 
   void loadStatsJS().then(Stats => {
-    if (!Stats || !isDev) return;
+    if (!Stats || !isDev || generation !== initGeneration) return;
     statsJS = new Stats();
     statsJS.showPanel(0);
     statsJS.dom.classList.add('hs-stats-panel');
@@ -350,7 +364,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
   }).catch(error => console.warn('Stats.js initialization failed:', error));
 
   void loadTweakpane().then(Pane => {
-    if (!Pane || !isDev) return;
+    if (!Pane || !isDev || generation !== initGeneration) return;
     const initialExpanded = loadDevPanelExpanded();
     pane = new Pane({ title: 'HAND SABERS DEV', expanded: initialExpanded });
     pane.on('fold', event => saveDevPanelExpanded(event.expanded));
@@ -525,7 +539,9 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
     panelEl.classList.add('hs-dev-pane');
     panelEl.setAttribute('aria-label', 'Hand Sabers developer panel');
     panelEl.style.cssText = 'position:fixed;top:16px;left:16px;z-index:9000;width:min(360px,calc(100vw - 32px));';
-    makeDraggable(panelEl);
+    panelInteractionController?.abort();
+    panelInteractionController = new AbortController();
+    makeDraggable(panelEl, panelInteractionController.signal);
     attachMarqueeScroll(panelEl);
   }).catch(error => console.warn('Tweakpane initialization failed:', error));
 }
@@ -658,7 +674,7 @@ function attachMarqueeScroll(panelEl: HTMLElement): void {
   });
 }
 
-function makeDraggable(el: HTMLElement): void {
+function makeDraggable(el: HTMLElement, signal: AbortSignal): void {
   let ox = 0, oy = 0, dragging = false;
   const header = (el.querySelector('.tp-rotv_b') ?? el) as HTMLElement;
   header.style.cursor = 'grab';
@@ -668,14 +684,14 @@ function makeDraggable(el: HTMLElement): void {
     ox = e.clientX - rect.left;
     oy = e.clientY - rect.top;
     header.style.cursor = 'grabbing';
-  });
+  }, { signal });
   window.addEventListener('mousemove', (e: MouseEvent) => {
     if (!dragging) return;
     el.style.left  = `${e.clientX - ox}px`;
     el.style.top   = `${e.clientY - oy}px`;
     el.style.right = 'auto';
-  });
-  window.addEventListener('mouseup', () => { dragging = false; header.style.cursor = 'grab'; });
+  }, { signal });
+  window.addEventListener('mouseup', () => { dragging = false; header.style.cursor = 'grab'; }, { signal });
 }
 
 async function loadTweakpane(): Promise<(new (opts: { title: string; expanded: boolean }) => TweakpaneInstance) | null> {
