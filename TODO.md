@@ -454,7 +454,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [ ] Przebudować tło areny i podłogę: poprawić czytelność, głębię, odbicia, materiały i zachowanie na różnych profilach wydajności.
 - [ ] Dodać dodatkowe, opcjonalne efekty reagujące na muzykę i pasma częstotliwości, z kontrolą intensywności, ograniczeniem wpływu na czytelność bloków oraz możliwością całkowitego wyłączenia.
 - [ ] Dodać tryb gry z przestrzennie losowymi pozycjami bloków zamiast stałych wysokości. Wykrywać grupy multi-cube (więcej niż 3 bloki w oknie około 0,5 s) i zachowywać dla nich wspólny/przechodni układ, aby sekwencja pozostała fizycznie możliwa do wykonania. Generator musi sprawdzać reachability i kolizje czasowo-przestrzenne.
-- [ ] Dodać więcej subtelnych mikroanimacji tekstów, nagłówków, przycisków i zmian stanu, z obsługą `prefers-reduced-motion` i bez pogarszania wydajności/czytelności.
+- [x] Dodać więcej subtelnych mikroanimacji tekstów, nagłówków, przycisków i zmian stanu, z obsługą `prefers-reduced-motion` i bez pogarszania wydajności/czytelności. — krótkie wejścia obejmują nagłówki i sekcje ustawień/modali, komunikaty stanu mają dyskretny pop, a przyciski delikatny feedback `scale`; efekty używają wyłącznie `opacity`/`transform`/`scale`, są ograniczone do UI i wyłączane przy redukcji ruchu.
 
 ### Ustawienia i konfiguracja
 
