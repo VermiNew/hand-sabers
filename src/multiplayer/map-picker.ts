@@ -1,5 +1,5 @@
 import { t } from '../i18n/index.ts';
-import { popFocusTrap, pushFocusTrap } from '../ui/keyboard-nav.ts';
+import { createModalTransition } from '../ui/modal-transition.ts';
 
 interface MapSummary {
   id: string;
@@ -82,17 +82,13 @@ export function initMultiplayerMapPicker(onSelect: (mapId: string) => void): {
   let maps: MapSummary[] = [];
   let selectedId: string | null = null;
   let loading = false;
-  let returnFocus: HTMLElement | null = null;
+  const modal = createModalTransition({
+    overlay,
+    panel: overlay.querySelector<HTMLElement>('.mp-map-picker-panel'),
+  });
 
   const close = () => {
-    if (overlay.hidden) return;
-    overlay.hidden = true;
-    popFocusTrap(overlay);
-    const focusTarget = returnFocus;
-    returnFocus = null;
-    if (focusTarget?.isConnected && focusTarget.getClientRects().length > 0 && !focusTarget.matches('[hidden], :disabled')) {
-      focusTarget.focus({ preventScroll: true });
-    }
+    modal.close();
   };
 
   const render = () => {
@@ -145,26 +141,16 @@ export function initMultiplayerMapPicker(onSelect: (mapId: string) => void): {
   };
 
   openButton.addEventListener('click', () => {
-    if (!overlay.hidden) return;
-    returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    overlay.hidden = false;
-    pushFocusTrap(overlay);
+    if (modal.isOpen()) return;
     searchInput.value = '';
     render();
-    searchInput.focus({ preventScroll: true });
+    modal.open({ initialFocus: searchInput, returnFocusTo: openButton });
   });
   closeButton.addEventListener('click', close);
   overlay.addEventListener('pointerdown', event => {
     if (event.target === overlay) close();
   });
   searchInput.addEventListener('input', render);
-  window.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || overlay.hidden) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    close();
-  }, { capture: true });
-
   return {
     async load() {
       if (loading) return;

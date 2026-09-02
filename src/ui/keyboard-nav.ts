@@ -101,14 +101,12 @@ export function popEscapeHandler(el: HTMLElement): void {
 }
 
 function handleEscape(e: KeyboardEvent): void {
-  // Only fire if no input focused
-  const target = e.target as HTMLElement;
-  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
   if (e.key !== 'Escape') return;
   const top = escapeStack[escapeStack.length - 1];
   if (top) {
     e.preventDefault();
     top.onEscape();
+    return;
   }
 }
 

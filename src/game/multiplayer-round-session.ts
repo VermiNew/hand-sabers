@@ -2,7 +2,11 @@ import { PAUSE_REASONS } from '../core/pause.ts';
 import { S, state } from '../core/state.ts';
 import type { Settings } from '../types/index.js';
 import { t } from '../i18n/index.ts';
-import { sendMultiplayerScore } from '../multiplayer/client.ts';
+import {
+  hideMultiplayerOverlay,
+  sendMultiplayerScore,
+  showMultiplayerOverlay,
+} from '../multiplayer/client.ts';
 import { hideHandsPaused, hidePauseMenu, showMapTitle, ui } from '../ui/ui.ts';
 import { initAudio, stopMapAudio } from './audio.ts';
 import type { CalibrationController } from './calibration-controller.ts';
@@ -67,8 +71,7 @@ export function createMultiplayerRoundSession({
     if (mainMenu) mainMenu.style.display = 'flex';
     document.body.classList.add('menu-open');
     resetMenuDemo();
-    const multiplayerOverlay = document.getElementById('multiplayerOverlay');
-    if (multiplayerOverlay) multiplayerOverlay.hidden = false;
+    showMultiplayerOverlay();
     window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepared', { detail: { mapId } }));
     return true;
   }
@@ -107,8 +110,7 @@ export function createMultiplayerRoundSession({
           completePreparation();
           return;
         }
-        const multiplayerOverlay = document.getElementById('multiplayerOverlay');
-        if (multiplayerOverlay) multiplayerOverlay.hidden = true;
+        hideMultiplayerOverlay();
         await startWithCalibration();
       } catch (error) {
         console.error('Multiplayer preparation failed:', error);
@@ -131,8 +133,7 @@ export function createMultiplayerRoundSession({
       hideOverlay();
       hideHandsPaused();
       hidePauseMenu();
-      const multiplayerOverlay = document.getElementById('multiplayerOverlay');
-      if (multiplayerOverlay) multiplayerOverlay.hidden = true;
+      hideMultiplayerOverlay();
       const mainMenu = document.getElementById('mainMenu');
       if (mainMenu) mainMenu.style.display = 'none';
       document.body.classList.remove('menu-open');

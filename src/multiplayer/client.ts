@@ -18,6 +18,7 @@ import { recordClockPong, resetClockSync, serverTimeToPerformance } from './cloc
 import { createMultiplayerChatView } from './chat-view.ts';
 import { renderMultiplayerScores } from './score-view.ts';
 import { renderRoomPlayerList } from './room-player-list.ts';
+import { createModalTransition, type ModalTransitionController } from '../ui/modal-transition.ts';
 
 export { PROTOCOL_VERSION } from './protocol.ts';
 export { serverTimeToPerformance } from './clock-sync.ts';
@@ -31,6 +32,7 @@ let currentRoom: RoomSnapshot | null = null;
 let pendingPreparationMapId = '';
 let announcedRoundId = 0;
 let lastFinishedRoundId = 0;
+let multiplayerModal: ModalTransitionController | null = null;
 
 function trySocketSend(target: WebSocket | null, payload: string | ArrayBuffer, context: string): boolean {
   if (target?.readyState !== WebSocket.OPEN) return false;
@@ -77,8 +79,18 @@ export function sendMultiplayerScore(payload: {
   );
 }
 
+export function showMultiplayerOverlay(returnFocusTo?: HTMLElement | null): void {
+  multiplayerModal?.open({ returnFocusTo });
+}
+
+export function hideMultiplayerOverlay(): void {
+  multiplayerModal?.close();
+}
+
 export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const overlay = element<HTMLElement>('multiplayerOverlay');
+  const panel = overlay.querySelector<HTMLElement>('.mp-panel');
+  const openButton = element<HTMLButtonElement>('mainMultiplayer');
   const setup = element<HTMLElement>('multiplayerSetup');
   const room = element<HTMLElement>('multiplayerRoom');
   const share = element<HTMLElement>('multiplayerShare');
@@ -107,6 +119,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const lobbyScores = element<HTMLElement>('multiplayerLobbyScores');
   const hudScores = element<HTMLElement>('multiplayerHudScores');
   const copyFeedbackTimers = new Map<HTMLButtonElement, number>();
+  multiplayerModal = createModalTransition({ overlay, panel });
 
   const secureHostingWarning = document.createElement('aside');
   secureHostingWarning.className = 'mp-network-warning';
@@ -136,8 +149,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     joinButton.disabled = busy;
   };
   const open = () => {
-    overlay.hidden = false;
     showMessage();
+    multiplayerModal?.open({ initialFocus: nameInput, returnFocusTo: openButton });
   };
   const showRoom = () => {
     setup.hidden = true;
@@ -390,15 +403,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     });
   }
 
-  element('mainMultiplayer').addEventListener('click', open);
-  element('multiplayerClose').addEventListener('click', () => {
-    overlay.hidden = true;
-  });
+  openButton.addEventListener('click', open);
+  element('multiplayerClose').addEventListener('click', hideMultiplayerOverlay);
   overlay.addEventListener('pointerdown', event => {
-    if (event.target === overlay) overlay.hidden = true;
-  });
-  window.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !overlay.hidden) overlay.hidden = true;
+    if (event.target === overlay) hideMultiplayerOverlay();
   });
 
   createButton.addEventListener('click', async () => {
