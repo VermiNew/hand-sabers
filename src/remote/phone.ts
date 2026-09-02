@@ -58,10 +58,7 @@ const phoneAudio = initPhoneAudio(
 );
 
 // Add "Enable audio" button to the phone page
-setupPhoneAudioUI(() => {
-  // User tapped enable — this satisfies mobile autoplay policy
-  // The actual audio commands will come from the host
-});
+setupPhoneAudioUI(() => phoneAudio.enableAudio());
 
 function applyTranslations(): void {
   document.documentElement.lang = getCurrentLang();

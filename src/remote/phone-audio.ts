@@ -13,10 +13,12 @@ import { isAudioCommand } from './audio-protocol.ts';
 export function initPhoneAudio(onReady: () => void, onError: (code: string) => void): {
   handleCommand(raw: unknown): void;
   setLatencyMs(ms: number): void;
+  enableAudio(): Promise<boolean>;
 } {
   let audioEl: HTMLAudioElement | null = null;
   let latencyMs = 0;
-  let enabled = false;
+  let loaded = false;
+  let userEnabled = false;
   let prepareVersion = 0;
 
   function ensureAudioElement(): HTMLAudioElement {
@@ -36,16 +38,16 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
       const version = ++prepareVersion;
       const audioUrl = getCanonicalMapAudioUrl(cmd.mapId);
       if (!audioUrl) {
-        enabled = false;
+        loaded = false;
         onError('INVALID_AUDIO_URL');
         return;
       }
       const el = ensureAudioElement();
-      enabled = false;
+      loaded = false;
       el.addEventListener('canplay', () => {
         if (version !== prepareVersion || audioEl !== el) return;
-        enabled = true;
-        onReady();
+        loaded = true;
+        if (userEnabled) onReady();
       }, { once: true });
       el.addEventListener('error', () => {
         if (version !== prepareVersion || audioEl !== el) return;
@@ -58,7 +60,7 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
       return;
     }
 
-    if (!enabled || !audioEl) return;
+    if (!loaded || !userEnabled || !audioEl) return;
 
     switch (cmd.type) {
       case 'audio-play': {
@@ -93,12 +95,32 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
     latencyMs = Math.max(0, Math.min(1000, ms));
   }
 
-  return { handleCommand, setLatencyMs };
+  async function enableAudio(): Promise<boolean> {
+    const el = ensureAudioElement();
+    if (!loaded || !el.currentSrc) return false;
+    const muted = el.muted;
+    try {
+      el.muted = true;
+      await el.play();
+      el.pause();
+      userEnabled = true;
+      onReady();
+      return true;
+    } catch {
+      userEnabled = false;
+      onError('ENABLE_FAILED');
+      return false;
+    } finally {
+      el.muted = muted;
+    }
+  }
+
+  return { handleCommand, setLatencyMs, enableAudio };
 }
 
 /** UI helper: adds an "Enable audio" button to the phone page. */
 export function setupPhoneAudioUI(
-  onEnable: () => void,
+  onEnable: () => Promise<boolean>,
 ): void {
   const container = document.querySelector('.remote-card');
   if (!container) return;
@@ -118,10 +140,11 @@ export function setupPhoneAudioUI(
   btn.className = 'remote-audio-enable';
   btn.textContent = t('remoteTracking.phoneAudioEnable');
 
-  btn.addEventListener('click', () => {
+  btn.addEventListener('click', async () => {
     btn.disabled = true;
-    btn.textContent = t('remoteTracking.phoneAudioEnabled');
-    onEnable();
+    const enabled = await onEnable();
+    btn.disabled = enabled;
+    if (enabled) btn.textContent = t('remoteTracking.phoneAudioEnabled');
   });
 
   section.append(title, desc, btn);
