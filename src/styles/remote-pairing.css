@@ -101,13 +101,18 @@
 
 
 .experimental-badge {
-  display:inline-flex; align-items:center; margin-left:10px; padding:4px 7px;
-  border:1px solid rgba(255,190,92,.42); border-radius:999px;
-  background:rgba(255,160,60,.09); color:#ffd08a;
-  font:800 8px 'JetBrains Mono',monospace; letter-spacing:1px; vertical-align:middle;
+  display:inline-flex; align-items:center; gap:5px; margin-left:10px; padding:5px 9px;
+  border:1px solid rgba(255,197,104,.5); border-radius:999px;
+  background:linear-gradient(135deg,rgba(255,183,77,.18),rgba(255,126,60,.08)); color:#ffe0aa;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 5px 18px rgba(255,149,54,.1);
+  font:800 9px/1 'Oxanium',sans-serif; letter-spacing:.8px; text-transform:uppercase; vertical-align:middle;
   white-space:nowrap;
 }
-.sp-tab-title .experimental-badge { transform:translateY(-2px); }
+.experimental-badge::before {
+  content:'science'; color:#ffd17a; font:normal 15px/1 'Material Symbols Rounded';
+  font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 20;
+}
+.sp-tab-title .experimental-badge { transform:translateY(-1px); }
 @media (max-width:560px) {
-  .experimental-badge { display:flex; width:max-content; margin:8px 0 0; }
+  .experimental-badge { width:max-content; max-width:100%; margin:8px 0 0; white-space:normal; line-height:1.25; }
 }
