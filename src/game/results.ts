@@ -9,7 +9,7 @@ export function renderSingleplayerResults(
   state: GameState,
   victory: boolean,
 ): void {
-  const scoreStr = String(Math.max(0, Math.round(state.score))).padStart(6, '0');
+  const score = Math.max(0, Math.round(state.score));
   const combo = Math.max(0, Math.round(state.maxCombo));
   const hits = Math.max(0, Math.round(state.hits));
   const misses = Math.max(0, Math.round(state.misses));
@@ -33,7 +33,7 @@ export function renderSingleplayerResults(
   scoreLabel.textContent = t('gameover.score');
   const scoreValue = document.createElement('span');
   scoreValue.className = 'go-value score-highlight';
-  scoreValue.textContent = scoreStr;
+  scoreValue.setAttribute('aria-label', String(score));
   scoreCard.append(scoreLabel, scoreValue);
 
   const stats = document.createElement('div');
@@ -45,6 +45,24 @@ export function renderSingleplayerResults(
   addStat(stats, t('gameover.perfects'), String(Math.max(0, Math.round(state.perfectHits))));
 
   goBody.append(mapTitle, summary, scoreCard, stats);
+  animateScoreValue(scoreValue, score);
+}
+
+function animateScoreValue(element: HTMLElement, target: number): void {
+  const format = (value: number) => String(value).padStart(6, '0');
+  if (target === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    element.textContent = format(target);
+    return;
+  }
+  const durationMs = 700;
+  const startedAt = performance.now();
+  const frame = (now: number) => {
+    const progress = Math.min(1, (now - startedAt) / durationMs);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    element.textContent = format(Math.round(target * eased));
+    if (progress < 1) requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
 }
 
 function addStat(container: HTMLElement, label: string, value: string, className = ''): void {
