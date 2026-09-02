@@ -424,7 +424,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 
 ### Tracking, kamera i audio telefonu
 
-- [ ] Udostępnić zaawansowane ustawienia modelu śledzenia dłoni po uprzednim zinwentaryzowaniu opcji MediaPipe. Zachować obecne wartości jako domyślne, walidować zakresy, dodać reset i opisy wpływu na dokładność, opóźnienie oraz wydajność.
+- [x] Udostępnić zaawansowane ustawienia modelu śledzenia dłoni po uprzednim zinwentaryzowaniu opcji MediaPipe. Zachować obecne wartości jako domyślne, walidować zakresy, dodać reset i opisy wpływu na dokładność, opóźnienie oraz wydajność. — zinwentaryzowano faktycznie wspierane progi HandLandmarker: wykrycie, obecność i śledzenie; są walidowane w ustawieniach, transferze i protokole telefonu, zachowują domyślne 42%, mają opisy kompromisów oraz atomowy reset wysyłający jedną konfigurację do sparowanego telefonu.
   - [x] Zinwentaryzować lokalnie używane opcje: 2 dłonie, delegat GPU oraz progi wykrycia, obecności i śledzenia — wszystkie z dotychczasową wartością 0,42.
   - [x] Dodać trzy walidowane suwaki modelu dla kamery PC, pełny eksport/import i reset do wartości 0,42; wartości są stosowane przy kolejnym uruchomieniu lokalnego trackingu.
   - [x] Dodać bezpieczne przekazywanie konfiguracji do telefonu: host przesyła wyłącznie trzy walidowane progi po sparowaniu i po zmianie suwaka, a telefon zapisuje je bez przerywania bieżącej detekcji i stosuje przy kolejnym uruchomieniu kamery.
