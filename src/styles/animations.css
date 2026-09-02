@@ -104,6 +104,124 @@ body.danger-crit { --danger-speed:0.5s; }
   transition:opacity 0.18s ease, transform 0.18s ease, visibility 0s;
 }
 
+/* Lightweight UI microinteractions: compositor-only opacity/transform/scale. */
+@keyframes uiMicroRise {
+  from { opacity:0; transform:translateY(5px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+@keyframes uiStatePop {
+  from { opacity:0; transform:scale(.985); }
+  to { opacity:1; transform:scale(1); }
+}
+
+.sp-tab.is-active > :where(.sp-tab-title, .sp-group, .sp-hint),
+[data-modal-transition].modal-transition-open :where(
+  .help-section,
+  .mp-action-card,
+  .rt-status,
+  .profile-onboarding-preview
+) {
+  animation:uiMicroRise .22s cubic-bezier(.22,1,.36,1) both;
+}
+
+[data-modal-transition].modal-transition-open .help-section:nth-child(2),
+[data-modal-transition].modal-transition-open .mp-action-card:nth-child(2) {
+  animation-delay:35ms;
+}
+
+[data-modal-transition].modal-transition-open .help-section:nth-child(3) {
+  animation-delay:70ms;
+}
+
+:where(
+  .mp-message:not([hidden]),
+  .mp-import-status:not([hidden]),
+  .profile-name-error:not([hidden]),
+  #menuProfileSaved.is-visible
+) {
+  animation:uiStatePop .18s ease-out both;
+}
+
+:where(
+  .sp-inline-action,
+  .help-primary,
+  .help-secondary,
+  .mp-primary,
+  .mp-secondary,
+  .rt-primary,
+  .rt-secondary,
+  .cp-modal-btn-apply,
+  .cp-modal-btn-reject
+) {
+  transition-property:background-color, border-color, box-shadow, color, filter, scale;
+  transition-duration:.16s;
+  transition-timing-function:ease;
+}
+
+@media (hover:hover) and (pointer:fine) {
+  :where(
+    .sp-inline-action,
+    .help-primary,
+    .help-secondary,
+    .mp-primary,
+    .mp-secondary,
+    .rt-primary,
+    .rt-secondary,
+    .cp-modal-btn-apply,
+    .cp-modal-btn-reject
+  ):not(:disabled):hover {
+    scale:1.015;
+  }
+}
+
+:where(
+  .sp-inline-action,
+  .help-primary,
+  .help-secondary,
+  .mp-primary,
+  .mp-secondary,
+  .rt-primary,
+  .rt-secondary,
+  .cp-modal-btn-apply,
+  .cp-modal-btn-reject
+):not(:disabled):active {
+  scale:.985;
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .sp-tab.is-active > :where(.sp-tab-title, .sp-group, .sp-hint),
+  [data-modal-transition].modal-transition-open :where(
+    .help-section,
+    .mp-action-card,
+    .rt-status,
+    .profile-onboarding-preview
+  ),
+  :where(
+    .mp-message:not([hidden]),
+    .mp-import-status:not([hidden]),
+    .profile-name-error:not([hidden]),
+    #menuProfileSaved.is-visible
+  ) {
+    animation:none;
+  }
+
+  :where(
+    .sp-inline-action,
+    .help-primary,
+    .help-secondary,
+    .mp-primary,
+    .mp-secondary,
+    .rt-primary,
+    .rt-secondary,
+    .cp-modal-btn-apply,
+    .cp-modal-btn-reject
+  ) {
+    scale:none;
+    transition-duration:.01ms;
+  }
+}
+
 @media (max-width:760px) {
   .main-menu-panel {
     width:100%;
