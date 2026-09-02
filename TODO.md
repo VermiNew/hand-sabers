@@ -466,7 +466,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Dodać do dev panelu średni FPS (AVG FPS) liczony w stabilnym ruchomym oknie obok wartości chwilowej oraz opcjonalnie 1% low, aby chwilowe skoki nie zaciemniały pomiaru. (10-sekundowe okno; 1% low pozostaje opcjonalne.)
 - [x] Sprawdzić wszystkie skutki flagi `?testing`; udokumentować je i, jeśli nadal są potrzebne, dodać kontrolowaną możliwość włączenia równoważnego trybu z panelu developerskiego bez ręcznej edycji URL. `?testing` jest wyłącznie historycznym aliasem `?dev`: uruchamia panel deweloperski i debugowe wizualizacje trackingu; odpowiada mu istniejący przełącznik „Tryb developera”, więc nie dodawano osobnego trybu testowego.
 - [x] Zapisywać stan zminimalizowania panelu HAND SABERS DEV oraz ostatnio otwartą zakładkę; przywracać je po przeładowaniu z rozsądnym fallbackiem po zmianie wersji UI.
-- [ ] Zsynchronizować ustawienia dev panelu z ustawieniami gry dwukierunkowo i na żywo: jedna warstwa stanu, brak rozbieżnych wartości, natychmiastowa aktualizacja UI/sceny oraz poprawny reset do domyślnych.
+- [x] Zsynchronizować ustawienia dev panelu z ustawieniami gry dwukierunkowo i na żywo: jedna warstwa stanu, brak rozbieżnych wartości, natychmiastowa aktualizacja UI/sceny oraz poprawny reset do domyślnych. — `core/settings` emituje typowane zmiany z jednego współdzielonego obiektu; Tweakpane odświeża się po zmianach zwykłego UI/importu/resetu, a zmiany dev panelu synchronizują kontrolki audio, gameplayu, trackingu i grafiki wraz ze sceną. Smoke potwierdził oba kierunki, localStorage i reset wyłączający domyślnie tryb dev.
 
 ### Multiplayer, co-op i czat
 
