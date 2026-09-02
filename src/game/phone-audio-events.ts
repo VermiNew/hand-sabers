@@ -7,7 +7,7 @@ import {
 } from '../remote/host-audio.ts';
 import { state } from '../core/state.ts';
 import type { Settings } from '../types/index.js';
-import { setMusicVolume } from './audio.ts';
+import { getMapAudioPlaybackState, setMusicVolume } from './audio.ts';
 
 export function initPhoneAudioEvents(settings: Settings): void {
   window.addEventListener('hand-sabers:phone-audio-connected', () => {
@@ -20,6 +20,13 @@ export function initPhoneAudioEvents(settings: Settings): void {
     const detail = (event as CustomEvent<{ offsetSec: number; playbackRate: number }>).detail;
     if (!detail) return;
     playPhoneAudio(detail.offsetSec, Date.now(), detail.playbackRate);
+  });
+  window.addEventListener('hand-sabers:phone-audio-ready', () => {
+    if (!isPhoneAudioActive()) return;
+    const playback = getMapAudioPlaybackState();
+    if (playback.playing) {
+      playPhoneAudio(playback.currentTime, Date.now(), playback.playbackRate);
+    }
   });
   window.addEventListener('hand-sabers:map-audio-pause', () => {
     if (isPhoneAudioActive()) pausePhoneAudio();

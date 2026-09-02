@@ -53,6 +53,7 @@ export function onPhoneAudioReady(): void {
   if (getSettings().phoneAudioOutput) {
     syncPhoneAudioVolume();
     mutePcAudio();
+    window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-ready'));
   }
 }
 

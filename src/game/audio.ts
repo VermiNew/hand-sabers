@@ -387,6 +387,18 @@ export function getMapTime(): number {
   return mapOffset + (ctx.currentTime - mapStartedAt) * mapPlaybackRate;
 }
 
+export function getMapAudioPlaybackState(): {
+  playing: boolean;
+  currentTime: number;
+  playbackRate: number;
+} {
+  return {
+    playing: mapPlaying,
+    currentTime: getMapTime(),
+    playbackRate: mapPlaybackRate,
+  };
+}
+
 export function getMapDuration(): number {
   return mapBuffer?.duration ?? 0;
 }
