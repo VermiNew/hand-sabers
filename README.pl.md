@@ -31,6 +31,8 @@ http://localhost:3000
 
 To buduje frontend Vite, kompiluje `server.ts` do `dist-server/` i uruchamia skompilowany serwer Express. Ten tryb jest najprostszy do normalnego grania.
 
+Plik `config.json` steruje opcjonalnymi zabezpieczeniami wdrożeniowymi. Domyślne `"security": false` nie ustawia restrykcyjnej CSP ani kontroli Origin podczas lokalnej pracy. Ustaw `true` dopiero przed publicznym wdrożeniem i po sprawdzeniu aplikacji pod produkcyjnymi nagłówkami.
+
 ## Tryb developerski
 
 Najwygodniej uruchomić backend i Vite razem:

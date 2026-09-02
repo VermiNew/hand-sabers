@@ -31,6 +31,8 @@ http://localhost:3000
 
 This builds the Vite frontend, compiles `server.ts` to `dist-server/` and starts the compiled Express server. This is the simplest way to play the game.
 
+The `config.json` file controls optional deployment protections. The default `"security": false` avoids restrictive CSP and Origin checks during local work. Set it to `true` only before a public deployment and after verifying the app with production headers enabled.
+
 ## Development mode
 
 The easiest way to run both the backend and Vite together:
