@@ -1,5 +1,5 @@
-import { popEscapeHandler, popFocusTrap, pushEscapeHandler, pushFocusTrap } from './keyboard-nav.ts';
 import { t } from '../i18n/index.ts';
+import { createModalTransition } from './modal-transition.ts';
 
 const TUTORIAL_SEEN_KEY = 'hs_tutorial_seen';
 const TUTORIAL_STEPS = [
@@ -33,7 +33,6 @@ export function initHelpOverlay(): void {
     !tutorialStepTitle || !tutorialStepBody || !tutorialSkip || !tutorialBack || !tutorialNext
   ) return;
 
-  let closeTimer: number | null = null;
   let tutorialActive = false;
   let tutorialStep = 0;
 
@@ -54,35 +53,30 @@ export function initHelpOverlay(): void {
     tutorialNext.textContent = t(tutorialStep === TUTORIAL_STEPS.length - 1 ? 'tutorial.finish' : 'tutorial.next');
   };
 
+  const modal = createModalTransition({
+    overlay,
+    panel,
+    visibleClass: 'show',
+    transitionMs: 220,
+    onBeforeClose: () => {
+      if (tutorialActive) markTutorialSeen();
+    },
+  });
+
   const close = () => {
-    if (overlay.hidden) return;
-    if (tutorialActive) markTutorialSeen();
-    overlay.classList.remove('show');
-    popFocusTrap(panel);
-    popEscapeHandler(overlay);
-    closeTimer = window.setTimeout(() => {
-      overlay.hidden = true;
-      closeTimer = null;
-      openButton.focus({ preventScroll: true });
-    }, 180);
+    if (!modal.isOpen()) return;
+    modal.close();
   };
 
   const open = (showTutorial = false) => {
-    if (closeTimer !== null) {
-      window.clearTimeout(closeTimer);
-      closeTimer = null;
-    }
     tutorialActive = showTutorial;
     tutorialStep = 0;
     guide.hidden = showTutorial;
     tutorialView.hidden = !showTutorial;
     if (showTutorial) renderTutorialStep();
-    overlay.hidden = false;
-    pushFocusTrap(panel);
-    pushEscapeHandler(overlay, close);
-    requestAnimationFrame(() => {
-      overlay.classList.add('show');
-      (showTutorial ? tutorialNext : closeButton).focus({ preventScroll: true });
+    modal.open({
+      initialFocus: showTutorial ? tutorialNext : closeButton,
+      returnFocusTo: openButton,
     });
   };
 
