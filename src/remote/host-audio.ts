@@ -11,7 +11,6 @@ import type { AudioCommand } from './audio-protocol.ts';
 let hostSocket: WebSocket | null = null;
 let phoneAudioReady = false;
 let pcMusicMuted = false;
-let originalMusicVolume = 1;
 
 /** Set the host tracking socket so we can send commands to the phone. */
 export function setHostAudioSocket(socket: WebSocket | null): void {
@@ -52,6 +51,7 @@ export function sendAudioCommand(cmd: AudioCommand): boolean {
 export function onPhoneAudioReady(): void {
   phoneAudioReady = true;
   if (getSettings().phoneAudioOutput) {
+    syncPhoneAudioVolume();
     mutePcAudio();
   }
 }
@@ -93,16 +93,17 @@ export function setPhoneAudioVolume(volume: number): boolean {
   return sendAudioCommand({ v: 1, type: 'audio-volume', volume });
 }
 
-/** Mute PC music by setting music volume to 0 (saves original for restore). */
+/** Match phone music loudness to the two gain controls used by PC playback. */
+export function syncPhoneAudioVolume(): boolean {
+  const settings = getSettings();
+  return setPhoneAudioVolume(settings.volume * settings.musicVolume);
+}
+
+/** Mute PC music while leaving sound effects on the computer. */
 function mutePcAudio(): void {
   if (pcMusicMuted) return;
-  const settings = getSettings();
-  originalMusicVolume = settings.musicVolume;
   pcMusicMuted = true;
-  // Dispatch event for the audio module to pick up
-  window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-mute', {
-    detail: { originalVolume: originalMusicVolume },
-  }));
+  window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-mute'));
 }
 
 /** Restore PC music volume after phone audio ends or disconnects. */
@@ -110,6 +111,6 @@ function restorePcAudio(): void {
   if (!pcMusicMuted) return;
   pcMusicMuted = false;
   window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-restore', {
-    detail: { volume: originalMusicVolume },
+    detail: { volume: getSettings().musicVolume },
   }));
 }

@@ -10,9 +10,11 @@ import {
 import { setMusicVolume, setSfxVolume, setSoundVolume, setVolume } from './audio.ts';
 import { narratorQuick } from './narrator.ts';
 import {
+  isPhoneAudioActive,
   preparePhoneAudio,
   setPhoneAudioOutputEnabled,
   stopPhoneAudio,
+  syncPhoneAudioVolume,
 } from '../remote/host-audio.ts';
 import { state } from '../core/state.ts';
 
@@ -42,6 +44,7 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
       settings.volume = value;
       setSetting('volume', value);
       setVolume(value);
+      if (isPhoneAudioActive()) syncPhoneAudioVolume();
     });
   }
 
@@ -57,7 +60,10 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
       const value = Number(input.value);
       (settings as unknown as Record<string, unknown>)[key] = value;
       setSetting(key as keyof Settings, value);
-      if (audioSetters[key]) audioSetters[key](value);
+      if (key === 'musicVolume' && isPhoneAudioActive()) {
+        setMusicVolume(0);
+        syncPhoneAudioVolume();
+      } else if (audioSetters[key]) audioSetters[key](value);
       else setSoundVolume(key, value);
     });
   }
