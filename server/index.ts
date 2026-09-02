@@ -32,6 +32,12 @@ const COMPILED_PROJECT_ROOT = path.resolve(SERVER_DIR, '..', '..');
 const PROJECT_ROOT_CANDIDATES = [SOURCE_PROJECT_ROOT, COMPILED_PROJECT_ROOT];
 const PROJECT_ROOT = PROJECT_ROOT_CANDIDATES.find(candidate => existsSync(path.join(candidate, 'package.json')))
   || SOURCE_PROJECT_ROOT;
+const CONFIG_PATH = path.join(PROJECT_ROOT, 'config.json');
+const projectConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as { security?: unknown };
+if (typeof projectConfig.security !== 'boolean') {
+  throw new Error('config.json: pole "security" musi mieć wartość true albo false.');
+}
+const securityEnabled = projectConfig.security;
 const FRONTEND_DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const STATIC_DIR = existsSync(path.join(FRONTEND_DIST_DIR, 'index.html')) ? FRONTEND_DIST_DIR : PROJECT_ROOT;
 const DEFAULT_MAPS_DIR = path.join(PROJECT_ROOT, 'maps');
@@ -127,20 +133,22 @@ const CONTENT_SECURITY_POLICY = [
   "manifest-src 'self'",
   "media-src 'self' blob:",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://mrdoob.github.io",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://mrdoob.github.io",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "worker-src 'self' blob:",
 ].join('; ');
 
-app.use((req, res, next) => {
-  res.setHeader('Content-Security-Policy', CONTENT_SECURITY_POLICY);
-  res.setHeader('Permissions-Policy', 'camera=(self), fullscreen=(self), geolocation=(), microphone=(), payment=(), usb=()');
-  res.setHeader('Referrer-Policy', 'no-referrer');
-  res.setHeader('X-Content-Type-Options', 'nosniff');
-  res.setHeader('X-Frame-Options', 'DENY');
-  if (req.secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
-  next();
-});
+if (securityEnabled) {
+  app.use((req, res, next) => {
+    res.setHeader('Content-Security-Policy', CONTENT_SECURITY_POLICY);
+    res.setHeader('Permissions-Policy', 'camera=(self), fullscreen=(self), geolocation=(), microphone=(), payment=(), usb=()');
+    res.setHeader('Referrer-Policy', 'no-referrer');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    if (req.secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    next();
+  });
+}
 
 const limiter = new RateLimiter();
 const mapAssetLocks = new KeyedMutex(id => caseInsensitiveMapIds ? id.toLowerCase() : id);
@@ -150,25 +158,27 @@ const trackingSessions = new TrackingSessionRegistry();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
   limiter.check(ip, key, maxPerMinute);
 
-app.use((req, res, next) => {
-  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
-  const origin = req.get('origin');
-  if (!origin) return next();
+if (securityEnabled) {
+  app.use((req, res, next) => {
+    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+    const origin = req.get('origin');
+    if (!origin) return next();
 
-  try {
-    const host = req.get('host');
-    const originUrl = new URL(origin);
-    if (host && originUrl.host === host) return next();
-    const [hostName = '', hostPort = ''] = String(host || '').toLowerCase().split(':');
-    if (originUrl.hostname.toLowerCase() === hostName && ['3000', '5173'].includes(originUrl.port) && ['3000', '5173'].includes(hostPort)) {
-      return next();
-    }
-  } catch {}
+    try {
+      const host = req.get('host');
+      const originUrl = new URL(origin);
+      if (host && originUrl.host === host) return next();
+      const [hostName = '', hostPort = ''] = String(host || '').toLowerCase().split(':');
+      if (originUrl.hostname.toLowerCase() === hostName && ['3000', '5173'].includes(originUrl.port) && ['3000', '5173'].includes(hostPort)) {
+        return next();
+      }
+    } catch {}
 
-  return res.status(403).json({ error: 'Niedozwolone źródło żądania.' });
-});
+    return res.status(403).json({ error: 'Niedozwolone źródło żądania.' });
+  });
+}
 
-const BLOCKED_STATIC_RE = /^\/(?:node_modules|maps|scripts|server|src|tests|dist-server|\.claude|\.git)(?:\/|$)|^\/(?:server\.(?:js|ts)|package(?:-lock)?\.json|TODO\.md|README(?:\.pl)?\.md|vite\.config\.js|tsconfig(?:\.server)?\.json|AGENTS\.md)$/i;
+const BLOCKED_STATIC_RE = /^\/(?:node_modules|maps|scripts|server|src|tests|dist-server|\.claude|\.git)(?:\/|$)|^\/(?:server\.(?:js|ts)|package(?:-lock)?\.json|config\.json|TODO\.md|README(?:\.pl)?\.md|vite\.config\.js|tsconfig(?:\.server)?\.json|AGENTS\.md)$/i;
 app.use((req, res, next) => {
   if ((req.method === 'GET' || req.method === 'HEAD') && BLOCKED_STATIC_RE.test(req.path)) {
     return res.status(404).type('text/plain').send('Not found');
@@ -177,6 +187,10 @@ app.use((req, res, next) => {
 });
 app.use(express.static(STATIC_DIR, { dotfiles: 'deny', index: false }));
 app.get('/', (_req, res) => res.sendFile(path.join(STATIC_DIR, 'index.html')));
+
+app.get('/api', (_req, res) => {
+  res.json({ ok: true, name: 'hand-sabers', health: '/api/health' });
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, name: 'hand-sabers', time: new Date().toISOString(), maxImportBytes: MAX_IMPORT_BYTES });
@@ -243,6 +257,7 @@ server.listen(PORT, '0.0.0.0', () => {
   const protocol = secure ? 'https' : 'http';
   console.log(`Hand Sabers → ${protocol}://localhost:${PORT}`);
   console.log(`W sieci lokalnej → ${protocol}://<twoje-ip-lub-hostname>:${PORT}`);
+  console.log(`Zabezpieczenia wdrożeniowe: ${securityEnabled ? 'włączone' : 'wyłączone'} (config.json → security).`);
   if (!secure) console.log('Kamera telefonu poza localhost wymaga HTTPS (HAND_SABERS_TLS_CERT + HAND_SABERS_TLS_KEY).');
 });
 
