@@ -462,7 +462,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 
 ### Developer tools
 
-- [ ] Dokończyć tryb deweloperski jako spójny zestaw narzędzi, usunąć martwe kontrolki i zapewnić poprawne sprzątanie stanu po jego wyłączeniu.
+- [x] Dokończyć tryb deweloperski jako spójny zestaw narzędzi, usunąć martwe kontrolki i zapewnić poprawne sprzątanie stanu po jego wyłączeniu. — ustawienia i Tweakpane synchronizują się dwukierunkowo, wszystkie widoczne kontrolki mają aktywne handlery, a wyłączenie usuwa panel, Stats, globalne nasłuchy przeciągania, spóźnione inicjalizacje, klasę trybu oraz debugowe hitboxy/wireframe. Przycisk `[dev]` przełącza narzędzia bez przeładowania i usuwa wymuszający parametr URL; zweryfikowano szybkie przełączenie i dwa pełne cykle bez duplikatów lub pozostawionego stanu.
 - [x] Dodać do dev panelu średni FPS (AVG FPS) liczony w stabilnym ruchomym oknie obok wartości chwilowej oraz opcjonalnie 1% low, aby chwilowe skoki nie zaciemniały pomiaru. (10-sekundowe okno; 1% low pozostaje opcjonalne.)
 - [x] Sprawdzić wszystkie skutki flagi `?testing`; udokumentować je i, jeśli nadal są potrzebne, dodać kontrolowaną możliwość włączenia równoważnego trybu z panelu developerskiego bez ręcznej edycji URL. `?testing` jest wyłącznie historycznym aliasem `?dev`: uruchamia panel deweloperski i debugowe wizualizacje trackingu; odpowiada mu istniejący przełącznik „Tryb developera”, więc nie dodawano osobnego trybu testowego.
 - [x] Zapisywać stan zminimalizowania panelu HAND SABERS DEV oraz ostatnio otwartą zakładkę; przywracać je po przeładowaniu z rozsądnym fallbackiem po zmianie wersji UI.
