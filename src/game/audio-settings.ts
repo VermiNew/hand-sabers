@@ -9,7 +9,12 @@ import {
 } from './audio-calibration.ts';
 import { setMusicVolume, setSfxVolume, setSoundVolume, setVolume } from './audio.ts';
 import { narratorQuick } from './narrator.ts';
-import { isPhoneAudioActive } from '../remote/host-audio.ts';
+import {
+  preparePhoneAudio,
+  setPhoneAudioOutputEnabled,
+  stopPhoneAudio,
+} from '../remote/host-audio.ts';
+import { state } from '../core/state.ts';
 
 type RangeBinder = (input: HTMLInputElement | null) => void;
 
@@ -99,9 +104,15 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
   if (phoneAudioToggle) {
     phoneAudioToggle.checked = settings.phoneAudioOutput ?? false;
     phoneAudioToggle.addEventListener('change', () => {
-      settings.phoneAudioOutput = phoneAudioToggle.checked;
-      setSetting('phoneAudioOutput', phoneAudioToggle.checked);
-      setMusicVolume(phoneAudioToggle.checked && isPhoneAudioActive() ? 0 : settings.musicVolume);
+      const enabled = phoneAudioToggle.checked;
+      settings.phoneAudioOutput = enabled;
+      setSetting('phoneAudioOutput', enabled);
+      setPhoneAudioOutputEnabled(enabled);
+      if (enabled && state.map?.id && !state.map.localOnly) {
+        preparePhoneAudio(state.map.id);
+      } else if (!enabled) {
+        stopPhoneAudio();
+      }
     });
   }
 

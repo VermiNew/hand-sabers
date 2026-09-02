@@ -28,6 +28,15 @@ export function isPhoneAudioActive(): boolean {
   return getSettings().phoneAudioOutput && phoneAudioReady;
 }
 
+/** Apply an output change immediately, keeping the PC as the reliable fallback. */
+export function setPhoneAudioOutputEnabled(enabled: boolean): void {
+  if (enabled && phoneAudioReady) {
+    mutePcAudio();
+    return;
+  }
+  restorePcAudio();
+}
+
 /** Send an audio command to the phone via the tracking channel. */
 export function sendAudioCommand(cmd: AudioCommand): boolean {
   if (!hostSocket || hostSocket.readyState !== WebSocket.OPEN) return false;
