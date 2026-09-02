@@ -3,10 +3,13 @@ import { showMultiplayerResults } from '../ui/ui.ts';
 import { getCurrentPlayerId } from '../multiplayer/client.ts';
 import { parseRoomSnapshot } from '../multiplayer/protocol.ts';
 import { recordMultiplayerGame } from '../core/achievements.ts';
+import type { GameMode } from '../types/index.js';
 
 export interface MultiplayerRules {
   trainingMode: boolean;
   noFail: boolean;
+  gameMode: GameMode;
+  noteSpeed: 0.75 | 1 | 1.35 | 1.75;
 }
 
 export interface MultiplayerRoundStart {
@@ -48,6 +51,8 @@ export function initMultiplayerEvents({ onPrepare, onStart }: MultiplayerEventsO
       && !Array.isArray(rules)
       && typeof (rules as Record<string, unknown>)['trainingMode'] === 'boolean'
       && typeof (rules as Record<string, unknown>)['noFail'] === 'boolean'
+      && ['normal', 'no-arrows', 'pro', 'speed-trials'].includes(String((rules as Record<string, unknown>)['gameMode']))
+      && [0.75, 1, 1.35, 1.75].includes(Number((rules as Record<string, unknown>)['noteSpeed']))
       && typeof detail.startAtPerformance === 'number'
     ) {
       onStart({

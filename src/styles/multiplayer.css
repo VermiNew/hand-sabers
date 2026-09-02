@@ -155,6 +155,12 @@
 .mp-rule { display:flex; align-items:center; gap:9px; color:var(--text); font:600 10px 'JetBrains Mono',monospace; }
 .mp-rule input { accent-color:var(--accent); }
 .mp-rules:disabled .mp-rule { opacity:.62; }
+.mp-rule-field { display:grid; gap:5px; color:var(--dim); font:700 9px 'Oxanium',sans-serif; letter-spacing:.7px; }
+.mp-rule-field select {
+  width:100%; min-height:35px; padding:0 9px; border:1px solid rgba(142,200,255,.18); border-radius:6px;
+  background:#07101c; color:var(--text); font:700 10px 'Oxanium',sans-serif;
+}
+.mp-rule-field select:disabled { opacity:.72; }
 .mp-rules > p { color:var(--dim); font-size:9px; line-height:1.4; }
 .mp-lobby-controls .mp-primary { margin-top:14px; }
 .mp-lobby-controls > p { margin-top:9px; color:var(--dim); font-size:9px; line-height:1.45; }

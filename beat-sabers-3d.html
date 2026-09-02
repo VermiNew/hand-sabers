@@ -872,6 +872,24 @@
                 <input id="multiplayerNoFail" type="checkbox">
                 <span data-i18n="multiplayer.noFail">NO FAIL</span>
               </label>
+              <label class="mp-rule-field">
+                <span data-i18n="settings.gameplay.gameMode">TRYB GRY</span>
+                <select id="multiplayerGameMode">
+                  <option value="normal" data-i18n="settings.gameplay.modeNormal">Normalny</option>
+                  <option value="no-arrows" data-i18n="settings.gameplay.modeNoArrows">Bez strzałek</option>
+                  <option value="pro" data-i18n="settings.gameplay.modePro">Pro</option>
+                  <option value="speed-trials" data-i18n="settings.gameplay.modeSpeedTrials">Speed Trials</option>
+                </select>
+              </label>
+              <label class="mp-rule-field">
+                <span data-i18n="settings.gameplay.noteSpeed">PRĘDKOŚĆ NUT</span>
+                <select id="multiplayerNoteSpeed">
+                  <option value="0.75" data-i18n="settings.gameplay.speedRelaxed">Spokojny</option>
+                  <option value="1" data-i18n="settings.gameplay.speedNormal">Standard</option>
+                  <option value="1.35" data-i18n="settings.gameplay.speedFast">Szybki</option>
+                  <option value="1.75" data-i18n="settings.gameplay.speedExpert">Expert</option>
+                </select>
+              </label>
               <p data-i18n="multiplayer.hostControlsRules">Te ustawienia kontroluje host.</p>
             </fieldset>
             <button class="mp-primary" id="multiplayerReady" type="button" disabled data-i18n="multiplayer.ready">GOTOWY</button>

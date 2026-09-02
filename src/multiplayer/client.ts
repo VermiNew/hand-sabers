@@ -112,6 +112,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const rulesPanel = element<HTMLFieldSetElement>('multiplayerRules');
   const trainingModeInput = element<HTMLInputElement>('multiplayerTrainingMode');
   const noFailInput = element<HTMLInputElement>('multiplayerNoFail');
+  const gameModeSelect = element<HTMLSelectElement>('multiplayerGameMode');
+  const noteSpeedSelect = element<HTMLSelectElement>('multiplayerNoteSpeed');
   const readyButton = element<HTMLButtonElement>('multiplayerReady');
   const startButton = element<HTMLButtonElement>('multiplayerStart');
   const coopHint = element<HTMLElement>('multiplayerCoopHint');
@@ -182,6 +184,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     rulesPanel.disabled = true;
     trainingModeInput.checked = false;
     noFailInput.checked = false;
+    gameModeSelect.value = 'normal';
+    noteSpeedSelect.value = '1';
     readyButton.disabled = true;
     readyButton.classList.remove('is-ready');
     readyButton.textContent = t('multiplayer.ready');
@@ -265,6 +269,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     modeSelect.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     trainingModeInput.checked = snapshot.rules.trainingMode;
     noFailInput.checked = snapshot.rules.noFail;
+    gameModeSelect.value = snapshot.rules.gameMode;
+    noteSpeedSelect.value = String(snapshot.rules.noteSpeed);
     rulesPanel.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     const self = snapshot.players.find(player => player.id === currentPlayerId);
     readyButton.disabled = !snapshot.mapId || !self || Boolean(pendingPreparationMapId);
@@ -497,10 +503,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       type: 'set-rules',
       trainingMode: trainingModeInput.checked,
       noFail: noFailInput.checked,
+      gameMode: gameModeSelect.value,
+      noteSpeed: Number(noteSpeedSelect.value),
     });
   };
   trainingModeInput.addEventListener('change', sendRules);
   noFailInput.addEventListener('change', sendRules);
+  gameModeSelect.addEventListener('change', sendRules);
+  noteSpeedSelect.addEventListener('change', sendRules);
   window.addEventListener('hand-sabers:multiplayer-prepared', event => {
     const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
     if (typeof mapId !== 'string' || mapId !== pendingPreparationMapId || currentRoom?.mapId !== mapId) return;

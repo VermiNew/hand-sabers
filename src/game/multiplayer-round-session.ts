@@ -52,10 +52,17 @@ export function createMultiplayerRoundSession({
   let active = false;
   let rules: MultiplayerRules | null = null;
   let preparationMapId = '';
+  let singleplayerRules: Pick<Settings, 'gameMode' | 'noteSpeed'> | null = null;
 
   function restoreSingleplayerRules(): void {
     active = false;
     rules = null;
+    if (singleplayerRules) {
+      settings.gameMode = singleplayerRules.gameMode;
+      settings.noteSpeed = singleplayerRules.noteSpeed;
+      document.body.dataset['gameMode'] = singleplayerRules.gameMode;
+      singleplayerRules = null;
+    }
     state.noFail = settings.noFail;
     document.body.classList.toggle('training-mode', settings.trainingMode);
   }
@@ -144,9 +151,16 @@ export function createMultiplayerRoundSession({
       state.appState = S.PLAYING;
       rules = { ...detail.rules };
       active = true;
+      singleplayerRules = {
+        gameMode: settings.gameMode,
+        noteSpeed: settings.noteSpeed,
+      };
+      settings.gameMode = detail.rules.gameMode;
+      settings.noteSpeed = detail.rules.noteSpeed;
       scorePublisher.reset();
       state.noFail = detail.rules.noFail;
       document.body.classList.toggle('training-mode', detail.rules.trainingMode);
+      document.body.dataset['gameMode'] = detail.rules.gameMode;
       document.body.dataset['multiplayerMode'] = detail.mode;
       resetMapSpawn();
       mapTimeline.startAt(detail.startAtPerformance);
