@@ -449,7 +449,8 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
   - [ ] Wykonać ręczny pomiar na realnych wyjściach audio (przewodowe, Bluetooth, głośniki) i ocenić, czy zakres oraz znak zapisanego offsetu odpowiadają odczuciu w grze.
   - [x] Pokazać offset, rozrzut i liczbę użytych próbek dla wyniku stabilnego oraz niestabilnego.
   - [x] Czyścić timery animacji i stan wizualny przy anulowaniu, wyniku, zamknięciu oraz ponowieniu pomiaru.
-  - [ ] Ręcznie odsłuchać i sprawdzić pełny flow w obsługiwanych przeglądarkach: start, anulowanie, stabilny wynik, niestabilny wynik, zastosowanie, zamknięcie i szybkie ponowienie.
+  - [x] Sprawdzić pełny flow UI w Chromium: start, anulowanie, stabilny wynik, niestabilny wynik, zastosowanie, zamknięcie i szybkie ponowienie. Smoke potwierdził stabilny wynik `148 ms / ±31 ms`, zastosowanie, natychmiastowe anulowanie, reset retry do `ROZGRZEWKA 0 / 2` i brak błędów strony; wcześniejszy smoke potwierdził również wynik niestabilny i „Zastosuj mimo to”.
+  - [ ] Ręcznie odsłuchać tyknięcia i wynik na realnym wyjściu audio w każdej docelowo obsługiwanej przeglądarce.
 
 ### Gameplay, grafika i arena
 
