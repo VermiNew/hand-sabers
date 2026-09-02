@@ -113,7 +113,7 @@
       </nav>
 
       <!-- Zawartość zakładek -->
-      <div class="sp-body">
+      <div class="sp-body" tabindex="0" aria-label="Zawartość ustawień">
 
         <!-- TAB: AUDIO -->
         <div class="sp-tab is-active" data-tab="audio">
@@ -715,7 +715,7 @@
 
 <!-- HELP -->
 <div id="helpOverlay" class="help-overlay" hidden>
-  <section class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <section class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle" tabindex="0">
     <header class="help-head">
       <div>
         <h2 id="helpTitle" data-i18n="help.title">JAK GRAĆ</h2>
@@ -778,7 +778,7 @@
 
 <!-- MULTIPLAYER -->
 <div id="multiplayerOverlay" class="mp-overlay" hidden>
-  <section class="mp-panel" role="dialog" aria-modal="true" aria-labelledby="multiplayerTitle">
+  <section class="mp-panel" role="dialog" aria-modal="true" aria-labelledby="multiplayerTitle" tabindex="0">
     <header class="mp-header">
       <div>
         <p class="mp-eyebrow">HAND SABERS / ONLINE</p>
@@ -886,7 +886,7 @@
             <span class="mp-label" id="multiplayerChatTitle" data-i18n="multiplayer.chat">CZAT POKOJU</span>
             <span data-i18n="multiplayer.chatLimit">DO 240 ZNAKÓW</span>
           </header>
-          <div class="mp-chat-messages" id="multiplayerChatMessages" role="log" aria-live="polite"></div>
+          <div class="mp-chat-messages" id="multiplayerChatMessages" role="log" aria-live="polite" tabindex="0" aria-label="Wiadomości czatu pokoju"></div>
           <form class="mp-chat-form" id="multiplayerChatForm">
             <input id="multiplayerChatInput" type="text" maxlength="240" autocomplete="off"
               placeholder="Napisz wiadomość…" aria-label="Wiadomość na czacie" disabled>
@@ -916,7 +916,7 @@
       <span class="material-symbols-rounded" aria-hidden="true">search</span>
       <input id="multiplayerMapSearch" type="search" autocomplete="off" placeholder="Szukaj map…">
     </label>
-    <div class="mp-map-list" id="multiplayerMapList"></div>
+    <div class="mp-map-list" id="multiplayerMapList" tabindex="0" aria-label="Lista map pokoju"></div>
   </section>
 </div>
 
@@ -1263,8 +1263,8 @@
     </div>
     <div class="mp-import-status" id="mpImportStatus" role="status" hidden></div>
     <div class="mp-overlay-body">
-      <div class="mp-map-list" id="mpMapList" role="listbox"></div>
-      <div class="mp-detail-pane" id="mpDetailPane">
+      <div class="mp-map-list" id="mpMapList" role="listbox" tabindex="0" aria-label="Lista map"></div>
+      <div class="mp-detail-pane" id="mpDetailPane" tabindex="0" aria-label="Szczegóły mapy">
         <div class="mp-detail-empty" data-i18n="mapPicker.selectMap">Wybierz mapę z listy</div>
       </div>
     </div>
@@ -1274,7 +1274,7 @@
 
 <!-- PROFILE ONBOARDING (first-time user) -->
 <div id="profileOnboarding" class="profile-onboarding" hidden>
-  <div class="profile-onboarding-card">
+  <div class="profile-onboarding-card" tabindex="0">
     <h2 data-i18n="profile.welcomeTitle">Witaj w Hand Sabers!</h2>
     <p class="profile-onboarding-intro" data-i18n="profile.welcomeIntro">Przed startem wybierz nazwę gracza i awatar. Będą używane w grze, trybie multiplayer i rankingach.</p>
     <div class="profile-onboarding-preview" aria-live="polite">

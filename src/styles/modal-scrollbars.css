@@ -1,0 +1,139 @@
+/* Shared scrollbar treatment for scrollable surfaces inside game overlays. */
+:where(
+  .main-settings-card,
+  .sp-body,
+  .help-panel,
+  .mp-panel,
+  .mp-map-list,
+  .mp-chat-messages,
+  #mapPickerOverlay .mp-detail-pane,
+  .profile-onboarding-card,
+  #narratorSpeech
+) {
+  scrollbar-color: rgba(126, 184, 255, .52) rgba(3, 8, 18, .26);
+  scrollbar-width: thin;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+:where(
+  .main-settings-card,
+  .sp-body,
+  .help-panel,
+  .mp-panel,
+  .mp-map-list,
+  .mp-chat-messages,
+  #mapPickerOverlay .mp-detail-pane,
+  .profile-onboarding-card,
+  #narratorSpeech
+)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:where(
+  .main-settings-card,
+  .sp-body,
+  .help-panel,
+  .mp-panel,
+  .mp-map-list,
+  .mp-chat-messages,
+  #mapPickerOverlay .mp-detail-pane,
+  .profile-onboarding-card,
+  #narratorSpeech
+)::-webkit-scrollbar-track {
+  background: rgba(3, 8, 18, .26);
+}
+
+:where(
+  .main-settings-card,
+  .sp-body,
+  .help-panel,
+  .mp-panel,
+  .mp-map-list,
+  .mp-chat-messages,
+  #mapPickerOverlay .mp-detail-pane,
+  .profile-onboarding-card,
+  #narratorSpeech
+)::-webkit-scrollbar-thumb {
+  min-height: 36px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(126, 184, 255, .52);
+  background-clip: padding-box;
+}
+
+:where(
+  .main-settings-card,
+  .sp-body,
+  .help-panel,
+  .mp-panel,
+  .mp-map-list,
+  .mp-chat-messages,
+  #mapPickerOverlay .mp-detail-pane,
+  .profile-onboarding-card,
+  #narratorSpeech
+)::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(160, 207, 255, .76);
+}
+
+:where(
+  .sp-body,
+  .help-panel,
+  .mp-panel,
+  .mp-map-list,
+  .mp-chat-messages,
+  #mapPickerOverlay .mp-detail-pane,
+  .profile-onboarding-card,
+  #narratorSpeech
+)[tabindex]:focus-visible {
+  outline: 2px solid var(--main-light, #8ec8ff);
+  outline-offset: -3px;
+}
+
+@media (pointer: coarse) {
+  :where(
+    .main-settings-card,
+    .sp-body,
+    .help-panel,
+    .mp-panel,
+    .mp-map-list,
+    .mp-chat-messages,
+    #mapPickerOverlay .mp-detail-pane,
+    .profile-onboarding-card,
+    #narratorSpeech
+  ) {
+    scrollbar-width: auto;
+  }
+
+  :where(
+    .main-settings-card,
+    .sp-body,
+    .help-panel,
+    .mp-panel,
+    .mp-map-list,
+    .mp-chat-messages,
+    #mapPickerOverlay .mp-detail-pane,
+    .profile-onboarding-card,
+    #narratorSpeech
+  )::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (forced-colors: active) {
+  :where(
+    .main-settings-card,
+    .sp-body,
+    .help-panel,
+    .mp-panel,
+    .mp-map-list,
+    .mp-chat-messages,
+    #mapPickerOverlay .mp-detail-pane,
+    .profile-onboarding-card,
+    #narratorSpeech
+  ) {
+    scrollbar-color: auto;
+  }
+}
