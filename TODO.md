@@ -478,5 +478,5 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 ### Tutorial i ogólny polish UI
 
 - [ ] Zbudować pełny interaktywny tutorial gry: konfiguracja kamery, kalibracja, pozycja dłoni, pierwszy ruch mieczem, prawidłowe cięcie, timing, combo, bomby, held beats, pauza i ukończenie krótkiej kontrolowanej sekwencji z feedbackiem na żywo.
-- [ ] Ujednolicić i poprawić styl scrollbarów we wszystkich modalach, z obsługą Firefox/Chromium, klawiatury, wysokiego kontrastu i urządzeń dotykowych.
+- [x] Ujednolicić i poprawić styl scrollbarów we wszystkich modalach, z obsługą Firefox/Chromium, klawiatury, wysokiego kontrastu i urządzeń dotykowych. — wspólna warstwa stylu obejmuje przewijane powierzchnie ustawień, pomocy, multiplayera, pickerów map, onboardingu i narratora; dodano fokus klawiatury, większe uchwyty dla urządzeń dotykowych, `overscroll-behavior` oraz fallback `forced-colors`.
 - [ ] Poprawić animacje wejścia i wyjścia wszystkich modali: wspólny mechanizm, prawidłowe oczekiwanie przed `hidden`, focus trap/restore, blokowanie interakcji z tłem oraz `prefers-reduced-motion`.
