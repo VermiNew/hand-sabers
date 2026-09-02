@@ -967,7 +967,18 @@
     "settingsIntro": "Nazwa, awatar i kolor będą widoczne w grze, rankingach oraz trybie multiplayer.",
     "chooseColor": "Kolor profilu",
     "customColor": "Własny",
-    "colorPreset": "Kolor profilu: {{color}}"
+    "colorPreset": "Kolor profilu: {{color}}",
+    "nameRequired": "Wpisz nazwę gracza, aby kontynuować.",
+    "avatars": {
+      "default": "Awatar: osoba",
+      "cat": "Awatar: kot",
+      "rocket": "Awatar: rakieta",
+      "star": "Awatar: gwiazda",
+      "music": "Awatar: nuta",
+      "bolt": "Awatar: błyskawica",
+      "diamond": "Awatar: diament",
+      "forest": "Awatar: las"
+    }
   },
   "metronome": {
     "title": "KALIBRACJA METRONOMU",

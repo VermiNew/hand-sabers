@@ -967,7 +967,18 @@
     "settingsIntro": "Your name, avatar, and color appear in the game, leaderboards, and multiplayer.",
     "chooseColor": "Profile color",
     "customColor": "Custom",
-    "colorPreset": "Profile color: {{color}}"
+    "colorPreset": "Profile color: {{color}}",
+    "nameRequired": "Enter a player name to continue.",
+    "avatars": {
+      "default": "Avatar: person",
+      "cat": "Avatar: cat",
+      "rocket": "Avatar: rocket",
+      "star": "Avatar: star",
+      "music": "Avatar: music note",
+      "bolt": "Avatar: lightning bolt",
+      "diamond": "Avatar: diamond",
+      "forest": "Avatar: forest"
+    }
   },
   "metronome": {
     "title": "METRONOME CALIBRATION",

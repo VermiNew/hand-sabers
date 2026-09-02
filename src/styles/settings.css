@@ -429,6 +429,7 @@ body.settings-modal-open #camPanel {
 .profile-settings-section .profile-avatar-option.is-selected {
   box-shadow: 0 0 0 3px rgba(47,124,255,0.1), inset 0 0 18px rgba(47,124,255,0.09);
 }
+.profile-name-error { margin: 7px 0 0; color: #ff8d9a; font: 500 11px/1.4 'JetBrains Mono', monospace; }
 
 .profile-color-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .profile-color-presets { display: flex; flex-wrap: wrap; gap: 8px; }

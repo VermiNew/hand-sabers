@@ -538,9 +538,10 @@
             <div class="sp-group-title" data-i18n="profile.playerName">Nazwa gracza</div>
             <label class="profile-settings-field" for="menuProfileName">
               <span class="material-symbols-rounded" aria-hidden="true">badge</span>
-              <input type="text" id="menuProfileName" class="sp-profile-input" maxlength="32" autocomplete="nickname">
+              <input type="text" id="menuProfileName" class="sp-profile-input" maxlength="32" autocomplete="nickname" aria-describedby="menuProfileNameCount menuProfileNameError">
               <span class="profile-name-count" id="menuProfileNameCount">0 / 32</span>
             </label>
+            <p class="profile-name-error" id="menuProfileNameError" role="alert" hidden></p>
           </div>
 
           <div class="profile-settings-section profile-avatar-section">
@@ -1272,9 +1273,14 @@
   <div class="profile-onboarding-card">
     <h2 data-i18n="profile.welcomeTitle">Witaj w Hand Sabers!</h2>
     <p class="profile-onboarding-intro" data-i18n="profile.welcomeIntro">Przed startem wybierz nazwę gracza i awatar. Będą używane w grze, trybie multiplayer i rankingach.</p>
+    <div class="profile-onboarding-preview" aria-live="polite">
+      <span class="material-symbols-rounded" id="profileOnboardingAvatarPreview" aria-hidden="true">person</span>
+      <strong id="profileOnboardingNamePreview">Gracz</strong>
+    </div>
     <div class="profile-onboarding-field">
       <label for="profileNameInput" data-i18n="profile.playerName">Nazwa gracza</label>
-      <input type="text" id="profileNameInput" maxlength="32" autocomplete="nickname" placeholder="Gracz">
+      <input type="text" id="profileNameInput" maxlength="32" autocomplete="nickname" placeholder="Gracz" aria-describedby="profileNameError">
+      <p class="profile-name-error" id="profileNameError" role="alert" hidden></p>
     </div>
     <div class="profile-onboarding-field">
       <label data-i18n="profile.chooseAvatar">Wybierz awatar</label>
