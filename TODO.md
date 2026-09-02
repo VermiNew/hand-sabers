@@ -154,10 +154,10 @@
 - [ ] Dodać ekspresje twarzy avatara narratora z `.agents/LORA`
 - [ ] Wykorzystać narratora (`?narrator&text=""`) do czegoś pożytecznego w grze — [do ustalenia]
 - [ ] Lyra ma mieć dobre serce i być pomocna w nauce — spersonalizować teksty, ton i reakcje
-- [ ] Powiększyć kontener narratora — rozmiar ma być kalkulowany na początku, nie ma skakać gdy jest dużo tekstu
-- [ ] Każdy znak tekstu narratora ma mieć fade-in (stopniowe pojawianie się) zamiast prostego typewriter effect
-- [ ] Gdy na ekranie są przyciski narratora, gra ma zrobić pauzę dopóki gracz nie wybierze opcji
-- [ ] Dodać tryb narratora bez przycisków — sam tekst z automatycznym przejściem (do użycia w kreatorze map i tutorialu)
+- [x] Powiększyć kontener narratora — rozmiar ma być kalkulowany na początku, nie ma skakać gdy jest dużo tekstu. — stały, przewijany obszar pięciu linii na desktopie i większy na mobile, zweryfikowany smoke długiej rozmowy.
+- [x] Każdy znak tekstu narratora ma mieć fade-in (stopniowe pojawianie się) zamiast prostego typewriter effect. — każdy wpisywany znak otrzymuje `.narrator-char` z animacją, z poszanowaniem `prefers-reduced-motion`.
+- [x] Gdy na ekranie są przyciski narratora, gra ma zrobić pauzę dopóki gracz nie wybierze opcji. — zdarzenia `hand-sabers:narrator-pause`/`resume` zatrzymują i bezpiecznie wznawiają timeline.
+- [x] Dodać tryb narratora bez przycisków — sam tekst z automatycznym przejściem (do użycia w kreatorze map i tutorialu). — `narratorQuick` korzysta z `autoAdvanceMs` bez tworzenia kontrolek.
 
 ## 22. Wizualizacje reagujące na muzykę i nowe tryby gry
 
