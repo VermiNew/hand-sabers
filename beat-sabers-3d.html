@@ -496,18 +496,22 @@
               <div class="sp-slider-wrap"><input id="menuHandDetectionConfidence" type="range" min="0" max="1" step="0.01"></div>
               <span class="sp-value" data-for="menuHandDetectionConfidence">42%</span>
             </div>
+            <p class="sp-hint sp-hint--compact" data-i18n="remoteTracking.detectionConfidenceHint">Niższy próg szybciej wykrywa nową rękę, ale może dopuścić więcej błędnych wykryć.</p>
             <div class="sp-row">
               <span class="sp-label" data-i18n="remoteTracking.presenceConfidence">Pewność obecności</span>
               <div class="sp-slider-wrap"><input id="menuHandPresenceConfidence" type="range" min="0" max="1" step="0.01"></div>
               <span class="sp-value" data-for="menuHandPresenceConfidence">42%</span>
             </div>
+            <p class="sp-hint sp-hint--compact" data-i18n="remoteTracking.presenceConfidenceHint">Niższy próg dłużej utrzymuje częściowo zasłoniętą rękę, ale może mniej pewnie rozpoznać jej zniknięcie.</p>
             <div class="sp-row">
               <span class="sp-label" data-i18n="remoteTracking.trackingConfidence">Pewność śledzenia</span>
               <div class="sp-slider-wrap"><input id="menuHandTrackingConfidence" type="range" min="0" max="1" step="0.01"></div>
               <span class="sp-value" data-for="menuHandTrackingConfidence">42%</span>
             </div>
+            <p class="sp-hint sp-hint--compact" data-i18n="remoteTracking.trackingConfidenceHint">Wyższy próg wymaga stabilniejszego ruchu między klatkami; obniż go, gdy śledzenie zbyt często się resetuje.</p>
           </div>
           <p class="sp-hint" data-i18n="remoteTracking.modelSettingsHint">Domyślnie 42%. Zmiany działają przy kolejnym uruchomieniu kamery i są wysyłane do sparowanego telefonu.</p>
+          <button class="sp-inline-action" id="menuResetHandModelSettings" type="button" data-i18n="remoteTracking.resetModelSettings">PRZYWRÓĆ PROGI MODELU</button>
           <div class="sp-group">
             <div class="sp-toggle-row">
               <div class="sp-toggle-info">

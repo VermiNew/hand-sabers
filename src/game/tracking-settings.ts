@@ -1,11 +1,11 @@
-import { setSetting } from '../core/settings.ts';
+import { DEFAULTS, setSetting } from '../core/settings.ts';
 import { t } from '../i18n/index.ts';
 import { isRemoteTrackingConnected, sendPhoneTrackingOptions } from '../remote/host-pairing.ts';
 import {
   applyTrackingSettings,
   setAutoFlipSuggestionHandler,
 } from '../tracking/tracking.ts';
-import { bindStyledRange } from '../ui/settings-range.ts';
+import { bindStyledRange, updateRangeProgress, updateSettingsSliderValue } from '../ui/settings-range.ts';
 import type { Settings, TrackingSourcePreference } from '../types/index.js';
 
 interface TrackingSettingsOptions {
@@ -27,6 +27,7 @@ export function initTrackingSettings(
   const sourceHint = document.getElementById('menuTrackingSourceHint');
   const modelLocation = document.getElementById('menuTrackingModelLocation');
   const flipCameraInput = document.getElementById('menuFlipCamera') as HTMLInputElement | null;
+  const resetModelButton = document.getElementById('menuResetHandModelSettings') as HTMLButtonElement | null;
   const modelInputs: Array<[HandModelSettingKey, HTMLInputElement | null]> = [
     ['handDetectionConfidence', document.getElementById('menuHandDetectionConfidence') as HTMLInputElement | null],
     ['handPresenceConfidence', document.getElementById('menuHandPresenceConfidence') as HTMLInputElement | null],
@@ -81,6 +82,20 @@ export function initTrackingSettings(
       sendPhoneTrackingOptions();
     });
   }
+
+  resetModelButton?.addEventListener('click', () => {
+    for (const [key, input] of modelInputs) {
+      const value = DEFAULTS[key];
+      settings[key] = value;
+      setSetting(key, value);
+      if (input) {
+        input.value = String(value);
+        updateRangeProgress(input);
+        updateSettingsSliderValue(input);
+      }
+    }
+    sendPhoneTrackingOptions();
+  });
 
   setAutoFlipSuggestionHandler(({ flipCamera }) => {
     settings.flipCamera = flipCamera;
