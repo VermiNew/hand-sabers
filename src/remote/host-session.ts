@@ -224,6 +224,7 @@ function connectHostChannel(session: ActiveSession): void {
         session.pollTimer = null;
         setHostAudioSocket(session.socket);
         sendPhoneTrackingOptions();
+        window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-connected'));
       } else if (event.type === 'peer-disconnected') {
         setRemoteTrackingConnected(false);
         dispatchState('claimed');
