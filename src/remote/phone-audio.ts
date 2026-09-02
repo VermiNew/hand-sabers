@@ -17,6 +17,7 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
   let audioEl: HTMLAudioElement | null = null;
   let latencyMs = 0;
   let enabled = false;
+  let prepareVersion = 0;
 
   function ensureAudioElement(): HTMLAudioElement {
     if (!audioEl) {
@@ -32,6 +33,7 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
     const cmd = raw as AudioCommand;
 
     if (cmd.type === 'audio-prepare') {
+      const version = ++prepareVersion;
       const audioUrl = getCanonicalMapAudioUrl(cmd.mapId);
       if (!audioUrl) {
         enabled = false;
@@ -39,13 +41,20 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
         return;
       }
       const el = ensureAudioElement();
+      enabled = false;
+      el.addEventListener('canplay', () => {
+        if (version !== prepareVersion || audioEl !== el) return;
+        enabled = true;
+        onReady();
+      }, { once: true });
+      el.addEventListener('error', () => {
+        if (version !== prepareVersion || audioEl !== el) return;
+        onError('LOAD_FAILED');
+      }, { once: true });
       el.src = audioUrl;
       el.load();
       // Apply latency compensation from host settings
       if (typeof cmd.latencyMs === 'number') setLatencyMs(cmd.latencyMs);
-      // Send ready confirmation back through the tracking channel
-      enabled = true;
-      onReady();
       return;
     }
 
