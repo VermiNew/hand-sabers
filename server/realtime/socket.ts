@@ -263,6 +263,8 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
           broadcast(client.roomCode, rooms.setRules(client.roomCode, client.playerId, {
             trainingMode: message.trainingMode,
             noFail: message.noFail,
+            gameMode: message.gameMode,
+            noteSpeed: message.noteSpeed,
           }));
           return;
         }

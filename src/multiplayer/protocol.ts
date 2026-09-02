@@ -59,7 +59,12 @@ export interface RoomSnapshot {
   revision: number;
   mapId: string | null;
   mode: 'coop' | 'score-attack';
-  rules: { trainingMode: boolean; noFail: boolean };
+  rules: {
+    trainingMode: boolean;
+    noFail: boolean;
+    gameMode: 'normal' | 'no-arrows' | 'pro' | 'speed-trials';
+    noteSpeed: 0.75 | 1 | 1.35 | 1.75;
+  };
   maxPlayers: number;
   round: { id: number; mapId: string; startAt: number; finishedAt: number | null } | null;
   players: RoomPlayer[];
@@ -163,7 +168,12 @@ export function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     || Array.isArray(rulesValue)
   ) return null;
   const candidateRules = rulesValue as Record<string, unknown>;
-  if (typeof candidateRules['trainingMode'] !== 'boolean' || typeof candidateRules['noFail'] !== 'boolean') {
+  if (
+    typeof candidateRules['trainingMode'] !== 'boolean'
+    || typeof candidateRules['noFail'] !== 'boolean'
+    || !['normal', 'no-arrows', 'pro', 'speed-trials'].includes(String(candidateRules['gameMode']))
+    || ![0.75, 1, 1.35, 1.75].includes(Number(candidateRules['noteSpeed']))
+  ) {
     return null;
   }
   const roundValue = candidate['round'];
@@ -210,6 +220,8 @@ export function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     rules: {
       trainingMode: candidateRules['trainingMode'],
       noFail: candidateRules['noFail'],
+      gameMode: candidateRules['gameMode'] as RoomSnapshot['rules']['gameMode'],
+      noteSpeed: candidateRules['noteSpeed'] as RoomSnapshot['rules']['noteSpeed'],
     },
     maxPlayers: candidate['maxPlayers'] as number,
     round,

@@ -63,10 +63,13 @@ export interface RoomPlayer {
 }
 
 export type RoomMode = 'coop' | 'score-attack';
+export type RoomGameMode = 'normal' | 'no-arrows' | 'pro' | 'speed-trials';
 
 export interface RoomRules {
   trainingMode: boolean;
   noFail: boolean;
+  gameMode: RoomGameMode;
+  noteSpeed: 0.75 | 1 | 1.35 | 1.75;
 }
 
 export interface RoomSnapshot {
@@ -166,7 +169,7 @@ export class RoomRegistry {
       revision: 0,
       mapId: null,
       mode: 'score-attack',
-      rules: { trainingMode: false, noFail: false },
+      rules: { trainingMode: false, noFail: false, gameMode: 'normal', noteSpeed: 1 },
       maxPlayers: SCORE_ATTACK_MAX_PLAYERS,
       round: null,
       nextRoundId: 1,
@@ -316,19 +319,36 @@ export class RoomRegistry {
   setRules(
     code: string,
     playerId: string,
-    rules: { trainingMode: unknown; noFail: unknown },
+    rules: { trainingMode: unknown; noFail: unknown; gameMode: unknown; noteSpeed: unknown },
   ): RoomSnapshot {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
-    if (typeof rules.trainingMode !== 'boolean' || typeof rules.noFail !== 'boolean') {
+    const gameModes: RoomGameMode[] = ['normal', 'no-arrows', 'pro', 'speed-trials'];
+    const noteSpeeds: RoomRules['noteSpeed'][] = [0.75, 1, 1.35, 1.75];
+    if (
+      typeof rules.trainingMode !== 'boolean'
+      || typeof rules.noFail !== 'boolean'
+      || !gameModes.includes(rules.gameMode as RoomGameMode)
+      || !noteSpeeds.includes(rules.noteSpeed as RoomRules['noteSpeed'])
+    ) {
       throw new RoomError('INVALID_RULES');
     }
     if (room.round?.finishedAt === null) throw new RoomError('ROUND_ALREADY_STARTED');
-    if (room.rules.trainingMode === rules.trainingMode && room.rules.noFail === rules.noFail) {
+    if (
+      room.rules.trainingMode === rules.trainingMode
+      && room.rules.noFail === rules.noFail
+      && room.rules.gameMode === rules.gameMode
+      && room.rules.noteSpeed === rules.noteSpeed
+    ) {
       return this.snapshot(room);
     }
-    room.rules = { trainingMode: rules.trainingMode, noFail: rules.noFail };
+    room.rules = {
+      trainingMode: rules.trainingMode,
+      noFail: rules.noFail,
+      gameMode: rules.gameMode as RoomGameMode,
+      noteSpeed: rules.noteSpeed as RoomRules['noteSpeed'],
+    };
     room.revision++;
     return this.snapshot(room);
   }

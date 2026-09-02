@@ -18,6 +18,8 @@ export interface ClientMessage {
   mode?: unknown;
   trainingMode?: unknown;
   noFail?: unknown;
+  gameMode?: unknown;
+  noteSpeed?: unknown;
   score?: unknown;
   combo?: unknown;
   lives?: unknown;
