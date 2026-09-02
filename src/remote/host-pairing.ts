@@ -7,6 +7,7 @@ import {
   revokeRemoteTrackingSession,
 } from './host-session.ts';
 import type { RemoteTrackingSessionState } from './host-session.ts';
+import { createModalTransition } from '../ui/modal-transition.ts';
 
 export { isRemoteTrackingConnected, sendPhoneTrackingOptions } from './host-session.ts';
 
@@ -34,6 +35,10 @@ export function initRemoteTrackingPairing(): void {
   const confirmNoButton = element<HTMLButtonElement>('remoteTrackingConfirmNo');
   const newCodeButton = element<HTMLButtonElement>('remoteTrackingNewCode');
   if (!openButton || !overlay || !closeButton || !createButton || !sessionPanel || !qr || !code || !phoneLink || !status || !statusText || !errorMessage) return;
+  const modal = createModalTransition({
+    overlay,
+    panel: overlay.querySelector<HTMLElement>('.rt-panel'),
+  });
 
   const badgeTargets = [
     document.querySelector<HTMLElement>('.sp-tab[data-tab="remoteTracking"] .sp-tab-title'),
@@ -84,14 +89,16 @@ export function initRemoteTrackingPairing(): void {
   };
 
   const open = () => {
-    overlay.hidden = false;
-    render(getRemoteTrackingSessionState());
-    if (!getRemoteTrackingSessionState().session) createButton.focus({ preventScroll: true });
+    const sessionState = getRemoteTrackingSessionState();
+    render(sessionState);
+    modal.open({
+      initialFocus: sessionState.session ? closeButton : createButton,
+      returnFocusTo: openButton,
+    });
   };
 
   const close = () => {
-    overlay.hidden = true;
-    openButton.focus({ preventScroll: true });
+    modal.close();
   };
 
   openButton.addEventListener('click', open);
@@ -101,9 +108,6 @@ export function initRemoteTrackingPairing(): void {
   });
   overlay.addEventListener('pointerdown', event => {
     if (event.target === overlay) close();
-  });
-  window.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && !overlay.hidden) close();
   });
   window.addEventListener('hand-sabers:remote-session-state', event => {
     render((event as CustomEvent<RemoteTrackingSessionState>).detail);

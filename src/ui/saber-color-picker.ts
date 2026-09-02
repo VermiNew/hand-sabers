@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import { createModalTransition } from './modal-transition.ts';
 
 type SaberSide = 'left' | 'right';
 
@@ -77,6 +78,12 @@ export function initSaberColorPicker({ getColor, onApply }: SaberColorPickerOpti
   const hexInput = document.getElementById('cpModalHexInput') as HTMLInputElement | null;
   const applyButton = document.getElementById('cpModalApply');
   const rejectButton = document.getElementById('cpModalReject');
+  if (!modal) return;
+  const modalTransition = createModalTransition({
+    overlay: modal,
+    panel: modal.querySelector<HTMLElement>('.cp-modal-panel'),
+    visibleClass: 'is-open',
+  });
 
   let side: SaberSide = 'left';
   let hue = 0;
@@ -105,7 +112,7 @@ export function initSaberColorPicker({ getColor, onApply }: SaberColorPickerOpti
     if (hexInput) hexInput.value = hex;
   }
 
-  function open(nextSide: SaberSide): void {
+  function open(nextSide: SaberSide, returnFocusTo: HTMLElement): void {
     side = nextSide;
     [hue, saturation, lightness] = hexToHsl(getColor(side));
     if (sideBadge) {
@@ -114,11 +121,11 @@ export function initSaberColorPicker({ getColor, onApply }: SaberColorPickerOpti
         : t('settings.gameplay.rightHand');
     }
     sync();
-    modal?.classList.add('is-open');
+    modalTransition.open({ initialFocus: hueInput, returnFocusTo });
   }
 
   function close(): void {
-    modal?.classList.remove('is-open');
+    modalTransition.close();
   }
 
   hueInput?.addEventListener('input', () => { hue = Number(hueInput.value); sync(); });
@@ -136,10 +143,7 @@ export function initSaberColorPicker({ getColor, onApply }: SaberColorPickerOpti
   });
   rejectButton?.addEventListener('click', close);
   backdrop?.addEventListener('pointerdown', close);
-  window.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && modal?.classList.contains('is-open')) close();
-  });
   document.querySelectorAll<HTMLButtonElement>('.cp-toggle').forEach(button => {
-    button.addEventListener('click', () => open((button.dataset['side'] ?? 'left') as SaberSide));
+    button.addEventListener('click', () => open((button.dataset['side'] ?? 'left') as SaberSide, button));
   });
 }

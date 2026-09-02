@@ -20,7 +20,8 @@
   .mp-map-picker-panel,
   .rt-panel,
   .profile-onboarding-card,
-  .mp-overlay-panel
+  .mp-overlay-panel,
+  .cp-modal-panel
 ) {
   transform: translateY(10px) scale(.985);
   transition: transform .2s cubic-bezier(.22, 1, .36, 1);
@@ -33,7 +34,8 @@
   .mp-map-picker-panel,
   .rt-panel,
   .profile-onboarding-card,
-  .mp-overlay-panel
+  .mp-overlay-panel,
+  .cp-modal-panel
 ) {
   transform: translateY(0) scale(1);
 }
@@ -45,7 +47,8 @@
   .mp-map-picker-panel,
   .rt-panel,
   .profile-onboarding-card,
-  .mp-overlay-panel
+  .mp-overlay-panel,
+  .cp-modal-panel
 ) {
   transform: translateY(10px) scale(.985);
 }
@@ -59,7 +62,8 @@
     .mp-map-picker-panel,
     .rt-panel,
     .profile-onboarding-card,
-    .mp-overlay-panel
+    .mp-overlay-panel,
+    .cp-modal-panel
   ) {
     transition-duration: .01ms;
   }

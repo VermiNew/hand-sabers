@@ -1148,7 +1148,7 @@
 </div>
 
 <!-- COLOR PICKER MODAL -->
-<div id="cpModal" role="dialog" aria-modal="true" aria-labelledby="cpModalTitle">
+<div id="cpModal" role="dialog" aria-modal="true" aria-labelledby="cpModalTitle" hidden>
   <div class="cp-modal-backdrop"></div>
   <div class="cp-modal-panel">
     <div class="cp-modal-head">
@@ -1274,8 +1274,8 @@
 
 <!-- PROFILE ONBOARDING (first-time user) -->
 <div id="profileOnboarding" class="profile-onboarding" hidden>
-  <div class="profile-onboarding-card" tabindex="0">
-    <h2 data-i18n="profile.welcomeTitle">Witaj w Hand Sabers!</h2>
+  <div class="profile-onboarding-card" role="dialog" aria-modal="true" aria-labelledby="profileOnboardingTitle" tabindex="0">
+    <h2 id="profileOnboardingTitle" data-i18n="profile.welcomeTitle">Witaj w Hand Sabers!</h2>
     <p class="profile-onboarding-intro" data-i18n="profile.welcomeIntro">Przed startem wybierz nazwę gracza i awatar. Będą używane w grze, trybie multiplayer i rankingach.</p>
     <div class="profile-onboarding-preview" aria-live="polite">
       <span class="material-symbols-rounded" id="profileOnboardingAvatarPreview" aria-hidden="true">person</span>

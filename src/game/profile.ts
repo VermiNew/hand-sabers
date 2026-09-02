@@ -2,12 +2,14 @@ import { t, translateDom } from '../i18n/index.ts';
 import { getSettings, setSetting } from '../core/settings.ts';
 import { PROFILE_COLOR_PRESETS, sanitizeProfileColor } from '../core/profile-color.ts';
 import type { Settings } from '../types/index.js';
+import { createModalTransition, type ModalTransitionController } from '../ui/modal-transition.ts';
 
 function element<T extends HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
 }
 
 let initialized = false;
+let onboardingModal: ModalTransitionController | null = null;
 
 const MAX_PLAYER_NAME_LENGTH = 32;
 
@@ -116,9 +118,11 @@ export function initProfileOnboarding(): void {
     if (!nameError?.hidden) setNameError(nameInput, nameError, validatePlayerName(nameInput.value));
   });
 
-  const close = () => {
-    overlay.hidden = true;
-  };
+  onboardingModal = createModalTransition({
+    overlay,
+    panel: overlay.querySelector<HTMLElement>('.profile-onboarding-card'),
+    closeOnEscape: false,
+  });
 
   confirmBtn.addEventListener('click', () => {
     const error = validatePlayerName(nameInput.value);
@@ -134,7 +138,7 @@ export function initProfileOnboarding(): void {
     window.dispatchEvent(new CustomEvent('hand-sabers:profile-updated', {
       detail: { playerName: name, avatar: selectedAvatar, playerColor: sanitizeProfileColor(settings.playerColor) },
     }));
-    close();
+    onboardingModal?.close();
   });
 
   // Allow Enter to confirm
@@ -149,10 +153,9 @@ export function showProfileOnboardingIfNeeded(): void {
   const settings = getSettings();
   if (!settings.profileCompleted) {
     translateDom(overlay);
-    overlay.hidden = false;
     const nameInput = element<HTMLInputElement>('profileNameInput');
     setNameError(nameInput, element<HTMLElement>('profileNameError'), null);
-    nameInput?.focus({ preventScroll: true });
+    onboardingModal?.open({ initialFocus: nameInput, returnFocusTo: null });
   }
 }
 

@@ -139,9 +139,6 @@ export function initMainMenuShell({ onAchievementsOpen }: MainMenuShellOptions):
   settingsBackdrop?.addEventListener('pointerdown', event => {
     if (event.target === settingsBackdrop) closeSettings();
   });
-  window.addEventListener('keydown', event => {
-    if (event.key === 'Escape' && isSettingsVisible()) closeSettings();
-  });
   window.addEventListener('hand-sabers:open-settings', event => {
     const detail = (event as CustomEvent<{ tab?: string }>).detail;
     openSettings(detail?.tab ?? 'audio');
