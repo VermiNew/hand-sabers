@@ -9,6 +9,7 @@ import {
 } from './audio-calibration.ts';
 import { setMusicVolume, setSfxVolume, setSoundVolume, setVolume } from './audio.ts';
 import { narratorQuick } from './narrator.ts';
+import { isPhoneAudioActive } from '../remote/host-audio.ts';
 
 type RangeBinder = (input: HTMLInputElement | null) => void;
 
@@ -100,7 +101,7 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
     phoneAudioToggle.addEventListener('change', () => {
       settings.phoneAudioOutput = phoneAudioToggle.checked;
       setSetting('phoneAudioOutput', phoneAudioToggle.checked);
-      setMusicVolume(phoneAudioToggle.checked ? 0 : settings.musicVolume);
+      setMusicVolume(phoneAudioToggle.checked && isPhoneAudioActive() ? 0 : settings.musicVolume);
     });
   }
 
