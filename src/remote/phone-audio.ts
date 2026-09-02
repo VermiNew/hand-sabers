@@ -63,7 +63,11 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
     switch (cmd.type) {
       case 'audio-play': {
         const el = audioEl;
-        const targetTime = cmd.offsetSec + latencyMs / 1000;
+        const elapsedMs = Date.now() - cmd.serverTime;
+        const networkDelaySec = elapsedMs >= 0 && elapsedMs <= 5_000
+          ? elapsedMs / 1000 * cmd.playbackRate
+          : 0;
+        const targetTime = cmd.offsetSec + latencyMs / 1000 + networkDelaySec;
         el.currentTime = Math.max(0, targetTime);
         el.playbackRate = Math.max(0.5, Math.min(1.5, cmd.playbackRate || 1));
         void el.play().catch(() => onError('PLAY_FAILED'));
