@@ -8,7 +8,7 @@ import {
   type LearningCurveRecommendation,
 } from '../core/learning-curve.ts';
 import type { DifficultyBeat } from '../core/map-difficulty.ts';
-import { popFocusTrap, pushFocusTrap } from '../ui/keyboard-nav.ts';
+import { createModalTransition, type ModalTransitionController } from '../ui/modal-transition.ts';
 
 interface MapMeta {
   title?: string;
@@ -85,8 +85,7 @@ let searchQuery = '';
 let loading = false;
 let initialized = false;
 let importing = false;
-let returnFocus: HTMLElement | null = null;
-let closeTimer: number | null = null;
+let mapPickerModal: ModalTransitionController | null = null;
 let learningRecommendation: LearningCurveRecommendation | null = null;
 const PREVIEW_MAX_SECONDS = 30;
 let previewAudio: HTMLAudioElement | null = null;
@@ -675,15 +674,8 @@ async function importMapFile(file: File): Promise<void> {
 
 function openOverlay(returnFocusTo?: HTMLElement | null): void {
   const overlay = element<HTMLElement>('mapPickerOverlay');
-  if (!overlay || !overlay.hidden) return;
-  if (closeTimer !== null) window.clearTimeout(closeTimer);
-  closeTimer = null;
-  overlay.classList.remove('is-closing');
-  returnFocus = returnFocusTo
-    ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
+  if (!overlay || !mapPickerModal || mapPickerModal.isOpen()) return;
   overlay.querySelector('.mp-overlay-body')?.classList.remove('is-detail-open');
-  overlay.hidden = false;
-  pushFocusTrap(overlay);
   translateDom(overlay);
   clearImportStatus();
   if (allMaps.length === 0) void loadMaps();
@@ -691,32 +683,14 @@ function openOverlay(returnFocusTo?: HTMLElement | null): void {
     const list = element<HTMLElement>('mpMapList');
     if (list) renderMapList(list);
   }
-  element<HTMLInputElement>('mpSearch')?.focus({ preventScroll: true });
-}
-
-function finishClosingOverlay(overlay: HTMLElement): void {
-  closeTimer = null;
-  overlay.hidden = true;
-  overlay.classList.remove('is-closing');
-  popFocusTrap(overlay);
-  const focusTarget = returnFocus;
-  returnFocus = null;
-  if (focusTarget?.isConnected && focusTarget.getClientRects().length > 0 && !focusTarget.matches('[hidden], :disabled')) {
-    focusTarget.focus({ preventScroll: true });
-  }
+  mapPickerModal.open({
+    initialFocus: element<HTMLInputElement>('mpSearch'),
+    returnFocusTo,
+  });
 }
 
 function closeOverlay(): void {
-  const overlay = element<HTMLElement>('mapPickerOverlay');
-  if (!overlay || overlay.hidden || overlay.classList.contains('is-closing')) return;
-  stopPreview();
-  overlay.querySelector('.mp-overlay-body')?.classList.remove('is-detail-open');
-  overlay.classList.add('is-closing');
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    finishClosingOverlay(overlay);
-  } else {
-    closeTimer = window.setTimeout(() => finishClosingOverlay(overlay), 180);
-  }
+  mapPickerModal?.close();
 }
 
 // -- Init --
@@ -732,15 +706,18 @@ export function initMapPickerOverlay(): void {
   const importInput = element<HTMLInputElement>('mpImportInput');
   const favoritesButton = element<HTMLButtonElement>('mpFavorites');
   if (!overlay || !closeBtn || !searchInput || !sortSelect) return;
+  mapPickerModal = createModalTransition({
+    overlay,
+    panel: overlay,
+    transitionMs: 180,
+    onBeforeClose: () => {
+      stopPreview();
+      overlay.querySelector('.mp-overlay-body')?.classList.remove('is-detail-open');
+    },
+  });
   // Close
   closeBtn.addEventListener('click', closeOverlay);
   overlay.addEventListener('pointerdown', e => { if (e.target === overlay) closeOverlay(); });
-  window.addEventListener('keydown', e => {
-    if (e.key !== 'Escape' || overlay.hidden) return;
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    closeOverlay();
-  }, { capture: true });
   window.addEventListener('pagehide', stopPreview, { once: true });
   // Search
   searchInput.addEventListener('input', () => {

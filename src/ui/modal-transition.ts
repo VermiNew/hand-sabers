@@ -1,8 +1,8 @@
 import { popEscapeHandler, popFocusTrap, pushEscapeHandler, pushFocusTrap } from './keyboard-nav.ts';
 
 interface ModalOpenOptions {
-  initialFocus?: HTMLElement | null;
-  returnFocusTo?: HTMLElement | null;
+  initialFocus?: HTMLElement | null | undefined;
+  returnFocusTo?: HTMLElement | null | undefined;
 }
 
 interface ModalTransitionOptions {
