@@ -325,6 +325,12 @@ body.menu-open #hud,
 body.menu-open #pauseBanner,
 body.menu-open #pauseMenu { display:none !important; }
 
+/* Keep camera diagnostics available, but out of the way while Lyra needs input. */
+body.narrator-open #camPanel {
+  visibility:hidden;
+  pointer-events:none;
+}
+
 @media (max-width:760px) {
   .main-menu-panel { width:100%; padding:22px; }
   .main-brand-title { letter-spacing:3px; font-size:clamp(22px, 6vw, 32px); }
@@ -934,16 +940,28 @@ body.menu-open #pauseMenu { display:none !important; }
   flex:1;
   display:flex; flex-direction:column; gap:16px;
   justify-content:space-between;
+  min-width:0;
 }
 
 /* Speech area — 5 lines reserved */
 #narratorSpeech {
+  height:8.6em;
+  min-height:8.6em;
+  overflow-x:hidden;
+  overflow-y:auto;
   font-family:'JetBrains Mono', monospace;
   font-size:14px;
   line-height:1.72;
   color:var(--text);
   white-space:pre-wrap;
-  word-break:break-word;
+  overflow-wrap:anywhere;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(54,242,161,0.32) transparent;
+}
+#narratorSpeech::-webkit-scrollbar { width:5px; }
+#narratorSpeech::-webkit-scrollbar-thumb {
+  border-radius:999px;
+  background:rgba(54,242,161,0.32);
 }
 
 /* Per-character fade-in */
@@ -971,9 +989,10 @@ body.menu-open #pauseMenu { display:none !important; }
 #narratorButtons {
   display:flex;
   flex-direction:row-reverse;
+  flex-wrap:wrap;
   align-items:center;
   gap:10px;
-  min-height:36px;
+  min-height:40px;
 }
 
 /* Hint under avatar */
@@ -1004,6 +1023,8 @@ body.menu-open #pauseMenu { display:none !important; }
   pointer-events:auto;
 }
 .narrator-btn {
+  max-width:100%;
+  min-width:0;
   font-family:'Oxanium', sans-serif;
   font-weight:800;
   font-size:12px;
@@ -1014,6 +1035,10 @@ body.menu-open #pauseMenu { display:none !important; }
   border-bottom:1px solid rgba(15,40,140,0.90);
   border-radius:7px;
   padding:8px 26px;
+  line-height:1.3;
+  overflow-wrap:anywhere;
+  text-align:center;
+  white-space:normal;
   cursor:pointer;
   outline:none;
   box-shadow:
@@ -1053,6 +1078,62 @@ body.menu-open #pauseMenu { display:none !important; }
 @keyframes narratorBlink {
   0%,100% { opacity:1; }
   50%     { opacity:0; }
+}
+
+@media (max-width:620px) {
+  #narratorBox {
+    bottom:12px;
+    gap:12px;
+    width:calc(100vw - 24px);
+    max-width:none;
+    padding:14px;
+  }
+
+  #narratorAvatar {
+    width:64px;
+    height:64px;
+  }
+
+  #narratorHint {
+    max-width:70px;
+    margin-top:4px;
+    font-size:8px;
+    letter-spacing:0.5px;
+  }
+
+  #narratorBody {
+    gap:10px;
+  }
+
+  #narratorSpeech {
+    height:10.3em;
+    min-height:10.3em;
+    font-size:12px;
+    line-height:1.7;
+  }
+
+  #narratorButtons {
+    align-items:stretch;
+    gap:8px;
+  }
+
+  .narrator-btn {
+    flex:1 1 100%;
+    padding:8px 12px;
+    font-size:11px;
+    letter-spacing:1.5px;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  #narratorBox.is-visible,
+  #narratorBox.is-hiding,
+  .narrator-char,
+  #narratorAvatar .narrator-avatar-img,
+  .narrator-btn {
+    animation:none;
+    transition:none;
+  }
 }
 
 

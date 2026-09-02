@@ -49,11 +49,13 @@ let activeResolve: ((index: number) => void) | null = null;
 let typingTimer: ReturnType<typeof setTimeout> | null = null;
 let keyHandler: ((e: KeyboardEvent) => void) | null = null;
 let focusedBtn = 0;
+let hideToken = 0;
 
 function getEls() {
   return {
     box:     document.getElementById('narratorBox'),
     speech:  document.getElementById('narratorText'),
+    viewport: document.getElementById('narratorSpeech'),
     cursor:  document.getElementById('narratorCursor'),
     btnsRow: document.getElementById('narratorButtons'),
     hint:    document.getElementById('narratorHint'),
@@ -109,16 +111,29 @@ function setFocus(btns: HTMLButtonElement[], index: number): void {
   btns.forEach((b, i) => b.classList.toggle('is-focused', i === focusedBtn));
 }
 
+function hideBox(box: HTMLElement): void {
+  const token = ++hideToken;
+  const finish = () => {
+    if (token !== hideToken) return;
+    box.classList.remove('is-visible', 'is-hiding');
+    document.body.classList.remove('narrator-open');
+  };
+  box.classList.add('is-hiding');
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    finish();
+    return;
+  }
+  box.addEventListener('animationend', finish, { once: true });
+  window.setTimeout(finish, 400);
+}
+
 export function narratorHide(): void {
   clearTyping();
   clearKeyHandler();
   const { box } = getEls();
   if (activeResolve) { activeResolve(-1); activeResolve = null; }
   if (!box || !box.classList.contains('is-visible')) return;
-  box.classList.add('is-hiding');
-  box.addEventListener('animationend', () => {
-    box.classList.remove('is-visible', 'is-hiding');
-  }, { once: true });
+  hideBox(box);
 }
 
 /** Hide narrator without resolving the active promise (used by click/keyboard handlers that resolve manually). */
@@ -127,10 +142,7 @@ function hideWithoutResolve(): void {
   clearKeyHandler();
   const { box } = getEls();
   if (!box || !box.classList.contains('is-visible')) return;
-  box.classList.add('is-hiding');
-  box.addEventListener('animationend', () => {
-    box.classList.remove('is-visible', 'is-hiding');
-  }, { once: true });
+  hideBox(box);
 }
 
 export function isNarratorVisible(): boolean {
@@ -145,11 +157,15 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
     activeResolve = resolve;
 
     const els = getEls();
-    if (!els.box || !els.speech || !els.cursor || !els.hint) { resolve(0); return; }
+    if (!els.box || !els.speech || !els.viewport || !els.cursor || !els.hint) { resolve(0); return; }
     const box    = els.box;
     const speech = els.speech;
+    const viewport = els.viewport;
     const cursor = els.cursor;
     const hint   = els.hint;
+    hideToken++;
+    box.classList.remove('is-visible', 'is-hiding');
+    document.body.classList.add('narrator-open');
 
     setMood(opts.mood || 'neutral');
 
@@ -187,14 +203,9 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
       document.addEventListener('keydown', keyHandler);
     }
 
-    // Pre-calculate container height to prevent layout jumps
-    speech.style.minHeight = '';
-    speech.textContent = opts.text;
-    speech.style.visibility = 'hidden';
-    const measuredHeight = speech.offsetHeight;
-    speech.style.minHeight = `${measuredHeight}px`;
-    speech.style.visibility = '';
     speech.textContent = '';
+    viewport.scrollTop = 0;
+    viewport.setAttribute('aria-label', opts.text);
 
     cursor.className = '';
     hint.classList.remove('is-visible');
@@ -239,6 +250,7 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
       span.className = 'narrator-char';
       span.textContent = ch;
       speech.appendChild(span);
+      viewport.scrollTop = viewport.scrollHeight;
       playTypingTick(ch);
       i++;
       typingTimer = setTimeout(typeNext, charDelay(ch, text[i], charMs));
