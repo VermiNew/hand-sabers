@@ -944,6 +944,26 @@
 <!-- MULTIPLAYER — player hand previews (visible during gameplay, not dev-only) -->
 <div id="multiplayerCameras" hidden></div>
 
+<!-- MULTIPLAYER — collapsible room chat during gameplay -->
+<aside class="mp-game-chat" id="multiplayerGameChat" aria-label="Czat pokoju">
+  <button class="mp-game-chat-toggle" id="multiplayerGameChatToggle" type="button"
+    aria-expanded="false" aria-controls="multiplayerGameChatBody">
+    <span class="material-symbols-rounded" aria-hidden="true">chat</span>
+    <span data-i18n="multiplayer.chatGameplay">CZAT POKOJU</span>
+    <span class="mp-game-chat-unread" id="multiplayerGameChatUnread" hidden>0</span>
+    <span class="material-symbols-rounded mp-game-chat-chevron" aria-hidden="true">expand_more</span>
+  </button>
+  <div class="mp-game-chat-body" id="multiplayerGameChatBody" hidden>
+    <div class="mp-chat-messages" id="multiplayerGameChatMessages" role="log" aria-live="polite"
+      tabindex="0" aria-label="Wiadomości czatu podczas gry"></div>
+    <form class="mp-chat-form" id="multiplayerGameChatForm">
+      <input id="multiplayerGameChatInput" type="text" maxlength="240" autocomplete="off"
+        placeholder="Napisz wiadomość…" aria-label="Wiadomość na czacie podczas gry" disabled>
+      <button id="multiplayerGameChatSend" type="submit" disabled data-i18n="multiplayer.chatSend">WYŚLIJ</button>
+    </form>
+  </div>
+</aside>
+
 <!-- HUD -->
 <div id="hud">
   <div id="hudTop">
