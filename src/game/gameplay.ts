@@ -11,6 +11,7 @@ import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './sc
 import { showHitFeedback } from './hit-feedback.ts';
 import { MapSpawnQueue } from './map-spawn-queue.ts';
 import { createSpatialBeatLayout, type SpatialBeatPosition } from './spatial-beat-layout.ts';
+import { emitGameplayFeedback } from './gameplay-feedback.ts';
 import { resetMusicVisualizer, triggerMusicVisualizerBeat } from './music-visualizer.ts';
 import {
   APPROACH_TIME_MS,
@@ -363,6 +364,14 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
     hitStreakForRegen = 0;
   }
   lastHitMs = performance.now();
+  emitGameplayFeedback({
+    type: 'block-hit',
+    side: entry.side,
+    cut: entry.cut,
+    quality: quality.label,
+    timingMs: deltaMs,
+    combo: state.combo,
+  });
 
   if (hitStreakForRegen >= REGEN_EVERY_HITS && state.lives < state.maxLives) {
     state.lives = Math.min(state.maxLives, state.lives + 1);
@@ -397,6 +406,7 @@ function hitBomb(entry: ActiveBlock): void {
   ({ combo: state.combo, maxCombo: state.maxCombo } = resetCombo(state));
   state.lives = Math.max(0, state.lives - 2);
   hitStreakForRegen = 0;
+  emitGameplayFeedback({ type: 'bomb-hit', combo: state.combo });
   updateHUD(state);
   playBomb();
   triggerShake(0.10);
@@ -458,6 +468,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
         state.lives = Math.max(0, state.lives - 1);
         hitStreakForRegen = 0;
         state.misses++;
+        emitGameplayFeedback({ type: 'block-miss', side: entry.side, combo: state.combo });
         updateHUD(state);
         playMiss();
         triggerShake(0.07);
@@ -499,6 +510,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
           state.maxCombo = next.maxCombo;
           hitStreakForRegen++;
           lastHitMs = performance.now();
+          emitGameplayFeedback({ type: 'held-complete', side: entry.side, combo: state.combo });
           updateHUD(state);
           playHit(Math.max(1, state.combo));
           showHitFeedback(pos, 'HOLD', true, '', 0);
@@ -514,6 +526,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
           ({ combo: state.combo, maxCombo: state.maxCombo } = resetCombo(state));
           state.lives = Math.max(0, state.lives - 1);
           hitStreakForRegen = 0;
+          emitGameplayFeedback({ type: 'held-break', side: entry.side, combo: state.combo });
           updateHUD(state);
           triggerShake(0.04);
           if (state.lives <= 0 && !state.noFail) gameOverHandler();
