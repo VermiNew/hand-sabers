@@ -75,7 +75,9 @@
 - [x] Zaprojektować flow tutoriala (krok po kroku: kalibracja → ruch → trafienie)
 - [x] Overlay z instrukcjami wyświetlany przy pierwszym uruchomieniu
 - [x] Możliwość pominięcia i powrotu do tutoriala z menu
-- [ ] Przebudować tutorial tak, aby faktycznie wprowadzał do gry — interaktywne kroki z rzeczywistym śledzeniem rąk, testowaniem cięć i feedbackiem na żywo, a nie tylko tekst instrukcji
+- [ ] Przebudować tutorial tak, aby faktycznie wprowadzał do gry — interaktywne kroki z rzeczywistym śledzeniem rąk, testowaniem cięć i feedbackiem na żywo, a nie tylko tekst instrukcji.
+  - [x] Dodać pierwszy interaktywny krok sprawdzania kamery: dostęp wyłącznie po kliknięciu, lokalny podgląd, wykrycie realnej klatki i rozdzielczości, blokada przejścia do sukcesu oraz bezwarunkowe zatrzymanie ścieżek przy wyjściu. Zweryfikowano w Chromium z wirtualną kamerą: `live` → `ended`, brak błędów i pełny widok bez scrolla przy 1280×900.
+  - [ ] Połączyć kolejne kroki z kalibracją, trackingiem dłoni i kontrolowaną sekwencją treningową opisaną w szczegółowej checkliście poniżej.
 
 ## 11. Menu pomocy
 
@@ -481,7 +483,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 ### Multiplayer, co-op i czat
 
 - [x] Dodać obok „KOPIUJ LINK” przycisk „KOPIUJ KOD” z feedbackiem sukcesu/błędu i fallbackiem, gdy Clipboard API jest niedostępne.
-- [x] Udoskonalić ustawienia zasad Multiplayer tak, aby pokrywały 100% wspieranych możliwości rozgrywki; host ma być źródłem prawdy, a zablokowane lokalne ustawienia muszą jasno pokazywać wartość narzuconą przez pokój. — snapshot pokoju obejmuje tryb multiplayer, trening, No Fail, wszystkie cztery tryby gry i cztery prędkości nut; serwer waliduje wartości, a goście widzą je w zablokowanych polach. Runda używa reguł hosta tylko w pamięci i przywraca profil singleplayer po zakończeniu. Ustawienia zależne od urządzenia (tracking, audio, grafika) świadomie pozostają lokalne, a wybór ręki już wynika z roli przydzielonej przez serwer.
+- [x] Udoskonalić ustawienia zasad Multiplayer tak, aby pokrywały 100% wspieranych możliwości rozgrywki; host ma być źródłem prawdy, a zablokowane lokalne ustawienia muszą jasno pokazywać wartość narzuconą przez pokój. — snapshot pokoju obejmuje tryb multiplayer, trening, No Fail, wszystkie pięć trybów gry i cztery prędkości nut; serwer waliduje wartości, a goście widzą je w zablokowanych polach. Runda używa reguł hosta tylko w pamięci i przywraca profil singleplayer po zakończeniu. Ustawienia zależne od urządzenia (tracking, audio, grafika) świadomie pozostają lokalne, a wybór ręki już wynika z roli przydzielonej przez serwer.
 - [x] Poprawić czat pokoju i udostępnić go zarówno w lobby, jak i podczas rozgrywki: wspólna historia ostatnich 50 wiadomości trafia do lobby i zwijanego overlayu w prawym górnym rogu, badge sygnalizuje nowe wiadomości, a formularz izoluje klawisze od sterowania grą i przejmuje focus po rozwinięciu. Istniejący limit 240 znaków i serwerowy rate limit pozostają aktywne. Zweryfikowano dwiema niezależnymi sesjami przeglądarki oraz wizualnie na desktopie i ekranie 390 px.
 - [x] Poprawić co-op dla lobby z więcej niż 2 osobami: opcja co-op może pozostać wybrana, ale START ma być zablokowany z jasnym komunikatem o wymaganej liczbie graczy i wskazaniem konieczności usunięcia nadmiarowych osób.
 - [ ] Dodać hostowi możliwość kickowania graczy oraz banowania. Przed implementacją ustalić zakres bana (pokój, sesja serwera czy trwały), identyfikator gracza bez systemu kont, czas ważności, sposób cofnięcia oraz ochronę przed ponownym dołączeniem tym samym tokenem.
