@@ -79,7 +79,14 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
   const type = value['type'];
   if (peer.role === 'phone') {
     return type === 'audio-ready'
-      || (type === 'audio-error' && typeof value['code'] === 'string' && /^[A-Z0-9_]{1,64}$/.test(value['code']));
+      || (type === 'audio-error' && typeof value['code'] === 'string' && /^[A-Z0-9_]{1,64}$/.test(value['code']))
+      || (type === 'tracking-metrics'
+        && (value['captureAgeMs'] === null || finiteInRange(value['captureAgeMs'], 0, 5_000))
+        && finiteInRange(value['detectionMs'], 0, 5_000)
+        && finiteInRange(value['encodeMs'], 0, 1_000)
+        && finiteInRange(value['bufferedBytes'], 0, 1_048_576)
+        && finiteInRange(value['sentPackets'], 0, 1_000)
+        && finiteInRange(value['droppedPackets'], 0, 1_000));
   }
   if (type === 'tracking-options') {
     const options = value['options'];

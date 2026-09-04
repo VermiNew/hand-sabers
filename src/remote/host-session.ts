@@ -3,7 +3,12 @@ import { getSettings } from '../core/settings.ts';
 import { isAudioEvent } from './audio-protocol.ts';
 import { onPhoneAudioError, onPhoneAudioReady, setHostAudioSocket } from './host-audio.ts';
 import type { TrackingOptionsCommand } from './tracking-options-protocol.ts';
-import { recordRemoteTrackingPacket, resetRemoteTrackingMetrics } from './tracking-metrics.ts';
+import {
+  isPhoneTrackingMetricsEvent,
+  recordPhoneTrackingMetrics,
+  recordRemoteTrackingPacket,
+  resetRemoteTrackingMetrics,
+} from './tracking-metrics.ts';
 
 export interface RemoteTrackingSession {
   id: string;
@@ -237,6 +242,8 @@ function connectHostChannel(session: ActiveSession): void {
       } else if (isAudioEvent(event)) {
         if (event.type === 'audio-ready') onPhoneAudioReady();
         else if (event.type === 'audio-error') onPhoneAudioError();
+      } else if (isPhoneTrackingMetricsEvent(event)) {
+        recordPhoneTrackingMetrics(event);
       }
     },
     onBinary: packet => {

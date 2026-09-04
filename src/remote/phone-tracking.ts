@@ -1,5 +1,6 @@
 import { t } from '../i18n/index.ts';
 import type { HandTrackingOptions } from './tracking-options-protocol.ts';
+import type { PhoneTrackingMetricsEvent } from './tracking-metrics.ts';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
@@ -110,7 +111,10 @@ function drawHands(context: CanvasRenderingContext2D, result: DetectionResult): 
   }
 }
 
-export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean): {
+export function initPhoneTracking(
+  sendPacket: (packet: ArrayBuffer) => boolean,
+  sendMetrics: (metrics: PhoneTrackingMetricsEvent) => boolean,
+): {
   setPeerConnected(connected: boolean): void;
   setModelOptions(options: HandTrackingOptions): void;
 } {
@@ -125,9 +129,19 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
   let starting = false;
   let activeStream: MediaStream | null = null;
   let animationFrame: number | null = null;
+  let videoFrameCallback: number | null = null;
   let startAttempt = 0;
   let sequence = 0;
   let lastDetectionAt = -Infinity;
+  let lastCameraFrameAt = -Infinity;
+  let metricsStartedAt = performance.now();
+  let metricsSamples = 0;
+  let detectionMsTotal = 0;
+  let encodeMsTotal = 0;
+  let captureAgeMsTotal = 0;
+  let captureAgeSamples = 0;
+  let sentPackets = 0;
+  let droppedPackets = 0;
   let modelOptions = { ...DEFAULT_HAND_TRACKING_OPTIONS };
 
   function stopCamera(): void {
@@ -137,6 +151,10 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
     if (animationFrame !== null) {
       cancelAnimationFrame(animationFrame);
       animationFrame = null;
+    }
+    if (videoFrameCallback !== null) {
+      video.cancelVideoFrameCallback(videoFrameCallback);
+      videoFrameCallback = null;
     }
     activeStream?.getTracks().forEach(track => track.stop());
     activeStream = null;
@@ -184,14 +202,55 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
       starting = false;
       started = true;
       trackingStatus.textContent = t('remoteTracking.trackingActive');
+      const watchVideoFrame: VideoFrameRequestCallback = frameNow => {
+        lastCameraFrameAt = frameNow;
+        if (started && attempt === startAttempt) {
+          videoFrameCallback = video.requestVideoFrameCallback(watchVideoFrame);
+        }
+      };
+      if ('requestVideoFrameCallback' in video) {
+        videoFrameCallback = video.requestVideoFrameCallback(watchVideoFrame);
+      }
       const detect = (now: number): void => {
         if (!started || attempt !== startAttempt) return;
         try {
           if (peerConnected && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && now - lastDetectionAt >= 33) {
             lastDetectionAt = now;
+            const detectionStartedAt = performance.now();
             const result = landmarker.detectForVideo(video, now);
+            const detectionFinishedAt = performance.now();
             drawHands(context, result);
-            sendPacket(encodeLandmarks(result, sequence++, Date.now()));
+            const packet = encodeLandmarks(result, sequence++, Date.now());
+            const encodedAt = performance.now();
+            if (sendPacket(packet)) sentPackets++;
+            else droppedPackets++;
+            metricsSamples++;
+            detectionMsTotal += detectionFinishedAt - detectionStartedAt;
+            encodeMsTotal += encodedAt - detectionFinishedAt;
+            if (Number.isFinite(lastCameraFrameAt)) {
+              captureAgeMsTotal += Math.max(0, detectionStartedAt - lastCameraFrameAt);
+              captureAgeSamples++;
+            }
+            if (encodedAt - metricsStartedAt >= 1_000) {
+              sendMetrics({
+                v: 1,
+                type: 'tracking-metrics',
+                captureAgeMs: captureAgeSamples ? captureAgeMsTotal / captureAgeSamples : null,
+                detectionMs: metricsSamples ? detectionMsTotal / metricsSamples : 0,
+                encodeMs: metricsSamples ? encodeMsTotal / metricsSamples : 0,
+                bufferedBytes: 0,
+                sentPackets,
+                droppedPackets,
+              });
+              metricsStartedAt = encodedAt;
+              metricsSamples = 0;
+              detectionMsTotal = 0;
+              encodeMsTotal = 0;
+              captureAgeMsTotal = 0;
+              captureAgeSamples = 0;
+              sentPackets = 0;
+              droppedPackets = 0;
+            }
           }
           animationFrame = requestAnimationFrame(detect);
         } catch (error) {

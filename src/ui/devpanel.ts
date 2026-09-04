@@ -52,6 +52,8 @@ interface DevData {
   leftActive: boolean; rightActive: boolean; filteredHands: number; rawHands: number;
   remotePacketRateHz: number; remotePayloadBytes: number; remoteNetworkMs: string; remoteDroppedPackets: number;
   remoteApplyMs: string;
+  remoteCaptureAgeMs: string; remoteDetectionMs: string; remoteEncodeMs: string;
+  remoteBufferedBytes: number; remotePhoneDroppedPackets: number;
   wireframe: boolean; noFail: boolean; developerMode: boolean;
   sensitivity: number; flipCamera: boolean;
   volume: number; musicVolume: number; sfxVolume: number;
@@ -202,6 +204,8 @@ const devData: DevData = {
   leftActive: false, rightActive: false, filteredHands: 0, rawHands: 0,
   remotePacketRateHz: 0, remotePayloadBytes: 0, remoteNetworkMs: '—', remoteDroppedPackets: 0,
   remoteApplyMs: '—',
+  remoteCaptureAgeMs: '—', remoteDetectionMs: '—', remoteEncodeMs: '—',
+  remoteBufferedBytes: 0, remotePhoneDroppedPackets: 0,
   wireframe: false, noFail: false, developerMode: false,
   sensitivity: 1.0, flipCamera: false,
   volume: 0.8, musicVolume: 1.0, sfxVolume: 1.0,
@@ -252,6 +256,11 @@ function bindRemoteMetrics(): void {
       ? '— (zegary)'
       : `${metrics.estimatedNetworkMs.toFixed(0)} ms`;
     devData.remoteDroppedPackets = metrics.droppedPackets;
+    devData.remoteCaptureAgeMs = metrics.phoneCaptureAgeMs === null ? '—' : `${metrics.phoneCaptureAgeMs.toFixed(1)} ms`;
+    devData.remoteDetectionMs = metrics.phoneDetectionMs === null ? '—' : `${metrics.phoneDetectionMs.toFixed(1)} ms`;
+    devData.remoteEncodeMs = metrics.phoneEncodeMs === null ? '—' : `${metrics.phoneEncodeMs.toFixed(2)} ms`;
+    devData.remoteBufferedBytes = metrics.phoneBufferedBytes;
+    devData.remotePhoneDroppedPackets = metrics.phoneDroppedPackets;
   });
 }
 
@@ -496,6 +505,11 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
     hand.addMonitor(devData, 'remoteNetworkMs', { label: 'Phone WS→PC', interval: 500 });
     hand.addMonitor(devData, 'remoteApplyMs', { label: 'Phone send→pose', interval: 500 });
     hand.addMonitor(devData, 'remoteDroppedPackets', { label: 'Phone lost', interval: 500 });
+    hand.addMonitor(devData, 'remoteCaptureAgeMs', { label: 'Camera age', interval: 500 });
+    hand.addMonitor(devData, 'remoteDetectionMs', { label: 'Phone ML', interval: 500 });
+    hand.addMonitor(devData, 'remoteEncodeMs', { label: 'Phone encode', interval: 500 });
+    hand.addMonitor(devData, 'remoteBufferedBytes', { label: 'Phone WS queue', interval: 500 });
+    hand.addMonitor(devData, 'remotePhoneDroppedPackets', { label: 'Phone drop/s', interval: 500 });
     addSeparator(hand);
     hand.addInput(devData, 'sensitivity', { label: 'Sensitivity', min: 0.5, max: 2.0, step: 0.05 }).on('change', ev => {
       setSetting('sensitivity', Number(ev.value), 'devpanel');

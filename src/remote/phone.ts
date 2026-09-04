@@ -3,6 +3,7 @@ import { openRemoteTrackingChannel } from './channel.ts';
 import { initPhoneTracking } from './phone-tracking.ts';
 import { initPhoneAudio, setupPhoneAudioUI } from './phone-audio.ts';
 import { isTrackingOptionsCommand } from './tracking-options-protocol.ts';
+import type { PhoneTrackingMetricsEvent } from './tracking-metrics.ts';
 
 interface PhoneCredential {
   id: string;
@@ -32,11 +33,19 @@ const codeInput = element<HTMLInputElement>('remotePairCode');
 const claimButton = element<HTMLButtonElement>('remoteClaim');
 const ready = element<HTMLElement>('remoteCredentialReady');
 const errorMessage = element<HTMLElement>('remoteError');
-const phoneTracking = initPhoneTracking(packet => {
-  if (trackingSocket?.readyState !== WebSocket.OPEN || trackingSocket.bufferedAmount > 64 * 1024) return false;
-  trackingSocket.send(packet);
-  return true;
-});
+const phoneTracking = initPhoneTracking(
+  packet => {
+    if (trackingSocket?.readyState !== WebSocket.OPEN || trackingSocket.bufferedAmount > 64 * 1024) return false;
+    trackingSocket.send(packet);
+    return true;
+  },
+  metrics => {
+    if (trackingSocket?.readyState !== WebSocket.OPEN) return false;
+    const event: PhoneTrackingMetricsEvent = { ...metrics, bufferedBytes: trackingSocket.bufferedAmount };
+    trackingSocket.send(JSON.stringify(event));
+    return true;
+  },
+);
 
 // Phone audio player — receives commands from host via tracking channel
 const phoneAudio = initPhoneAudio(
