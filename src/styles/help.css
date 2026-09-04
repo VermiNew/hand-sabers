@@ -230,6 +230,16 @@
 }
 
 .tutorial-camera-check[hidden] { display:none; }
+.tutorial-calibration-action[hidden] { display:none; }
+
+.tutorial-calibration-action {
+  width:min(420px,100%);
+  margin-top:18px;
+  padding:18px;
+  border:1px solid rgba(54,242,161,.22);
+  border-radius:10px;
+  background:rgba(54,242,161,.06);
+}
 
 .tutorial-camera-check video {
   display:block;
@@ -267,6 +277,7 @@
 .tutorial-view.has-camera-check h3 { margin:8px 0; }
 .tutorial-view.has-camera-check p { min-height:0; }
 .tutorial-view.has-camera-check .tutorial-actions { margin-top:16px; }
+.tutorial-view.has-calibration-action .tutorial-actions { margin-top:18px; }
 
 .tutorial-actions {
   display:flex;

@@ -32,11 +32,14 @@ export function initHelpOverlay(): void {
   const cameraPreview = document.getElementById('tutorialCameraPreview') as HTMLVideoElement | null;
   const cameraStart = document.getElementById('tutorialCameraStart') as HTMLButtonElement | null;
   const cameraStatus = document.getElementById('tutorialCameraStatus');
+  const calibrationAction = document.getElementById('tutorialCalibrationAction');
+  const calibrationStart = document.getElementById('tutorialCalibrationStart') as HTMLButtonElement | null;
   if (
     !overlay || !panel || !openButton || !closeButton || !guide || !tutorialView ||
     !startTutorialButton || !tutorialProgress || !tutorialIcon || !tutorialStepLabel ||
     !tutorialStepTitle || !tutorialStepBody || !tutorialSkip || !tutorialBack || !tutorialNext ||
-    !cameraCheck || !cameraPreview || !cameraStart || !cameraStatus
+    !cameraCheck || !cameraPreview || !cameraStart || !cameraStatus ||
+    !calibrationAction || !calibrationStart
   ) return;
 
   let tutorialActive = false;
@@ -44,6 +47,7 @@ export function initHelpOverlay(): void {
   let cameraStream: MediaStream | null = null;
   let cameraReady = false;
   let cameraAttempt = 0;
+  let markSeenOnClose = true;
 
   const stopCameraCheck = () => {
     cameraAttempt++;
@@ -99,9 +103,12 @@ export function initHelpOverlay(): void {
     tutorialStepTitle.textContent = t(`tutorial.${step.key}.title`);
     tutorialStepBody.textContent = t(`tutorial.${step.key}.body`);
     const isCameraCheck = step.key === 'cameraCheck';
+    const isCalibration = step.key === 'calibration';
     tutorialView.classList.toggle('has-camera-check', isCameraCheck);
+    tutorialView.classList.toggle('has-calibration-action', isCalibration);
     cameraCheck.hidden = !isCameraCheck;
-    tutorialNext.disabled = isCameraCheck && !cameraReady;
+    calibrationAction.hidden = !isCalibration;
+    tutorialNext.disabled = (isCameraCheck && !cameraReady) || isCalibration;
     tutorialBack.hidden = tutorialStep === 0;
     tutorialNext.textContent = t(tutorialStep === TUTORIAL_STEPS.length - 1 ? 'tutorial.finish' : 'tutorial.next');
   };
@@ -113,7 +120,7 @@ export function initHelpOverlay(): void {
     transitionMs: 220,
     onBeforeClose: () => {
       stopCameraCheck();
-      if (tutorialActive) markTutorialSeen();
+      if (tutorialActive && markSeenOnClose) markTutorialSeen();
     },
   });
 
@@ -122,17 +129,21 @@ export function initHelpOverlay(): void {
     modal.close();
   };
 
-  const open = (showTutorial = false) => {
+  const open = (showTutorial = false, initialStep = 0) => {
     tutorialActive = showTutorial;
-    tutorialStep = 0;
+    tutorialStep = Math.max(0, Math.min(TUTORIAL_STEPS.length - 1, initialStep));
+    markSeenOnClose = true;
     cameraReady = false;
     cameraStatus.textContent = '';
     delete cameraStatus.dataset['state'];
     guide.hidden = showTutorial;
     tutorialView.hidden = !showTutorial;
     if (showTutorial) renderTutorialStep();
+    const activeKey = TUTORIAL_STEPS[tutorialStep]?.key;
     modal.open({
-      initialFocus: showTutorial ? cameraStart : closeButton,
+      initialFocus: showTutorial
+        ? (activeKey === 'cameraCheck' ? cameraStart : activeKey === 'calibration' ? calibrationStart : tutorialNext)
+        : closeButton,
       returnFocusTo: openButton,
     });
   };
@@ -152,6 +163,16 @@ export function initHelpOverlay(): void {
   closeButton.addEventListener('click', close);
   tutorialSkip.addEventListener('click', close);
   cameraStart.addEventListener('click', () => void startCameraCheck());
+  calibrationStart.addEventListener('click', () => {
+    markSeenOnClose = false;
+    stopCameraCheck();
+    modal.close();
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('hand-sabers:tutorial-calibration-request', {
+        detail: { resumeStep: tutorialStep },
+      }));
+    }, 240);
+  });
   tutorialBack.addEventListener('click', () => {
     if (tutorialStep <= 0) return;
     stopCameraCheck();
@@ -180,7 +201,12 @@ export function initHelpOverlay(): void {
   };
 
   window.addEventListener('hand-sabers:open-tutorial', event => {
-    const force = (event as CustomEvent<{ force?: boolean }>).detail?.force === true;
-    window.setTimeout(() => openTutorialIfNeeded(force), 0);
+    const detail = (event as CustomEvent<{ force?: boolean; step?: number }>).detail;
+    const force = detail?.force === true;
+    const requestedStep = Number.isInteger(detail?.step) ? Number(detail?.step) : 0;
+    window.setTimeout(() => {
+      if (requestedStep > 0 && document.body.classList.contains('menu-open')) open(true, requestedStep);
+      else openTutorialIfNeeded(force);
+    }, 0);
   });
 }

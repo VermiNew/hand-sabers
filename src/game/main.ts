@@ -131,9 +131,16 @@ function hideOverlay(): void {
 }
 
 const calibrationUI = createCalibrationUI();
+let tutorialCalibrationActive = false;
+let tutorialResumeStep = 0;
 const calibrationController = createCalibrationController(settings, calibrationUI, {
   async onComplete() {
     if (multiplayerRoundSession.completePreparation()) return;
+    if (tutorialCalibrationActive) {
+      tutorialResumeStep++;
+      returnToMainMenu();
+      return;
+    }
     await beginPlaying();
   },
 });
@@ -373,6 +380,12 @@ function returnToMainMenu(): void {
     state.pauseReason = PAUSE_REASONS.NONE;
     resetMenuDemo();
     triggerMenuEnter();
+    if (tutorialCalibrationActive) {
+      tutorialCalibrationActive = false;
+      window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', {
+        detail: { force: true, step: tutorialResumeStep },
+      }));
+    }
   });
 }
 
@@ -512,6 +525,13 @@ function initMainMenu(): void {
   });
   menuShell.bindAction('mainMaps', () => {
     openMapPicker(document.getElementById('mainMaps'));
+  });
+  window.addEventListener('hand-sabers:tutorial-calibration-request', event => {
+    const resumeStep = (event as CustomEvent<{ resumeStep?: unknown }>).detail?.resumeStep;
+    if (!Number.isInteger(resumeStep) || Number(resumeStep) < 0) return;
+    tutorialCalibrationActive = true;
+    tutorialResumeStep = Number(resumeStep);
+    runAsyncTask('tutorial-calibration-start', () => startFromMainMenu({ calibrate: true }));
   });
 
   const settingsBindingsController = initSettingsBindings({

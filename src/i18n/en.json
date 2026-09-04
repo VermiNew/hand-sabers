@@ -203,7 +203,9 @@
     },
     "calibration": {
       "title": "Calibration",
-      "body": "Stand about 1–1.5 m from the camera. Complete all four calibration steps to match the play area and hand sides."
+      "body": "Stand about 1–1.5 m from the camera. Complete all four calibration steps to match the play area and hand sides.",
+      "start": "START CALIBRATION",
+      "actionHint": "After calibration you will return to the next tutorial step. If you cancel, you can try again."
     },
     "movement": {
       "title": "Saber movement",

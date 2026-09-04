@@ -203,7 +203,9 @@
     },
     "calibration": {
       "title": "Kalibracja",
-      "body": "Stań około 1–1,5 m od kamery. Wykonaj cztery kroki kalibracji, aby dopasować obszar ruchu i strony rąk."
+      "body": "Stań około 1–1,5 m od kamery. Wykonaj cztery kroki kalibracji, aby dopasować obszar ruchu i strony rąk.",
+      "start": "URUCHOM KALIBRACJĘ",
+      "actionHint": "Po ukończeniu kalibracji wrócisz do następnego kroku tutoriala. Po anulowaniu możesz spróbować ponownie."
     },
     "movement": {
       "title": "Ruch mieczy",
