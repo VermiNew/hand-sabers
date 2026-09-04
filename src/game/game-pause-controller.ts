@@ -50,6 +50,9 @@ export function createGamePauseController({
       showPauseMenu();
     }
     if (ui.dStatus) ui.dStatus.textContent = reason === PAUSE_REASONS.HANDS ? t('game.pauseHands') : t('game.pause');
+    window.dispatchEvent(new CustomEvent('hand-sabers:game-pause-state', {
+      detail: { paused: true, reason },
+    }));
   }
 
   async function resumeGame(now = performance.now(), source: ResumeSource = 'ui'): Promise<boolean> {
@@ -67,6 +70,9 @@ export function createGamePauseController({
       hideHandsPaused();
       hidePauseMenu();
       if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
+      window.dispatchEvent(new CustomEvent('hand-sabers:game-pause-state', {
+        detail: { paused: false, reason: pausedReason },
+      }));
       return true;
     } finally {
       resumeGuard.finishAttempt();

@@ -13,6 +13,7 @@ export type GameplayFeedback =
     }
   | { type: 'block-miss'; side: SaberSide; combo: number }
   | { type: 'bomb-hit'; combo: number }
+  | { type: 'bomb-avoided'; combo: number }
   | { type: 'held-complete'; side: SaberSide; combo: number }
   | { type: 'held-break'; side: SaberSide; combo: number };
 

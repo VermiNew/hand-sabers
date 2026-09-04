@@ -463,6 +463,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
       disposeHeldMesh(entry);
       releaseBlock(entry.mesh);
       swapRemoveActiveBlock(i);
+      if (entry.isBomb) emitGameplayFeedback({ type: 'bomb-avoided', combo: state.combo });
       if (!entry.isBomb && isSaberActive(entry.side)) {
         ({ combo: state.combo, maxCombo: state.maxCombo } = resetCombo(state));
         state.lives = Math.max(0, state.lives - 1);
