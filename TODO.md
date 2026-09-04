@@ -147,7 +147,7 @@
 
 - [x] Czat tekstowy w Multiplayer
 - [ ] Czat głosowy z avatarami podświetlającymi się przy mówieniu + animacje
-- [ ] Czat drużynowy podczas gry — w lewym górnym rogu ekranu, odsunięty ~50px od rogu
+- [x] Czat drużynowy podczas gry — zrealizowany jako wspólny czat pokoju dostępny w lobby i podczas rundy; zwijany panel jest po prawej stronie, aby nie zasłaniać HUD-u ani podglądów graczy po lewej.
 
 ## 21. Narrator (Lyra)
 
@@ -164,7 +164,7 @@
 - [x] Wstępne wizualizacje reaktywne na muzykę (pulsowanie tunelu, areny)
 - [ ] Podnieść jakość wizualną do efektu "Wow" — cel: wygląd zbliżony do Unreal Engine, nie "basic"
 - [x] Elementy wizualne reagujące na muzykę, częstotliwości i beaty (zgodne z tym, co użytkownik mapuje w kreatorze) — analizator FFT rozdziela bas/środek/górę, a posortowane czasy beatów mapy sterują impulsami portali, tła i efektów trafień.
-- [ ] Nowe gamemode'y urozmaicające i udoskonalające rozgrywkę — [brak pomysłów, do burzy mózgów]
+- [x] Nowe gamemode'y urozmaicające i udoskonalające rozgrywkę — dostępne są `normal`, `no-arrows`, `pro` i `speed-trials`, wraz z zapisem ustawienia oraz synchronizacją zasad w Multiplayerze.
 
 ## 23. Bugi UI / build
 
