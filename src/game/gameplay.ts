@@ -369,6 +369,7 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
     side: entry.side,
     cut: entry.cut,
     quality: quality.label,
+    reason: quality.reason,
     timingMs: deltaMs,
     combo: state.combo,
   });

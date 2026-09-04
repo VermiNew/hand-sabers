@@ -8,6 +8,7 @@ export type GameplayFeedback =
       side: SaberSide;
       cut: CutDirection;
       quality: 'PERFECT' | 'GOOD' | 'BAD';
+      reason: 'perfect' | 'timing' | 'cut';
       timingMs: number;
       combo: number;
     }
