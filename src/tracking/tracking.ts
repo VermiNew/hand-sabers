@@ -395,6 +395,9 @@ function applyWorkerResult(r: WorkerResult | null): void {
     state.handsLeftActive  = false;
     state.handsRightActive = false;
     updateHandDots(false, false);
+    window.dispatchEvent(new CustomEvent('hand-sabers:tracking-frame', {
+      detail: { leftActive: false, rightActive: false, leftPos: null, rightPos: null },
+    }));
     return;
   }
 
@@ -407,6 +410,14 @@ function applyWorkerResult(r: WorkerResult | null): void {
   if (r.rightPos && saberTargetSetter) saberTargetSetter('right', r.rightPos);
 
   updateHandDots(r.leftActive, r.rightActive);
+  window.dispatchEvent(new CustomEvent('hand-sabers:tracking-frame', {
+    detail: {
+      leftActive: r.leftActive,
+      rightActive: r.rightActive,
+      leftPos: r.leftPos ?? null,
+      rightPos: r.rightPos ?? null,
+    },
+  }));
 
   window.__lastHandConf      = r.leftConf || r.rightConf;
   window.__filteredHandCount = r.filteredCount;

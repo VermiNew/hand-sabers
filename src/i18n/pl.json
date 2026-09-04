@@ -209,7 +209,10 @@
     },
     "movement": {
       "title": "Ruch mieczy",
-      "body": "Poruszaj całymi przedramionami. Trzymaj ręce w kadrze, a ostrza prowadź przez środek nadlatujących bloków."
+      "body": "Pokaż wymagane dłonie i wykonaj wyraźny ruch przedramieniem. Tutorial korzysta teraz z rzeczywistych pozycji po kalibracji.",
+      "waiting": "Czekam na stabilne wykrycie wymaganych dłoni…",
+      "move": "Dłonie wykryte. Wykonaj wyraźny ruch mieczem.",
+      "ready": "Ruch wykryty — dobrze!"
     },
     "hit": {
       "title": "Trafienie w rytmie",

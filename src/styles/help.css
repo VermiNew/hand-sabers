@@ -231,6 +231,7 @@
 
 .tutorial-camera-check[hidden] { display:none; }
 .tutorial-calibration-action[hidden] { display:none; }
+.tutorial-tracking-check[hidden] { display:none; }
 
 .tutorial-calibration-action {
   width:min(420px,100%);
@@ -239,6 +240,39 @@
   border:1px solid rgba(54,242,161,.22);
   border-radius:10px;
   background:rgba(54,242,161,.06);
+}
+
+.tutorial-tracking-check {
+  width:min(320px,100%);
+  margin-top:18px;
+  padding:16px;
+  border:1px solid rgba(0,212,255,.2);
+  border-radius:10px;
+  background:rgba(0,212,255,.05);
+}
+
+.tutorial-hand-indicators {
+  display:flex;
+  justify-content:center;
+  gap:18px;
+}
+
+.tutorial-hand-indicators span {
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(148,163,184,.25);
+  border-radius:50%;
+  color:rgba(148,163,184,.5);
+  font:800 13px 'Oxanium',sans-serif;
+  transition:border-color .15s ease,color .15s ease,box-shadow .15s ease;
+}
+
+.tutorial-hand-indicators span.is-active {
+  border-color:#36f2a1;
+  color:#9affe0;
+  box-shadow:0 0 18px rgba(54,242,161,.22);
 }
 
 .tutorial-camera-check video {

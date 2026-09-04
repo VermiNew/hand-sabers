@@ -209,7 +209,10 @@
     },
     "movement": {
       "title": "Saber movement",
-      "body": "Move your full forearms. Keep both hands in frame and guide each blade through the center of incoming blocks."
+      "body": "Show the required hands and make a clear forearm movement. The tutorial now uses real positions from tracking after calibration.",
+      "waiting": "Waiting for stable detection of the required hands…",
+      "move": "Hands detected. Make a clear saber movement.",
+      "ready": "Movement detected — nice!"
     },
     "hit": {
       "title": "Hit on beat",

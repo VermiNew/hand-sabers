@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import { getSettings } from '../core/settings.ts';
 import { createModalTransition } from './modal-transition.ts';
 
 const TUTORIAL_SEEN_KEY = 'hs_tutorial_seen';
@@ -34,12 +35,16 @@ export function initHelpOverlay(): void {
   const cameraStatus = document.getElementById('tutorialCameraStatus');
   const calibrationAction = document.getElementById('tutorialCalibrationAction');
   const calibrationStart = document.getElementById('tutorialCalibrationStart') as HTMLButtonElement | null;
+  const trackingCheck = document.getElementById('tutorialTrackingCheck');
+  const trackingStatus = document.getElementById('tutorialTrackingStatus');
+  const handLeft = document.getElementById('tutorialHandLeft');
+  const handRight = document.getElementById('tutorialHandRight');
   if (
     !overlay || !panel || !openButton || !closeButton || !guide || !tutorialView ||
     !startTutorialButton || !tutorialProgress || !tutorialIcon || !tutorialStepLabel ||
     !tutorialStepTitle || !tutorialStepBody || !tutorialSkip || !tutorialBack || !tutorialNext ||
     !cameraCheck || !cameraPreview || !cameraStart || !cameraStatus ||
-    !calibrationAction || !calibrationStart
+    !calibrationAction || !calibrationStart || !trackingCheck || !trackingStatus || !handLeft || !handRight
   ) return;
 
   let tutorialActive = false;
@@ -48,6 +53,27 @@ export function initHelpOverlay(): void {
   let cameraReady = false;
   let cameraAttempt = 0;
   let markSeenOnClose = true;
+  let movementComplete = false;
+  let movementBaseline: { left: { x: number; y: number; z: number } | null; right: { x: number; y: number; z: number } | null } = {
+    left: null,
+    right: null,
+  };
+
+  const resetMovementCheck = () => {
+    movementComplete = false;
+    movementBaseline = { left: null, right: null };
+    handLeft.classList.remove('is-active');
+    handRight.classList.remove('is-active');
+    trackingStatus.dataset['state'] = 'checking';
+    trackingStatus.textContent = t('tutorial.movement.waiting');
+  };
+
+  const movementDistance = (
+    current: { x: number; y: number; z: number } | null,
+    baseline: { x: number; y: number; z: number } | null,
+  ): number => current && baseline
+    ? Math.hypot(current.x - baseline.x, current.y - baseline.y, current.z - baseline.z)
+    : 0;
 
   const stopCameraCheck = () => {
     cameraAttempt++;
@@ -104,11 +130,14 @@ export function initHelpOverlay(): void {
     tutorialStepBody.textContent = t(`tutorial.${step.key}.body`);
     const isCameraCheck = step.key === 'cameraCheck';
     const isCalibration = step.key === 'calibration';
+    const isMovement = step.key === 'movement';
     tutorialView.classList.toggle('has-camera-check', isCameraCheck);
     tutorialView.classList.toggle('has-calibration-action', isCalibration);
     cameraCheck.hidden = !isCameraCheck;
     calibrationAction.hidden = !isCalibration;
-    tutorialNext.disabled = (isCameraCheck && !cameraReady) || isCalibration;
+    trackingCheck.hidden = !isMovement;
+    if (isMovement) resetMovementCheck();
+    tutorialNext.disabled = (isCameraCheck && !cameraReady) || isCalibration || (isMovement && !movementComplete);
     tutorialBack.hidden = tutorialStep === 0;
     tutorialNext.textContent = t(tutorialStep === TUTORIAL_STEPS.length - 1 ? 'tutorial.finish' : 'tutorial.next');
   };
@@ -163,6 +192,44 @@ export function initHelpOverlay(): void {
   closeButton.addEventListener('click', close);
   tutorialSkip.addEventListener('click', close);
   cameraStart.addEventListener('click', () => void startCameraCheck());
+  window.addEventListener('hand-sabers:tracking-frame', event => {
+    if (!tutorialActive || TUTORIAL_STEPS[tutorialStep]?.key !== 'movement' || movementComplete) return;
+    const detail = (event as CustomEvent<{
+      leftActive?: boolean;
+      rightActive?: boolean;
+      leftPos?: { x: number; y: number; z: number } | null;
+      rightPos?: { x: number; y: number; z: number } | null;
+    }>).detail;
+    const oneHandMode = getSettings().oneHandMode;
+    const leftRequired = oneHandMode !== 'right';
+    const rightRequired = oneHandMode !== 'left';
+    const leftReady = Boolean(detail?.leftActive && detail.leftPos);
+    const rightReady = Boolean(detail?.rightActive && detail.rightPos);
+    handLeft.classList.toggle('is-active', leftReady);
+    handRight.classList.toggle('is-active', rightReady);
+    if ((leftRequired && !leftReady) || (rightRequired && !rightReady)) {
+      trackingStatus.dataset['state'] = 'checking';
+      trackingStatus.textContent = t('tutorial.movement.waiting');
+      return;
+    }
+    if ((leftRequired && !movementBaseline.left) || (rightRequired && !movementBaseline.right)) {
+      movementBaseline = {
+        left: leftReady ? { ...detail.leftPos! } : null,
+        right: rightReady ? { ...detail.rightPos! } : null,
+      };
+      trackingStatus.textContent = t('tutorial.movement.move');
+      return;
+    }
+    const moved = Math.max(
+      leftRequired ? movementDistance(detail.leftPos ?? null, movementBaseline.left) : 0,
+      rightRequired ? movementDistance(detail.rightPos ?? null, movementBaseline.right) : 0,
+    );
+    if (moved < 0.35) return;
+    movementComplete = true;
+    trackingStatus.dataset['state'] = 'ready';
+    trackingStatus.textContent = t('tutorial.movement.ready');
+    tutorialNext.disabled = false;
+  });
   calibrationStart.addEventListener('click', () => {
     markSeenOnClose = false;
     stopCameraCheck();
