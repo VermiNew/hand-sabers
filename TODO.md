@@ -164,7 +164,7 @@
 - [x] Wstępne wizualizacje reaktywne na muzykę (pulsowanie tunelu, areny)
 - [ ] Podnieść jakość wizualną do efektu "Wow" — cel: wygląd zbliżony do Unreal Engine, nie "basic"
 - [x] Elementy wizualne reagujące na muzykę, częstotliwości i beaty (zgodne z tym, co użytkownik mapuje w kreatorze) — analizator FFT rozdziela bas/środek/górę, a posortowane czasy beatów mapy sterują impulsami portali, tła i efektów trafień.
-- [x] Nowe gamemode'y urozmaicające i udoskonalające rozgrywkę — dostępne są `normal`, `no-arrows`, `pro` i `speed-trials`, wraz z zapisem ustawienia oraz synchronizacją zasad w Multiplayerze.
+- [x] Nowe gamemode'y urozmaicające i udoskonalające rozgrywkę — dostępne są `normal`, `no-arrows`, `pro`, `speed-trials` i `spatial`, wraz z zapisem ustawienia oraz synchronizacją zasad w Multiplayerze.
 
 ## 23. Bugi UI / build
 
@@ -463,7 +463,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Dodać więcej ustawień graficznych z podglądem na żywo i bezpiecznymi presetami: osobne sterowanie detalem areny, podłogą/odbiciami, tłem, mgłą, światłami, shaderami, efektami trafień i wizualizacjami muzycznymi. — tryb Custom steruje tymi elementami na żywo, w tym osobno oświetleniem dekoracyjnym; siedem presetów i Auto ograniczają kosztowne efekty na słabszych profilach.
 - [x] Przebudować tło areny i podłogę: poprawić czytelność, głębię, odbicia, materiały i zachowanie na różnych profilach wydajności. — warstwowy shader dodaje perspektywę, parallax, mgławicę, gwiazdy i przyciemnienie pasa gry; podłoga ma materiał z połyskiem, siatkę, poświaty mieczy i projekcyjne odbicie renderowane tylko na profilach Ultra/Maximum/Custom.
 - [x] Dodać dodatkowe, opcjonalne efekty reagujące na muzykę i pasma częstotliwości, z kontrolą intensywności, ograniczeniem wpływu na czytelność bloków oraz możliwością całkowitego wyłączenia. — portal/tunel, warstwy tła, gwiazdy i odłamki korzystają z energii pasm oraz beatów; ustawienia udostępniają wyłączenie, Auto i ręczne `0–1.5×`, a `gameplayVisualPressure` osłabia dekoracje przy blokach blisko gracza.
-- [ ] Dodać tryb gry z przestrzennie losowymi pozycjami bloków zamiast stałych wysokości. Wykrywać grupy multi-cube (więcej niż 3 bloki w oknie około 0,5 s) i zachowywać dla nich wspólny/przechodni układ, aby sekwencja pozostała fizycznie możliwa do wykonania. Generator musi sprawdzać reachability i kolizje czasowo-przestrzenne.
+- [x] Dodać tryb gry z przestrzennie losowymi pozycjami bloków zamiast stałych wysokości — tryb `spatial` korzysta z deterministycznego generatora wspólnego dla singla i Multiplayera; wykrywa grupy co najmniej 4 bloków w oknie 0,5 s, układa je w przechodnie formacje, ogranicza dystans kolejnych ruchów osobno dla każdej ręki oraz rozdziela pozycje bliskie w czasie. Zweryfikowano deterministyczność, zakres, reachability i separację kontrolowaną sekwencją oraz UI w Chromium.
 - [x] Dodać więcej subtelnych mikroanimacji tekstów, nagłówków, przycisków i zmian stanu, z obsługą `prefers-reduced-motion` i bez pogarszania wydajności/czytelności. — krótkie wejścia obejmują nagłówki i sekcje ustawień/modali, komunikaty stanu mają dyskretny pop, a przyciski delikatny feedback `scale`; efekty używają wyłącznie `opacity`/`transform`/`scale`, są ograniczone do UI i wyłączane przy redukcji ruchu.
 
 ### Ustawienia i konfiguracja
