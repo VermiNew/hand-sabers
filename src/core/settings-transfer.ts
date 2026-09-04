@@ -8,7 +8,7 @@ export const MAX_SETTINGS_IMPORT_BYTES = 64 * 1024;
 const PRODUCT_ID = 'hand-sabers-settings';
 const BOOLEAN_KEYS = new Set<keyof Settings>([
   'flipCamera', 'noFail', 'developerMode', 'customAntialias', 'customReflections',
-  'customFloorGlows', 'customSaberGlints', 'customSaberTrails', 'customBackgroundShader',
+  'customFloorGlows', 'customDecorativeLights', 'customSaberGlints', 'customSaberTrails', 'customBackgroundShader',
   'customFog', 'customGrid', 'musicReactiveEnabled', 'beatLimitEnabled', 'trainingMode',
   'rememberCalibration', 'profileCompleted', 'phoneAudioOutput',
 ]);
@@ -158,6 +158,10 @@ export function parseSettingsImport(text: string): SettingsTransferDocument {
   if (!('language' in settingsRecord)) settingsRecord['language'] = getSettings().language;
   // Files created before profile colors preserve the color already selected on this device.
   if (!('playerColor' in settingsRecord)) settingsRecord['playerColor'] = getSettings().playerColor;
+  // Files created before decorative light controls keep the current device preference.
+  if (!('customDecorativeLights' in settingsRecord)) {
+    settingsRecord['customDecorativeLights'] = getSettings().customDecorativeLights;
+  }
   const allowedKeys = Object.keys(DEFAULTS) as Array<keyof Settings>;
   if (!hasOnlyKeys(settingsRecord, allowedKeys)) throw new Error('SETTINGS_UNKNOWN_FIELD');
   for (const key of allowedKeys) {

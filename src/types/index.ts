@@ -102,6 +102,7 @@ export interface Settings {
   customAntialias: boolean;
   customReflections: boolean;
   customFloorGlows: boolean;
+  customDecorativeLights: boolean;
   customSaberGlints: boolean;
   customSaberTrails: boolean;
   customSaberTrailSamples: number;
@@ -166,6 +167,7 @@ export interface PerformanceProfile {
   antialias: boolean;
   reflections: boolean;
   floorGlows: boolean;
+  decorativeLights: boolean;
   saberGlints: boolean;
   saberTrails: boolean;
   saberTrailSamples: number;

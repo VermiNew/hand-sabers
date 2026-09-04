@@ -76,6 +76,7 @@ export const DEFAULTS: Settings = {
   customAntialias: false,
   customReflections: true,
   customFloorGlows: true,
+  customDecorativeLights: true,
   customSaberGlints: true,
   customSaberTrails: true,
   customSaberTrailSamples: 10,

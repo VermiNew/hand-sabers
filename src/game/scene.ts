@@ -512,6 +512,9 @@ function publishGraphicsStatus(): void {
 function applyDecorVisibility(): void {
   const reflectionOn = Boolean(perfProfile.reflections);
   floorReflect.visible  = reflectionOn;
+  specTopL.visible      = Boolean(perfProfile.decorativeLights);
+  rimL.visible          = Boolean(perfProfile.decorativeLights);
+  backL.visible         = Boolean(perfProfile.decorativeLights);
   applySaberVisibility();
   bgMesh.visible        = Boolean(perfProfile.backgroundShader);
   if (bgMat.uniforms['uDetail']) bgMat.uniforms['uDetail'].value = perfProfile.arenaDetail;

@@ -12,6 +12,7 @@ interface PerformanceSettingsLike {
   customAntialias?: boolean;
   customReflections?: boolean;
   customFloorGlows?: boolean;
+  customDecorativeLights?: boolean;
   customSaberGlints?: boolean;
   customSaberTrails?: boolean;
   customSaberTrailSamples?: number;
@@ -60,6 +61,7 @@ const PROFILES = {
     antialias: false,
     reflections: false,
     floorGlows: false,
+    decorativeLights: false,
     saberGlints: false,
     saberTrails: false,
     saberTrailSamples: 0,
@@ -86,6 +88,7 @@ const PROFILES = {
     antialias: false,
     reflections: false,
     floorGlows: false,
+    decorativeLights: false,
     saberGlints: false,
     saberTrails: false,
     saberTrailSamples: 0,
@@ -112,6 +115,7 @@ const PROFILES = {
     antialias: false,
     reflections: false,
     floorGlows: false,
+    decorativeLights: false,
     saberGlints: false,
     saberTrails: false,
     saberTrailSamples: 0,
@@ -138,6 +142,7 @@ const PROFILES = {
     antialias: false,
     reflections: false,
     floorGlows: false,
+    decorativeLights: false,
     saberGlints: true,
     saberTrails: true,
     saberTrailSamples: 6,
@@ -164,6 +169,7 @@ const PROFILES = {
     antialias: false,
     reflections: false,
     floorGlows: true,
+    decorativeLights: true,
     saberGlints: true,
     saberTrails: true,
     saberTrailSamples: 9,
@@ -190,6 +196,7 @@ const PROFILES = {
     antialias: true,
     reflections: true,
     floorGlows: true,
+    decorativeLights: true,
     saberGlints: true,
     saberTrails: true,
     saberTrailSamples: 12,
@@ -216,6 +223,7 @@ const PROFILES = {
     antialias: true,
     reflections: true,
     floorGlows: true,
+    decorativeLights: true,
     saberGlints: true,
     saberTrails: true,
     saberTrailSamples: 16,
@@ -321,6 +329,7 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
       antialias: Boolean(settings.customAntialias),
       reflections: Boolean(settings.customReflections),
       floorGlows: Boolean(settings.customFloorGlows),
+      decorativeLights: Boolean(settings.customDecorativeLights),
       saberGlints: Boolean(settings.customSaberGlints),
       saberTrails: Boolean(settings.customSaberTrails),
       saberTrailSamples: Math.max(0, Math.min(16, Math.round(settings.customSaberTrailSamples ?? 10))),
