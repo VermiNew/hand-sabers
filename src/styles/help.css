@@ -224,6 +224,50 @@
   line-height:1.7;
 }
 
+.tutorial-camera-check {
+  width:min(360px,100%);
+  margin-top:10px;
+}
+
+.tutorial-camera-check[hidden] { display:none; }
+
+.tutorial-camera-check video {
+  display:block;
+  width:100%;
+  aspect-ratio:16/9;
+  margin-bottom:12px;
+  border:1px solid rgba(0,212,255,.28);
+  border-radius:10px;
+  background:#02050b;
+  object-fit:cover;
+  transform:scaleX(-1);
+}
+
+.tutorial-live-status {
+  min-height:18px;
+  margin-top:10px;
+  color:rgba(203,213,225,.68);
+  font-size:11px;
+}
+
+.tutorial-live-status[data-state="ready"] { color:#36f2a1; }
+.tutorial-live-status[data-state="error"] { color:#ff8995; }
+.tutorial-actions button:disabled { opacity:.42; cursor:not-allowed; }
+
+.tutorial-view.has-camera-check {
+  min-height:0;
+  justify-content:flex-start;
+  padding-top:20px;
+  padding-bottom:18px;
+}
+
+.tutorial-view.has-camera-check .tutorial-progress { margin-bottom:16px; }
+.tutorial-view.has-camera-check .tutorial-icon { font-size:44px; }
+.tutorial-view.has-camera-check .tutorial-step-label { margin-top:8px; }
+.tutorial-view.has-camera-check h3 { margin:8px 0; }
+.tutorial-view.has-camera-check p { min-height:0; }
+.tutorial-view.has-camera-check .tutorial-actions { margin-top:16px; }
+
 .tutorial-actions {
   display:flex;
   justify-content:center;

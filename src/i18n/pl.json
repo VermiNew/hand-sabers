@@ -185,6 +185,14 @@
     "next": "DALEJ",
     "finish": "GOTOWE",
     "step": "KROK",
+    "cameraCheck": {
+      "title": "Sprawdź kamerę",
+      "body": "Ustaw kamerę na wysokości klatki piersiowej i oświetl się od przodu. Uruchom lokalny podgląd, aby sprawdzić kadr przed kalibracją.",
+      "start": "SPRAWDŹ KAMERĘ",
+      "checking": "Uruchamiam kamerę…",
+      "ready": "Kamera działa:",
+      "failed": "Nie udało się otrzymać obrazu. Sprawdź uprawnienia, połączenie kamery i spróbuj ponownie."
+    },
     "settings": {
       "title": "Ustawienia",
       "body": "Użyj przycisku menu, by otworzyć ustawienia. Dostosuj audio, grafikę i rozgrywkę do swoich preferencji i mocy PC."

@@ -185,6 +185,14 @@
     "next": "NEXT",
     "finish": "DONE",
     "step": "STEP",
+    "cameraCheck": {
+      "title": "Check your camera",
+      "body": "Place the camera at chest height and light yourself from the front. Start the local preview to verify the frame before calibration.",
+      "start": "CHECK CAMERA",
+      "checking": "Starting camera…",
+      "ready": "Camera ready:",
+      "failed": "No camera image was received. Check permissions and the camera connection, then try again."
+    },
     "settings": {
       "title": "Settings",
       "body": "Use the menu button to open settings. Adjust audio, graphics, and gameplay to fit your preferences and PC power."

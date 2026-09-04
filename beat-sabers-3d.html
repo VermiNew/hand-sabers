@@ -772,6 +772,11 @@
       <div class="tutorial-step-label" id="tutorialStepLabel">1 / 3</div>
       <h3 id="tutorialStepTitle"></h3>
       <p id="tutorialStepBody"></p>
+      <div class="tutorial-camera-check" id="tutorialCameraCheck" hidden>
+        <video id="tutorialCameraPreview" autoplay muted playsinline></video>
+        <button class="help-primary" id="tutorialCameraStart" type="button" data-i18n="tutorial.cameraCheck.start">SPRAWDŹ KAMERĘ</button>
+        <div class="tutorial-live-status" id="tutorialCameraStatus" role="status" aria-live="polite"></div>
+      </div>
       <div class="tutorial-actions">
         <button class="help-secondary" id="tutorialSkip" type="button" data-i18n="tutorial.skip">POMIŃ</button>
         <button class="help-secondary" id="tutorialBack" type="button" data-i18n="tutorial.back">WSTECZ</button>
