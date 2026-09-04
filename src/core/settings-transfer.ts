@@ -23,7 +23,7 @@ const ENUM_VALUES: Partial<Record<keyof Settings, readonly unknown[]>> = {
   oneHandMode: [null, 'left', 'right'],
   musicReactiveIntensityMode: ['auto', 'manual'],
   trackingSource: ['auto', 'camera', 'phone'],
-  gameMode: ['normal', 'no-arrows', 'pro', 'speed-trials'],
+  gameMode: ['normal', 'no-arrows', 'pro', 'speed-trials', 'spatial'],
   calibrationMode: ['auto', 'manual'],
   devAccent: ['green', 'blue', 'purple', 'pink', 'orange', 'yellow'],
   saberModel: ['classic', 'wide', 'thin', 'prism', 'edge', 'pulse'],

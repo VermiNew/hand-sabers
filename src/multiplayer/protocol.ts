@@ -62,7 +62,7 @@ export interface RoomSnapshot {
   rules: {
     trainingMode: boolean;
     noFail: boolean;
-    gameMode: 'normal' | 'no-arrows' | 'pro' | 'speed-trials';
+    gameMode: 'normal' | 'no-arrows' | 'pro' | 'speed-trials' | 'spatial';
     noteSpeed: 0.75 | 1 | 1.35 | 1.75;
   };
   maxPlayers: number;
@@ -171,7 +171,7 @@ export function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
   if (
     typeof candidateRules['trainingMode'] !== 'boolean'
     || typeof candidateRules['noFail'] !== 'boolean'
-    || !['normal', 'no-arrows', 'pro', 'speed-trials'].includes(String(candidateRules['gameMode']))
+    || !['normal', 'no-arrows', 'pro', 'speed-trials', 'spatial'].includes(String(candidateRules['gameMode']))
     || ![0.75, 1, 1.35, 1.75].includes(Number(candidateRules['noteSpeed']))
   ) {
     return null;

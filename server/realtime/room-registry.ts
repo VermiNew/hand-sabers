@@ -63,7 +63,7 @@ export interface RoomPlayer {
 }
 
 export type RoomMode = 'coop' | 'score-attack';
-export type RoomGameMode = 'normal' | 'no-arrows' | 'pro' | 'speed-trials';
+export type RoomGameMode = 'normal' | 'no-arrows' | 'pro' | 'speed-trials' | 'spatial';
 
 export interface RoomRules {
   trainingMode: boolean;
@@ -324,7 +324,7 @@ export class RoomRegistry {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
-    const gameModes: RoomGameMode[] = ['normal', 'no-arrows', 'pro', 'speed-trials'];
+    const gameModes: RoomGameMode[] = ['normal', 'no-arrows', 'pro', 'speed-trials', 'spatial'];
     const noteSpeeds: RoomRules['noteSpeed'][] = [0.75, 1, 1.35, 1.75];
     if (
       typeof rules.trainingMode !== 'boolean'

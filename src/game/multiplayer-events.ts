@@ -51,7 +51,7 @@ export function initMultiplayerEvents({ onPrepare, onStart }: MultiplayerEventsO
       && !Array.isArray(rules)
       && typeof (rules as Record<string, unknown>)['trainingMode'] === 'boolean'
       && typeof (rules as Record<string, unknown>)['noFail'] === 'boolean'
-      && ['normal', 'no-arrows', 'pro', 'speed-trials'].includes(String((rules as Record<string, unknown>)['gameMode']))
+      && ['normal', 'no-arrows', 'pro', 'speed-trials', 'spatial'].includes(String((rules as Record<string, unknown>)['gameMode']))
       && [0.75, 1, 1.35, 1.75].includes(Number((rules as Record<string, unknown>)['noteSpeed']))
       && typeof detail.startAtPerformance === 'number'
     ) {

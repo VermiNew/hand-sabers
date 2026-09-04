@@ -213,6 +213,7 @@ body.settings-modal-open #camPanel {
 
 /* Segmented */
 .sp-segmented { display:flex; gap:4px; flex-shrink:0; }
+.sp-game-modes { flex-wrap:wrap; }
 .sp-note-speed { flex-wrap:wrap; justify-content:flex-end; }
 .sp-seg {
   background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);

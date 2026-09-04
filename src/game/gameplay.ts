@@ -10,6 +10,7 @@ import { recordBombHit } from '../core/achievements.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import { showHitFeedback } from './hit-feedback.ts';
 import { MapSpawnQueue } from './map-spawn-queue.ts';
+import { createSpatialBeatLayout, type SpatialBeatPosition } from './spatial-beat-layout.ts';
 import { resetMusicVisualizer, triggerMusicVisualizerBeat } from './music-visualizer.ts';
 import {
   APPROACH_TIME_MS,
@@ -581,14 +582,25 @@ export function updateMenuDemo(now: number, t: number): void {
 
 // ── Map mode ─────────────────────────────────────────────────────────────────
 const mapSpawnQueue = new MapSpawnQueue();
+let spatialLayoutSource: Beat[] | null = null;
+let spatialLayout: SpatialBeatPosition[] = [];
+
+function spatialLaneForBeat(beats: Beat[], index: number): SpatialBeatPosition {
+  if (spatialLayoutSource !== beats) {
+    spatialLayoutSource = beats;
+    spatialLayout = createSpatialBeatLayout(beats);
+  }
+  return spatialLayout[index] ?? { x: 0, y: 1.1, grouped: false };
+}
 
 export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: number): void {
   if (!beats) return;
   const approachSec = getMapApproachTimeSec(currentTimeSec);
+  const spatialMode = getSettings().gameMode === 'spatial';
   for (const { beat: b, index, hitTime } of mapSpawnQueue.takeDue(beats, currentTimeSec, approachSec)) {
     const deterministicSide = ((index * 0x9e37_79b1) >>> 0) % 2 === 0 ? 'left' : 'right';
     const side = effectiveOneHandMode() || (b.side === 'random' ? deterministicSide : b.side);
-    const lane = laneForBeat(side, b);
+    const lane = spatialMode ? spatialLaneForBeat(beats, index) : laneForBeat(side, b);
     spawnBlock(side, b.type === 'bomb', {
       mapBeat: true,
       hitTimeSec: hitTime,
@@ -604,6 +616,8 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
 
 export function resetMapSpawn() {
   mapSpawnQueue.reset();
+  spatialLayoutSource = null;
+  spatialLayout = [];
 }
 
 // ── Update loop ───────────────────────────────────────────────────────────────
