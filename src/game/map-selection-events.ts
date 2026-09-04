@@ -8,9 +8,9 @@ export function initMapSelectionEvents(): void {
     if (!detail?.mapId) return;
     void loadMapById(detail.mapId).then(success => {
       if (success) {
-        void narratorQuick(t('narrator.mapLoaded'));
+        void narratorQuick(t('narrator.mapLoaded'), 'happy');
       } else {
-        void narratorQuick(t('narrator.mapLoadFailed'));
+        void narratorQuick(t('narrator.mapLoadFailed'), 'encourage');
       }
     });
   });

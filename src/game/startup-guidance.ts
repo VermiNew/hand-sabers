@@ -11,7 +11,7 @@ export function initStartupGuidance(): void {
   if (needsLanguageSelection()) {
     window.dispatchEvent(new CustomEvent('hand-sabers:open-settings', { detail: { tab: 'language' } }));
     window.setTimeout(() => {
-      void narratorShow({ text: t('narrator.chooseLanguage'), buttons: [t('calib.ok')] });
+      void narratorShow({ text: t('narrator.chooseLanguage'), buttons: [t('calib.ok')], mood: 'serious' });
     }, 250);
     return;
   }
@@ -22,6 +22,7 @@ export function initStartupGuidance(): void {
       void narratorShow({
         text: t('narrator.configureSettings'),
         buttons: [t('narrator.openSettings'), t('narrator.quickGuide'), t('narrator.later')],
+        mood: 'serious',
       }).then(choice => {
         if (choice === 0) {
           window.dispatchEvent(new CustomEvent('hand-sabers:open-settings', { detail: { tab: 'gameplay' } }));

@@ -1,5 +1,6 @@
 import { playInterfaceSound, playTypingTick } from './audio.ts';
 import neutralImg from '../assets/lora/01_neutral.png';
+import seriousImg from '../assets/lora/02_serious.png';
 import smirkImg from '../assets/lora/03_smirk.png';
 import smileImg from '../assets/lora/04_smile.png';
 import laughImg from '../assets/lora/05_laugh.png';
@@ -15,7 +16,7 @@ export const NARRATOR_SPEEDS: Record<string, number> = {
   ultrafast:   5,
 };
 
-export type NarratorMood = 'neutral' | 'happy' | 'excited' | 'sad' | 'surprised' | 'celebrate' | 'encourage';
+export type NarratorMood = 'neutral' | 'serious' | 'happy' | 'excited' | 'sad' | 'surprised' | 'celebrate' | 'encourage';
 
 
 const PAUSE_MAP: Record<string, number> = {
@@ -65,6 +66,7 @@ function getEls() {
 
 const MOOD_IMAGES: Record<NarratorMood, string> = {
   neutral: neutralImg,
+  serious: seriousImg,
   happy: smileImg,
   excited: smirkImg,
   sad: sadImg,

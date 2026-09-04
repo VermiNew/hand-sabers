@@ -96,14 +96,14 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
           settings.audioOffsetMs = offsetMs;
         }
         if (audioOffsetValue) audioOffsetValue.textContent = `${offsetMs} ms`;
-        void narratorQuick(t('narrator.metronomeDone').replace('{{ms}}', String(offsetMs)));
+        void narratorQuick(t('narrator.metronomeDone').replace('{{ms}}', String(offsetMs)), 'happy');
       },
       (active) => {
         metronomeButton.textContent = t(active ? 'settings.audio.metronomeStop' : 'settings.audio.metronomeCalibration');
       },
     );
     if (started) {
-      void narratorQuick(t('narrator.metronomeStart'));
+      void narratorQuick(t('narrator.metronomeStart'), 'encourage');
     }
   });
 

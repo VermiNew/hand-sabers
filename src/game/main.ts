@@ -487,6 +487,7 @@ function initMainMenu(): void {
         const choice = await narratorShow({
           text: t('narrator.selectMap'),
           buttons: [t('narrator.openMaps'), t('narrator.cancel')],
+          mood: 'encourage',
         });
         if (choice === 0) openMapPicker(document.getElementById('mainStart'));
       });
