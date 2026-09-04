@@ -77,7 +77,8 @@
 - [x] Możliwość pominięcia i powrotu do tutoriala z menu
 - [ ] Przebudować tutorial tak, aby faktycznie wprowadzał do gry — interaktywne kroki z rzeczywistym śledzeniem rąk, testowaniem cięć i feedbackiem na żywo, a nie tylko tekst instrukcji.
   - [x] Dodać pierwszy interaktywny krok sprawdzania kamery: dostęp wyłącznie po kliknięciu, lokalny podgląd, wykrycie realnej klatki i rozdzielczości, blokada przejścia do sukcesu oraz bezwarunkowe zatrzymanie ścieżek przy wyjściu. Zweryfikowano w Chromium z wirtualną kamerą: `live` → `ended`, brak błędów i pełny widok bez scrolla przy 1280×900.
-  - [ ] Połączyć kolejne kroki z kalibracją, trackingiem dłoni i kontrolowaną sekwencją treningową opisaną w szczegółowej checkliście poniżej.
+  - [x] Połączyć krok tutoriala z istniejącą kalibracją bez duplikowania MediaPipe: akcja uruchamia prawdziwy flow, po ukończeniu wznawia następny krok, a po anulowaniu wraca do kalibracji bez fałszywego zapisu ukończenia. Smoke potwierdził przejście menu→loading→anulowanie→ten sam krok i brak błędów.
+  - [ ] Połączyć kolejne kroki z trackingiem dłoni i kontrolowaną sekwencją treningową opisaną w szczegółowej checkliście poniżej.
 
 ## 11. Menu pomocy
 
