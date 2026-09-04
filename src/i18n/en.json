@@ -269,6 +269,7 @@
       "antialias": "Antialiasing",
       "reflections": "Floor reflections",
       "floorGlows": "Floor glow",
+      "decorativeLights": "Decorative lighting",
       "saberGlints": "Saber glints",
       "saberTrails": "Saber trails",
       "saberTrailsDesc": "A lightweight motion ribbon without full-screen motion blur.",

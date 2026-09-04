@@ -17,6 +17,7 @@ type CustomBooleanSetting =
   | 'customAntialias'
   | 'customReflections'
   | 'customFloorGlows'
+  | 'customDecorativeLights'
   | 'customSaberGlints'
   | 'customSaberTrails'
   | 'customBackgroundShader'
@@ -36,6 +37,7 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
     [document.getElementById('menuCustomAntialias') as HTMLInputElement | null, 'customAntialias'],
     [document.getElementById('menuCustomReflections') as HTMLInputElement | null, 'customReflections'],
     [document.getElementById('menuCustomFloorGlows') as HTMLInputElement | null, 'customFloorGlows'],
+    [document.getElementById('menuCustomDecorativeLights') as HTMLInputElement | null, 'customDecorativeLights'],
     [document.getElementById('menuCustomSaberGlints') as HTMLInputElement | null, 'customSaberGlints'],
     [document.getElementById('menuCustomSaberTrails') as HTMLInputElement | null, 'customSaberTrails'],
     [document.getElementById('menuCustomBackgroundShader') as HTMLInputElement | null, 'customBackgroundShader'],

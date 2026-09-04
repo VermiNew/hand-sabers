@@ -269,6 +269,7 @@
       "antialias": "Antyaliasing",
       "reflections": "Odbicia podłogi",
       "floorGlows": "Poświata podłogi",
+      "decorativeLights": "Oświetlenie dekoracyjne",
       "saberGlints": "Błyski na mieczach",
       "saberTrails": "Ślady mieczy",
       "saberTrailsDesc": "Lekka wstęga ruchu bez pełnoekranowego motion blur.",
