@@ -78,7 +78,8 @@
 - [ ] Przebudować tutorial tak, aby faktycznie wprowadzał do gry — interaktywne kroki z rzeczywistym śledzeniem rąk, testowaniem cięć i feedbackiem na żywo, a nie tylko tekst instrukcji.
   - [x] Dodać pierwszy interaktywny krok sprawdzania kamery: dostęp wyłącznie po kliknięciu, lokalny podgląd, wykrycie realnej klatki i rozdzielczości, blokada przejścia do sukcesu oraz bezwarunkowe zatrzymanie ścieżek przy wyjściu. Zweryfikowano w Chromium z wirtualną kamerą: `live` → `ended`, brak błędów i pełny widok bez scrolla przy 1280×900.
   - [x] Połączyć krok tutoriala z istniejącą kalibracją bez duplikowania MediaPipe: akcja uruchamia prawdziwy flow, po ukończeniu wznawia następny krok, a po anulowaniu wraca do kalibracji bez fałszywego zapisu ukończenia. Smoke potwierdził przejście menu→loading→anulowanie→ten sam krok i brak błędów.
-  - [ ] Połączyć kolejne kroki z trackingiem dłoni i kontrolowaną sekwencją treningową opisaną w szczegółowej checkliście poniżej.
+  - [x] Połączyć pozycję dłoni i pierwszy ruch z realnym trackingiem: krok respektuje tryb jednej ręki, wymaga stabilnej obecności właściwych dłoni, mierzy przemieszczenie w przestrzeni i odblokowuje się dopiero po ruchu co najmniej 0,35 jednostki. Smoke objął oba tryby, ruch pod/nad progiem i widok 1100×820.
+  - [ ] Zbudować kontrolowaną sekwencję treningową cięć, timingu, combo, bomb, held beats i pauzy opisaną w szczegółowej checkliście poniżej.
 
 ## 11. Menu pomocy
 
