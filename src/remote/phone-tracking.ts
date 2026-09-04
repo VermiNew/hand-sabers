@@ -64,7 +64,7 @@ function assignHands(result: DetectionResult): {
   };
 }
 
-function encodeLandmarks(result: DetectionResult, sequence: number, timestamp: number): ArrayBuffer {
+function encodeLandmarks(result: DetectionResult, sequence: number, sentAtEpochMs: number): ArrayBuffer {
   const hands = assignHands(result);
   const packet = new ArrayBuffer(528);
   const view = new DataView(packet);
@@ -72,7 +72,7 @@ function encodeLandmarks(result: DetectionResult, sequence: number, timestamp: n
   view.setUint8(1, 2);
   view.setUint8(2, (hands.left ? 1 : 0) | (hands.right ? 2 : 0));
   view.setUint32(4, sequence, true);
-  view.setFloat64(8, timestamp, true);
+  view.setFloat64(8, sentAtEpochMs, true);
   view.setFloat32(16, hands.leftConfidence, true);
   view.setFloat32(20, hands.rightConfidence, true);
   for (const [handIndex, landmarks] of [hands.left, hands.right].entries()) {
@@ -191,7 +191,7 @@ export function initPhoneTracking(sendPacket: (packet: ArrayBuffer) => boolean):
             lastDetectionAt = now;
             const result = landmarker.detectForVideo(video, now);
             drawHands(context, result);
-            sendPacket(encodeLandmarks(result, sequence++, now));
+            sendPacket(encodeLandmarks(result, sequence++, Date.now()));
           }
           animationFrame = requestAnimationFrame(detect);
         } catch (error) {

@@ -3,6 +3,7 @@ import { getSettings } from '../core/settings.ts';
 import { isAudioEvent } from './audio-protocol.ts';
 import { onPhoneAudioError, onPhoneAudioReady, setHostAudioSocket } from './host-audio.ts';
 import type { TrackingOptionsCommand } from './tracking-options-protocol.ts';
+import { recordRemoteTrackingPacket, resetRemoteTrackingMetrics } from './tracking-metrics.ts';
 
 export interface RemoteTrackingSession {
   id: string;
@@ -95,6 +96,7 @@ function dispatchState(phase: RemoteTrackingSessionPhase, error: RemoteTrackingS
 function setRemoteTrackingConnected(connected: boolean): void {
   if (remoteTrackingConnected === connected) return;
   remoteTrackingConnected = connected;
+  if (!connected) resetRemoteTrackingMetrics();
   window.dispatchEvent(new CustomEvent('hand-sabers:remote-tracking-state', { detail: { connected } }));
 }
 
@@ -239,6 +241,7 @@ function connectHostChannel(session: ActiveSession): void {
     },
     onBinary: packet => {
       if (activeSession === session) {
+        recordRemoteTrackingPacket(packet);
         window.dispatchEvent(new CustomEvent('hand-sabers:remote-tracking-packet', { detail: packet }));
       }
     },

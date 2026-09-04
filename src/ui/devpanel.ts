@@ -18,6 +18,10 @@ import { Vector2 } from 'three';
 import type { WebGLRenderer } from 'three';
 import type { PerformanceMode, Settings } from '../types/index.js';
 import { sampleGpuMemory } from './render-memory.ts';
+import {
+  REMOTE_TRACKING_METRICS_EVENT,
+  type RemoteTrackingMetrics,
+} from '../remote/tracking-metrics.ts';
 
 // ── Typy ──────────────────────────────────────────────────────────────────────
 interface GameStats {
@@ -46,6 +50,7 @@ interface DevData {
   songTime: number; nearestBeatDeltaMs: number; audioOffsetMs: number;
   nearestBeat1: string; nearestBeat2: string; nearestBeat3: string;
   leftActive: boolean; rightActive: boolean; filteredHands: number; rawHands: number;
+  remotePacketRateHz: number; remotePayloadBytes: number; remoteNetworkMs: string; remoteDroppedPackets: number;
   wireframe: boolean; noFail: boolean; developerMode: boolean;
   sensitivity: number; flipCamera: boolean;
   volume: number; musicVolume: number; sfxVolume: number;
@@ -102,6 +107,7 @@ let pane:         TweakpaneInstance | null = null;
 let statsJS:      StatsInstance | null = null;
 let isDev         = false;
 let settingsSyncBound = false;
+let remoteMetricsBound = false;
 let initGeneration = 0;
 let panelInteractionController: AbortController | null = null;
 
@@ -192,6 +198,7 @@ const devData: DevData = {
   songTime: 0, nearestBeatDeltaMs: 0, audioOffsetMs: 0,
   nearestBeat1: '—', nearestBeat2: '—', nearestBeat3: '—',
   leftActive: false, rightActive: false, filteredHands: 0, rawHands: 0,
+  remotePacketRateHz: 0, remotePayloadBytes: 0, remoteNetworkMs: '—', remoteDroppedPackets: 0,
   wireframe: false, noFail: false, developerMode: false,
   sensitivity: 1.0, flipCamera: false,
   volume: 0.8, musicVolume: 1.0, sfxVolume: 1.0,
@@ -228,6 +235,20 @@ function bindSettingsSync(): void {
     if (!detail || detail.source === 'devpanel') return;
     syncDevDataFromSettings(detail.settings);
     pane?.refresh();
+  });
+}
+
+function bindRemoteMetrics(): void {
+  if (remoteMetricsBound) return;
+  remoteMetricsBound = true;
+  window.addEventListener(REMOTE_TRACKING_METRICS_EVENT, event => {
+    const metrics = (event as CustomEvent<RemoteTrackingMetrics>).detail;
+    devData.remotePacketRateHz = +metrics.packetRateHz.toFixed(1);
+    devData.remotePayloadBytes = metrics.payloadBytes;
+    devData.remoteNetworkMs = metrics.estimatedNetworkMs === null
+      ? '— (zegary)'
+      : `${metrics.estimatedNetworkMs.toFixed(0)} ms`;
+    devData.remoteDroppedPackets = metrics.droppedPackets;
   });
 }
 
@@ -344,6 +365,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
   const settings = getSettings();
   syncDevDataFromSettings(settings);
   bindSettingsSync();
+  bindRemoteMetrics();
   applyDevAccent(settings.devAccent || 'green');
   updateRenderingDiagnostics(lastRenderer!);
 
@@ -466,6 +488,10 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
     hand.addMonitor(devData, 'filteredHands', { label: 'Filtered' });
     hand.addMonitor(devData, 'rawHands',      { label: 'Raw' });
     hand.addMonitor(devData, 'latMs',         { label: 'Latency', view: 'graph', min: 0, max: 80, interval: 500 });
+    hand.addMonitor(devData, 'remotePacketRateHz', { label: 'Phone pkt/s', interval: 500 });
+    hand.addMonitor(devData, 'remotePayloadBytes', { label: 'Phone bytes', interval: 500 });
+    hand.addMonitor(devData, 'remoteNetworkMs', { label: 'Phone WS→PC', interval: 500 });
+    hand.addMonitor(devData, 'remoteDroppedPackets', { label: 'Phone lost', interval: 500 });
     addSeparator(hand);
     hand.addInput(devData, 'sensitivity', { label: 'Sensitivity', min: 0.5, max: 2.0, step: 0.05 }).on('change', ev => {
       setSetting('sensitivity', Number(ev.value), 'devpanel');
