@@ -5,7 +5,6 @@ import type { GameplayFeedback } from './gameplay-feedback.ts';
 export const TUTORIAL_GAMEPLAY_MAP: GameMap = {
   id: 'tutorial-gameplay',
   formatVersion: 1,
-  localOnly: true,
   meta: {
     title: 'Trening podstaw',
     artist: 'Hand Sabers',

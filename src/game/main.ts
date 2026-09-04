@@ -58,6 +58,14 @@ import {
   createMultiplayerRoundSession,
   type MultiplayerRoundSession,
 } from './multiplayer-round-session.ts';
+import { GAMEPLAY_FEEDBACK_EVENT, type GameplayFeedback } from './gameplay-feedback.ts';
+import {
+  TUTORIAL_GAMEPLAY_MAP,
+  applyTutorialGameplayFeedback,
+  applyTutorialPauseState,
+  createTutorialGameplayProgress,
+  isTutorialGameplayComplete,
+} from './tutorial-gameplay-session.ts';
 
 declare global {
   interface Window {
@@ -133,6 +141,17 @@ function hideOverlay(): void {
 const calibrationUI = createCalibrationUI();
 let tutorialCalibrationActive = false;
 let tutorialResumeStep = 0;
+let tutorialGameplayActive = false;
+let tutorialGameplayCompleted = false;
+let tutorialGameplayResumeStep = 0;
+let tutorialGameplayProgress = createTutorialGameplayProgress();
+let tutorialManualPauseSeen = false;
+let tutorialGameplayRestore: {
+  map: typeof state.map;
+  noFail: boolean;
+  oneHandMode: typeof state.oneHandMode;
+  settings: Pick<typeof settings, 'gameMode' | 'noFail' | 'oneHandMode' | 'trainingMode'>;
+} | null = null;
 const calibrationController = createCalibrationController(settings, calibrationUI, {
   async onComplete() {
     if (multiplayerRoundSession.completePreparation()) return;
@@ -212,6 +231,85 @@ function endGame(victory = false): void {
   fadeTransition(() => { showGameOver(state, victory); });
 }
 
+function publishTutorialGameplayProgress(): void {
+  window.dispatchEvent(new CustomEvent('hand-sabers:tutorial-gameplay-progress', {
+    detail: { ...tutorialGameplayProgress },
+  }));
+}
+
+function beginTutorialGameplay(resumeStep: number): void {
+  if (tutorialGameplayActive) return;
+  tutorialGameplayRestore = {
+    map: state.map,
+    noFail: state.noFail,
+    oneHandMode: state.oneHandMode,
+    settings: {
+      gameMode: settings.gameMode,
+      noFail: settings.noFail,
+      oneHandMode: settings.oneHandMode,
+      trainingMode: settings.trainingMode,
+    },
+  };
+  tutorialGameplayActive = true;
+  tutorialGameplayCompleted = false;
+  tutorialGameplayResumeStep = resumeStep;
+  tutorialGameplayProgress = createTutorialGameplayProgress();
+  tutorialManualPauseSeen = false;
+  clearMapAudio();
+  state.map = {
+    ...TUTORIAL_GAMEPLAY_MAP,
+    meta: { ...TUTORIAL_GAMEPLAY_MAP.meta },
+    beats: [...TUTORIAL_GAMEPLAY_MAP.beats],
+  };
+  settings.gameMode = 'normal';
+  settings.noFail = true;
+  settings.oneHandMode = null;
+  settings.trainingMode = false;
+  state.noFail = true;
+  state.oneHandMode = null;
+  setOneHandModeVisuals(null);
+  window.__oneHandMode = 'both';
+  document.body.classList.remove('training-mode');
+  document.body.dataset['gameMode'] = 'normal';
+  publishTutorialGameplayProgress();
+  runAsyncTask('tutorial-gameplay-start', () => startFromMainMenu({ calibrate: false }));
+}
+
+function restoreAfterTutorialGameplay(): void {
+  const restore = tutorialGameplayRestore;
+  if (!restore) return;
+  clearMapAudio();
+  state.map = restore.map?.id
+    ? {
+        ...restore.map,
+        _audioReady: false,
+        _localAudioPending: Boolean(restore.map.localOnly),
+        _serverAudioPending: !restore.map.localOnly,
+      }
+    : restore.map;
+  settings.gameMode = restore.settings.gameMode;
+  settings.noFail = restore.settings.noFail;
+  settings.oneHandMode = restore.settings.oneHandMode;
+  settings.trainingMode = restore.settings.trainingMode;
+  state.noFail = restore.noFail;
+  state.oneHandMode = restore.oneHandMode;
+  setOneHandModeVisuals(restore.oneHandMode);
+  window.__oneHandMode = restore.oneHandMode ?? 'both';
+  document.body.classList.toggle('training-mode', settings.trainingMode);
+  document.body.dataset['gameMode'] = settings.gameMode;
+  tutorialGameplayRestore = null;
+}
+
+function handleMapComplete(): void {
+  if (!tutorialGameplayActive) {
+    endGame(true);
+    return;
+  }
+  tutorialGameplayCompleted = isTutorialGameplayComplete(tutorialGameplayProgress);
+  state.appState = S.GAMEOVER;
+  returnToMainMenu();
+}
+
 function restartGame(): void {
   clearDangerPulse();
   clearGameplayEntities();
@@ -264,7 +362,7 @@ function renderFrame(timestamp: number): void {
     mapTimeline,
     pauseController: gamePauseController,
     scorePublisher: multiplayerScorePublisher,
-    onMapComplete: () => endGame(true),
+    onMapComplete: handleMapComplete,
   });
   updateMusicVisualizer({
     active: state.appState === S.PLAYING,
@@ -380,6 +478,15 @@ function returnToMainMenu(): void {
     state.pauseReason = PAUSE_REASONS.NONE;
     resetMenuDemo();
     triggerMenuEnter();
+    if (tutorialGameplayActive) {
+      const resumeStep = tutorialGameplayResumeStep + (tutorialGameplayCompleted ? 1 : 0);
+      restoreAfterTutorialGameplay();
+      tutorialGameplayActive = false;
+      tutorialGameplayCompleted = false;
+      window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', {
+        detail: { force: true, step: resumeStep },
+      }));
+    }
     if (tutorialCalibrationActive) {
       tutorialCalibrationActive = false;
       window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', {
@@ -533,6 +640,11 @@ function initMainMenu(): void {
     tutorialResumeStep = Number(resumeStep);
     runAsyncTask('tutorial-calibration-start', () => startFromMainMenu({ calibrate: true }));
   });
+  window.addEventListener('hand-sabers:tutorial-gameplay-request', event => {
+    const resumeStep = (event as CustomEvent<{ resumeStep?: unknown }>).detail?.resumeStep;
+    if (!Number.isInteger(resumeStep) || Number(resumeStep) < 0) return;
+    beginTutorialGameplay(Number(resumeStep));
+  });
 
   const settingsBindingsController = initSettingsBindings({
     settings,
@@ -547,6 +659,29 @@ function initMainMenu(): void {
     },
   });
 }
+
+window.addEventListener(GAMEPLAY_FEEDBACK_EVENT, event => {
+  if (!tutorialGameplayActive) return;
+  const feedback = (event as CustomEvent<GameplayFeedback>).detail;
+  if (!feedback) return;
+  applyTutorialGameplayFeedback(
+    tutorialGameplayProgress,
+    feedback,
+  );
+  publishTutorialGameplayProgress();
+});
+window.addEventListener('hand-sabers:game-pause-state', event => {
+  if (!tutorialGameplayActive) return;
+  const detail = (event as CustomEvent<{ paused?: unknown; reason?: unknown }>).detail;
+  if (typeof detail?.paused !== 'boolean') return;
+  tutorialManualPauseSeen = applyTutorialPauseState(
+    tutorialGameplayProgress,
+    detail.paused,
+    detail.reason === PAUSE_REASONS.MANUAL ? PAUSE_REASONS.MANUAL : null,
+    tutorialManualPauseSeen,
+  );
+  publishTutorialGameplayProgress();
+});
 
 const { reportRuntimeError, runAsyncTask } = createRuntimeReporter({ showOverlay });
 const renderLoop = createRenderLoop(renderFrame, reportRuntimeError);
