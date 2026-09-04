@@ -51,6 +51,7 @@ interface DevData {
   nearestBeat1: string; nearestBeat2: string; nearestBeat3: string;
   leftActive: boolean; rightActive: boolean; filteredHands: number; rawHands: number;
   remotePacketRateHz: number; remotePayloadBytes: number; remoteNetworkMs: string; remoteDroppedPackets: number;
+  remoteApplyMs: string;
   wireframe: boolean; noFail: boolean; developerMode: boolean;
   sensitivity: number; flipCamera: boolean;
   volume: number; musicVolume: number; sfxVolume: number;
@@ -73,6 +74,7 @@ declare global {
     __prewarmedBombPool?: number;
     __prewarmedShardPool?: number;
     __lastDetectMs?: number;
+    __remoteTrackingApplyMs?: number;
     Tweakpane?: { Pane: new (opts: { title: string; expanded: boolean }) => TweakpaneInstance };
     Stats?: new () => StatsInstance;
   }
@@ -199,6 +201,7 @@ const devData: DevData = {
   nearestBeat1: '—', nearestBeat2: '—', nearestBeat3: '—',
   leftActive: false, rightActive: false, filteredHands: 0, rawHands: 0,
   remotePacketRateHz: 0, remotePayloadBytes: 0, remoteNetworkMs: '—', remoteDroppedPackets: 0,
+  remoteApplyMs: '—',
   wireframe: false, noFail: false, developerMode: false,
   sensitivity: 1.0, flipCamera: false,
   volume: 0.8, musicVolume: 1.0, sfxVolume: 1.0,
@@ -491,6 +494,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
     hand.addMonitor(devData, 'remotePacketRateHz', { label: 'Phone pkt/s', interval: 500 });
     hand.addMonitor(devData, 'remotePayloadBytes', { label: 'Phone bytes', interval: 500 });
     hand.addMonitor(devData, 'remoteNetworkMs', { label: 'Phone WS→PC', interval: 500 });
+    hand.addMonitor(devData, 'remoteApplyMs', { label: 'Phone send→pose', interval: 500 });
     hand.addMonitor(devData, 'remoteDroppedPackets', { label: 'Phone lost', interval: 500 });
     addSeparator(hand);
     hand.addInput(devData, 'sensitivity', { label: 'Sensitivity', min: 0.5, max: 2.0, step: 0.05 }).on('change', ev => {
@@ -635,6 +639,9 @@ export function tickDevPanel(
   devData.rightActive  = state.handsRightActive;
   devData.filteredHands = gameStats.filteredHands;
   devData.rawHands      = gameStats.rawHands;
+  devData.remoteApplyMs = window.__remoteTrackingApplyMs === undefined
+    ? '—'
+    : `${window.__remoteTrackingApplyMs.toFixed(0)} ms`;
   devData.appState      = state.appState;
 
   const meta = state.map?.meta;

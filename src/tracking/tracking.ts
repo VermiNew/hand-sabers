@@ -25,6 +25,7 @@ declare global {
     __lastHandConf?:     number;
     __filteredHandCount?: number;
     __rawHandCount?:     number;
+    __remoteTrackingApplyMs?: number;
   }
 }
 
@@ -244,9 +245,19 @@ function initWorker(): void {
 }
 
 let latestWorkerResult: WorkerResult | null = null;
+const remoteWorkerSentAtQueue: Array<number | null> = [];
+
 function onWorkerMessage(e: MessageEvent<{ type: string; payload: WorkerResult }>): void {
   if (e.data.type !== 'result') return;
   latestWorkerResult = e.data.payload;
+  applyWorkerResult(latestWorkerResult);
+  if (trackingSource !== 'remote') return;
+  const sentAtEpochMs = remoteWorkerSentAtQueue.shift() ?? null;
+  if (sentAtEpochMs === null) return;
+  const elapsed = Date.now() - sentAtEpochMs;
+  if (elapsed < 0 || elapsed > 5_000) return;
+  window.__remoteTrackingApplyMs = elapsed;
+  if (ui.dLat) ui.dLat.textContent = `${elapsed.toFixed(0)}ms`;
 }
 
 function drawLandmarks(result: DetectResult): void {
@@ -275,7 +286,12 @@ function collectAutoFlipSamples(result: DetectResult): void {
   }
 }
 
-function processDetectionResult(result: DetectResult, now: number, detectMs: number): void {
+function processDetectionResult(
+  result: DetectResult,
+  now: number,
+  detectMs: number,
+  remoteSentAtEpochMs: number | null = null,
+): void {
   latestLandmarks = result.landmarks ?? [];
   drawLandmarks(result);
   collectAutoFlipSamples(result);
@@ -291,12 +307,12 @@ function processDetectionResult(result: DetectResult, now: number, detectMs: num
       };
     });
     worker.postMessage({ type: 'setState', payload: { appState: state.appState, oneHandMode: state.oneHandMode || null } });
+    if (trackingSource === 'remote') remoteWorkerSentAtQueue.push(remoteSentAtEpochMs);
     worker.postMessage({ type: 'analyze', payload: { candidates } });
   } else if (worker) {
+    if (trackingSource === 'remote') remoteWorkerSentAtQueue.push(remoteSentAtEpochMs);
     worker.postMessage({ type: 'analyze', payload: { candidates: [] } });
   }
-
-  applyWorkerResult(latestWorkerResult);
 
   if (state.appState === S.CALIB && result.landmarks?.length) {
     for (const hand of result.landmarks) {
@@ -314,15 +330,24 @@ function processDetectionResult(result: DetectResult, now: number, detectMs: num
 window.addEventListener('hand-sabers:remote-tracking-packet', event => {
   if (!trackingActive || trackingSource !== 'remote') return;
   const startedAt = performance.now();
-  const result = decodeRemoteLandmarks((event as CustomEvent<ArrayBuffer>).detail);
+  const packet = (event as CustomEvent<ArrayBuffer>).detail;
+  const result = decodeRemoteLandmarks(packet);
   if (!result) return;
-  processDetectionResult(result, startedAt, performance.now() - startedAt);
+  const sentAtEpochMs = new DataView(packet).getFloat64(8, true);
+  processDetectionResult(
+    result,
+    startedAt,
+    performance.now() - startedAt,
+    sentAtEpochMs >= 1_000_000_000_000 ? sentAtEpochMs : null,
+  );
 });
 
 window.addEventListener('hand-sabers:remote-tracking-state', event => {
   const connected = Boolean((event as CustomEvent<{ connected?: boolean }>).detail?.connected);
   updateCalibrationSourceIndicator(connected);
   if (trackingSource === 'remote' && !connected) {
+    remoteWorkerSentAtQueue.length = 0;
+    delete window.__remoteTrackingApplyMs;
     latestLandmarks = [];
     latestWorkerResult = null;
     worker?.postMessage({ type: 'analyze', payload: { candidates: [] } });
@@ -438,6 +463,8 @@ function scheduleCalibAuto(): void {
 export function stopTracking(): void {
   trackingActive     = false;
   trackingSource     = null;
+  remoteWorkerSentAtQueue.length = 0;
+  delete window.__remoteTrackingApplyMs;
   latestWorkerResult = null;
   calibAutoScheduled = false;
 
