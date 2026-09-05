@@ -34,6 +34,7 @@ export interface TrackingSessionStatus {
   expiresAt: number;
   phoneCredentialIssued: boolean;
   phoneApprovalPending: boolean;
+  phoneApprovalGranted: boolean;
   hostConnected: boolean;
   phoneConnected: boolean;
 }
@@ -261,6 +262,7 @@ export class TrackingSessionRegistry {
       expiresAt: session.expiresAt,
       phoneCredentialIssued: session.phoneCredentialIssued,
       phoneApprovalPending: Boolean(session.pendingPhoneClaimToken),
+      phoneApprovalGranted: session.pendingPhoneClaimApproved,
       hostConnected: session.hostConnected,
       phoneConnected: session.phoneConnected,
     };

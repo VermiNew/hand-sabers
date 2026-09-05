@@ -23,6 +23,8 @@ export type RemoteTrackingSessionPhase =
   | 'idle'
   | 'connecting'
   | 'ready'
+  | 'approvalPending'
+  | 'approvalGranted'
   | 'claimed'
   | 'connected'
   | 'expired'
@@ -31,7 +33,7 @@ export type RemoteTrackingSessionPhase =
 export interface RemoteTrackingSessionState {
   session: RemoteTrackingSession | null;
   phase: RemoteTrackingSessionPhase;
-  error: 'createFailed' | 'rateLimited' | 'sessionExpired' | 'statusFailed' | null;
+  error: 'createFailed' | 'rateLimited' | 'sessionExpired' | 'statusFailed' | 'approvalFailed' | null;
 }
 
 interface TrackingSessionResponse {
@@ -48,6 +50,8 @@ interface TrackingSessionResponse {
 interface TrackingSessionStatus {
   expiresAt?: unknown;
   phoneCredentialIssued?: unknown;
+  phoneApprovalPending?: unknown;
+  phoneApprovalGranted?: unknown;
   phoneConnected?: unknown;
 }
 
@@ -189,6 +193,8 @@ async function readStatus(session: ActiveSession): Promise<void> {
   }
   if (remoteTrackingConnected) dispatchState('connected');
   else if (payload.phoneConnected === true) dispatchState('connecting');
+  else if (payload.phoneApprovalGranted === true) dispatchState('approvalGranted');
+  else if (payload.phoneApprovalPending === true) dispatchState('approvalPending');
   else dispatchState(payload.phoneCredentialIssued === true ? 'claimed' : 'ready');
 }
 
@@ -302,6 +308,22 @@ export function sendPhoneTrackingOptions(): boolean {
     return true;
   } catch {
     return false;
+  }
+}
+
+export async function respondToPhoneApproval(approved: boolean): Promise<void> {
+  const session = activeSession;
+  if (!session) return;
+  try {
+    const response = await fetch(`/api/tracking-sessions/${encodeURIComponent(session.id)}/phone-claim`, {
+      method: approved ? 'POST' : 'DELETE',
+      headers: bearer(session),
+    });
+    if (!response.ok) throw new Error('APPROVAL_FAILED');
+    await readStatus(session);
+  } catch (error) {
+    if (activeSession === session) dispatchState(state.phase, 'approvalFailed');
+    throw error;
   }
 }
 
