@@ -65,11 +65,19 @@ export interface MapMeta {
   audioUrl?: string;
 }
 
+export interface NarratorCue {
+  t: number;
+  text: string;
+  mood?: 'neutral' | 'encourage' | 'celebrate' | 'warning';
+  durationMs?: number;
+}
+
 export interface GameMap {
   id: string;
   formatVersion: number;
   meta: MapMeta;
   beats: Beat[];
+  narratorCues?: NarratorCue[];
   _serverAudioPending?: boolean;
   _localAudioPending?: boolean;
   _audioReady?: boolean;

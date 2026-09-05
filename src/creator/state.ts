@@ -1,4 +1,4 @@
-import type { CutDirection } from '../types/index.js';
+import type { CutDirection, NarratorCue } from '../types/index.js';
 
 export interface CreatorBeat {
   t: number;
@@ -16,6 +16,7 @@ export interface CreatorMap {
   id: string;
   meta: { title: string; duration: number; bpm?: number; difficulty?: string; audioFile?: string; audioUrl?: string };
   beats: CreatorBeat[];
+  narratorCues?: NarratorCue[];
 }
 
 export const MAP_ID = (): string => `map-${Date.now()}`;
@@ -28,6 +29,7 @@ export const state = {
     id:    MAP_ID(),
     meta:  { title: '', duration: 0, bpm: 120, difficulty: 'medium' },
     beats: [],
+    narratorCues: [],
   } as CreatorMap,
 
   activeCut:      'any' as CutDirection,

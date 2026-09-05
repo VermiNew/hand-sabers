@@ -1,5 +1,5 @@
 import { coreT } from './translate.js';
-import type { Beat, BeatSide, BeatType, CutDirection, GameMap, MapMeta } from '../types/index.js';
+import type { Beat, BeatSide, BeatType, CutDirection, GameMap, MapMeta, NarratorCue } from '../types/index.js';
 
 export const MAP_FORMAT_VERSION = 1;
 export const MAX_BEATS_DEFAULT = 10_000;
@@ -21,6 +21,10 @@ const CUT_DIRECTION_SET = new Set<string>([
   'up-right',
 ]);
 const META_TEXT_LIMIT = 120;
+const NARRATOR_CUE_LIMIT = 500;
+const NARRATOR_TEXT_LIMIT = 500;
+type NarratorMood = NonNullable<NarratorCue['mood']>;
+const NARRATOR_MOOD_SET = new Set<NarratorMood>(['neutral', 'encourage', 'celebrate', 'warning']);
 
 interface NormalizeMapOptions {
   fallbackId?: string;
@@ -142,6 +146,21 @@ function normalizeBeat(rawBeat: unknown, index = 0): NormalizedBeat {
   return out;
 }
 
+function normalizeNarratorCues(value: unknown): NarratorCue[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, NARRATOR_CUE_LIMIT).flatMap(rawCue => {
+    const cue = asRecord(rawCue);
+    const t = Number(cue.t ?? cue.time ?? cue.timeSec);
+    const text = String(cue.text ?? '').trim().slice(0, NARRATOR_TEXT_LIMIT);
+    if (!Number.isFinite(t) || t < 0 || t > MAX_MAP_DURATION_SEC || !text) return [];
+    const mood: NarratorMood = NARRATOR_MOOD_SET.has(cue.mood as NarratorMood)
+      ? cue.mood as NarratorMood
+      : 'neutral';
+    const durationMs = Math.round(Math.max(1000, Math.min(30_000, Number(cue.durationMs) || 4000)));
+    return [{ t, text, mood, durationMs }];
+  }).sort((a, b) => a.t - b.t);
+}
+
 export function upgradeMapFormat(rawMap: unknown, options: NormalizeMapOptions = {}): GameMap & UnknownRecord {
   if (!isPlainObject(rawMap)) throw new Error(coreT('mapMustBeObject'));
   const metaSource = asRecord(rawMap.meta);
@@ -170,6 +189,7 @@ export function upgradeMapFormat(rawMap: unknown, options: NormalizeMapOptions =
   if (!beats.length && options.requireBeats !== false) throw new Error(coreT('mapNeedsBeats'));
 
   const meta: MapMeta = { ...metaSource };
+  const narratorCues = normalizeNarratorCues(rawMap.narratorCues);
   const id = sanitizeMapId(rawMap.id || meta.title || rawMap.title || options.fallbackId || 'custom-map');
   delete meta.audioUrl;
   const audioOffsetMs = Number(meta.audioOffsetMs ?? rawMap.audioOffsetMs ?? 0);
@@ -189,6 +209,7 @@ export function upgradeMapFormat(rawMap: unknown, options: NormalizeMapOptions =
     formatVersion: Number(rawMap.formatVersion || MAP_FORMAT_VERSION),
     meta,
     beats,
+    narratorCues,
   };
 }
 
