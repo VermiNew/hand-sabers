@@ -69,6 +69,55 @@ export function registerTrackingSessionRoutes({
     res.json(credential);
   });
 
+  app.post('/api/tracking-sessions/code/:code/request', (req, res) => {
+    const ip = getIp(req);
+    if (rateLimit(ip, 'tracking-session-claim-request', 6)) {
+      return res.status(429).json({ error: 'RATE_LIMITED' });
+    }
+    const claim = sessions.requestPhoneCredential(String(req.params['code'] || ''));
+    if (!claim) return res.status(404).json({ error: 'TRACKING_SESSION_NOT_FOUND' });
+    res.status(202).json(claim);
+  });
+
+  app.get('/api/tracking-sessions/:id/phone-claim', (req, res) => {
+    const ip = getIp(req);
+    if (rateLimit(ip, 'tracking-session-claim-read', 60)) {
+      return res.status(429).json({ error: 'RATE_LIMITED' });
+    }
+    const credential = sessions.readPendingPhoneCredential(
+      String(req.params['id'] || ''),
+      bearerToken(req.get('authorization')),
+    );
+    if (!credential) return res.status(404).json({ error: 'TRACKING_SESSION_NOT_FOUND' });
+    res.status(credential.state === 'pending' ? 202 : 200).json(credential);
+  });
+
+  app.post('/api/tracking-sessions/:id/phone-claim', (req, res) => {
+    const ip = getIp(req);
+    if (rateLimit(ip, 'tracking-session-claim-approve', 30)) {
+      return res.status(429).json({ error: 'RATE_LIMITED' });
+    }
+    const approved = sessions.approvePhoneCredential(
+      String(req.params['id'] || ''),
+      bearerToken(req.get('authorization')),
+    );
+    if (!approved) return res.status(404).json({ error: 'TRACKING_SESSION_NOT_FOUND' });
+    res.status(204).end();
+  });
+
+  app.delete('/api/tracking-sessions/:id/phone-claim', (req, res) => {
+    const ip = getIp(req);
+    if (rateLimit(ip, 'tracking-session-claim-reject', 30)) {
+      return res.status(429).json({ error: 'RATE_LIMITED' });
+    }
+    const rejected = sessions.rejectPhoneCredential(
+      String(req.params['id'] || ''),
+      bearerToken(req.get('authorization')),
+    );
+    if (!rejected) return res.status(404).json({ error: 'TRACKING_SESSION_NOT_FOUND' });
+    res.status(204).end();
+  });
+
   app.get('/api/tracking-sessions/:id', (req, res) => {
     const ip = getIp(req);
     if (rateLimit(ip, 'tracking-session-read', 120)) {
