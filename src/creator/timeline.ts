@@ -223,6 +223,37 @@ export function renderTimeline(): void {
     }
   }
 
+  // ── Lyra narrator markers ──
+  for (const cue of state.map.narratorCues ?? []) {
+    const x = LABEL_W + (cue.t - state.viewStart) * state.pxPerSec;
+    if (x < LABEL_W || x > w) continue;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(196,118,255,.62)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 5]);
+    ctx.beginPath();
+    ctx.moveTo(x, RULER_H);
+    ctx.lineTo(x, h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#c476ff';
+    ctx.beginPath();
+    ctx.moveTo(x, RULER_H + 1);
+    ctx.lineTo(x + 6, RULER_H + 7);
+    ctx.lineTo(x, RULER_H + 13);
+    ctx.lineTo(x - 6, RULER_H + 7);
+    ctx.closePath();
+    ctx.fill();
+    if (state.pxPerSec >= 35) {
+      const snippet = cue.text.length > 24 ? `${cue.text.slice(0, 23)}…` : cue.text;
+      ctx.fillStyle = 'rgba(225,190,255,.86)';
+      ctx.font = '8px JetBrains Mono';
+      ctx.textAlign = x > w - 150 ? 'right' : 'left';
+      ctx.fillText(snippet, x + (ctx.textAlign === 'left' ? 9 : -9), RULER_H + 11);
+    }
+    ctx.restore();
+  }
+
   // ── Beats ──
   const rr = ctx as unknown as { roundRect: (x: number, y: number, w: number, h: number, r: number) => void };
 
