@@ -11,6 +11,12 @@ interface PhoneCredential {
   expiresAt: number;
 }
 
+interface PendingPhoneClaim {
+  id: string;
+  claimToken: string;
+  expiresAt: number;
+}
+
 const SESSION_ID_RE = /^[A-Za-z0-9_-]{16}$/;
 const TOKEN_RE = /^[A-Za-z0-9_-]{32}$/;
 const CODE_RE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
@@ -18,6 +24,8 @@ const CODE_RE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
 let credential: PhoneCredential | null = null;
 let trackingSocket: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let claimPollTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingClaim: PendingPhoneClaim | null = null;
 let reconnectAttempt = 0;
 
 function element<T extends HTMLElement>(id: string): T {
@@ -85,6 +93,12 @@ function showError(message: string): void {
 function clearReconnectTimer(): void {
   if (reconnectTimer) clearTimeout(reconnectTimer);
   reconnectTimer = null;
+}
+
+function clearPendingClaim(): void {
+  if (claimPollTimer) clearTimeout(claimPollTimer);
+  claimPollTimer = null;
+  pendingClaim = null;
 }
 
 function connectTrackingChannel(next: PhoneCredential): void {
@@ -156,6 +170,7 @@ function connectTrackingChannel(next: PhoneCredential): void {
 }
 
 function acceptCredential(next: PhoneCredential): void {
+  clearPendingClaim();
   credential = next;
   codeForm.hidden = true;
   ready.hidden = false;
@@ -169,6 +184,61 @@ function acceptCredential(next: PhoneCredential): void {
   trackingSocket = null;
   previousSocket?.close();
   connectTrackingChannel(next);
+}
+
+function resetRejectedClaim(): void {
+  clearPendingClaim();
+  codeForm.hidden = false;
+  ready.hidden = true;
+  claimButton.disabled = false;
+  status.dataset['state'] = 'idle';
+  statusText.textContent = t('remoteTracking.waitingCredential');
+  showError(t('remoteTracking.approvalRejected'));
+}
+
+async function pollPendingClaim(claim: PendingPhoneClaim): Promise<void> {
+  if (pendingClaim !== claim) return;
+  if (Date.now() >= claim.expiresAt) {
+    clearPendingClaim();
+    claimButton.disabled = false;
+    status.dataset['state'] = 'idle';
+    statusText.textContent = t('remoteTracking.waitingCredential');
+    showError(t('remoteTracking.sessionExpired'));
+    return;
+  }
+  try {
+    const response = await fetch(`/api/tracking-sessions/${encodeURIComponent(claim.id)}/phone-claim`, {
+      headers: { Authorization: `Bearer ${claim.claimToken}` },
+    });
+    const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
+    if (response.status === 404) {
+      resetRejectedClaim();
+      return;
+    }
+    if (response.status === 200) {
+      if (
+        payload['state'] !== 'approved'
+        || typeof payload['id'] !== 'string'
+        || !SESSION_ID_RE.test(payload['id'])
+        || typeof payload['phoneToken'] !== 'string'
+        || !TOKEN_RE.test(payload['phoneToken'])
+        || typeof payload['expiresAt'] !== 'number'
+        || !Number.isFinite(payload['expiresAt'])
+      ) throw new Error('INVALID_APPROVAL');
+      acceptCredential({
+        id: payload['id'],
+        phoneToken: payload['phoneToken'],
+        expiresAt: payload['expiresAt'],
+      });
+      return;
+    }
+    if (response.status !== 202 && response.status !== 429) throw new Error('CLAIM_STATUS_FAILED');
+  } catch {
+    // Keep the short-lived request alive across a temporary network interruption.
+  }
+  if (pendingClaim === claim) {
+    claimPollTimer = setTimeout(() => void pollPendingClaim(claim), 1_500);
+  }
 }
 
 function credentialFromHash(): PhoneCredential | null {
@@ -192,25 +262,28 @@ async function claimCode(): Promise<void> {
     const response = await fetch(`/api/tracking-sessions/code/${encodeURIComponent(code)}`, { method: 'POST' });
     const payload = await response.json().catch(() => ({})) as Record<string, unknown>;
     if (
-      !response.ok
+      response.status !== 202
       || typeof payload['id'] !== 'string'
       || !SESSION_ID_RE.test(payload['id'])
-      || typeof payload['phoneToken'] !== 'string'
-      || !TOKEN_RE.test(payload['phoneToken'])
+      || typeof payload['claimToken'] !== 'string'
+      || !TOKEN_RE.test(payload['claimToken'])
       || typeof payload['expiresAt'] !== 'number'
       || !Number.isFinite(payload['expiresAt'])
     ) throw new Error(response.status === 429 ? 'RATE_LIMITED' : 'NOT_FOUND');
-    acceptCredential({
+    pendingClaim = {
       id: payload['id'],
-      phoneToken: payload['phoneToken'],
+      claimToken: payload['claimToken'],
       expiresAt: payload['expiresAt'],
-    });
+    };
+    status.dataset['state'] = 'ready';
+    statusText.textContent = t('remoteTracking.waitingHostApproval');
+    void pollPendingClaim(pendingClaim);
   } catch (error) {
     showError(t(error instanceof Error && error.message === 'RATE_LIMITED'
       ? 'remoteTracking.rateLimited'
       : 'remoteTracking.sessionNotFound'));
   } finally {
-    claimButton.disabled = false;
+    claimButton.disabled = pendingClaim !== null;
   }
 }
 
@@ -228,3 +301,4 @@ codeInput.addEventListener('keydown', event => {
 
 const hashCredential = credentialFromHash();
 if (hashCredential) acceptCredential(hashCredential);
+window.addEventListener('pagehide', clearPendingClaim, { once: true });

@@ -725,6 +725,8 @@
     "pairingCode": "KOD PAROWANIA",
     "connect": "POŁĄCZ",
     "credentialReady": "DANE SESJI GOTOWE",
+    "waitingHostApproval": "OCZEKIWANIE NA ZGODĘ NA KOMPUTERZE",
+    "approvalRejected": "Host odrzucił prośbę o połączenie. Sprawdź kod i spróbuj ponownie.",
     "connectingStream": "ŁĄCZENIE KANAŁU DANYCH…",
     "waitingForComputer": "OCZEKIWANIE NA KOMPUTER",
     "streamConnected": "POŁĄCZONO Z KOMPUTEREM",

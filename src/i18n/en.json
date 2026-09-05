@@ -725,6 +725,8 @@
     "pairingCode": "PAIRING CODE",
     "connect": "CONNECT",
     "credentialReady": "SESSION CREDENTIAL READY",
+    "waitingHostApproval": "WAITING FOR APPROVAL ON THE COMPUTER",
+    "approvalRejected": "The host rejected the connection request. Check the code and try again.",
     "connectingStream": "CONNECTING DATA CHANNEL…",
     "waitingForComputer": "WAITING FOR COMPUTER",
     "streamConnected": "CONNECTED TO COMPUTER",
