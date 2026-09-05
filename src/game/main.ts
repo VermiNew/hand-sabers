@@ -152,10 +152,9 @@ let tutorialManualPauseSeen = false;
 let tutorialGameplayRestore: {
   map: typeof state.map;
   noFail: boolean;
-  oneHandMode: typeof state.oneHandMode;
   settings: Pick<
     typeof settings,
-    'gameMode' | 'hitboxSensitivity' | 'noFail' | 'noteSpeed' | 'oneHandMode' | 'trainingMode'
+    'gameMode' | 'hitboxSensitivity' | 'noFail' | 'noteSpeed' | 'trainingMode'
   >;
 } | null = null;
 const calibrationController = createCalibrationController(settings, calibrationUI, {
@@ -248,13 +247,11 @@ function beginTutorialGameplay(resumeStep: number): void {
   tutorialGameplayRestore = {
     map: state.map,
     noFail: state.noFail,
-    oneHandMode: state.oneHandMode,
     settings: {
       gameMode: settings.gameMode,
       hitboxSensitivity: settings.hitboxSensitivity,
       noFail: settings.noFail,
       noteSpeed: settings.noteSpeed,
-      oneHandMode: settings.oneHandMode,
       trainingMode: settings.trainingMode,
     },
   };
@@ -273,12 +270,8 @@ function beginTutorialGameplay(resumeStep: number): void {
   settings.hitboxSensitivity = 1.2;
   settings.noFail = true;
   settings.noteSpeed = 0.75;
-  settings.oneHandMode = null;
   settings.trainingMode = false;
   state.noFail = true;
-  state.oneHandMode = null;
-  setOneHandModeVisuals(null);
-  window.__oneHandMode = 'both';
   document.body.classList.remove('training-mode');
   document.body.dataset['gameMode'] = 'normal';
   publishTutorialGameplayProgress();
@@ -301,12 +294,8 @@ function restoreAfterTutorialGameplay(): void {
   settings.hitboxSensitivity = restore.settings.hitboxSensitivity;
   settings.noFail = restore.settings.noFail;
   settings.noteSpeed = restore.settings.noteSpeed;
-  settings.oneHandMode = restore.settings.oneHandMode;
   settings.trainingMode = restore.settings.trainingMode;
   state.noFail = restore.noFail;
-  state.oneHandMode = restore.oneHandMode;
-  setOneHandModeVisuals(restore.oneHandMode);
-  window.__oneHandMode = restore.oneHandMode ?? 'both';
   document.body.classList.toggle('training-mode', settings.trainingMode);
   document.body.dataset['gameMode'] = settings.gameMode;
   tutorialGameplayRestore = null;
