@@ -26,7 +26,13 @@ export interface ServerMessage {
   message?: unknown;
   sentAt?: unknown;
   serverTime?: unknown;
+  fromPlayerId?: unknown;
+  signal?: unknown;
 }
+
+export type VoiceSignal =
+  | { type: 'offer' | 'answer'; sdp: string }
+  | { type: 'ice'; candidate: string; sdpMid: string | null; sdpMLineIndex: number | null };
 
 export interface ChatMessage {
   playerId: string;
@@ -144,6 +150,28 @@ export function parseChatMessage(value: unknown): ChatMessage | null {
     text: message['text'],
     sentAt: message['sentAt'],
   };
+}
+
+export function parseVoiceSignal(value: unknown): VoiceSignal | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const signal = value as Record<string, unknown>;
+  if (signal['type'] === 'offer' || signal['type'] === 'answer') {
+    if (typeof signal['sdp'] !== 'string' || !signal['sdp'] || signal['sdp'].length > 50_000) return null;
+    return { type: signal['type'], sdp: signal['sdp'] };
+  }
+  if (signal['type'] !== 'ice') return null;
+  const candidate = signal['candidate'];
+  const sdpMid = signal['sdpMid'];
+  const sdpMLineIndex = signal['sdpMLineIndex'];
+  if (
+    typeof candidate !== 'string'
+    || !candidate
+    || candidate.length > 2_048
+    || (sdpMid !== null && (typeof sdpMid !== 'string' || sdpMid.length > 256))
+    || (sdpMLineIndex !== null
+      && (!Number.isSafeInteger(sdpMLineIndex) || Number(sdpMLineIndex) < 0 || Number(sdpMLineIndex) > 65_535))
+  ) return null;
+  return { type: 'ice', candidate, sdpMid, sdpMLineIndex: sdpMLineIndex as number | null };
 }
 
 export function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
