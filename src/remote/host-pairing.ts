@@ -4,6 +4,7 @@ import {
   getRemoteTrackingSessionState,
   initRemoteTrackingHost,
   isRemoteTrackingConnected,
+  respondToPhoneApproval,
   revokeRemoteTrackingSession,
 } from './host-session.ts';
 import type { RemoteTrackingSessionState } from './host-session.ts';
@@ -30,6 +31,9 @@ export function initRemoteTrackingPairing(): void {
   const statusText = element<HTMLElement>('remoteTrackingStatusText');
   const errorMessage = element<HTMLElement>('remoteTrackingError');
   const disconnectButton = element<HTMLButtonElement>('remoteTrackingDisconnect');
+  const approvalPanel = element<HTMLElement>('remoteTrackingApproval');
+  const approvalAllowButton = element<HTMLButtonElement>('remoteTrackingApprovalAllow');
+  const approvalDenyButton = element<HTMLButtonElement>('remoteTrackingApprovalDeny');
   const confirmPanel = element<HTMLElement>('remoteTrackingConfirm');
   const confirmYesButton = element<HTMLButtonElement>('remoteTrackingConfirmYes');
   const confirmNoButton = element<HTMLButtonElement>('remoteTrackingConfirmNo');
@@ -78,12 +82,17 @@ export function initRemoteTrackingPairing(): void {
 
     if (phase === 'connected') setStatus('connected', 'remoteTracking.phoneConnected');
     else if (phase === 'connecting') setStatus('loading', 'remoteTracking.reconnectingStream');
+    else if (phase === 'approvalPending') setStatus('loading', 'remoteTracking.manualApprovalPending');
+    else if (phase === 'approvalGranted') setStatus('ready', 'remoteTracking.manualApprovalGranted');
     else if (phase === 'claimed') setStatus('ready', 'remoteTracking.phoneClaimed');
     else if (phase === 'ready') setStatus('ready', 'remoteTracking.scanQr');
     else setStatus('idle', 'remoteTracking.hostIdle');
 
     const connected = phase === 'connected';
     if (disconnectButton) disconnectButton.hidden = !connected;
+    if (approvalPanel) approvalPanel.hidden = phase !== 'approvalPending';
+    if (approvalAllowButton) approvalAllowButton.disabled = false;
+    if (approvalDenyButton) approvalDenyButton.disabled = false;
     if (confirmPanel && !connected) confirmPanel.hidden = true;
     if (newCodeButton) newCodeButton.hidden = phase !== 'claimed';
   };
@@ -128,6 +137,16 @@ export function initRemoteTrackingPairing(): void {
   newCodeButton?.addEventListener('click', () => {
     void createRemoteTrackingSession().catch(() => undefined);
   });
+  const respondToApproval = (approved: boolean) => {
+    if (approvalAllowButton) approvalAllowButton.disabled = true;
+    if (approvalDenyButton) approvalDenyButton.disabled = true;
+    void respondToPhoneApproval(approved).catch(() => {
+      if (approvalAllowButton) approvalAllowButton.disabled = false;
+      if (approvalDenyButton) approvalDenyButton.disabled = false;
+    });
+  };
+  approvalAllowButton?.addEventListener('click', () => respondToApproval(true));
+  approvalDenyButton?.addEventListener('click', () => respondToApproval(false));
 
   render(getRemoteTrackingSessionState());
 }

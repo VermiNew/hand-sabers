@@ -697,6 +697,13 @@
           <a id="remoteTrackingPhoneLink" href="./remote-camera.html" target="_blank" rel="noopener" data-i18n="remoteTracking.openPhonePage">Otwórz stronę telefonu</a>
         </div>
       </div>
+      <div class="rt-approval" id="remoteTrackingApproval" hidden>
+        <p data-i18n="remoteTracking.manualApprovalPrompt">Telefon wpisał kod ręcznie. Zezwolić mu na połączenie?</p>
+        <div class="rt-approval-actions">
+          <button class="rt-approval-allow" id="remoteTrackingApprovalAllow" type="button" data-i18n="remoteTracking.manualApprovalAllow">ZEZWÓL</button>
+          <button class="rt-approval-deny" id="remoteTrackingApprovalDeny" type="button" data-i18n="remoteTracking.manualApprovalDeny">ODRZUĆ</button>
+        </div>
+      </div>
       <!-- Disconnect button — shown when phone is connected -->
       <button class="rt-disconnect" id="remoteTrackingDisconnect" type="button" hidden>
         <span class="material-symbols-rounded" aria-hidden="true">link_off</span>
