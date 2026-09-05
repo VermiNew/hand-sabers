@@ -125,7 +125,7 @@
 - [x] Czytelny preview "hit now" na osi czasu
 - [x] Lepsze narzędzia do układania beatów (snap do BPM, kopiuj/wklej)
 - [x] Podgląd mapy w trybie 3D podczas edycji
-- [ ] Dodać timeline w stylu DaVinci Resolve — przewijany suwak czasu z dokładnym pozycjonowaniem, możliwością wpisania czasu ręcznie, zoomowaną osią czasu — celem jest wygodne pisanie tekstu dla narratora (Lyra) bez przycisków wyboru
+- [x] Dodać timeline w stylu DaVinci Resolve — przewijany suwak czasu z dokładnym pozycjonowaniem, możliwością wpisania czasu ręcznie, zoomowaną osią czasu — kreator pozwala przewijać i zoomować oś, wpisywać czas `MM:SS.cc` lub sekundy oraz dodawać, edytować i usuwać automatyczne kwestie Lyry; znaczniki są widoczne na timeline, a zapisane kwestie odtwarzają się w grze bez przycisków.
 
 ## 18. Multiplayer — poprawki i co‑op
 
