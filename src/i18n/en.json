@@ -218,7 +218,8 @@
       "title": "Hit on beat",
       "body": "Cut each block with the matching saber and follow its arrow. Better timing and center accuracy earn more points.",
       "start": "START TRAINING",
-      "actionHint": "Complete the objectives on a short training map. The score and achievements will not be saved."
+      "actionHint": "Complete the objectives on a short training map. The score and achievements will not be saved.",
+      "retry": "Some objectives are still incomplete. Check the list and try again — the score will still not be saved."
     },
     "gameplay": {
       "title": "BASICS TRAINING",

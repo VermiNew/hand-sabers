@@ -218,7 +218,8 @@
       "title": "Trafienie w rytmie",
       "body": "Tnij blok mieczem tego samego koloru i zgodnie ze strzałką. Im bliżej rytmu i środka, tym więcej punktów.",
       "start": "URUCHOM TRENING",
-      "actionHint": "Wykonaj zadania na krótkiej mapie treningowej. Wynik ani osiągnięcia nie zostaną zapisane."
+      "actionHint": "Wykonaj zadania na krótkiej mapie treningowej. Wynik ani osiągnięcia nie zostaną zapisane.",
+      "retry": "Nie wykonano wszystkich zadań. Sprawdź checklistę i spróbuj ponownie — wynik nadal nie zostanie zapisany."
     },
     "gameplay": {
       "title": "TRENING PODSTAW",

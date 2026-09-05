@@ -37,6 +37,7 @@ export function initHelpOverlay(): void {
   const calibrationStart = document.getElementById('tutorialCalibrationStart') as HTMLButtonElement | null;
   const gameplayAction = document.getElementById('tutorialGameplayAction');
   const gameplayStart = document.getElementById('tutorialGameplayStart') as HTMLButtonElement | null;
+  const gameplayStatus = document.getElementById('tutorialGameplayStatus');
   const trackingCheck = document.getElementById('tutorialTrackingCheck');
   const trackingStatus = document.getElementById('tutorialTrackingStatus');
   const handLeft = document.getElementById('tutorialHandLeft');
@@ -46,7 +47,7 @@ export function initHelpOverlay(): void {
     !startTutorialButton || !tutorialProgress || !tutorialIcon || !tutorialStepLabel ||
     !tutorialStepTitle || !tutorialStepBody || !tutorialSkip || !tutorialBack || !tutorialNext ||
     !cameraCheck || !cameraPreview || !cameraStart || !cameraStatus ||
-    !calibrationAction || !calibrationStart || !gameplayAction || !gameplayStart ||
+    !calibrationAction || !calibrationStart || !gameplayAction || !gameplayStart || !gameplayStatus ||
     !trackingCheck || !trackingStatus || !handLeft || !handRight
   ) return;
 
@@ -57,6 +58,7 @@ export function initHelpOverlay(): void {
   let cameraAttempt = 0;
   let markSeenOnClose = true;
   let movementComplete = false;
+  let gameplayIncomplete = false;
   let movementBaseline: { left: { x: number; y: number; z: number } | null; right: { x: number; y: number; z: number } | null } = {
     left: null,
     right: null,
@@ -141,6 +143,10 @@ export function initHelpOverlay(): void {
     cameraCheck.hidden = !isCameraCheck;
     calibrationAction.hidden = !isCalibration;
     gameplayAction.hidden = !isGameplay;
+    if (isGameplay) {
+      gameplayStatus.dataset['state'] = gameplayIncomplete ? 'error' : 'checking';
+      gameplayStatus.textContent = t(gameplayIncomplete ? 'tutorial.hit.retry' : 'tutorial.hit.actionHint');
+    }
     trackingCheck.hidden = !isMovement;
     if (isMovement) resetMovementCheck();
     tutorialNext.disabled = (isCameraCheck && !cameraReady) || isCalibration || isGameplay || (isMovement && !movementComplete);
@@ -164,10 +170,11 @@ export function initHelpOverlay(): void {
     modal.close();
   };
 
-  const open = (showTutorial = false, initialStep = 0) => {
+  const open = (showTutorial = false, initialStep = 0, incompleteGameplay = false) => {
     tutorialActive = showTutorial;
     tutorialStep = Math.max(0, Math.min(TUTORIAL_STEPS.length - 1, initialStep));
     markSeenOnClose = true;
+    gameplayIncomplete = incompleteGameplay;
     cameraReady = false;
     cameraStatus.textContent = '';
     delete cameraStatus.dataset['state'];
@@ -262,6 +269,7 @@ export function initHelpOverlay(): void {
   tutorialBack.addEventListener('click', () => {
     if (tutorialStep <= 0) return;
     stopCameraCheck();
+    gameplayIncomplete = false;
     tutorialStep--;
     renderTutorialStep();
   });
@@ -272,6 +280,7 @@ export function initHelpOverlay(): void {
       return;
     }
     stopCameraCheck();
+    gameplayIncomplete = false;
     tutorialStep++;
     renderTutorialStep();
   });
@@ -287,12 +296,17 @@ export function initHelpOverlay(): void {
   };
 
   window.addEventListener('hand-sabers:open-tutorial', event => {
-    const detail = (event as CustomEvent<{ force?: boolean; step?: number }>).detail;
+    const detail = (event as CustomEvent<{
+      force?: boolean;
+      gameplayIncomplete?: boolean;
+      step?: number;
+    }>).detail;
     const force = detail?.force === true;
     const requestedStep = Number.isInteger(detail?.step) ? Number(detail?.step) : 0;
     window.setTimeout(() => {
-      if (requestedStep > 0 && document.body.classList.contains('menu-open')) open(true, requestedStep);
-      else openTutorialIfNeeded(force);
+      if (requestedStep > 0 && document.body.classList.contains('menu-open')) {
+        open(true, requestedStep, detail?.gameplayIncomplete === true);
+      } else openTutorialIfNeeded(force);
     }, 0);
   });
 }

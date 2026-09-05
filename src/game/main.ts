@@ -266,7 +266,7 @@ function beginTutorialGameplay(resumeStep: number): void {
   clearMapAudio();
   state.map = {
     ...TUTORIAL_GAMEPLAY_MAP,
-    meta: { ...TUTORIAL_GAMEPLAY_MAP.meta },
+    meta: { ...TUTORIAL_GAMEPLAY_MAP.meta, title: t('tutorial.gameplay.title') },
     beats: [...TUTORIAL_GAMEPLAY_MAP.beats],
   };
   settings.gameMode = 'normal';
@@ -492,12 +492,17 @@ function returnToMainMenu(): void {
     resetMenuDemo();
     triggerMenuEnter();
     if (tutorialGameplayActive) {
-      const resumeStep = tutorialGameplayResumeStep + (tutorialGameplayCompleted ? 1 : 0);
+      const completed = tutorialGameplayCompleted;
+      const resumeStep = tutorialGameplayResumeStep + (completed ? 1 : 0);
       restoreAfterTutorialGameplay();
       tutorialGameplayActive = false;
       tutorialGameplayCompleted = false;
       window.dispatchEvent(new CustomEvent('hand-sabers:open-tutorial', {
-        detail: { force: true, step: resumeStep },
+        detail: {
+          force: true,
+          step: resumeStep,
+          gameplayIncomplete: !completed,
+        },
       }));
     }
     if (tutorialCalibrationActive) {
