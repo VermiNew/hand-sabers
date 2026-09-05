@@ -12,6 +12,8 @@ interface TrackingSessionRecord {
   createdAt: number;
   expiresAt: number;
   phoneCredentialIssued: boolean;
+  pendingPhoneClaimToken: string | null;
+  pendingPhoneClaimApproved: boolean;
   hostConnected: boolean;
   phoneConnected: boolean;
 }
@@ -31,11 +33,16 @@ export interface TrackingSessionStatus {
   createdAt: number;
   expiresAt: number;
   phoneCredentialIssued: boolean;
+  phoneApprovalPending: boolean;
   hostConnected: boolean;
   phoneConnected: boolean;
 }
 
 export type TrackingSessionInvalidationReason = 'expired' | 'revoked';
+
+export type PendingPhoneCredential =
+  | { state: 'pending'; expiresAt: number }
+  | { state: 'approved'; id: string; phoneToken: string; expiresAt: number };
 
 function createToken(bytes = 24): string {
   return randomBytes(bytes).toString('base64url');
@@ -91,6 +98,8 @@ export class TrackingSessionRegistry {
       createdAt,
       expiresAt: createdAt + SESSION_TTL_MS,
       phoneCredentialIssued: false,
+      pendingPhoneClaimToken: null,
+      pendingPhoneClaimApproved: false,
       hostConnected: false,
       phoneConnected: false,
     };
@@ -141,6 +150,56 @@ export class TrackingSessionRegistry {
     if (!session) return;
     if (role === 'host') session.hostConnected = false;
     else session.phoneConnected = false;
+  }
+
+  requestPhoneCredential(code: string): { id: string; claimToken: string; expiresAt: number } | null {
+    this.deleteExpired();
+    const normalized = normalizeCode(code);
+    const session = [...this.sessions.values()].find(candidate => candidate.code === normalized);
+    if (
+      !session
+      || session.phoneCredentialIssued
+      || session.phoneConnected
+      || session.pendingPhoneClaimToken
+    ) return null;
+    session.pendingPhoneClaimToken = createToken();
+    session.pendingPhoneClaimApproved = false;
+    return {
+      id: session.id,
+      claimToken: session.pendingPhoneClaimToken,
+      expiresAt: session.expiresAt,
+    };
+  }
+
+  approvePhoneCredential(id: string, hostToken: string): boolean {
+    const session = this.requireAuthorized(id, hostToken, 'host');
+    if (!session?.pendingPhoneClaimToken || session.phoneCredentialIssued) return false;
+    session.pendingPhoneClaimApproved = true;
+    return true;
+  }
+
+  rejectPhoneCredential(id: string, hostToken: string): boolean {
+    const session = this.requireAuthorized(id, hostToken, 'host');
+    if (!session?.pendingPhoneClaimToken || session.phoneCredentialIssued) return false;
+    session.pendingPhoneClaimToken = null;
+    session.pendingPhoneClaimApproved = false;
+    return true;
+  }
+
+  readPendingPhoneCredential(id: string, claimToken: string): PendingPhoneCredential | null {
+    this.deleteExpired();
+    const session = this.sessions.get(id);
+    if (!session?.pendingPhoneClaimToken || !tokensMatch(claimToken, session.pendingPhoneClaimToken)) return null;
+    if (!session.pendingPhoneClaimApproved) return { state: 'pending', expiresAt: session.expiresAt };
+    session.pendingPhoneClaimToken = null;
+    session.pendingPhoneClaimApproved = false;
+    session.phoneCredentialIssued = true;
+    return {
+      state: 'approved',
+      id: session.id,
+      phoneToken: session.phoneToken,
+      expiresAt: session.expiresAt,
+    };
   }
 
   isActive(id: string): boolean {
@@ -201,6 +260,7 @@ export class TrackingSessionRegistry {
       createdAt: session.createdAt,
       expiresAt: session.expiresAt,
       phoneCredentialIssued: session.phoneCredentialIssued,
+      phoneApprovalPending: Boolean(session.pendingPhoneClaimToken),
       hostConnected: session.hostConnected,
       phoneConnected: session.phoneConnected,
     };
