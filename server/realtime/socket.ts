@@ -4,7 +4,7 @@ import type { Duplex } from 'node:stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import { RoomError } from './room-registry.js';
 import type { RoomRegistry, RoomSnapshot } from './room-registry.js';
-import { PROTOCOL_VERSION, parseMessage, sanitizeChatText, validateRealtimePacket } from './protocol.js';
+import { PROTOCOL_VERSION, parseMessage, parseVoiceSignal, sanitizeChatText, validateRealtimePacket } from './protocol.js';
 
 const MAX_CONTROL_MESSAGES_PER_MINUTE = 1_200;
 const MAX_CHAT_MESSAGES_PER_WINDOW = 8;
@@ -100,6 +100,25 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
   ): void {
     for (const [socket, client] of clients) {
       if (client.roomCode === roomCode) send(socket, { type: 'chat', message });
+    }
+  }
+
+  function relayVoiceSignal(
+    sender: WebSocket,
+    roomCode: string,
+    fromPlayerId: string,
+    targetPlayerId: string,
+    signal: ReturnType<typeof parseVoiceSignal>,
+  ): void {
+    for (const [socket, client] of clients) {
+      if (
+        socket !== sender
+        && client.roomCode === roomCode
+        && client.playerId === targetPlayerId
+      ) {
+        send(socket, { type: 'voice-signal', fromPlayerId, signal });
+        return;
+      }
     }
   }
 
@@ -234,6 +253,21 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
             text,
             sentAt: now,
           });
+          return;
+        }
+
+        if (type === 'voice-signal') {
+          const targetPlayerId = String(message.targetPlayerId || '');
+          if (!targetPlayerId || targetPlayerId.length > 64 || targetPlayerId === client.playerId) {
+            throw new Error('INVALID_VOICE_SIGNAL');
+          }
+          relayVoiceSignal(
+            socket,
+            client.roomCode,
+            client.playerId,
+            targetPlayerId,
+            parseVoiceSignal(message.signal),
+          );
           return;
         }
 

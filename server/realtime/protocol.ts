@@ -27,7 +27,13 @@ export interface ClientMessage {
   finished?: unknown;
   sentAt?: unknown;
   text?: unknown;
+  targetPlayerId?: unknown;
+  signal?: unknown;
 }
+
+export type VoiceSignal =
+  | { type: 'offer' | 'answer'; sdp: string }
+  | { type: 'ice'; candidate: string; sdpMid: string | null; sdpMLineIndex: number | null };
 
 export function parseMessage(data: RawData): ClientMessage {
   const parsed = JSON.parse(data.toString()) as unknown;
@@ -45,6 +51,32 @@ export function sanitizeChatText(value: unknown): string {
     .trim();
   if (!text || text.length > MAX_CHAT_LENGTH) throw new Error('INVALID_CHAT');
   return text;
+}
+
+export function parseVoiceSignal(value: unknown): VoiceSignal {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('INVALID_VOICE_SIGNAL');
+  const signal = value as Record<string, unknown>;
+  if (signal['type'] === 'offer' || signal['type'] === 'answer') {
+    if (typeof signal['sdp'] !== 'string' || !signal['sdp'] || signal['sdp'].length > 50_000) {
+      throw new Error('INVALID_VOICE_SIGNAL');
+    }
+    return { type: signal['type'], sdp: signal['sdp'] };
+  }
+  if (signal['type'] === 'ice') {
+    const candidate = signal['candidate'];
+    const sdpMid = signal['sdpMid'];
+    const sdpMLineIndex = signal['sdpMLineIndex'];
+    if (
+      typeof candidate !== 'string'
+      || !candidate
+      || candidate.length > 2_048
+      || (sdpMid !== null && (typeof sdpMid !== 'string' || sdpMid.length > 256))
+      || (sdpMLineIndex !== null
+        && (!Number.isSafeInteger(sdpMLineIndex) || Number(sdpMLineIndex) < 0 || Number(sdpMLineIndex) > 65_535))
+    ) throw new Error('INVALID_VOICE_SIGNAL');
+    return { type: 'ice', candidate, sdpMid, sdpMLineIndex: sdpMLineIndex as number | null };
+  }
+  throw new Error('INVALID_VOICE_SIGNAL');
 }
 
 export function validateRealtimePacket(packet: Buffer): 1 | 2 {
