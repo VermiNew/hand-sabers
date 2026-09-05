@@ -368,8 +368,10 @@ export function renderPlayhead(): void {
 }
 
 export function updateTimecode(): void {
-  const timecodeEl = document.getElementById('timecode');
-  if (timecodeEl) timecodeEl.textContent = formatCreatorTime(getPlayPos(), true);
+  const timecodeEl = document.getElementById('timecode') as HTMLInputElement | null;
+  if (timecodeEl && document.activeElement !== timecodeEl) {
+    timecodeEl.value = formatCreatorTime(getPlayPos(), true);
+  }
 }
 
 export function updateStatus(): void {

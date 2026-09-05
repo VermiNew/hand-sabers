@@ -506,6 +506,7 @@
   },
   "creator": {
     "title": "MAP CREATOR",
+    "seekTimeAria": "Seek to an exact time (MM:SS.cc or seconds)",
     "noFile": "— no file —",
     "save": "SAVE",
     "exportZip": "EXPORT ZIP",

@@ -506,6 +506,7 @@
   },
   "creator": {
     "title": "KREATOR MAP",
+    "seekTimeAria": "Przejdź do dokładnego czasu (MM:SS.cc lub sekundy)",
     "noFile": "— brak pliku —",
     "save": "ZAPISZ",
     "exportZip": "EKSPORT ZIP",

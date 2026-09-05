@@ -1,6 +1,6 @@
 import { state } from './state.ts';
 import { removeBeatByReference, sortBeatsByTime } from '../core/creator-rules.ts';
-import { playAudio, stopAudio } from './audio.ts';
+import { getPlayPos, playAudio, stopAudio } from './audio.ts';
 import { renderAll, requestTimelineRender, hitTestBeat, updateZoomLabel, getLabelWidth, xToTime } from './timeline.ts';
 import { scheduleAutosave } from './storage.ts';
 import { TimelineDragSelection } from './drag-selection.ts';
@@ -9,6 +9,7 @@ import { checkOverlaps, pushUndo, redo, undo } from './history.ts';
 import { cycleSnap, snapTime } from './snap.ts';
 import { cancelPrecount } from './precount.ts';
 import { bindCreatorKeyboard } from './keyboard-input.ts';
+import { formatCreatorTime, parseCreatorTime } from './time-format.ts';
 import {
   cycleCutForSelectionOrTap,
   toggleLoop,
@@ -48,6 +49,34 @@ export function bindTimelineEvents(callbacks: {
   const timelineCanvas = document.getElementById('timelineCanvas') as HTMLCanvasElement | null;
   const waveCanvas     = document.getElementById('waveCanvas')     as HTMLCanvasElement | null;
   if (!timelineCanvas || !waveCanvas) return;
+
+  const timecodeInput = document.getElementById('timecode') as HTMLInputElement | null;
+  const commitTimecode = (): void => {
+    if (!timecodeInput) return;
+    const parsed = parseCreatorTime(timecodeInput.value);
+    const duration = state.map.meta.duration || state.audioBuffer?.duration || Number.POSITIVE_INFINITY;
+    if (parsed === null) {
+      timecodeInput.value = formatCreatorTime(getPlayPos(), true);
+      return;
+    }
+    const wasPlaying = state.isPlaying;
+    state.currentTime = Math.min(parsed, duration);
+    const visibleSec = Math.max(0, (timelineCanvas.width - getLabelWidth()) / state.pxPerSec);
+    state.viewStart = Math.max(0, state.currentTime - visibleSec * 0.5);
+    if (wasPlaying) playAudio(state.currentTime, callbacks.onPlayEnd);
+    renderAll();
+  };
+  timecodeInput?.addEventListener('change', commitTimecode);
+  timecodeInput?.addEventListener('keydown', event => {
+    event.stopPropagation();
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      timecodeInput.blur();
+    } else if (event.key === 'Escape') {
+      timecodeInput.value = formatCreatorTime(getPlayPos(), true);
+      timecodeInput.blur();
+    }
+  });
 
   let middleMouseDown = false;
   let middleMouseLastX = 0;
