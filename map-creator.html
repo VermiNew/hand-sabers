@@ -235,6 +235,43 @@
     <canvas id="creatorPreviewCanvas"></canvas>
   </aside>
 
+  <aside id="narratorCueEditor" class="narrator-cue-editor" aria-labelledby="narratorCueEditorTitle">
+    <header>
+      <div>
+        <span class="material-symbols-rounded" aria-hidden="true">subtitles</span>
+        <strong id="narratorCueEditorTitle" data-i18n="creator.narrator.title">TEKSTY LYRY</strong>
+      </div>
+      <span id="narratorCueCount">0</span>
+    </header>
+    <form id="narratorCueForm">
+      <div class="narrator-cue-time-row">
+        <label for="narratorCueTime" data-i18n="creator.narrator.time">CZAS (S)</label>
+        <input id="narratorCueTime" type="number" min="0" max="86400" step="0.01" value="0" required>
+        <button id="narratorCueUsePlayhead" type="button" data-i18n="creator.narrator.usePlayhead">PLAYHEAD</button>
+      </div>
+      <label for="narratorCueText" data-i18n="creator.narrator.text">TEKST LYRY</label>
+      <textarea id="narratorCueText" maxlength="500" rows="3" required data-i18n-placeholder="creator.narrator.textPlaceholder" placeholder="Wpisz tekst wyświetlany podczas gry…"></textarea>
+      <div class="narrator-cue-options">
+        <label><span data-i18n="creator.narrator.mood">NASTRÓJ</span>
+          <select id="narratorCueMood">
+            <option value="neutral" data-i18n="creator.narrator.moodNeutral">Neutralny</option>
+            <option value="encourage" data-i18n="creator.narrator.moodEncourage">Wsparcie</option>
+            <option value="celebrate" data-i18n="creator.narrator.moodCelebrate">Radość</option>
+            <option value="warning" data-i18n="creator.narrator.moodWarning">Ostrzeżenie</option>
+          </select>
+        </label>
+        <label><span data-i18n="creator.narrator.duration">CZAS EKRANU (S)</span>
+          <input id="narratorCueDuration" type="number" min="1" max="30" step="0.5" value="4" required>
+        </label>
+      </div>
+      <div class="narrator-cue-actions">
+        <button id="narratorCueCancel" type="button" hidden data-i18n="creator.narrator.cancel">ANULUJ</button>
+        <button id="narratorCueSave" type="submit" data-i18n="creator.narrator.add">DODAJ TEKST</button>
+      </div>
+    </form>
+    <div id="narratorCueList" class="narrator-cue-list"></div>
+  </aside>
+
   <!-- Drop zone -->
   <div id="dropZone">
     <div class="drop-title">HAND SABERS</div>

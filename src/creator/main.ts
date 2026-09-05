@@ -52,9 +52,11 @@ import {
 
 import { initKeybindsUI } from './keybinds-ui.ts';
 import { formatCreatorTime } from './time-format.ts';
+import { initNarratorCueEditor } from './narrator-cue-editor.ts';
 
 let lastCreatorError = '';
 let lastCreatorErrorAt = 0;
+let narratorCueEditor: { refresh(): void } | null = null;
 
 function reportCreatorError(context: string, error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
@@ -213,6 +215,7 @@ async function handleFile(file: File): Promise<void> {
         if (warningMsg) warningMsg.textContent = t('creator.noAudioWarning');
       }
       saveCreatorMapLocally();
+      narratorCueEditor?.refresh();
       renderAll();
       showToast(t('creator.mapJsonLoaded'), { type: 'success' });
     } else if (lowerName.endsWith('.zip')) {
@@ -220,6 +223,7 @@ async function handleFile(file: File): Promise<void> {
       syncDifficultyInput();
       updateDifficultySuggestion();
       checkOverlaps();
+      narratorCueEditor?.refresh();
       renderAll();
       showToast(t('creator.zipLoaded'), { type: 'success' });
     } else {
@@ -432,6 +436,7 @@ startRafLoop();
 syncCutButton();
 bindDropZone();
 applyCreatorTranslations();
+narratorCueEditor = initNarratorCueEditor();
 
 bindTimelineEvents({
   onSave:    () => runCreatorTask('map-save', saveMap),
@@ -460,6 +465,12 @@ window.addEventListener('resize', () => {
 
 runCreatorTask('initial-map-load', () => loadInitialMap({
   onDecoded: audioCallbacks.onDecoded,
-  onMapLoaded: () => { syncDifficultyInput(); updateDifficultySuggestion(); checkOverlaps(); renderAll(); },
+  onMapLoaded: () => {
+    syncDifficultyInput();
+    updateDifficultySuggestion();
+    checkOverlaps();
+    narratorCueEditor?.refresh();
+    renderAll();
+  },
   getLocalMapById: (id: string) => getLocalMapById(id),
 }));
