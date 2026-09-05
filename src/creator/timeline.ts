@@ -10,6 +10,7 @@ export function renderAll(): void {
   renderTimeline();
   renderPlayhead();
   updateTimecode();
+  updateTimelineNavigator();
   updateStatus();
 }
 
@@ -403,6 +404,20 @@ export function updateTimecode(): void {
   if (timecodeEl && document.activeElement !== timecodeEl) {
     timecodeEl.value = formatCreatorTime(getPlayPos(), true);
   }
+}
+
+function updateTimelineNavigator(): void {
+  const navigator = document.getElementById('timelineNavigator') as HTMLInputElement | null;
+  const canvas = document.getElementById('timelineCanvas') as HTMLCanvasElement | null;
+  if (!navigator || !canvas) return;
+  const duration = state.map.meta.duration || state.audioBuffer?.duration || 0;
+  const visibleSec = Math.max(0, (canvas.width - LABEL_W) / state.pxPerSec);
+  const maxViewStart = Math.max(0, duration - visibleSec);
+  const viewRatio = maxViewStart > 0
+    ? Math.max(0, Math.min(1, state.viewStart / maxViewStart))
+    : 0;
+  navigator.disabled = maxViewStart <= 0;
+  navigator.value = String(Math.round(viewRatio * 1000));
 }
 
 export function updateStatus(): void {

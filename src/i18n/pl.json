@@ -507,6 +507,7 @@
   "creator": {
     "title": "KREATOR MAP",
     "seekTimeAria": "Przejdź do dokładnego czasu (MM:SS.cc lub sekundy)",
+    "timelineNavigatorAria": "Przewiń widoczne okno osi czasu",
     "narrator": {
       "title": "TEKSTY LYRY",
       "time": "CZAS (S)",

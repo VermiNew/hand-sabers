@@ -77,6 +77,14 @@ export function bindTimelineEvents(callbacks: {
       timecodeInput.blur();
     }
   });
+  const timelineNavigator = document.getElementById('timelineNavigator') as HTMLInputElement | null;
+  timelineNavigator?.addEventListener('input', () => {
+    const duration = state.map.meta.duration || state.audioBuffer?.duration || 0;
+    const visibleSec = Math.max(0, (timelineCanvas.width - getLabelWidth()) / state.pxPerSec);
+    const maxViewStart = Math.max(0, duration - visibleSec);
+    state.viewStart = maxViewStart * Number(timelineNavigator.value) / 1000;
+    renderAll();
+  });
 
   let middleMouseDown = false;
   let middleMouseLastX = 0;

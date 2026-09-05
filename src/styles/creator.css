@@ -314,6 +314,14 @@ body {
 
 #timelineWrap { flex:1; position:relative; overflow:hidden; }
 #timelineCanvas { width:100%; height:100%; display:block; cursor:crosshair; }
+#timelineNavigator {
+  position:absolute; left:58px; right:12px; bottom:7px; z-index:6;
+  width:calc(100% - 70px); height:12px; margin:0; opacity:.58; cursor:ew-resize;
+  accent-color:#c476ff; transition:opacity .15s ease;
+}
+#timelineNavigator:hover,
+#timelineNavigator:focus-visible { opacity:1; }
+#timelineNavigator:disabled { opacity:.18; cursor:default; }
 
 #creatorPreview3d {
   position:absolute; top:104px; right:16px; z-index:7; width:min(320px,32vw); height:200px;

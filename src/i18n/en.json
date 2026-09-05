@@ -507,6 +507,7 @@
   "creator": {
     "title": "MAP CREATOR",
     "seekTimeAria": "Seek to an exact time (MM:SS.cc or seconds)",
+    "timelineNavigatorAria": "Scroll the visible timeline window",
     "narrator": {
       "title": "LYRA TEXT",
       "time": "TIME (S)",
