@@ -17,8 +17,11 @@ endpoint at `/tracking-ws`; there is no WebRTC or DataChannel transport.
 2. The PC displays a six-character manual code and a QR URL. The QR stores the
    phone credential in its URL fragment, which the phone removes from the
    address bar immediately after reading it.
-3. A phone that uses the manual code claims its phone credential once through
-   REST. A QR link already contains that credential.
+3. A phone that uses the manual code creates one pending request through REST
+   and polls it with a separate random claim token. The host must allow or
+   reject that request; the phone credential is returned exactly once and only
+   after approval. A QR link already contains that credential and does not need
+   the manual-code confirmation.
 4. Host and phone open `/tracking-ws` and authenticate their role, session ID
    and token within ten seconds.
 5. MediaPipe runs locally on the phone. The server validates and rate-limits
@@ -47,10 +50,11 @@ after session expiry and drops excess packets instead of queueing them.
 - Require HTTPS/WSS outside localhost because phone camera access needs a
   secure context.
 - QR pairing uses the random phone bearer token. Manual pairing uses a
-  six-character, roughly 30-bit code that can issue the phone credential only
-  once and is limited to six attempts per minute per transport IP. There is no
-  host-side confirmation yet, so a visible manual code can be raced; use this
-  mode only in a trusted setting.
+  six-character, roughly 30-bit code and is limited to six attempts per minute
+  per transport IP. Entering it creates a single pending request; the host sees
+  explicit allow/reject controls, and the phone receives its role-bound bearer
+  token only after approval. The private claim token can retrieve that
+  credential once and becomes invalid after rejection or successful retrieval.
 - Sessions are memory-only and expire exactly five minutes after creation,
   including while both peers are connected.
 - Host and phone tokens are role-bound. WebSocket upgrades enforce same-origin
