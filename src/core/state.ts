@@ -1,4 +1,4 @@
-import type { AppStateKey, Beat, MapMeta, OneHandMode, PauseReason, SaberQuat } from '../types/index.js';
+import type { AppStateKey, Beat, MapMeta, NarratorCue, OneHandMode, PauseReason, SaberQuat } from '../types/index.js';
 
 export const S = {
   MENU:     'menu',
@@ -14,6 +14,7 @@ interface StateMap {
   formatVersion?: number;
   meta?: MapMeta;
   beats: Beat[] | null;
+  narratorCues?: NarratorCue[];
   audioBuffer?: ArrayBuffer;
   _serverAudioPending?: boolean;
   _localAudioPending?: boolean;

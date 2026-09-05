@@ -22,7 +22,7 @@ import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
-import { narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
+import { narratorHide, narratorQuick, narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initAchievements, recordGameEnd, recordPhoneConnected } from '../core/achievements.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
@@ -60,6 +60,7 @@ import {
   type MultiplayerRoundSession,
 } from './multiplayer-round-session.ts';
 import { GAMEPLAY_FEEDBACK_EVENT, type GameplayFeedback } from './gameplay-feedback.ts';
+import { createMapNarratorTimeline } from './map-narrator-timeline.ts';
 import {
   TUTORIAL_GAMEPLAY_MAP,
   TUTORIAL_GAMEPLAY_END_EVENT,
@@ -129,6 +130,13 @@ let multiplayerRoundSession: MultiplayerRoundSession;
 
 const mapTimeline = new MapTimeline({
   isTrainingMode: () => multiplayerRoundSession?.getTrainingMode() ?? settings.trainingMode,
+});
+const mapNarratorTimeline = createMapNarratorTimeline({
+  hideCue: narratorHide,
+  showCue(cue) {
+    const mood = cue.mood === 'warning' ? 'serious' : cue.mood ?? 'neutral';
+    narratorQuick(cue.text, mood, cue.durationMs ?? 4000);
+  },
 });
 
 function showOverlay(): void {
@@ -200,6 +208,7 @@ async function beginPlaying(): Promise<void> {
   gamePauseController.reset();
   state.pauseReason  = PAUSE_REASONS.NONE;
   state.appState     = S.PLAYING;
+  mapNarratorTimeline.reset(state.map?.narratorCues ?? []);
 
   if (state.map) {
     await ensureCurrentMapAudio(settings);
@@ -217,6 +226,7 @@ async function beginPlaying(): Promise<void> {
 function endGame(victory = false): void {
   const playTimeMs = state.map && mapTimeline ? mapTimeline.getTime() * 1000 : 0;
   recordGameEnd(state, victory, playTimeMs);
+  mapNarratorTimeline.reset();
   gamePauseController.reset();
   clearDangerPulse();
   state.appState    = S.GAMEOVER;
@@ -313,6 +323,7 @@ function handleMapComplete(): void {
 }
 
 function restartGame(): void {
+  mapNarratorTimeline.reset();
   clearDangerPulse();
   clearGameplayEntities();
   stopMapAudio();
@@ -325,6 +336,7 @@ function restartGame(): void {
 }
 
 function restartWithoutCalib(): void {
+  mapNarratorTimeline.reset();
   clearDangerPulse();
   clearGameplayEntities();
   stopMapAudio();
@@ -356,6 +368,7 @@ function renderFrame(timestamp: number): void {
   if (bgMat.uniforms['uTime']) bgMat.uniforms['uTime'].value = t;
 
   const gamePhaseStart = profiling ? performance.now() : 0;
+  mapNarratorTimeline.update(mapTimeline.getTime(now), state.appState === S.PLAYING);
   updateFrameGamePhase({
     now,
     timeSec: t,
@@ -461,6 +474,7 @@ pauseMapsButton?.addEventListener('click', () => {
 });
 
 function returnToMainMenu(): void {
+  mapNarratorTimeline.reset();
   gamePauseController.reset();
   clearDangerPulse();
   fadeTransition(() => {
