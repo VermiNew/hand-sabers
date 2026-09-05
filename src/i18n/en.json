@@ -216,7 +216,9 @@
     },
     "hit": {
       "title": "Hit on beat",
-      "body": "Cut each block with the matching saber and follow its arrow. Better timing and center accuracy earn more points."
+      "body": "Cut each block with the matching saber and follow its arrow. Better timing and center accuracy earn more points.",
+      "start": "START TRAINING",
+      "actionHint": "Complete the objectives on a short training map. The score and achievements will not be saved."
     },
     "tracking": {
       "title": "Camera & lighting",

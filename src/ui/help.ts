@@ -35,6 +35,8 @@ export function initHelpOverlay(): void {
   const cameraStatus = document.getElementById('tutorialCameraStatus');
   const calibrationAction = document.getElementById('tutorialCalibrationAction');
   const calibrationStart = document.getElementById('tutorialCalibrationStart') as HTMLButtonElement | null;
+  const gameplayAction = document.getElementById('tutorialGameplayAction');
+  const gameplayStart = document.getElementById('tutorialGameplayStart') as HTMLButtonElement | null;
   const trackingCheck = document.getElementById('tutorialTrackingCheck');
   const trackingStatus = document.getElementById('tutorialTrackingStatus');
   const handLeft = document.getElementById('tutorialHandLeft');
@@ -44,7 +46,8 @@ export function initHelpOverlay(): void {
     !startTutorialButton || !tutorialProgress || !tutorialIcon || !tutorialStepLabel ||
     !tutorialStepTitle || !tutorialStepBody || !tutorialSkip || !tutorialBack || !tutorialNext ||
     !cameraCheck || !cameraPreview || !cameraStart || !cameraStatus ||
-    !calibrationAction || !calibrationStart || !trackingCheck || !trackingStatus || !handLeft || !handRight
+    !calibrationAction || !calibrationStart || !gameplayAction || !gameplayStart ||
+    !trackingCheck || !trackingStatus || !handLeft || !handRight
   ) return;
 
   let tutorialActive = false;
@@ -131,13 +134,16 @@ export function initHelpOverlay(): void {
     const isCameraCheck = step.key === 'cameraCheck';
     const isCalibration = step.key === 'calibration';
     const isMovement = step.key === 'movement';
+    const isGameplay = step.key === 'hit';
     tutorialView.classList.toggle('has-camera-check', isCameraCheck);
     tutorialView.classList.toggle('has-calibration-action', isCalibration);
+    tutorialView.classList.toggle('has-gameplay-action', isGameplay);
     cameraCheck.hidden = !isCameraCheck;
     calibrationAction.hidden = !isCalibration;
+    gameplayAction.hidden = !isGameplay;
     trackingCheck.hidden = !isMovement;
     if (isMovement) resetMovementCheck();
-    tutorialNext.disabled = (isCameraCheck && !cameraReady) || isCalibration || (isMovement && !movementComplete);
+    tutorialNext.disabled = (isCameraCheck && !cameraReady) || isCalibration || isGameplay || (isMovement && !movementComplete);
     tutorialBack.hidden = tutorialStep === 0;
     tutorialNext.textContent = t(tutorialStep === TUTORIAL_STEPS.length - 1 ? 'tutorial.finish' : 'tutorial.next');
   };
@@ -171,7 +177,11 @@ export function initHelpOverlay(): void {
     const activeKey = TUTORIAL_STEPS[tutorialStep]?.key;
     modal.open({
       initialFocus: showTutorial
-        ? (activeKey === 'cameraCheck' ? cameraStart : activeKey === 'calibration' ? calibrationStart : tutorialNext)
+        ? (activeKey === 'cameraCheck'
+            ? cameraStart
+            : activeKey === 'calibration'
+              ? calibrationStart
+              : activeKey === 'hit' ? gameplayStart : tutorialNext)
         : closeButton,
       returnFocusTo: openButton,
     });
@@ -236,6 +246,15 @@ export function initHelpOverlay(): void {
     modal.close();
     window.setTimeout(() => {
       window.dispatchEvent(new CustomEvent('hand-sabers:tutorial-calibration-request', {
+        detail: { resumeStep: tutorialStep },
+      }));
+    }, 240);
+  });
+  gameplayStart.addEventListener('click', () => {
+    markSeenOnClose = false;
+    modal.close();
+    window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('hand-sabers:tutorial-gameplay-request', {
         detail: { resumeStep: tutorialStep },
       }));
     }, 240);

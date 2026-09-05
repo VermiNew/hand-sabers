@@ -231,9 +231,11 @@
 
 .tutorial-camera-check[hidden] { display:none; }
 .tutorial-calibration-action[hidden] { display:none; }
+.tutorial-gameplay-action[hidden] { display:none; }
 .tutorial-tracking-check[hidden] { display:none; }
 
-.tutorial-calibration-action {
+.tutorial-calibration-action,
+.tutorial-gameplay-action {
   width:min(420px,100%);
   margin-top:18px;
   padding:18px;
@@ -312,6 +314,7 @@
 .tutorial-view.has-camera-check p { min-height:0; }
 .tutorial-view.has-camera-check .tutorial-actions { margin-top:16px; }
 .tutorial-view.has-calibration-action .tutorial-actions { margin-top:18px; }
+.tutorial-view.has-gameplay-action .tutorial-actions { margin-top:18px; }
 
 .tutorial-actions {
   display:flex;
