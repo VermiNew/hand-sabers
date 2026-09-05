@@ -150,7 +150,10 @@ let tutorialGameplayRestore: {
   map: typeof state.map;
   noFail: boolean;
   oneHandMode: typeof state.oneHandMode;
-  settings: Pick<typeof settings, 'gameMode' | 'noFail' | 'oneHandMode' | 'trainingMode'>;
+  settings: Pick<
+    typeof settings,
+    'gameMode' | 'hitboxSensitivity' | 'noFail' | 'noteSpeed' | 'oneHandMode' | 'trainingMode'
+  >;
 } | null = null;
 const calibrationController = createCalibrationController(settings, calibrationUI, {
   async onComplete() {
@@ -245,7 +248,9 @@ function beginTutorialGameplay(resumeStep: number): void {
     oneHandMode: state.oneHandMode,
     settings: {
       gameMode: settings.gameMode,
+      hitboxSensitivity: settings.hitboxSensitivity,
       noFail: settings.noFail,
+      noteSpeed: settings.noteSpeed,
       oneHandMode: settings.oneHandMode,
       trainingMode: settings.trainingMode,
     },
@@ -262,7 +267,9 @@ function beginTutorialGameplay(resumeStep: number): void {
     beats: [...TUTORIAL_GAMEPLAY_MAP.beats],
   };
   settings.gameMode = 'normal';
+  settings.hitboxSensitivity = 1.2;
   settings.noFail = true;
+  settings.noteSpeed = 0.75;
   settings.oneHandMode = null;
   settings.trainingMode = false;
   state.noFail = true;
@@ -288,7 +295,9 @@ function restoreAfterTutorialGameplay(): void {
       }
     : restore.map;
   settings.gameMode = restore.settings.gameMode;
+  settings.hitboxSensitivity = restore.settings.hitboxSensitivity;
   settings.noFail = restore.settings.noFail;
+  settings.noteSpeed = restore.settings.noteSpeed;
   settings.oneHandMode = restore.settings.oneHandMode;
   settings.trainingMode = restore.settings.trainingMode;
   state.noFail = restore.noFail;
