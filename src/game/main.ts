@@ -17,6 +17,7 @@ import { PAUSE_REASONS } from '../core/pause.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
+import { initTutorialGameplayHud } from '../ui/tutorial-gameplay-hud.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
@@ -61,6 +62,8 @@ import {
 import { GAMEPLAY_FEEDBACK_EVENT, type GameplayFeedback } from './gameplay-feedback.ts';
 import {
   TUTORIAL_GAMEPLAY_MAP,
+  TUTORIAL_GAMEPLAY_END_EVENT,
+  TUTORIAL_GAMEPLAY_PROGRESS_EVENT,
   applyTutorialGameplayFeedback,
   applyTutorialPauseState,
   createTutorialGameplayProgress,
@@ -235,7 +238,7 @@ function endGame(victory = false): void {
 }
 
 function publishTutorialGameplayProgress(): void {
-  window.dispatchEvent(new CustomEvent('hand-sabers:tutorial-gameplay-progress', {
+  window.dispatchEvent(new CustomEvent(TUTORIAL_GAMEPLAY_PROGRESS_EVENT, {
     detail: { ...tutorialGameplayProgress },
   }));
 }
@@ -307,6 +310,7 @@ function restoreAfterTutorialGameplay(): void {
   document.body.classList.toggle('training-mode', settings.trainingMode);
   document.body.dataset['gameMode'] = settings.gameMode;
   tutorialGameplayRestore = null;
+  window.dispatchEvent(new CustomEvent(TUTORIAL_GAMEPLAY_END_EVENT));
 }
 
 function handleMapComplete(): void {
@@ -714,6 +718,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 initHelpOverlay();
+initTutorialGameplayHud();
 registerMlAssetCache();
 initRemoteTrackingPairing();
 initMultiplayerEvents({

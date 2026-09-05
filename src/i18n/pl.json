@@ -220,6 +220,16 @@
       "start": "URUCHOM TRENING",
       "actionHint": "Wykonaj zadania na krótkiej mapie treningowej. Wynik ani osiągnięcia nie zostaną zapisane."
     },
+    "gameplay": {
+      "title": "TRENING PODSTAW",
+      "hint": "Wykonaj wszystkie zadania przed końcem mapy",
+      "directionalCut": "Poprawne cięcie ze strzałką",
+      "goodTiming": "Timing GOOD lub PERFECT",
+      "combo": "Zbuduj combo ×3",
+      "bombAvoided": "Omiń bombę",
+      "heldComplete": "Utrzymaj długi blok",
+      "pausedAndResumed": "Wciśnij Escape i wznów"
+    },
     "tracking": {
       "title": "Kamera i oświetlenie",
       "body": "Umieść kamerę na wysokości klatki piersiowej. Zadbaj o światło z przodu. Unikaj podświetlenia i ciemnych pomieszczeń."

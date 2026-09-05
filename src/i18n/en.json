@@ -220,6 +220,16 @@
       "start": "START TRAINING",
       "actionHint": "Complete the objectives on a short training map. The score and achievements will not be saved."
     },
+    "gameplay": {
+      "title": "BASICS TRAINING",
+      "hint": "Complete every objective before the map ends",
+      "directionalCut": "Follow a directional arrow",
+      "goodTiming": "Earn GOOD or PERFECT timing",
+      "combo": "Build a ×3 combo",
+      "bombAvoided": "Avoid the bomb",
+      "heldComplete": "Complete the held block",
+      "pausedAndResumed": "Press Escape and resume"
+    },
     "tracking": {
       "title": "Camera & lighting",
       "body": "Place your camera at chest height. Ensure good lighting from the front. Avoid backlight or dark rooms."

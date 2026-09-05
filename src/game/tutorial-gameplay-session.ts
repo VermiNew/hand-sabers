@@ -2,6 +2,9 @@ import { PAUSE_REASONS } from '../core/pause.ts';
 import type { GameMap, PauseReason } from '../types/index.js';
 import type { GameplayFeedback } from './gameplay-feedback.ts';
 
+export const TUTORIAL_GAMEPLAY_PROGRESS_EVENT = 'hand-sabers:tutorial-gameplay-progress';
+export const TUTORIAL_GAMEPLAY_END_EVENT = 'hand-sabers:tutorial-gameplay-end';
+
 export const TUTORIAL_GAMEPLAY_MAP: GameMap = {
   id: 'tutorial-gameplay',
   formatVersion: 1,
