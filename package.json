@@ -36,6 +36,7 @@
     "check:bundle": "node scripts/check-bundle-size.mjs",
     "check:i18n": "node --experimental-strip-types scripts/check-i18n-keys.mjs",
     "smoke": "node scripts/smoke-server.mjs",
+    "smoke:csp": "npm run build && npm run server:build && node scripts/smoke-mediapipe-csp.mjs",
     "smoke:e2e": "playwright test",
     "test": "npm run check && npm run unit && npm run server:build && npm run smoke",
     "verify": "npm run lint && npm run build && npm run typecheck:server && npm run server:build && npm run unit && npm run smoke",
