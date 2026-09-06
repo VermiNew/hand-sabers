@@ -52,13 +52,13 @@ Adresy:
 | `http://localhost:5173` | Gra (przez serwer Vite) |
 | `http://localhost:3000` | Backend / API |
 
-Vite proxy przekazuje wszystkie żądania `/api` do Expressa.
+Proxy Vite przekazuje żądania `/api` oraz kanały `/ws` i `/tracking-ws` do Expressa.
 
 Można też uruchomić osobno:
 
 ```bash
 npm run dev:server   # kompiluje i uruchamia Express na porcie 3000
-npm run dev:client   # uruchamia tylko Vite; proxy API oczekuje backendu na porcie 3000
+npm run dev:client   # uruchamia tylko Vite; proxy API/WebSocket oczekuje backendu na porcie 3000
 ```
 
 ## Przydatne adresy

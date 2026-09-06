@@ -58,7 +58,7 @@ You can also run them separately:
 
 ```bash
 npm run dev:server   # compile and start Express on port 3000
-npm run dev:client   # start Vite only; its API proxy expects the backend on port 3000
+npm run dev:client   # start Vite only; its API/WebSocket proxy expects the backend on port 3000
 ```
 
 ## URLs

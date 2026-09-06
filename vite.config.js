@@ -16,6 +16,10 @@ export default defineConfig({
         target: 'ws://localhost:3000',
         ws: true,
       },
+      '/tracking-ws': {
+        target: 'ws://localhost:3000',
+        ws: true,
+      },
     },
   },
   build: {
