@@ -51,7 +51,7 @@
 
 ## 8. TODO techniczne (backlog)
 
-- [ ] Przetestować `audioOffsetMs` na kilku urządzeniach (Bluetooth, przewodowe, głośniki)
+- [ ] Przetestować `audioOffsetMs` na kilku urządzeniach (Bluetooth, przewodowe, głośniki) — **zablokowane sprzętowo**: wymaga ręcznego odsłuchu i pomiaru na co najmniej trzech fizycznych torach audio; test przeglądarkowy nie odtworzy ich opóźnień.
 - [x] Ujednolicić creator i gameplay wokół `src/core/timing.ts`
 - [x] Dodać komunikat UI przy pliku >100 MB zamiast alertu
 - [x] Dodać bardziej precyzyjne komunikaty błędów w `maps.html` i `map-creator.html`
@@ -348,23 +348,23 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 
 - [x] Naprawić uruchamianie MediaPipe WebAssembly przy produkcyjnej CSP — `security: true` stosuje wąskie `'wasm-unsafe-eval'` bez szerokiego `'unsafe-eval'`; izolowany `npm run smoke:csp` sprawdza brak CSP przy domyślnym `false`, dokładną politykę przy `true` i inicjalizuje prawdziwy runtime WASM oraz model 7,5 MiB przez skompilowany serwer produkcyjny. Zweryfikowano na Chromium 151 z zakresu wspieranych aktualnych Chrome/Edge; zgodność tokenu potwierdzają CSP3 i MDN.
 - [x] Usunąć zdalny DOM XSS z podglądu graczy Multiplayer: etykieta w `src/multiplayer/remote-preview.ts` jest teraz budowana przez bezpieczne elementy DOM i `textContent`, bez interpretowania nazwy gracza jako HTML.
-- [ ] Zabezpieczyć uploady przed DoS: uwierzytelniać i limitować przed buforowaniem body, zastąpić `multer.memoryStorage()` strumieniowaniem do ograniczonego pliku tymczasowego, dodać limity współbieżności, byte-rate oraz globalne/per-user quota dysku.
+- [ ] Zabezpieczyć uploady przed DoS — **częściowo wykonane; zablokowane decyzją o tożsamości i parserze ZIP**: limity przed body, `diskStorage`, współbieżność, byte-rate i quota globalna działają; pełne domknięcie wymaga wyboru strumieniowego parsera oraz definicji uwierzytelnionego użytkownika.
   - [x] Przenieść istniejący rate limit tras `/api/maps/save` i `/api/maps/import` przed middleware Multer, aby odrzucane żądania multipart nie były wcześniej buforowane w pamięci.
   - [x] Ujednolicić `MAX_IMPORT_BYTES` do 64 MB dla klienta i serwera; limit obejmuje upload Multera, zapis audio i ZIP po dekompresji.
   - [x] Zastąpić `multer.memoryStorage()` `diskStorage` w prywatnym `maps/.uploads`: audio jest przenoszone do docelowego pliku bez `Buffer`, a uploady są usuwane po sukcesie i błędzie.
-  - [ ] Ograniczyć pamięć akceptowanego importu ZIP/JSON: obecny `JSZip` oraz `readFile` wciąż wczytują zaakceptowany plik do 64 MB RAM; pełne rozwiązanie wymaga parsera strumieniowego albo innej zaakceptowanej architektury.
-  - [ ] Dodać limity współbieżności, byte-rate oraz globalne/per-user quota dysku dla katalogu uploadów.
+  - [ ] Ograniczyć pamięć akceptowanego importu ZIP/JSON — **zablokowane wyborem architektury/dependency**: obecny `JSZip` oraz `readFile` wciąż wczytują zaakceptowany plik do 64 MB RAM; repozytorium nie ma biblioteki do strumieniowego odczytu ZIP, a dodanie zależności wymaga akceptacji.
+  - [ ] Dodać limity współbieżności, byte-rate oraz globalne/per-user quota dysku dla katalogu uploadów — **część możliwa bez kont jest gotowa; per-user zablokowane tożsamością**.
     - [x] Ograniczyć aktywne zapisy/importy map przed parserami i Multerem do 4 globalnie oraz 2 per IP; slot obejmuje całe przetwarzanie i wraca po sprzątnięciu uploadu lub błędzie middleware.
     - [x] Dodać minimalny byte-rate 32 KiB/s po 10 s okresu ochronnego, sprawdzany w oknach 5 s; wolny upload kończy się 408, sprzątnięciem pliku tymczasowego i zwolnieniem slotu.
     - [x] Dodać globalną quota 256 MB katalogu `.uploads`: każdy multipart rezerwuje pełne 64 MB przed Multerem, istniejące i niesprzątnięte pliki pomniejszają dostępny budżet, a przekroczenie zwraca 507.
-    - [ ] Dodać quota per-user po zdefiniowaniu i uwierzytelnieniu tożsamości użytkownika (IP jest tylko przybliżeniem per-client).
+    - [ ] Dodać quota per-user — **zablokowane decyzją produktową**: trzeba najpierw zdefiniować i uwierzytelnić tożsamość użytkownika; IP jest tylko przybliżeniem per-client.
   - [x] Zastąpić globalny `express.json({ limit: '100mb' })` limitami per trasa: 25 MB dla zapisu map i 4 KB dla scores, wykonywanymi dopiero po rate limiterze; endpointy bez body nie uruchamiają parsera JSON.
 - [x] Zablokować trwały DoS przez `POST /api/scores`: serwer generuje datę, wymaga małego schematu i ogranicza długości pól, `score`, `combo` oraz `progress`, więc klient nie może utrzymywać ogromnych rekordów w top 1000 i rozrastać `_scores.json`.
 
 ### P1 — wysoki priorytet
 
 - [x] Naprawić pipeline testów: usunięto osieroczone oczekiwanie wobec nieistniejącego `findClosestSaberColor`; test pokrywa faktyczny kontrakt eksportowanych presetów, a `npm run unit` przechodzi 31/31.
-- [ ] Nie ufać wynikom podawanym przez klienta. Powiązać leaderboard i wyniki Multiplayer z uwierzytelnionym graczem, mapą oraz wydaną przez serwer rundą; obecnie można przesłać dowolny wynik i combo.
+- [ ] Nie ufać wynikom podawanym przez klienta — **zablokowane modelem tożsamości i autorytetu**: trzeba ustalić uwierzytelnienie gracza oraz czy serwer ma weryfikować zdarzenia cięć, czy jedynie ograniczać wynik do wydanej rundy/mapy; obecnie można przesłać dowolny wynik i combo.
 - [x] Ograniczyć niezalogowane połączenia `/tracking-ws` per IP i wydzielić małą pulę handshake: maksymalnie 8 oczekujących globalnie, 2 per adres transportowy, zwalniane twardo po 10 s; limit 64 pozostaje dla uwierzytelnionych peerów.
 - [x] Egzekwować pięciominutowe wygaśnięcie sesji remote tracking również dla już połączonych socketów: zamykać je przy expiry/revoke i sprawdzać aktywność sesji przed relayem.
 - [x] Usunąć zmienny skrypt Lucide `@latest` z `beat-sabers-3d.html`: nieużywany skrypt CDN został usunięty, a ikony nadal korzystają z Material Symbols.
@@ -433,18 +433,18 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
   - [x] Zinwentaryzować lokalnie używane opcje: 2 dłonie, delegat GPU oraz progi wykrycia, obecności i śledzenia — wszystkie z dotychczasową wartością 0,42.
   - [x] Dodać trzy walidowane suwaki modelu dla kamery PC, pełny eksport/import i reset do wartości 0,42; wartości są stosowane przy kolejnym uruchomieniu lokalnego trackingu.
   - [x] Dodać bezpieczne przekazywanie konfiguracji do telefonu: host przesyła wyłącznie trzy walidowane progi po sparowaniu i po zmianie suwaka, a telefon zapisuje je bez przerywania bieżącej detekcji i stosuje przy kolejnym uruchomieniu kamery.
-- [ ] Dokończyć i ustabilizować audio na telefonie.
+- [ ] Dokończyć i ustabilizować audio na telefonie — **część kodowa gotowa; zablokowane testem sprzętowym iOS/Android**.
   - [x] Obsłużyć i walidować `prepare`/`play`/`pause`/`seek`/`stop`/`volume` oraz przekazywać głośność główną i muzyki.
   - [x] Kompensować czas transmisji i konfigurowalną latencję bez pogarszania działania przy rozjechanych zegarach urządzeń.
   - [x] Po reconnect ponownie przygotować utwór i wznowić go od aktualnej pozycji oraz z aktualnym tempem.
   - [x] Przełączać wyjście podczas działania, wymagać prawdziwej aktywacji audio na telefonie i zawsze przywracać aktualną głośność PC jako fallback.
-  - [ ] Przetestować cały przepływ na fizycznych telefonach z iOS i Androidem, również po blokadzie ekranu oraz zmianie głośnika/słuchawek Bluetooth.
+  - [ ] Przetestować cały przepływ na fizycznych telefonach z iOS i Androidem, również po blokadzie ekranu oraz zmianie głośnika/słuchawek Bluetooth — **zablokowane brakiem dostępu do tych urządzeń w środowisku agenta**.
 - [x] Pokazywać jednoznacznie miejsce wykonywania ML dla kamery telefonu: „ML: komputer”, „ML: telefon” albo oczekiwanie na telefon. Etykieta aktualizuje się dla trybu Auto, Kamera PC i Telefon wraz ze stanem połączenia.
-- [ ] Zmierzyć i zoptymalizować end-to-end latency remote tracking.
+- [ ] Zmierzyć i zoptymalizować end-to-end latency remote tracking — **instrumentacja gotowa; zablokowane pomiarami na dwóch klasach fizycznych telefonów**.
   - [x] Dodać diagnostykę etapów: wiek ostatniej klatki kamery, ML i kodowanie na telefonie, częstotliwość oraz rozmiar pakietów, kolejkę WebSocket, lokalne odrzucenia, braki sekwencji, szacowane WS→PC i telefon-send→zastosowanie pozycji. Przy rozbieżnych zegarach wynik sieci jest jawnie ukrywany zamiast fałszowany.
   - [x] Usunąć dodatkowy interwał opóźnienia: wynik Workera jest stosowany natychmiast po odpowiedzi, a nie dopiero przy następnym wykryciu.
-  - [ ] Zmierzyć przepływ osobno na fizycznym telefonie słabszym i high-end oraz zapisać wyniki.
-  - [ ] Na podstawie pomiarów dostroić częstotliwość, kolejki/backpressure, interpolację i odrzucanie spóźnionych danych; bez wyników urządzeń nie zgadywać progów.
+  - [ ] Zmierzyć przepływ osobno na fizycznym telefonie słabszym i high-end oraz zapisać wyniki — **zablokowane brakiem dostępu do obu klas urządzeń**.
+  - [ ] Na podstawie pomiarów dostroić częstotliwość, kolejki/backpressure, interpolację i odrzucanie spóźnionych danych — **zablokowane wynikami poprzedniego pomiaru; bez nich nie zgadywać progów**.
 - [x] Poprawić wyświetlanie landmarków innych graczy: położenie, skalowanie, podpisy, kolory profilu, widoczność w normalnym/dev mode, brak zasłaniania gameplayu oraz płynność przy opóźnieniach i utracie pakietów. — podglądy tworzą zwartą siatkę w lewym dolnym obszarze, zachowują avatar, nazwę i kolor profilu, przenoszą się do panelu kamer w dev mode i nie kolidują z czatem/HUD-em. Zawężono błędny selektor ukrywający pierwszego gracza; brak danych przez 1 s wygasza i czyści obraz, a nowy pakiet go przywraca. Pozycje mieczy korzystają z istniejącego bufora interpolacji 100 ms i progu nieaktualności 750 ms. Zweryfikowano czterech graczy, oba tryby, utratę/powrót pakietów i usunięcie gracza.
 - [x] Poprawić kalibrację metronomem: stabilność obliczenia offsetu, wyraźne rozróżnienie warm-up i właściwych próbek, możliwość ponowienia, poprawne zatrzymanie timerów/audio oraz czytelny wynik i ostrzeżenie o niestabilnym pomiarze. — istniejąca implementacja odrzuca 2 próbki rozgrzewkowe, zbiera 8 właściwych, używa mediany/MAD, odrzucania odstających wartości i przyciętej średniej, a UI rozdziela liczniki i pokazuje offset z rozrzutem albo ostrzeżenie. Smoke potwierdził pełny pomiar, wynik niestabilny, retry oraz anulowanie bez pozostawionego overlayu, timera lub handlera klawiatury.
   - [x] Liczyć offset względem każdego tyknięcia co 500 ms, a nie wyłącznie względem akcentu występującego co piąte tyknięcie.
@@ -454,11 +454,11 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
   - [x] Rozdzielić licznik i komunikaty na 2 tapnięcia rozgrzewkowe oraz 8 właściwych próbek pomiarowych, bez błędu off-by-one.
   - [x] Pozostawić wynik na ekranie do decyzji użytkownika: zastosować offset, ponowić pomiar lub zamknąć bez zmian; niestabilny wynik wymaga osobnego „Zastosuj mimo to”.
   - [x] Planować kliknięcia według zegara `AudioContext` z wyprzedzeniem zamiast dokładności timerów JavaScript; start czeka na wznowienie audio, a zamknięcie w trakcie startu anuluje żądanie.
-  - [ ] Wykonać ręczny pomiar na realnych wyjściach audio (przewodowe, Bluetooth, głośniki) i ocenić, czy zakres oraz znak zapisanego offsetu odpowiadają odczuciu w grze.
+  - [ ] Wykonać ręczny pomiar na realnych wyjściach audio (przewodowe, Bluetooth, głośniki) i ocenić, czy zakres oraz znak zapisanego offsetu odpowiadają odczuciu w grze — **zablokowane sprzętowo**.
   - [x] Pokazać offset, rozrzut i liczbę użytych próbek dla wyniku stabilnego oraz niestabilnego.
   - [x] Czyścić timery animacji i stan wizualny przy anulowaniu, wyniku, zamknięciu oraz ponowieniu pomiaru.
   - [x] Sprawdzić pełny flow UI w Chromium: start, anulowanie, stabilny wynik, niestabilny wynik, zastosowanie, zamknięcie i szybkie ponowienie. Smoke potwierdził stabilny wynik `148 ms / ±31 ms`, zastosowanie, natychmiastowe anulowanie, reset retry do `ROZGRZEWKA 0 / 2` i brak błędów strony; wcześniejszy smoke potwierdził również wynik niestabilny i „Zastosuj mimo to”.
-  - [ ] Ręcznie odsłuchać tyknięcia i wynik na realnym wyjściu audio w każdej docelowo obsługiwanej przeglądarce.
+  - [ ] Ręcznie odsłuchać tyknięcia i wynik na realnym wyjściu audio w każdej docelowo obsługiwanej przeglądarce — **zablokowane sprzętowo; automatyczny smoke nie potwierdzi odczuwalnej synchronizacji**.
 
 ### Gameplay, grafika i arena
 
@@ -488,7 +488,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Udoskonalić ustawienia zasad Multiplayer tak, aby pokrywały 100% wspieranych możliwości rozgrywki; host ma być źródłem prawdy, a zablokowane lokalne ustawienia muszą jasno pokazywać wartość narzuconą przez pokój. — snapshot pokoju obejmuje tryb multiplayer, trening, No Fail, wszystkie pięć trybów gry i cztery prędkości nut; serwer waliduje wartości, a goście widzą je w zablokowanych polach. Runda używa reguł hosta tylko w pamięci i przywraca profil singleplayer po zakończeniu. Ustawienia zależne od urządzenia (tracking, audio, grafika) świadomie pozostają lokalne, a wybór ręki już wynika z roli przydzielonej przez serwer.
 - [x] Poprawić czat pokoju i udostępnić go zarówno w lobby, jak i podczas rozgrywki: wspólna historia ostatnich 50 wiadomości trafia do lobby i zwijanego overlayu w prawym górnym rogu, badge sygnalizuje nowe wiadomości, a formularz izoluje klawisze od sterowania grą i przejmuje focus po rozwinięciu. Istniejący limit 240 znaków i serwerowy rate limit pozostają aktywne. Zweryfikowano dwiema niezależnymi sesjami przeglądarki oraz wizualnie na desktopie i ekranie 390 px.
 - [x] Poprawić co-op dla lobby z więcej niż 2 osobami: opcja co-op może pozostać wybrana, ale START ma być zablokowany z jasnym komunikatem o wymaganej liczbie graczy i wskazaniem konieczności usunięcia nadmiarowych osób.
-- [ ] Dodać hostowi możliwość kickowania graczy oraz banowania. Przed implementacją ustalić zakres bana (pokój, sesja serwera czy trwały), identyfikator gracza bez systemu kont, czas ważności, sposób cofnięcia oraz ochronę przed ponownym dołączeniem tym samym tokenem.
+- [ ] Dodać hostowi możliwość kickowania graczy oraz banowania — **zablokowane decyzją produktową**: przed implementacją trzeba ustalić zakres bana (pokój, sesja serwera czy trwały), identyfikator gracza bez systemu kont, czas ważności, sposób cofnięcia oraz ochronę przed ponownym dołączeniem tym samym tokenem.
 
 ### Tutorial i ogólny polish UI
 
