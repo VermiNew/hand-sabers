@@ -154,6 +154,28 @@ export function createArenaBackground(scene: THREE.Scene, arenaDetail: number): 
         float horizon = exp(-pow((uv.y - 0.16) * 12.0, 2.0));
         color += uHorizon * horizon * detailStep * (0.065 + music * 0.045 + beat * 0.11 + flash * 0.10);
 
+        // Wide atmospheric shafts keep the arena dimensional even before music starts.
+        float shaftFade = smoothstep(0.08, 0.28, uv.y) * smoothstep(1.02, 0.58, uv.y);
+        float leftShaft = 1.0 - smoothstep(
+          0.025,
+          0.30,
+          abs(p.x + 0.72 - (uv.y - 0.16) * 0.34)
+        );
+        float rightShaft = 1.0 - smoothstep(
+          0.025,
+          0.30,
+          abs(p.x - 0.72 + (uv.y - 0.16) * 0.34)
+        );
+        float shaftMotion = 0.82 + 0.18 * sin(uTime * 0.42 + uv.y * 5.0);
+        float shafts = (leftShaft + rightShaft) * shaftFade * shaftMotion;
+        color += mix(mix(uNebulaA, uAccent, 0.48), uNebulaB, uv.x * 0.52) * shafts * detailStep
+          * (0.28 + bass * 0.10 + beat * 0.075) * (1.0 - pressure * 0.62);
+
+        float horizonBloom = exp(-pow((uv.y - 0.16) * 5.2, 2.0))
+          * smoothstep(0.10, 0.92, abs(p.x));
+        color += mix(uHorizon, uAccent, 0.42) * horizonBloom * detailStep
+          * (0.14 + music * 0.05 + flash * 0.10) * (1.0 - pressure * 0.48);
+
         // ── Layer 5: perspective frames (depth cue outside gameplay lane) ────
         float architecture = smoothstep(0.12, 0.72, detail) * (1.0 - pressure * 0.58);
         float frameFade = smoothstep(0.12, 0.28, uv.y) * smoothstep(1.02, 0.72, uv.y);
