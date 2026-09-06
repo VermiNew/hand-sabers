@@ -25,6 +25,7 @@ import { registerRealtimeServer } from './realtime/socket.js';
 import { TrackingSessionRegistry } from './realtime/tracking-session-registry.js';
 import { registerRemoteTrackingServer } from './realtime/remote-tracking-socket.js';
 import { createUploadConcurrencyGate } from './upload-concurrency.js';
+import { createOriginPolicy } from './origin-policy.js';
 
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE_PROJECT_ROOT = path.resolve(SERVER_DIR, '..');
@@ -33,11 +34,16 @@ const PROJECT_ROOT_CANDIDATES = [SOURCE_PROJECT_ROOT, COMPILED_PROJECT_ROOT];
 const PROJECT_ROOT = PROJECT_ROOT_CANDIDATES.find(candidate => existsSync(path.join(candidate, 'package.json')))
   || SOURCE_PROJECT_ROOT;
 const CONFIG_PATH = path.join(PROJECT_ROOT, 'config.json');
-const projectConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as { security?: unknown };
+const projectConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as { security?: unknown; allowedOrigins?: unknown };
 if (typeof projectConfig.security !== 'boolean') {
   throw new Error('config.json: pole "security" musi mieć wartość true albo false.');
 }
+if (projectConfig.allowedOrigins !== undefined
+  && (!Array.isArray(projectConfig.allowedOrigins) || projectConfig.allowedOrigins.some(value => typeof value !== 'string'))) {
+  throw new Error('config.json: pole "allowedOrigins" musi być tablicą adresów URL.');
+}
 const securityEnabled = projectConfig.security;
+const originPolicy = createOriginPolicy(securityEnabled, (projectConfig.allowedOrigins ?? []) as string[]);
 const FRONTEND_DIST_DIR = path.join(PROJECT_ROOT, 'dist');
 const STATIC_DIR = existsSync(path.join(FRONTEND_DIST_DIR, 'index.html')) ? FRONTEND_DIST_DIR : PROJECT_ROOT;
 const DEFAULT_MAPS_DIR = path.join(PROJECT_ROOT, 'maps');
@@ -158,25 +164,11 @@ const trackingSessions = new TrackingSessionRegistry();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
   limiter.check(ip, key, maxPerMinute);
 
-if (securityEnabled) {
-  app.use((req, res, next) => {
-    if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
-    const origin = req.get('origin');
-    if (!origin) return next();
-
-    try {
-      const host = req.get('host');
-      const originUrl = new URL(origin);
-      if (host && originUrl.host === host) return next();
-      const [hostName = '', hostPort = ''] = String(host || '').toLowerCase().split(':');
-      if (originUrl.hostname.toLowerCase() === hostName && ['3000', '5173'].includes(originUrl.port) && ['3000', '5173'].includes(hostPort)) {
-        return next();
-      }
-    } catch {}
-
-    return res.status(403).json({ error: 'Niedozwolone źródło żądania.' });
-  });
-}
+app.use((req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  if (originPolicy.isAllowed(req.get('origin'))) return next();
+  return res.status(403).json({ error: 'Niedozwolone źródło żądania.' });
+});
 
 const BLOCKED_STATIC_RE = /^\/(?:node_modules|maps|scripts|server|src|tests|dist-server|\.claude|\.git)(?:\/|$)|^\/(?:server\.(?:js|ts)|package(?:-lock)?\.json|config\.json|TODO\.md|README(?:\.pl)?\.md|vite\.config\.js|tsconfig(?:\.server)?\.json|AGENTS\.md)$/i;
 app.use((req, res, next) => {
@@ -250,8 +242,8 @@ const secure = Boolean(tlsCertPath && tlsKeyPath);
 const server = secure
   ? createHttpsServer({ cert: readFileSync(tlsCertPath!), key: readFileSync(tlsKeyPath!) }, app)
   : createHttpServer(app);
-const realtimeServer = registerRealtimeServer(server, rooms);
-const remoteTrackingServer = registerRemoteTrackingServer(server, trackingSessions);
+const realtimeServer = registerRealtimeServer(server, rooms, originPolicy);
+const remoteTrackingServer = registerRemoteTrackingServer(server, trackingSessions, originPolicy);
 const PORT = Number(process.env.PORT || 3000);
 server.listen(PORT, '0.0.0.0', () => {
   const protocol = secure ? 'https' : 'http';

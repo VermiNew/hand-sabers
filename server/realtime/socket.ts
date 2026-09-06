@@ -6,6 +6,7 @@ import { RoomError } from './room-registry.js';
 import type { RoomRegistry, RoomSnapshot } from './room-registry.js';
 import { PROTOCOL_VERSION, parseMessage, parseVoiceSignal, sanitizeChatText, validateRealtimePacket } from './protocol.js';
 import { RateLimiter } from '../utils.js';
+import type { OriginPolicy } from '../origin-policy.js';
 
 const MAX_CONTROL_MESSAGES_PER_MINUTE = 1_200;
 const MAX_CHAT_MESSAGES_PER_WINDOW = 8;
@@ -26,22 +27,6 @@ interface ClientState {
   realtimeUpdatedAt: number;
   realtimeViolations: number;
   alive: boolean;
-}
-
-function isAllowedOrigin(request: IncomingMessage): boolean {
-  const origin = request.headers.origin;
-  if (!origin) return true;
-  try {
-    const originUrl = new URL(origin);
-    const host = String(request.headers.host || '').toLowerCase();
-    if (originUrl.host.toLowerCase() === host) return true;
-    const [hostName = '', hostPort = ''] = host.split(':');
-    return originUrl.hostname.toLowerCase() === hostName
-      && ['3000', '5173'].includes(originUrl.port)
-      && ['3000', '5173'].includes(hostPort);
-  } catch {
-    return false;
-  }
 }
 
 function send(socket: WebSocket, payload: object): void {
@@ -67,7 +52,11 @@ function consumeRealtimeToken(client: ClientState, now: number): boolean {
   return true;
 }
 
-export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: RoomRegistry): { close(): void } {
+export function registerRealtimeServer(
+  server: HttpServer | HttpsServer,
+  rooms: RoomRegistry,
+  originPolicy: OriginPolicy,
+): { close(): void } {
   const webSocketServer = new WebSocketServer({
     noServer: true,
     maxPayload: 64 * 1024,
@@ -356,7 +345,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
       const ip = request.socket.remoteAddress || 'unknown';
       const upgradeRateLimited = upgradeLimiter.check(ip, 'multiplayer-upgrade', MAX_UPGRADES_PER_IP_PER_MINUTE);
       if (
-        !isAllowedOrigin(request)
+        !originPolicy.isAllowed(request.headers.origin)
         || clients.size >= MAX_CONNECTIONS
         || upgradeRateLimited
       ) {

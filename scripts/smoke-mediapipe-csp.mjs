@@ -36,8 +36,11 @@ async function prepareTemporaryProject() {
 }
 
 async function startServer(security) {
-  await writeFile(path.join(TEMP_ROOT, 'config.json'), `${JSON.stringify({ security }, null, 2)}\n`);
   const port = await getFreePort();
+  await writeFile(path.join(TEMP_ROOT, 'config.json'), `${JSON.stringify({
+    security,
+    allowedOrigins: [`http://127.0.0.1:${port}`],
+  }, null, 2)}\n`);
   const output = [];
   const server = spawn(process.execPath, [SERVER_ENTRY], {
     cwd: TEMP_ROOT,

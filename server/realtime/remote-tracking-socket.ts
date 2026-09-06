@@ -3,6 +3,7 @@ import type { Server as HttpsServer } from 'node:https';
 import type { Duplex } from 'node:stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { TrackingSessionRegistry } from './tracking-session-registry.js';
+import type { OriginPolicy } from '../origin-policy.js';
 
 const PROTOCOL_VERSION = 1;
 const JOIN_TIMEOUT_MS = 10_000;
@@ -111,16 +112,6 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
   return type === 'audio-pause' || type === 'audio-stop';
 }
 
-function isAllowedOrigin(request: IncomingMessage): boolean {
-  const origin = request.headers.origin;
-  if (!origin) return true;
-  try {
-    return new URL(origin).host.toLowerCase() === String(request.headers.host || '').toLowerCase();
-  } catch {
-    return false;
-  }
-}
-
 function send(socket: WebSocket, payload: object): void {
   if (socket.readyState === WebSocket.OPEN) {
     if (!isRemoteTrackingBufferAvailable(socket.bufferedAmount)) {
@@ -139,6 +130,7 @@ function send(socket: WebSocket, payload: object): void {
 export function registerRemoteTrackingServer(
   server: HttpServer | HttpsServer,
   sessions: TrackingSessionRegistry,
+  originPolicy: OriginPolicy,
 ): { close(): void } {
   const webSocketServer = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
   const peers = new Map<WebSocket, Peer>();
@@ -297,7 +289,7 @@ export function registerRemoteTrackingServer(
       if (url.pathname !== '/tracking-ws') return;
       const ip = request.socket.remoteAddress || 'unknown';
       if (
-        !isAllowedOrigin(request)
+        !originPolicy.isAllowed(request.headers.origin)
         || peers.size >= MAX_CONNECTIONS
         || pendingHandshakes.size >= MAX_PENDING_HANDSHAKES
         || pendingHandshakesForIp(ip) >= MAX_PENDING_HANDSHAKES_PER_IP
