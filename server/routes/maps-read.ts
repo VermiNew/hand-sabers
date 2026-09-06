@@ -1,6 +1,8 @@
-import { createReadStream } from 'fs';
+import { createReadStream, type ReadStream } from 'fs';
 import type { Express, Response } from 'express';
 import { createRequire } from 'module';
+import type { Readable } from 'stream';
+import { pipeline } from 'stream/promises';
 import { getCanonicalMapAudioUrl, sanitizeMapId } from '../../src/core/map-format.js';
 import type { AudioStorage } from '../storage/audio.js';
 import type { MapStorage, StoredMap } from '../storage/maps.js';
@@ -14,16 +16,43 @@ interface MapReadRoutesOptions {
   mapCatalogLock: FileMutex;
 }
 
-interface ArchiveLike {
-  on(event: 'error', handler: (err: Error) => void): void;
-  pipe(destination: NodeJS.WritableStream): void;
-  append(source: string | Buffer, data: { name: string }): void;
-  file(filePath: string, data: { name: string }): void;
+interface ArchiveLike extends Readable {
+  append(source: string | Buffer | NodeJS.ReadableStream, data: { name: string }): void;
+  abort(): void;
   finalize(): Promise<void>;
 }
 
 const require = createRequire(import.meta.url);
 const archiver: { ZipArchive: new (options?: unknown) => ArchiveLike } = require('archiver');
+const DOWNLOAD_TIMEOUT_MS = 5 * 60_000;
+
+function openPausedReadStream(filePath: string): Promise<ReadStream> {
+  const stream = createReadStream(filePath);
+  return new Promise((resolve, reject) => {
+    const handleOpen = (): void => {
+      stream.off('error', handleError);
+      stream.pause();
+      resolve(stream);
+    };
+    const handleError = (error: Error): void => {
+      stream.off('open', handleOpen);
+      reject(error);
+    };
+    stream.once('open', handleOpen);
+    stream.once('error', handleError);
+  });
+}
+
+async function streamResponse(source: Readable, res: Response): Promise<void> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), DOWNLOAD_TIMEOUT_MS);
+  timeout.unref();
+  try {
+    await pipeline(source, res, { signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 function safeId(id: unknown): string {
   return sanitizeMapId(id, '');
@@ -49,16 +78,6 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
       release();
     }
   };
-  const waitForResponse = (res: Response): Promise<void> => new Promise(resolve => {
-    let settled = false;
-    const settle = (): void => {
-      if (settled) return;
-      settled = true;
-      resolve();
-    };
-    res.once('finish', settle);
-    res.once('close', settle);
-  });
   const withCatalogLock = async <T>(operation: () => Promise<T>): Promise<T> => {
     const release = await mapCatalogLock.acquire();
     try {
@@ -100,33 +119,52 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
     const id = safeId(req.params['id']);
     if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
     try {
-      await withMapLock(id, async () => {
+      const snapshot = await withMapLock(id, async () => {
+        if (res.destroyed) return null;
         const data = await mapStorage.read(id);
         if (!data) {
           res.status(404).json({ error: 'Nie znaleziono.' });
-          return;
+          return null;
         }
-
-        const archive = new archiver.ZipArchive({ zlib: { level: 6 } });
-        const responseComplete = waitForResponse(res);
-
-        archive.on('error', err => {
-          if (!res.headersSent) res.status(500).json({ error: err.message });
-          else res.destroy(err);
-        });
-
-        res.attachment(`${id}.zip`);
-        archive.pipe(res);
-        archive.append(JSON.stringify(mapForResponse(data, id), null, 2), { name: 'map.json' });
-
         const audio = await audioStorage.find(id, data);
-        if (audio) archive.file(audio.fullPath, { name: audio.publicName });
-
-        await archive.finalize();
-        await responseComplete;
+        const audioStream = audio ? await openPausedReadStream(audio.fullPath) : null;
+        return {
+          mapJson: JSON.stringify(mapForResponse(data, id), null, 2),
+          audioName: audio?.publicName ?? null,
+          audioStream,
+        };
       });
+      if (!snapshot || res.destroyed) {
+        snapshot?.audioStream?.destroy();
+        return;
+      }
+
+      const archive = new archiver.ZipArchive({ zlib: { level: 6 } });
+      const forwardAudioError = (error: Error): void => {
+        archive.destroy(error);
+      };
+      snapshot.audioStream?.once('error', forwardAudioError);
+      const transfer = streamResponse(archive, res);
+      try {
+        res.attachment(`${id}.zip`);
+        archive.append(snapshot.mapJson, { name: 'map.json' });
+        if (snapshot.audioStream && snapshot.audioName) {
+          archive.append(snapshot.audioStream, { name: snapshot.audioName });
+        }
+        await Promise.all([archive.finalize(), transfer]);
+      } catch (error) {
+        snapshot.audioStream?.destroy();
+        try {
+          archive.abort();
+        } catch {}
+        await transfer.catch(() => {});
+        throw error;
+      } finally {
+        snapshot.audioStream?.off('error', forwardAudioError);
+      }
     } catch (error) {
-      if (!res.headersSent) res.status(500).json({ error: errorMessage(error) });
+      if (!res.headersSent && !res.destroyed) res.status(500).json({ error: errorMessage(error) });
+      else if (!res.destroyed) res.destroy(error instanceof Error ? error : undefined);
     }
   });
 
@@ -134,29 +172,32 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
     try {
       const id = safeId(req.params['id']);
       if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
-      await withMapLock(id, async () => {
+      const snapshot = await withMapLock(id, async () => {
+        if (res.destroyed) return null;
         const map = await mapStorage.read(id);
         if (!map) {
           res.status(404).json({ error: 'Mapa nie znaleziona.' });
-          return;
+          return null;
         }
         const audio = await audioStorage.find(id, map);
         if (!audio) {
           res.status(404).json({ error: 'Audio nie znalezione.' });
-          return;
+          return null;
         }
-        const responseComplete = waitForResponse(res);
-        res.type(audioStorage.mimeForFile(audio.publicName || audio.fileName));
-        createReadStream(audio.fullPath)
-          .on('error', err => {
-            if (!res.headersSent) res.status(500).json({ error: err.message });
-            else res.destroy(err);
-          })
-          .pipe(res);
-        await responseComplete;
+        return {
+          mime: audioStorage.mimeForFile(audio.publicName || audio.fileName),
+          stream: await openPausedReadStream(audio.fullPath),
+        };
       });
+      if (!snapshot || res.destroyed) {
+        snapshot?.stream.destroy();
+        return;
+      }
+      res.type(snapshot.mime);
+      await streamResponse(snapshot.stream, res);
     } catch (error) {
-      res.status(500).json({ error: errorMessage(error) });
+      if (!res.headersSent && !res.destroyed) res.status(500).json({ error: errorMessage(error) });
+      else if (!res.destroyed) res.destroy(error instanceof Error ? error : undefined);
     }
   });
 

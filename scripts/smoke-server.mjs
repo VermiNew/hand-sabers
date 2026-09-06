@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { createServer as createNetServer } from 'node:net';
 import { request as httpRequest } from 'node:http';
 import { existsSync } from 'node:fs';
@@ -115,6 +116,55 @@ async function waitForServer() {
     await sleep(100);
   }
   throw new Error(`Server did not start on ${base}.\nSTDOUT:\n${stdout}\nSTDERR:\n${stderr}`);
+}
+
+async function openPausedDownload(requestPath) {
+  return await new Promise((resolve, reject) => {
+    const req = httpRequest({ hostname: HOST, port: Number(PORT), path: requestPath }, res => {
+      const chunks = [];
+      let paused = false;
+      let resolveCompleted;
+      let rejectCompleted;
+      const completed = new Promise((resolveBody, rejectBody) => {
+        resolveCompleted = resolveBody;
+        rejectCompleted = rejectBody;
+      });
+      completed.catch(() => {});
+      res.on('data', chunk => {
+        chunks.push(chunk);
+        if (paused) return;
+        paused = true;
+        res.pause();
+        req.setTimeout(0);
+        resolve({
+          status: res.statusCode || 0,
+          resume: async () => {
+            res.resume();
+            return await completed;
+          },
+        });
+      });
+      res.on('end', () => resolveCompleted(Buffer.concat(chunks)));
+      res.on('error', rejectCompleted);
+    });
+    req.setTimeout(6_000, () => req.destroy(new Error(`Timeout GET ${requestPath}`)));
+    req.on('error', reject);
+    req.end();
+  });
+}
+
+async function withDeadline(promise, timeoutMs, message) {
+  let timeout;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        timeout = setTimeout(() => reject(new Error(message)), timeoutMs);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 async function getJson(path) {
@@ -245,6 +295,54 @@ try {
   if (creatorSaved.id !== 'creator-smoke' || creatorSaved.audio !== 'song.ogg') throw new Error('creator save failed');
   expectFile('beatdata/creator-smoke.json', 'creator save beatdata');
   expectFile('audio/creator-smoke.ogg', 'creator save audio');
+
+  const oldAudio = Buffer.alloc(4 * 1024 * 1024, 0x5a);
+  const newAudio = Buffer.from([4, 3, 2, 1]);
+  await postMultipart('/api/maps/save', [
+    { name: 'map', value: JSON.stringify({ id: 'creator-smoke', meta: { title: 'Old Snapshot' }, beats: [{ t: 2, side: 'left' }] }) },
+    { name: 'audio', filename: 'old.ogg', mimeType: 'audio/ogg', bytes: oldAudio },
+  ]);
+  const pausedAudio = await openPausedDownload('/api/maps/creator-smoke/audio');
+  if (pausedAudio.status !== 200) throw new Error(`paused audio request failed: ${pausedAudio.status}`);
+  await withDeadline(
+    postMultipart('/api/maps/save', [
+      { name: 'map', value: JSON.stringify({ id: 'creator-smoke', meta: { title: 'New Snapshot' }, beats: [{ t: 3, side: 'right' }] }) },
+      { name: 'audio', filename: 'new.ogg', mimeType: 'audio/ogg', bytes: newAudio },
+    ]),
+    2_000,
+    'map replacement waited for a slow audio client',
+  );
+  const oldDownload = await pausedAudio.resume();
+  if (!oldDownload.equals(oldAudio)) throw new Error('slow audio client did not receive the complete old snapshot');
+  const newDownload = await smokeRequest('/api/maps/creator-smoke/audio');
+  if (!newDownload.body.equals(newAudio)) throw new Error('audio endpoint did not expose the replacement after snapshot download');
+
+  const oldExportAudio = randomBytes(4 * 1024 * 1024);
+  const newExportAudio = Buffer.from([7, 7, 7, 7]);
+  await postMultipart('/api/maps/save', [
+    { name: 'map', value: JSON.stringify({ id: 'creator-smoke', meta: { title: 'Old Export Snapshot' }, beats: [{ t: 4, side: 'left' }] }) },
+    { name: 'audio', filename: 'old-export.ogg', mimeType: 'audio/ogg', bytes: oldExportAudio },
+  ]);
+  const pausedExport = await openPausedDownload('/api/maps/creator-smoke/export.zip');
+  if (pausedExport.status !== 200) throw new Error(`paused export request failed: ${pausedExport.status}`);
+  await withDeadline(
+    postMultipart('/api/maps/save', [
+      { name: 'map', value: JSON.stringify({ id: 'creator-smoke', meta: { title: 'New Export Snapshot' }, beats: [{ t: 5, side: 'right' }] }) },
+      { name: 'audio', filename: 'new-export.ogg', mimeType: 'audio/ogg', bytes: newExportAudio },
+    ]),
+    2_000,
+    'map replacement waited for a slow ZIP client',
+  );
+  const oldExport = await JSZip.loadAsync(await pausedExport.resume());
+  const oldExportMap = JSON.parse(await oldExport.file('map.json').async('string'));
+  const oldExportAudioFile = oldExport.file('old-export.ogg');
+  if (oldExportMap.meta?.title !== 'Old Export Snapshot' || !oldExportAudioFile) {
+    throw new Error('slow ZIP client did not receive the old map/audio snapshot');
+  }
+  const oldExportAudioBytes = await oldExportAudioFile.async('nodebuffer');
+  if (!oldExportAudioBytes.equals(oldExportAudio)) throw new Error('slow ZIP client received inconsistent old audio');
+  const currentExportAudio = await smokeRequest('/api/maps/creator-smoke/audio');
+  if (!currentExportAudio.body.equals(newExportAudio)) throw new Error('audio endpoint did not expose the post-export replacement');
 
   await postJson('/api/maps', { id: 'bad-map', beats: 'nope' }, 400);
 

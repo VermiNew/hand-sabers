@@ -45,6 +45,19 @@ interface AudioStorageOptions {
   caseInsensitiveIds?: boolean;
 }
 
+async function replaceFile(sourcePath: string, destinationPath: string): Promise<void> {
+  try {
+    await rename(sourcePath, destinationPath);
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (process.platform !== 'win32' || (code !== 'EEXIST' && code !== 'EPERM')) throw error;
+    await unlink(destinationPath).catch(unlinkError => {
+      if ((unlinkError as NodeJS.ErrnoException).code !== 'ENOENT') throw unlinkError;
+    });
+    await rename(sourcePath, destinationPath);
+  }
+}
+
 const AUDIO_MIME_BY_EXT = new Map([
   ['.mp3', 'audio/mpeg'],
   ['.ogg', 'audio/ogg'],
@@ -223,7 +236,7 @@ export function createAudioStorage({ audioDir, legacyAudioDir, caseInsensitiveId
       const tmpPath = `${storedPath}.${process.pid}.${randomUUID()}.tmp`;
       try {
         await writeFile(tmpPath, Buffer.from(buffer));
-        await rename(tmpPath, storedPath);
+        await replaceFile(tmpPath, storedPath);
       } finally {
         await unlink(tmpPath).catch(error => {
           if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
@@ -257,7 +270,7 @@ export function createAudioStorage({ audioDir, legacyAudioDir, caseInsensitiveId
 
       const storedFile = `${map.id}${ext}`;
       const storedPath = path.join(audioDir, storedFile);
-      await rename(sourcePath, storedPath);
+      await replaceFile(sourcePath, storedPath);
       await storage.remove(map.id, storedPath);
 
       map.meta = {
