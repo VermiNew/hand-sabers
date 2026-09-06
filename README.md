@@ -33,6 +33,8 @@ This builds the Vite frontend, compiles `server.ts` to `dist-server/` and starts
 
 The `config.json` file controls optional deployment protections. The default `"security": false` avoids restrictive CSP and Origin checks during local work. Set it to `true` only before a public deployment and after verifying the app with production headers enabled.
 
+With `security: true`, the CSP uses the narrow [`'wasm-unsafe-eval'`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/script-src) source instead of broad `'unsafe-eval'`. This permits MediaPipe WebAssembly without enabling JavaScript string evaluation. Run `npm run smoke:csp` with internet access to check both config modes and initialize the real MediaPipe runtime and model through the compiled production server. The smoke is maintained for the supported current Chrome/Edge family and was verified with Chromium 151; older browsers that do not implement the CSP3 token are outside the documented support scope.
+
 ## Development mode
 
 The easiest way to run both the backend and Vite together:

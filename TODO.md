@@ -346,7 +346,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 
 ### P0 — blokery wydania
 
-- [ ] Naprawić uruchamianie MediaPipe WebAssembly przy produkcyjnej CSP: obecne `script-src` blokuje `WebAssembly.instantiate()` i kończy inicjalizację komunikatem „Nie udało się załadować modelu lub zależności”. Zastosować najmniejsze potrzebne rozszerzenie polityki (preferować `'wasm-unsafe-eval'`, nie szerokie `'unsafe-eval'`), sprawdzić zgodność obsługiwanych przeglądarek i dodać smoke ładowania modelu pod nagłówkami produkcyjnymi.
+- [x] Naprawić uruchamianie MediaPipe WebAssembly przy produkcyjnej CSP — `security: true` stosuje wąskie `'wasm-unsafe-eval'` bez szerokiego `'unsafe-eval'`; izolowany `npm run smoke:csp` sprawdza brak CSP przy domyślnym `false`, dokładną politykę przy `true` i inicjalizuje prawdziwy runtime WASM oraz model 7,5 MiB przez skompilowany serwer produkcyjny. Zweryfikowano na Chromium 151 z zakresu wspieranych aktualnych Chrome/Edge; zgodność tokenu potwierdzają CSP3 i MDN.
 - [x] Usunąć zdalny DOM XSS z podglądu graczy Multiplayer: etykieta w `src/multiplayer/remote-preview.ts` jest teraz budowana przez bezpieczne elementy DOM i `textContent`, bez interpretowania nazwy gracza jako HTML.
 - [ ] Zabezpieczyć uploady przed DoS: uwierzytelniać i limitować przed buforowaniem body, zastąpić `multer.memoryStorage()` strumieniowaniem do ograniczonego pliku tymczasowego, dodać limity współbieżności, byte-rate oraz globalne/per-user quota dysku.
   - [x] Przenieść istniejący rate limit tras `/api/maps/save` i `/api/maps/import` przed middleware Multer, aby odrzucane żądania multipart nie były wcześniej buforowane w pamięci.

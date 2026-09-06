@@ -33,6 +33,8 @@ To buduje frontend Vite, kompiluje `server.ts` do `dist-server/` i uruchamia sko
 
 Plik `config.json` steruje opcjonalnymi zabezpieczeniami wdrożeniowymi. Domyślne `"security": false` nie ustawia restrykcyjnej CSP ani kontroli Origin podczas lokalnej pracy. Ustaw `true` dopiero przed publicznym wdrożeniem i po sprawdzeniu aplikacji pod produkcyjnymi nagłówkami.
 
+Przy `security: true` polityka CSP używa wąskiego źródła [`'wasm-unsafe-eval'`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/script-src), a nie szerokiego `'unsafe-eval'`. Pozwala to uruchomić WebAssembly MediaPipe bez włączania wykonywania JavaScriptu z tekstu. Polecenie `npm run smoke:csp` przy dostępie do internetu sprawdza oba tryby konfiguracji oraz inicjalizuje prawdziwy runtime i model MediaPipe przez skompilowany serwer produkcyjny. Smoke jest utrzymywany dla obsługiwanej, aktualnej rodziny Chrome/Edge i został zweryfikowany na Chromium 151; starsze przeglądarki bez obsługi tokenu CSP3 nie należą do udokumentowanego zakresu wsparcia.
+
 ## Tryb developerski
 
 Najwygodniej uruchomić backend i Vite razem:
