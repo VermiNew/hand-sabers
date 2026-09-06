@@ -4,6 +4,7 @@ interface VoiceChatOptions {
   getCurrentPlayerId(): string;
   sendSignal(targetPlayerId: string, signal: VoiceSignal): boolean;
   onStateChange(state: 'off' | 'starting' | 'on' | 'error'): void;
+  onSpeakingChange(playerId: string, speaking: boolean): void;
 }
 
 interface PeerState {
@@ -11,6 +12,13 @@ interface PeerState {
   makingOffer: boolean;
   ignoreOffer: boolean;
   polite: boolean;
+}
+
+interface SpeakingMonitor {
+  stream: MediaStream;
+  source: MediaStreamAudioSourceNode;
+  animationFrame: number;
+  speaking: boolean;
 }
 
 export interface VoiceChatController {
@@ -25,14 +33,59 @@ export function createVoiceChat({
   getCurrentPlayerId,
   sendSignal,
   onStateChange,
+  onSpeakingChange,
 }: VoiceChatOptions): VoiceChatController {
   const peers = new Map<string, PeerState>();
   const remoteAudio = new Map<string, HTMLAudioElement>();
+  const speakingMonitors = new Map<string, SpeakingMonitor>();
   let roomPlayers = new Set<string>();
   let localStream: MediaStream | null = null;
   let enabled = false;
   let starting = false;
   let enableGeneration = 0;
+  let audioContext: AudioContext | null = null;
+
+  const stopSpeakingMonitor = (playerId: string) => {
+    const monitor = speakingMonitors.get(playerId);
+    if (!monitor) return;
+    cancelAnimationFrame(monitor.animationFrame);
+    monitor.source.disconnect();
+    if (monitor.speaking) onSpeakingChange(playerId, false);
+    speakingMonitors.delete(playerId);
+  };
+
+  const monitorSpeaking = (playerId: string, stream: MediaStream) => {
+    const existing = speakingMonitors.get(playerId);
+    if (existing?.stream === stream) return;
+    stopSpeakingMonitor(playerId);
+    if (!audioContext) return;
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyser = audioContext.createAnalyser();
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.35;
+    source.connect(analyser);
+    const levels = new Uint8Array(analyser.fftSize);
+    let lastActiveAt = Number.NEGATIVE_INFINITY;
+    const monitor: SpeakingMonitor = { stream, source, animationFrame: 0, speaking: false };
+    const sample = () => {
+      analyser.getByteTimeDomainData(levels);
+      let energy = 0;
+      for (const level of levels) {
+        const centered = (level - 128) / 128;
+        energy += centered * centered;
+      }
+      const now = performance.now();
+      if (Math.sqrt(energy / levels.length) >= 0.025) lastActiveAt = now;
+      const speaking = now - lastActiveAt < 180;
+      if (speaking !== monitor.speaking) {
+        monitor.speaking = speaking;
+        onSpeakingChange(playerId, speaking);
+      }
+      monitor.animationFrame = requestAnimationFrame(sample);
+    };
+    speakingMonitors.set(playerId, monitor);
+    sample();
+  };
 
   const closePeer = (playerId: string) => {
     const peer = peers.get(playerId);
@@ -51,6 +104,7 @@ export function createVoiceChat({
       audio.remove();
       remoteAudio.delete(playerId);
     }
+    stopSpeakingMonitor(playerId);
   };
 
   const sendDescription = (playerId: string, description: RTCSessionDescription | null): void => {
@@ -71,6 +125,7 @@ export function createVoiceChat({
       remoteAudio.set(playerId, audio);
     }
     if (audio.srcObject !== stream) audio.srcObject = stream;
+    monitorSpeaking(playerId, stream);
     void audio.play().catch(() => undefined);
   };
 
@@ -127,6 +182,9 @@ export function createVoiceChat({
     for (const playerId of [...peers.keys()]) closePeer(playerId);
     for (const track of localStream?.getTracks() ?? []) track.stop();
     localStream = null;
+    for (const playerId of [...speakingMonitors.keys()]) stopSpeakingMonitor(playerId);
+    if (audioContext) void audioContext.close().catch(() => undefined);
+    audioContext = null;
     onStateChange('off');
   };
 
@@ -150,19 +208,25 @@ export function createVoiceChat({
           return;
         }
         localStream = stream;
+        audioContext = new AudioContext();
+        await audioContext.resume();
         starting = false;
         enabled = true;
         onStateChange('on');
         const selfId = getCurrentPlayerId();
+        if (selfId) monitorSpeaking(selfId, stream);
         for (const playerId of roomPlayers) {
           if (playerId !== selfId) ensurePeer(playerId);
         }
       } catch (error) {
         if (generation !== enableGeneration) return;
         console.error('[multiplayer:voice-microphone]', error);
+        for (const track of localStream?.getTracks() ?? []) track.stop();
+        localStream = null;
+        if (audioContext) void audioContext.close().catch(() => undefined);
+        audioContext = null;
         starting = false;
         enabled = false;
-        localStream = null;
         onStateChange('error');
         throw error;
       }
