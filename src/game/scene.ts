@@ -165,6 +165,50 @@ function rail(x: number, color: number): THREE.MeshBasicMaterial[] {
 const leftRailMats  = rail(-2.2, THEME.left);
 const rightRailMats = rail(2.2,  THEME.right);
 
+const ARENA_RIB_COUNT = 6;
+const arenaRibGeometry = new THREE.BoxGeometry(0.045, 4.4, 0.045);
+const arenaRibGlowGeometry = new THREE.BoxGeometry(0.16, 4.4, 0.12);
+const leftRibMaterial = new THREE.MeshBasicMaterial({
+  color: THEME.left,
+  transparent: true,
+  opacity: 0.42,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending,
+});
+const rightRibMaterial = leftRibMaterial.clone();
+rightRibMaterial.color.setHex(THEME.right);
+const leftRibGlowMaterial = leftRibMaterial.clone();
+leftRibGlowMaterial.opacity = 0.09;
+const rightRibGlowMaterial = rightRibMaterial.clone();
+rightRibGlowMaterial.opacity = 0.09;
+const arenaRibs = new THREE.Group();
+const leftRibs = new THREE.InstancedMesh(arenaRibGeometry, leftRibMaterial, ARENA_RIB_COUNT);
+const rightRibs = new THREE.InstancedMesh(arenaRibGeometry, rightRibMaterial, ARENA_RIB_COUNT);
+const leftRibGlows = new THREE.InstancedMesh(arenaRibGlowGeometry, leftRibGlowMaterial, ARENA_RIB_COUNT);
+const rightRibGlows = new THREE.InstancedMesh(arenaRibGlowGeometry, rightRibGlowMaterial, ARENA_RIB_COUNT);
+const arenaRibTransform = new THREE.Object3D();
+
+for (let index = 0; index < ARENA_RIB_COUNT; index++) {
+  const depth = -4.8 - index * 3.15;
+  const spread = 2.95 + index * 0.035;
+  for (const [side, core, glow] of [
+    [-1, leftRibs, leftRibGlows],
+    [1, rightRibs, rightRibGlows],
+  ] as const) {
+    arenaRibTransform.position.set(side * spread, 2.0, depth);
+    arenaRibTransform.rotation.set(0, 0, side * -0.16);
+    arenaRibTransform.updateMatrix();
+    core.setMatrixAt(index, arenaRibTransform.matrix);
+    glow.setMatrixAt(index, arenaRibTransform.matrix);
+  }
+}
+for (const mesh of [leftRibs, rightRibs, leftRibGlows, rightRibGlows]) {
+  mesh.instanceMatrix.needsUpdate = true;
+  mesh.frustumCulled = false;
+  arenaRibs.add(mesh);
+}
+scene.add(arenaRibs);
+
 function makeBlobShadow(): THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial> {
   const c = document.createElement('canvas');
   c.width = 64; c.height = 64;
@@ -329,6 +373,13 @@ export function setSaberColor(side: 'left' | 'right', hex: string): void {
     railMat.color.set(color);
     railMat.needsUpdate = true;
   }
+  const ribMats = side === 'left'
+    ? [leftRibMaterial, leftRibGlowMaterial]
+    : [rightRibMaterial, rightRibGlowMaterial];
+  for (const ribMat of ribMats) {
+    ribMat.color.set(color);
+    ribMat.needsUpdate = true;
+  }
 
   ud.color = new THREE.Color(colorHex).getHex();
   publishSaberColorCss(side, color);
@@ -408,6 +459,16 @@ export function updateArenaPulse(
     materials[0]!.opacity = THREE.MathUtils.clamp(0.64 + railPulse, 0.42, 1);
     materials[1]!.opacity = THREE.MathUtils.clamp(0.11 + railPulse * 0.72, 0.06, 0.42);
   }
+  leftRibMaterial.opacity = rightRibMaterial.opacity = THREE.MathUtils.clamp(
+    0.28 + railPulse * 0.72,
+    0.22,
+    0.62,
+  );
+  leftRibGlowMaterial.opacity = rightRibGlowMaterial.opacity = THREE.MathUtils.clamp(
+    0.055 + railPulse * 0.32,
+    0.04,
+    0.18,
+  );
 
   floorMat.opacity = THREE.MathUtils.clamp(0.28 + energy * 0.035 + beat * 0.025, 0.24, 0.42);
   if (perfProfile.reflections) {
@@ -515,6 +576,7 @@ function applyDecorVisibility(): void {
   specTopL.visible      = Boolean(perfProfile.decorativeLights);
   rimL.visible          = Boolean(perfProfile.decorativeLights);
   backL.visible         = Boolean(perfProfile.decorativeLights);
+  arenaRibs.visible     = Boolean(perfProfile.decorativeLights) && perfProfile.arenaDetail >= 0.6;
   applySaberVisibility();
   bgMesh.visible        = Boolean(perfProfile.backgroundShader);
   if (bgMat.uniforms['uDetail']) bgMat.uniforms['uDetail'].value = perfProfile.arenaDetail;
