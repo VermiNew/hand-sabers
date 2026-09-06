@@ -1,8 +1,10 @@
 import type { RemoteLandmarkPacket, RemoteRealtimePacket } from './realtime.ts';
 import { avatarIcon } from './avatars.ts';
 import { sanitizeProfileColor } from '../core/profile-color.ts';
+import { isVoicePlayerSpeaking } from './voice-speaking.ts';
 
 interface RoomStatePlayer {
+  id: string;
   streamId: number;
   name: string;
   avatar: string;
@@ -23,6 +25,7 @@ const HAND_CONNECTIONS: readonly [number, number][] = [
 ];
 
 interface PlayerInfo {
+  id: string;
   name: string;
   avatar: string;
   color: string;
@@ -95,6 +98,8 @@ function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanva
     element = document.createElement('div');
     element.className = 'cam-box remote-ml-preview';
     element.dataset['streamId'] = String(streamId);
+    element.dataset['voicePlayerId'] = info.id;
+    element.classList.toggle('is-voice-speaking', isVoicePlayerSpeaking(info.id));
     const label = document.createElement('span');
     label.className = 'cam-tag ml';
     const canvas = document.createElement('canvas');
@@ -105,6 +110,8 @@ function previewFor(streamId: number): { element: HTMLElement; canvas: HTMLCanva
     previews.set(streamId, element);
   }
   if (element.parentElement !== container) container.append(element);
+  element.dataset['voicePlayerId'] = info.id;
+  element.classList.toggle('is-voice-speaking', isVoicePlayerSpeaking(info.id));
   const label = element.querySelector<HTMLElement>('.cam-tag');
   if (label) renderPlayerLabel(label, info);
   updateOverlayVisibility();
@@ -146,6 +153,7 @@ function updatePlayers(detail: RoomStateDetail | null): void {
   for (const player of detail?.players ?? []) {
     if (Number.isSafeInteger(player.streamId) && player.streamId > 0) {
       playerInfo.set(player.streamId, {
+        id: player.id,
         name: player.name.slice(0, 32),
         avatar: player.avatar ?? 'default',
         color: sanitizeProfileColor(player.color),

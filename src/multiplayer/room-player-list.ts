@@ -1,6 +1,7 @@
 import { t } from '../i18n/index.ts';
 import { createAvatarBadge } from './avatars.ts';
 import type { RoomSnapshot } from './protocol.ts';
+import { isVoicePlayerSpeaking } from './voice-speaking.ts';
 
 export function renderRoomPlayerList(
   container: HTMLElement,
@@ -12,6 +13,8 @@ export function renderRoomPlayerList(
   for (const player of snapshot.players) {
     const row = document.createElement('div');
     row.className = `mp-player-row${player.ready ? ' is-ready' : ''}`;
+    row.dataset['voicePlayerId'] = player.id;
+    row.classList.toggle('is-voice-speaking', isVoicePlayerSpeaking(player.id));
     const identity = document.createElement('span');
     identity.className = 'mp-player-name';
     identity.append(createAvatarBadge(player.avatar, 18, player.color));

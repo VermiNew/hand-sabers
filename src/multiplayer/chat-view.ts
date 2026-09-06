@@ -1,5 +1,6 @@
 import { t } from '../i18n/index.ts';
 import { createAvatarBadge } from './avatars.ts';
+import { isVoicePlayerSpeaking } from './voice-speaking.ts';
 import { element } from './client-utils.ts';
 import type { ChatMessage } from './protocol.ts';
 
@@ -48,6 +49,8 @@ export function createMultiplayerChatView({
   function createMessageRow(chatMessage: ChatMessage): HTMLElement {
     const row = document.createElement('article');
     row.className = `mp-chat-message${chatMessage.playerId === getCurrentPlayerId() ? ' is-own' : ''}`;
+    row.dataset['voicePlayerId'] = chatMessage.playerId;
+    row.classList.toggle('is-voice-speaking', isVoicePlayerSpeaking(chatMessage.playerId));
     const header = document.createElement('div');
     header.className = 'mp-chat-header';
     header.append(createAvatarBadge(chatMessage.avatar, 20, chatMessage.color));
