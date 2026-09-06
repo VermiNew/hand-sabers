@@ -107,11 +107,27 @@ try {
   if (unsecuredResponse.headers.has('content-security-policy')) {
     throw new Error('security=false unexpectedly emitted Content-Security-Policy.');
   }
+  const unsecuredOriginResponse = await fetch(`${unsecured.baseUrl}/api/scores`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', host: 'attacker.test:3000', origin: 'http://attacker.test:3000' },
+    body: '{}',
+  });
+  if (unsecuredOriginResponse.status === 403) {
+    throw new Error('security=false unexpectedly enforced the Origin allowlist.');
+  }
   await stopServer(unsecured.server);
   activeServer = null;
 
   const secured = await startServer(true);
   activeServer = secured.server;
+  const rebindingResponse = await fetch(`${secured.baseUrl}/api/scores`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', host: 'attacker.test:3000', origin: 'http://attacker.test:3000' },
+    body: '{}',
+  });
+  if (rebindingResponse.status !== 403) {
+    throw new Error(`Matching attacker Origin and Host were not rejected: ${rebindingResponse.status}`);
+  }
   browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   const criticalErrors = [];

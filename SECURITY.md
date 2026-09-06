@@ -43,6 +43,8 @@ and form an explicitly accepted third-party trust boundary.
 - Remote-tracking and multiplayer peers must authenticate before relaying
   packets. Sessions must expire or be revocable as documented.
 - Origin checks and IP rate limits must never be described as authorization.
+- When deployment security is enabled, browser origins must match the explicit
+  configured allowlist and must never be trusted by comparison with request Host.
 - Uploads, JSON, ZIP decompression, WebSocket payloads and persistent storage
   must remain bounded. ZIP paths and stored identifiers must not escape their
   configured directories.

@@ -31,7 +31,7 @@ http://localhost:3000
 
 This builds the Vite frontend, compiles `server.ts` to `dist-server/` and starts the compiled Express server. This is the simplest way to play the game.
 
-The `config.json` file controls optional deployment protections. The default `"security": false` avoids restrictive CSP and Origin checks during local work. Set it to `true` only before a public deployment and after verifying the app with production headers enabled.
+The `config.json` file controls optional deployment protections. The default `"security": false` avoids restrictive CSP and Origin checks during local work. Set it to `true` only before a public deployment and after verifying the app with production headers enabled. When enabled, REST writes and both WebSocket endpoints accept browser requests only from the exact URLs in `allowedOrigins`; add every LAN address, HTTPS hostname or tunnel URL that players actually open. Do not use wildcards. Origin-less native/CLI clients remain supported, and this check is not user authorization.
 
 With `security: true`, the CSP uses the narrow [`'wasm-unsafe-eval'`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Content-Security-Policy/script-src) source instead of broad `'unsafe-eval'`. This permits MediaPipe WebAssembly without enabling JavaScript string evaluation. Run `npm run smoke:csp` with internet access to check both config modes and initialize the real MediaPipe runtime and model through the compiled production server. The smoke is maintained for the supported current Chrome/Edge family and was verified with Chromium 151; older browsers that do not implement the CSP3 token are outside the documented support scope.
 

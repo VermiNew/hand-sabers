@@ -32,6 +32,22 @@ http://localhost:3000/api/health
 
 Odpowiedź powinna zawierać `"ok": true`.
 
+## Konfiguracja zabezpieczeń i adresów
+
+Domyślne `config.json` ma `"security": false`, więc lokalny prototyp nie włącza CSP ani kontroli Origin. Przed wystawieniem serwera ustaw `"security": true` i wpisz do `allowedOrigins` każdy dokładny adres otwierany w przeglądarce, razem ze schematem oraz portem, na przykład:
+
+```json
+{
+  "security": true,
+  "allowedOrigins": [
+    "https://gra.example.org",
+    "http://192.168.1.20:3000"
+  ]
+}
+```
+
+Adres tunelu lub domenę HTTPS trzeba dopisać przed uruchomieniem serwera. Nie wpisuj wildcardów ani samej nazwy hosta. Kontrola obejmuje zapisy REST, multiplayer i połączenie telefonu, ale nie zastępuje uwierzytelniania ani modelu uprawnień.
+
 ## Najprostsze udostępnienie na konkursie: tunel HTTPS
 
 Uruchom grę lokalnie poleceniem `npm start`, a następnie wystaw port `3000` przez zaufany tunel HTTPS, np. Cloudflare Tunnel, ngrok lub podobną usługę. Udostępniaj uczestnikom wyłącznie adres zaczynający się od `https://`.
