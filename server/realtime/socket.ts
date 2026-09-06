@@ -5,6 +5,7 @@ import { WebSocket, WebSocketServer } from 'ws';
 import { RoomError } from './room-registry.js';
 import type { RoomRegistry, RoomSnapshot } from './room-registry.js';
 import { PROTOCOL_VERSION, parseMessage, parseVoiceSignal, sanitizeChatText, validateRealtimePacket } from './protocol.js';
+import { RateLimiter } from '../utils.js';
 
 const MAX_CONTROL_MESSAGES_PER_MINUTE = 1_200;
 const MAX_CHAT_MESSAGES_PER_WINDOW = 8;
@@ -73,7 +74,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
     perMessageDeflate: false,
   });
   const clients = new Map<WebSocket, ClientState>();
-  const upgradesByIp = new Map<string, number[]>();
+  const upgradeLimiter = new RateLimiter();
 
   function broadcast(roomCode: string, snapshot: RoomSnapshot | null): void {
     if (!snapshot) return;
@@ -353,14 +354,11 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
       const url = new URL(request.url || '/', 'http://localhost');
       if (url.pathname !== '/ws') return;
       const ip = request.socket.remoteAddress || 'unknown';
-      const now = Date.now();
-      const recentUpgrades = (upgradesByIp.get(ip) ?? []).filter(timestamp => now - timestamp < 60_000);
-      recentUpgrades.push(now);
-      upgradesByIp.set(ip, recentUpgrades);
+      const upgradeRateLimited = upgradeLimiter.check(ip, 'multiplayer-upgrade', MAX_UPGRADES_PER_IP_PER_MINUTE);
       if (
         !isAllowedOrigin(request)
         || clients.size >= MAX_CONNECTIONS
-        || recentUpgrades.length > MAX_UPGRADES_PER_IP_PER_MINUTE
+        || upgradeRateLimited
       ) {
         socket.destroy();
         return;
@@ -394,6 +392,7 @@ export function registerRealtimeServer(server: HttpServer | HttpsServer, rooms: 
   return {
     close(): void {
       clearInterval(heartbeat);
+      upgradeLimiter.destroy();
       server.off('upgrade', handleUpgrade);
       for (const socket of clients.keys()) {
         try {

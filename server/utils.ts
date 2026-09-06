@@ -77,9 +77,13 @@ export class RateLimiter {
     const mapKey = `${key}:${ip}`;
     const now = Date.now();
     const calls = (this.map.get(mapKey) ?? []).filter(t => now - t < 60_000);
+    if (calls.length >= maxPerMinute) {
+      this.map.set(mapKey, calls);
+      return true;
+    }
     calls.push(now);
     this.map.set(mapKey, calls);
-    return calls.length > maxPerMinute;
+    return false;
   }
 
   private cleanup(): void {
@@ -93,6 +97,7 @@ export class RateLimiter {
 
   destroy(): void {
     clearInterval(this.cleanupInterval);
+    this.map.clear();
   }
 }
 

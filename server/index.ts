@@ -265,6 +265,7 @@ function shutdown(signal: NodeJS.Signals): void {
   console.log(`\n${signal} — zamykam serwer…`);
   realtimeServer.close();
   remoteTrackingServer.close();
+  limiter.destroy();
   rooms.destroy();
   trackingSessions.destroy();
   server.close(err => {
