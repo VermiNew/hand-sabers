@@ -141,7 +141,7 @@ const CONTENT_SECURITY_POLICY = [
 if (securityEnabled) {
   app.use((req, res, next) => {
     res.setHeader('Content-Security-Policy', CONTENT_SECURITY_POLICY);
-    res.setHeader('Permissions-Policy', 'camera=(self), fullscreen=(self), geolocation=(), microphone=(), payment=(), usb=()');
+    res.setHeader('Permissions-Policy', 'camera=(self), fullscreen=(self), geolocation=(), microphone=(self), payment=(), usb=()');
     res.setHeader('Referrer-Policy', 'no-referrer');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
