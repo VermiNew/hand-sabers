@@ -26,6 +26,7 @@ import { TrackingSessionRegistry } from './realtime/tracking-session-registry.js
 import { registerRemoteTrackingServer } from './realtime/remote-tracking-socket.js';
 import { createUploadConcurrencyGate } from './upload-concurrency.js';
 import { createOriginPolicy } from './origin-policy.js';
+import { requireFrontendDist } from './static-root.js';
 
 const SERVER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE_PROJECT_ROOT = path.resolve(SERVER_DIR, '..');
@@ -44,8 +45,7 @@ if (projectConfig.allowedOrigins !== undefined
 }
 const securityEnabled = projectConfig.security;
 const originPolicy = createOriginPolicy(securityEnabled, (projectConfig.allowedOrigins ?? []) as string[]);
-const FRONTEND_DIST_DIR = path.join(PROJECT_ROOT, 'dist');
-const STATIC_DIR = existsSync(path.join(FRONTEND_DIST_DIR, 'index.html')) ? FRONTEND_DIST_DIR : PROJECT_ROOT;
+const STATIC_DIR = requireFrontendDist(PROJECT_ROOT);
 const DEFAULT_MAPS_DIR = path.join(PROJECT_ROOT, 'maps');
 const MAPS_DIR = path.resolve(process.env.HAND_SABERS_MAPS_DIR || process.env.MAPS_DIR || DEFAULT_MAPS_DIR);
 const MAP_BEATDATA_DIR = path.join(MAPS_DIR, 'beatdata');

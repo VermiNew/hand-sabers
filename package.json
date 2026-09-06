@@ -21,7 +21,7 @@
   "scripts": {
     "dev": "node scripts/dev-vite.mjs",
     "dev:client": "vite",
-    "dev:server": "npm run server:build && node dist-server/server.js",
+    "dev:server": "npm run server",
     "build": "tsc && vite build && npm run check:bundle",
     "preview": "vite preview",
     "lint": "npm run check",
