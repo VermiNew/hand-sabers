@@ -16,6 +16,24 @@ Spectator pose updates and opt-in developer landmark previews use the bounded
 [binary realtime protocol](realtime-protocol.md). Raw camera frames are never
 relayed.
 
+## Voice communication
+
+Room voice chat is opt-in. After the player enables the microphone, clients
+exchange WebRTC offers, answers and ICE candidates through the room WebSocket,
+but audio travels directly between peers and is never relayed by the Express
+server. The signaling server derives the sender identity from the connection
+and only forwards messages to another player in the same room.
+
+Each received and local audio stream is monitored in the browser for speaking
+activity. The corresponding player row, chat avatar and in-game remote preview
+receive the same short pulse highlight. Disabling voice, leaving the room or
+disconnecting closes peer connections, stops local media tracks and removes
+audio and speaking indicators.
+
+The current prototype deliberately has no external STUN or TURN dependency.
+This keeps local development self-contained, but direct voice connectivity
+outside a LAN can depend on the peers' NAT and firewall configuration.
+
 ## Clock and song synchronization
 
 Each client estimates its offset to the server monotonic clock using repeated

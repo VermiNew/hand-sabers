@@ -150,7 +150,7 @@
 ## 20. Czat i komunikacja (backlog)
 
 - [x] Czat tekstowy w Multiplayer
-- [ ] Czat głosowy z avatarami podświetlającymi się przy mówieniu + animacje
+- [x] Czat głosowy z avatarami podświetlającymi się przy mówieniu + animacje — opt-in WebRTC P2P z sygnalizacją ograniczoną do graczy pokoju, obsługą wyłączenia i zwalniania mikrofonu oraz animowanym wyróżnieniem mówiącego w lobby, czacie i podglądzie podczas gry; bez zewnętrznego STUN/TURN połączenie poza LAN może zależeć od konfiguracji NAT.
 - [x] Czat drużynowy podczas gry — zrealizowany jako wspólny czat pokoju dostępny w lobby i podczas rundy; zwijany panel jest po prawej stronie, aby nie zasłaniać HUD-u ani podglądów graczy po lewej.
 
 ## 21. Narrator (Lyra)
