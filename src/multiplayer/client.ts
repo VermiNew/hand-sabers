@@ -3,7 +3,7 @@ import { setSetting, getSettings } from '../core/settings.ts';
 import { decodeRealtimePacket } from './realtime.ts';
 import { remoteTracking } from './remote-state.ts';
 import { initMultiplayerMapPicker } from './map-picker.ts';
-import { PROTOCOL_VERSION, parseChatMessage, parseRoomPlayer, parseRoomSnapshot } from './protocol.ts';
+import { PROTOCOL_VERSION, parseChatMessage, parseRoomPlayer, parseRoomSnapshot, parseVoiceSignal } from './protocol.ts';
 import type { CreateRoomResponse, JoinCodeResponse, RoomSnapshot, ServerMessage } from './protocol.ts';
 import {
   copyText,
@@ -19,6 +19,8 @@ import { createMultiplayerChatView } from './chat-view.ts';
 import { renderMultiplayerScores } from './score-view.ts';
 import { renderRoomPlayerList } from './room-player-list.ts';
 import { createModalTransition, type ModalTransitionController } from '../ui/modal-transition.ts';
+import { createVoiceChat, type VoiceChatController } from './voice-chat.ts';
+import { clearVoiceSpeaking, setVoicePlayerSpeaking } from './voice-speaking.ts';
 
 export { PROTOCOL_VERSION } from './protocol.ts';
 export { serverTimeToPerformance } from './clock-sync.ts';
@@ -120,7 +122,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const disconnectButton = element<HTMLButtonElement>('multiplayerDisconnect');
   const lobbyScores = element<HTMLElement>('multiplayerLobbyScores');
   const hudScores = element<HTMLElement>('multiplayerHudScores');
+  const voiceButtons = [
+    element<HTMLButtonElement>('multiplayerVoiceToggle'),
+    element<HTMLButtonElement>('multiplayerGameVoiceToggle'),
+  ];
   const copyFeedbackTimers = new Map<HTMLButtonElement, number>();
+  let voiceChat: VoiceChatController | null = null;
+  let voiceState: 'off' | 'starting' | 'on' | 'error' = 'off';
+  let voiceErrorVisible = false;
   multiplayerModal = createModalTransition({ overlay, panel });
 
   const secureHostingWarning = document.createElement('aside');
@@ -160,6 +169,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     status.textContent = t('multiplayer.connecting');
   };
   const resetRoomView = () => {
+    voiceChat?.setRoom(null);
+    clearVoiceSpeaking();
     currentPlayerId = '';
     currentRole = null;
     currentRoom = null;
@@ -196,6 +207,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     for (const timer of copyFeedbackTimers.values()) window.clearTimeout(timer);
     copyFeedbackTimers.clear();
     chatView.reset();
+    renderVoiceControls('off');
   };
   const disconnectRoom = () => {
     if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) {
@@ -212,6 +224,42 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       showMessage(t('multiplayer.connectionError'));
     }
   };
+  const renderVoiceControls = (state: typeof voiceState) => {
+    voiceState = state;
+    const labelKey = state === 'on'
+      ? 'multiplayer.voiceDisable'
+      : state === 'starting'
+        ? 'multiplayer.voiceStarting'
+        : state === 'error'
+          ? 'multiplayer.voiceRetry'
+          : 'multiplayer.voiceEnable';
+    for (const button of voiceButtons) {
+      button.disabled = !currentPlayerId || state === 'starting';
+      button.dataset['state'] = state;
+      button.setAttribute('aria-pressed', String(state === 'on'));
+      const icon = button.querySelector<HTMLElement>('.material-symbols-rounded');
+      const label = button.querySelector<HTMLElement>('[data-i18n]');
+      if (icon) icon.textContent = state === 'on' ? 'mic' : state === 'starting' ? 'hourglass_top' : 'mic_off';
+      if (label) label.textContent = t(labelKey);
+    }
+    if (state === 'error') {
+      showMessage(t('multiplayer.voicePermissionError'));
+      voiceErrorVisible = true;
+    } else if (voiceErrorVisible) {
+      if (message.textContent === t('multiplayer.voicePermissionError')) showMessage();
+      voiceErrorVisible = false;
+    }
+  };
+  voiceChat = createVoiceChat({
+    getCurrentPlayerId: () => currentPlayerId,
+    sendSignal: (targetPlayerId, signal) => trySocketSend(
+      socket,
+      JSON.stringify({ v: PROTOCOL_VERSION, type: 'voice-signal', targetPlayerId, signal }),
+      'voice-signal',
+    ),
+    onStateChange: renderVoiceControls,
+    onSpeakingChange: setVoicePlayerSpeaking,
+  });
   const chatView = createMultiplayerChatView({
     canSend: () => Boolean(currentPlayerId),
     getCurrentPlayerId: () => currentPlayerId,
@@ -262,6 +310,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     lobbyCode.textContent = snapshot.code;
     playerCount.textContent = `${snapshot.players.length} / ${snapshot.maxPlayers}`;
     renderRoomPlayerList(playerList, snapshot, currentPlayerId, pendingPreparationMapId);
+    voiceChat?.setRoom(snapshot);
+    renderVoiceControls(voiceState);
 
     mapPicker.setSelected(snapshot.mapId);
     mapPicker.setEnabled(currentRole === 'host' && !Boolean(snapshot.round && snapshot.round.finishedAt === null));
@@ -384,6 +434,12 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         } else if (incoming.type === 'chat') {
           const chatMessage = parseChatMessage(incoming.message);
           if (chatMessage) chatView.append(chatMessage);
+        } else if (incoming.type === 'voice-signal') {
+          const fromPlayerId = typeof incoming.fromPlayerId === 'string' ? incoming.fromPlayerId : '';
+          const signal = parseVoiceSignal(incoming.signal);
+          if (signal && currentRoom?.players.some(player => player.id === fromPlayerId)) {
+            void voiceChat?.handleSignal(fromPlayerId, signal);
+          }
         } else if (incoming.type === 'pong') {
           recordClockPong(incoming.sentAt, incoming.serverTime, Date.now());
         } else if (incoming.type === 'error') {
@@ -492,6 +548,12 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   });
   startButton.addEventListener('click', () => sendControl({ type: 'start-game' }));
   disconnectButton.addEventListener('click', disconnectRoom);
+  for (const button of voiceButtons) {
+    button.addEventListener('click', () => {
+      if (voiceChat?.isEnabled()) voiceChat.disable();
+      else void voiceChat?.enable().catch(() => undefined);
+    });
+  }
   modeSelect.addEventListener('change', () => {
     if (currentRole !== 'host' || !['coop', 'score-attack'].includes(modeSelect.value)) return;
     pendingPreparationMapId = '';

@@ -179,7 +179,18 @@
 .mp-lobby-controls > p { margin-top:9px; color:var(--dim); font-size:9px; line-height:1.45; }
 .mp-chat { margin-top:16px; overflow:hidden; border:1px solid rgba(142,200,255,.12); border-radius:8px; background:rgba(3,8,18,.72); }
 .mp-chat-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border-bottom:1px solid rgba(142,200,255,.1); }
-.mp-chat-head > span:last-child { color:var(--dim); font-size:8px; font-weight:700; letter-spacing:1.2px; }
+.mp-chat-actions { display:flex; align-items:center; gap:10px; }
+.mp-chat-actions > span { color:var(--dim); font-size:8px; font-weight:700; letter-spacing:1.2px; }
+.mp-voice-toggle {
+  min-height:30px; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:0 10px;
+  border:1px solid rgba(142,200,255,.28); border-radius:7px; background:rgba(47,124,255,.09);
+  color:var(--main-light); font:800 8px 'Oxanium',sans-serif; letter-spacing:1px; cursor:pointer;
+}
+.mp-voice-toggle .material-symbols-rounded { font-size:15px; }
+.mp-voice-toggle[data-state="on"] { border-color:rgba(54,242,161,.5); background:rgba(54,242,161,.12); color:var(--accent); }
+.mp-voice-toggle[data-state="error"] { border-color:rgba(255,91,115,.48); color:#ff9aaa; }
+.mp-voice-toggle:disabled { opacity:.45; cursor:not-allowed; }
+.mp-voice-toggle--game { width:calc(100% - 18px); margin:9px 9px 0; }
 .mp-chat-messages { height:132px; overflow:auto; padding:7px 12px; }
 .mp-chat-empty { padding:42px 0; color:var(--dim); font-size:9px; text-align:center; }
 .mp-chat-message { display:grid; grid-template-columns:auto 1fr auto; gap:8px; padding:6px 0; font-size:10px; line-height:1.45; }

@@ -935,7 +935,13 @@
         <section class="mp-chat" aria-labelledby="multiplayerChatTitle">
           <header class="mp-chat-head">
             <span class="mp-label" id="multiplayerChatTitle" data-i18n="multiplayer.chat">CZAT POKOJU</span>
-            <span data-i18n="multiplayer.chatLimit">DO 240 ZNAKÓW</span>
+            <div class="mp-chat-actions">
+              <span data-i18n="multiplayer.chatLimit">DO 240 ZNAKÓW</span>
+              <button class="mp-voice-toggle" id="multiplayerVoiceToggle" type="button" disabled aria-pressed="false">
+                <span class="material-symbols-rounded" aria-hidden="true">mic_off</span>
+                <span data-i18n="multiplayer.voiceEnable">WŁĄCZ GŁOS</span>
+              </button>
+            </div>
           </header>
           <div class="mp-chat-messages" id="multiplayerChatMessages" role="log" aria-live="polite" tabindex="0" aria-label="Wiadomości czatu pokoju"></div>
           <form class="mp-chat-form" id="multiplayerChatForm">
@@ -1005,6 +1011,10 @@
     <span class="material-symbols-rounded mp-game-chat-chevron" aria-hidden="true">expand_more</span>
   </button>
   <div class="mp-game-chat-body" id="multiplayerGameChatBody" hidden>
+    <button class="mp-voice-toggle mp-voice-toggle--game" id="multiplayerGameVoiceToggle" type="button" disabled aria-pressed="false">
+      <span class="material-symbols-rounded" aria-hidden="true">mic_off</span>
+      <span data-i18n="multiplayer.voiceEnable">WŁĄCZ GŁOS</span>
+    </button>
     <div class="mp-chat-messages" id="multiplayerGameChatMessages" role="log" aria-live="polite"
       tabindex="0" aria-label="Wiadomości czatu podczas gry"></div>
     <form class="mp-chat-form" id="multiplayerGameChatForm">

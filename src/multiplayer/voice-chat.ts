@@ -38,6 +38,7 @@ export function createVoiceChat({
   const peers = new Map<string, PeerState>();
   const remoteAudio = new Map<string, HTMLAudioElement>();
   const speakingMonitors = new Map<string, SpeakingMonitor>();
+  const pendingSignals = new Map<string, VoiceSignal[]>();
   let roomPlayers = new Set<string>();
   let localStream: MediaStream | null = null;
   let enabled = false;
@@ -185,7 +186,48 @@ export function createVoiceChat({
     for (const playerId of [...speakingMonitors.keys()]) stopSpeakingMonitor(playerId);
     if (audioContext) void audioContext.close().catch(() => undefined);
     audioContext = null;
+    pendingSignals.clear();
     onStateChange('off');
+  };
+
+  const handleSignal = async (fromPlayerId: string, signal: VoiceSignal): Promise<void> => {
+    if (!enabled) {
+      if (signal.type === 'offer') pendingSignals.set(fromPlayerId, [signal]);
+      else if (signal.type === 'ice') {
+        const queued = pendingSignals.get(fromPlayerId);
+        if (queued && queued.length < 64) queued.push(signal);
+      }
+      return;
+    }
+    const peer = ensurePeer(fromPlayerId);
+    if (!peer) return;
+    const { connection } = peer;
+    try {
+      if (signal.type === 'ice') {
+        try {
+          await connection.addIceCandidate({
+            candidate: signal.candidate,
+            sdpMid: signal.sdpMid,
+            sdpMLineIndex: signal.sdpMLineIndex,
+          });
+        } catch (error) {
+          if (!peer.ignoreOffer) throw error;
+        }
+        return;
+      }
+
+      const offerCollision = signal.type === 'offer'
+        && (peer.makingOffer || connection.signalingState !== 'stable');
+      peer.ignoreOffer = !peer.polite && offerCollision;
+      if (peer.ignoreOffer) return;
+      await connection.setRemoteDescription({ type: signal.type, sdp: signal.sdp });
+      if (signal.type === 'offer') {
+        await connection.setLocalDescription();
+        sendDescription(fromPlayerId, connection.localDescription);
+      }
+    } catch (error) {
+      console.error('[multiplayer:voice-signal]', error);
+    }
   };
 
   return {
@@ -218,6 +260,10 @@ export function createVoiceChat({
         for (const playerId of roomPlayers) {
           if (playerId !== selfId) ensurePeer(playerId);
         }
+        for (const [playerId, signals] of [...pendingSignals]) {
+          pendingSignals.delete(playerId);
+          for (const signal of signals) await handleSignal(playerId, signal);
+        }
       } catch (error) {
         if (generation !== enableGeneration) return;
         console.error('[multiplayer:voice-microphone]', error);
@@ -234,43 +280,16 @@ export function createVoiceChat({
 
     disable,
 
-    async handleSignal(fromPlayerId: string, signal: VoiceSignal): Promise<void> {
-      const peer = ensurePeer(fromPlayerId);
-      if (!peer) return;
-      const { connection } = peer;
-      try {
-        if (signal.type === 'ice') {
-          try {
-            await connection.addIceCandidate({
-              candidate: signal.candidate,
-              sdpMid: signal.sdpMid,
-              sdpMLineIndex: signal.sdpMLineIndex,
-            });
-          } catch (error) {
-            if (!peer.ignoreOffer) throw error;
-          }
-          return;
-        }
-
-        const offerCollision = signal.type === 'offer'
-          && (peer.makingOffer || connection.signalingState !== 'stable');
-        peer.ignoreOffer = !peer.polite && offerCollision;
-        if (peer.ignoreOffer) return;
-        await connection.setRemoteDescription({ type: signal.type, sdp: signal.sdp });
-        if (signal.type === 'offer') {
-          await connection.setLocalDescription();
-          sendDescription(fromPlayerId, connection.localDescription);
-        }
-      } catch (error) {
-        console.error('[multiplayer:voice-signal]', error);
-      }
-    },
+    handleSignal,
 
     setRoom(snapshot: RoomSnapshot | null): void {
       const selfId = getCurrentPlayerId();
       roomPlayers = new Set(snapshot?.players.map(player => player.id) ?? []);
       for (const playerId of [...peers.keys()]) {
         if (!roomPlayers.has(playerId)) closePeer(playerId);
+      }
+      for (const playerId of [...pendingSignals.keys()]) {
+        if (!roomPlayers.has(playerId)) pendingSignals.delete(playerId);
       }
       if (!snapshot) {
         disable();
