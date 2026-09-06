@@ -81,9 +81,11 @@ broader limitation is already documented.
   publicly without adding authorization is unsupported.
 - Leaderboard scores are currently supplied by clients and are not bound to a
   server-issued game round.
-- The six-character manual phone-pairing code can be raced by somebody who can
-  see it. It is single-use, expires with the five-minute session and is
-  rate-limited, but does not yet require host confirmation.
+- The six-character manual phone-pairing code is visible to nearby people and
+  therefore only creates a pending claim. It expires with the five-minute
+  session, is rate-limited, and requires explicit host confirmation before the
+  phone credential can be retrieved once. QR pairing intentionally carries the
+  phone credential directly and should only be shown to the intended phone.
 - Accepted ZIP imports are still initially read into memory by JSZip, within
   configured size and concurrency limits.
 - Upload storage has global and per-IP controls but no authenticated per-user
