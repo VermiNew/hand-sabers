@@ -411,7 +411,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Pozwolić na mikrofon z własnego originu w `Permissions-Policy`, gdy `security: true`, aby opcjonalny czat głosowy nie był blokowany przez nagłówki wdrożeniowe; polityka dopuszcza teraz wyłącznie `(self)`, a czat nadal wymaga jawnego kliknięcia i zgody przeglądarki.
 - [x] Dodać proxy `/tracking-ws` do konfiguracji Vite — developerski frontend przekazuje teraz `/api`, `/ws` i kanał telefonu do Expressa na porcie 3000; dokumentacja obu języków opisuje ten sam układ.
 - [x] Zaktualizować `SECURITY.md` do faktycznego ręcznego parowania: kod tworzy pending claim, host musi jawnie zatwierdzić, token telefonu jest wydawany jednokrotnie; QR nadal przenosi bezpośredni token telefonu.
-- [ ] Zaktualizować podatne wersje przechodnie `brace-expansion` i `qs` w lockfile bez dodawania nowych pakietów. `npm audit --omit=dev` zgłasza advisories, ale audyt osiągalności nie znalazł użycia podatnych funkcji: eksport Archiver dodaje jawne pliki bez globów, Express używa prostego parsera query i body JSON.
+- [x] Zaktualizować podatne wersje przechodnie bez dodawania nowych pakietów — lockfile ma teraz `brace-expansion@5.0.9`, `qs@6.16.0`, `nanoid@3.3.18` i `postcss@8.5.28`; pełne `npm audit` zgłasza 0 podatności. Wcześniejszy audyt osiągalności dodatkowo potwierdził, że eksport Archiver dodaje jawne pliki bez globów, a Express używa prostego parsera query i body JSON.
 
 ### Świadomie zaakceptowane ryzyka i decyzje wdrożeniowe
 
