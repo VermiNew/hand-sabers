@@ -166,7 +166,7 @@
 ## 22. Wizualizacje reagujące na muzykę i nowe tryby gry
 
 - [x] Wstępne wizualizacje reaktywne na muzykę (pulsowanie tunelu, areny)
-- [ ] Podnieść jakość wizualną do efektu "Wow" — cel: wygląd zbliżony do Unreal Engine, nie "basic"
+- [x] Podnieść jakość wizualną do efektu "Wow" — arena łączy wielowarstwową mgławicę i gwiazdy z parallaxem, kinowe smugi i poświatę horyzontu, instancjonowane neonowe żebra głębi, portalowy tunel, refleksy podłogi, świetlne miecze i ACES tone mapping; intensywność reaguje na muzykę, beat oraz natłok bloków, a cięższe dekoracje respektują profile jakości. Zweryfikowano wizualnie na profilu Maximum przy 1440×900 bez błędów strony/konsoli.
 - [x] Elementy wizualne reagujące na muzykę, częstotliwości i beaty (zgodne z tym, co użytkownik mapuje w kreatorze) — analizator FFT rozdziela bas/środek/górę, a posortowane czasy beatów mapy sterują impulsami portali, tła i efektów trafień.
 - [x] Nowe gamemode'y urozmaicające i udoskonalające rozgrywkę — dostępne są `normal`, `no-arrows`, `pro`, `speed-trials` i `spatial`, wraz z zapisem ustawienia oraz synchronizacją zasad w Multiplayerze.
 
