@@ -3,6 +3,7 @@ import { setSetting } from '../core/settings.ts';
 import { t } from '../i18n/index.ts';
 import type { Settings } from '../types/index.js';
 import { initSaberColorPicker } from '../ui/saber-color-picker.ts';
+import { initSaberModelPicker } from '../ui/saber-model-picker.ts';
 import { setBlockColor } from './gameplay.ts';
 import { setSaberColor, setSaberModel } from './scene.ts';
 
@@ -26,8 +27,6 @@ export function applySaberAppearance(settings: Settings): void {
 }
 
 export function initSaberSettings(settings: Settings): SaberSettingsController {
-  const modelPicker = document.getElementById('saberModelPicker');
-
   function updateColorPreview(
     previewBar: HTMLElement | null,
     previewName: HTMLElement | null,
@@ -92,26 +91,38 @@ export function initSaberSettings(settings: Settings): SaberSettingsController {
     const rightModel = (settings.saberModelRight || settings.saberModel || 'classic') as SaberModel;
     setSaberModel('left', leftModel);
     setSaberModel('right', rightModel);
-    modelPicker?.querySelectorAll<HTMLElement>('[data-saber-model]').forEach(button => {
-      button.classList.toggle(
-        'is-active',
-        leftModel === rightModel && button.dataset['saberModel'] === leftModel,
-      );
-    });
+    const labels: Record<SaberModel, string> = {
+      classic: t('settings.gameplay.modelClassic'),
+      wide: t('settings.gameplay.modelWide'),
+      thin: t('settings.gameplay.modelThin'),
+      prism: t('settings.gameplay.modelPrism'),
+      edge: t('settings.gameplay.modelEdge'),
+      pulse: t('settings.gameplay.modelPulse'),
+    };
+    const leftSummary = document.getElementById('saberModelSummaryLeft');
+    const rightSummary = document.getElementById('saberModelSummaryRight');
+    if (leftSummary) leftSummary.textContent = labels[leftModel];
+    if (rightSummary) rightSummary.textContent = labels[rightModel];
   }
 
-  modelPicker?.querySelectorAll<HTMLButtonElement>('[data-saber-model]').forEach(button => {
-    button.addEventListener('click', () => {
-      const model = button.dataset['saberModel'] as SaberModel | undefined;
-      if (!model) return;
-      settings.saberModel = model;
-      settings.saberModelLeft = model;
-      settings.saberModelRight = model;
-      setSetting('saberModel', model);
-      setSetting('saberModelLeft', model);
-      setSetting('saberModelRight', model);
+  initSaberModelPicker({
+    getColor: side => side === 'left'
+      ? settings.saberColorLeft || '#36f2a1'
+      : settings.saberColorRight || '#2f7cff',
+    getModel: side => (
+      side === 'left'
+        ? settings.saberModelLeft || settings.saberModel || 'classic'
+        : settings.saberModelRight || settings.saberModel || 'classic'
+    ) as SaberModel,
+    onApply: (leftModel, rightModel) => {
+      settings.saberModel = leftModel;
+      settings.saberModelLeft = leftModel;
+      settings.saberModelRight = rightModel;
+      setSetting('saberModel', leftModel);
+      setSetting('saberModelLeft', leftModel);
+      setSetting('saberModelRight', rightModel);
       syncModelPicker();
-    });
+    },
   });
 
   initSaberColorPicker({

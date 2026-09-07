@@ -312,14 +312,11 @@
           <div class="sp-group">
             <div class="sp-row sp-saber-model-row">
               <span class="sp-label" data-i18n="settings.gameplay.saberModelLabel">Kształt ostrza</span>
-              <div class="sp-seg-row" id="saberModelPicker">
-                <button type="button" class="sp-seg is-active" data-saber-model="classic" data-i18n="settings.gameplay.modelClassic">Klasyczny</button>
-                <button type="button" class="sp-seg" data-saber-model="wide" data-i18n="settings.gameplay.modelWide">Szeroki</button>
-                <button type="button" class="sp-seg" data-saber-model="thin" data-i18n="settings.gameplay.modelThin">Cienki</button>
-                <button type="button" class="sp-seg" data-saber-model="prism" data-i18n="settings.gameplay.modelPrism">Prism</button>
-                <button type="button" class="sp-seg" data-saber-model="edge" data-i18n="settings.gameplay.modelEdge">Edge</button>
-                <button type="button" class="sp-seg" data-saber-model="pulse" data-i18n="settings.gameplay.modelPulse">Pulse</button>
-              </div>
+              <button type="button" class="smp-open-button" id="saberModelPickerOpen">
+                <span><small data-i18n="settings.gameplay.leftHand">Lewa ręka</small><strong id="saberModelSummaryLeft">Klasyczny</strong></span>
+                <span><small data-i18n="settings.gameplay.rightHand">Prawa ręka</small><strong id="saberModelSummaryRight">Klasyczny</strong></span>
+                <span class="material-symbols-rounded" aria-hidden="true">open_in_full</span>
+              </button>
             </div>
           </div>
 
@@ -1307,6 +1304,54 @@
       <button type="button" class="cp-modal-btn-apply" id="cpModalApply" data-i18n="settings.gameplay.apply">Zatwierdź</button>
     </div>
   </div>
+</div>
+
+<!-- FULL-SCREEN SABER MODEL PICKER -->
+<div id="saberModelModal" role="dialog" aria-modal="true" aria-labelledby="saberModelModalTitle" hidden>
+  <div class="smp-backdrop"></div>
+  <section class="smp-panel">
+    <header class="smp-header">
+      <div>
+        <span class="smp-eyebrow">HAND SABERS / LOADOUT</span>
+        <h2 id="saberModelModalTitle" data-i18n="settings.gameplay.saberPickerTitle">Wybierz modele mieczy</h2>
+      </div>
+      <button type="button" class="smp-icon-button" id="saberModelPickerClose" data-i18n-aria-label="settings.close" aria-label="Zamknij ustawienia">
+        <span class="material-symbols-rounded" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <div class="smp-body">
+      <aside class="smp-controls">
+        <div class="smp-side-switch" role="group" aria-label="Wybór ręki">
+          <button type="button" data-saber-side="left" class="is-active" aria-pressed="true" data-i18n="settings.gameplay.leftHand">Lewa ręka</button>
+          <button type="button" data-saber-side="right" aria-pressed="false" data-i18n="settings.gameplay.rightHand">Prawa ręka</button>
+        </div>
+        <p class="smp-description" data-i18n="settings.gameplay.saberPickerDesc">Każda dłoń może używać innej sylwetki. Wybór zobaczysz od razu w podglądzie.</p>
+        <div class="smp-model-grid" role="group" aria-label="Modele mieczy">
+          <button type="button" data-picker-saber-model="classic"><span data-i18n="settings.gameplay.modelClassic">Klasyczny</span><small>01</small></button>
+          <button type="button" data-picker-saber-model="wide"><span data-i18n="settings.gameplay.modelWide">Szeroki</span><small>02</small></button>
+          <button type="button" data-picker-saber-model="thin"><span data-i18n="settings.gameplay.modelThin">Cienki</span><small>03</small></button>
+          <button type="button" data-picker-saber-model="prism"><span data-i18n="settings.gameplay.modelPrism">Prism</span><small>04</small></button>
+          <button type="button" data-picker-saber-model="edge"><span data-i18n="settings.gameplay.modelEdge">Edge</span><small>05</small></button>
+          <button type="button" data-picker-saber-model="pulse"><span data-i18n="settings.gameplay.modelPulse">Pulse</span><small>06</small></button>
+        </div>
+      </aside>
+      <div class="smp-stage">
+        <div class="smp-stage-grid" aria-hidden="true"></div>
+        <div id="saberModelPreview" class="smp-preview" aria-hidden="true"></div>
+        <div class="smp-preview-caption">
+          <span data-i18n="settings.gameplay.preview">Podgląd</span>
+          <strong id="saberModelPreviewSide">Lewa ręka</strong>
+        </div>
+      </div>
+    </div>
+    <footer class="smp-footer">
+      <span data-i18n="settings.gameplay.saberPickerHint">Wybory zostaną zapisane dopiero po zastosowaniu.</span>
+      <div>
+        <button type="button" class="smp-secondary" id="saberModelPickerCancel" data-i18n="settings.gameplay.reject">Odrzuć</button>
+        <button type="button" class="smp-primary" id="saberModelPickerApply" data-i18n="settings.gameplay.apply">Zatwierdź</button>
+      </div>
+    </footer>
+  </section>
 </div>
 
 <div id="screenFade"></div>

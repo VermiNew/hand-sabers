@@ -356,6 +356,19 @@ export function setSaberVisualColor(saber: THREE.Group, hex: number): void {
   });
 }
 
+export function disposeSaber(saber: THREE.Group): void {
+  const geometries = new Set<THREE.BufferGeometry>();
+  const materials = new Set<THREE.Material>();
+  saber.traverse(child => {
+    const mesh = child as THREE.Mesh;
+    if (mesh.geometry) geometries.add(mesh.geometry);
+    const meshMaterials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    meshMaterials.forEach(material => { if (material) materials.add(material); });
+  });
+  geometries.forEach(geometry => geometry.dispose());
+  materials.forEach(material => material.dispose());
+}
+
 export function applySaberModel(saber: THREE.Group, model: SaberModel): void {
   const spec = SABER_MODELS[model] ?? SABER_MODELS.classic;
   const userData = saber.userData as SaberUserData;
