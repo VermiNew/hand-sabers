@@ -103,6 +103,12 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
         && finiteInRange(value['totalAssets'], 1, 1_000)
         && (value['cachedAssets'] as number) <= (value['totalAssets'] as number)
         && finiteInRange(value['totalBytes'], 0, 1_000_000_000))
+      || (type === 'audio-clock-pong'
+        && typeof value['requestId'] === 'string' && REQUEST_ID_RE.test(value['requestId'])
+        && finiteInRange(value['hostSentAt'], 0, Number.MAX_SAFE_INTEGER)
+        && finiteInRange(value['phoneReceivedAt'], 0, Number.MAX_SAFE_INTEGER)
+        && finiteInRange(value['phoneSentAt'], 0, Number.MAX_SAFE_INTEGER)
+        && (value['phoneSentAt'] as number) >= (value['phoneReceivedAt'] as number))
       || (type === 'tracking-metrics'
         && (value['captureAgeMs'] === null || finiteInRange(value['captureAgeMs'], 0, 5_000))
         && finiteInRange(value['detectionMs'], 0, 5_000)
@@ -136,6 +142,12 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
       && finiteInRange(value['serverTime'], 0, Number.MAX_SAFE_INTEGER)
       && finiteInRange(value['playbackRate'], 0.5, 1.5);
   }
+  if (type === 'audio-clock-ping') {
+    return typeof value['requestId'] === 'string'
+      && REQUEST_ID_RE.test(value['requestId'])
+      && finiteInRange(value['hostSentAt'], 0, Number.MAX_SAFE_INTEGER);
+  }
+  if (type === 'audio-clock-update') return finiteInRange(value['offsetMs'], -86_400_000, 86_400_000);
   if (type === 'audio-seek') return finiteInRange(value['offsetSec'], 0, 86_400);
   if (type === 'audio-volume') return finiteInRange(value['volume'], 0, 1);
   return type === 'audio-pause' || type === 'audio-stop';

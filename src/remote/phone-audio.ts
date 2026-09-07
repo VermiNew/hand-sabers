@@ -29,6 +29,7 @@ export function initPhoneAudio(
   let musicObjectUrl = '';
   let preparedBank: PreparedPhoneAudioBank | null = null;
   let bankRequestId = '';
+  let hostClockOffsetMs = 0;
 
   function reportBankReady(): void {
     if (!userEnabled || !loaded || !preparedBank || !bankRequestId) return;
@@ -109,6 +110,23 @@ export function initPhoneAudio(
     if (!isAudioCommand(raw)) return;
     const cmd = raw as AudioCommand;
 
+    if (cmd.type === 'audio-clock-ping') {
+      const phoneReceivedAt = Date.now();
+      onBankEvent({
+        v: 1,
+        type: 'audio-clock-pong',
+        requestId: cmd.requestId,
+        hostSentAt: cmd.hostSentAt,
+        phoneReceivedAt,
+        phoneSentAt: Date.now(),
+      });
+      return;
+    }
+    if (cmd.type === 'audio-clock-update') {
+      hostClockOffsetMs = cmd.offsetMs;
+      return;
+    }
+
     if (cmd.type === 'audio-bank-prepare') {
       void prepareBank(cmd);
       return;
@@ -140,7 +158,8 @@ export function initPhoneAudio(
     switch (cmd.type) {
       case 'audio-play': {
         const el = audioEl;
-        const elapsedMs = Date.now() - cmd.serverTime;
+        const estimatedHostNow = Date.now() - hostClockOffsetMs;
+        const elapsedMs = estimatedHostNow - cmd.serverTime;
         const networkDelaySec = elapsedMs >= 0 && elapsedMs <= 5_000
           ? elapsedMs / 1000 * cmd.playbackRate
           : 0;

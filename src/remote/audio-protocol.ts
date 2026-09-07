@@ -45,6 +45,19 @@ export interface AudioSeekCommand {
   offsetSec: number;
 }
 
+export interface AudioClockPingCommand {
+  v: 1;
+  type: 'audio-clock-ping';
+  requestId: string;
+  hostSentAt: number;
+}
+
+export interface AudioClockUpdateCommand {
+  v: 1;
+  type: 'audio-clock-update';
+  offsetMs: number;
+}
+
 export type AudioCommand =
   | AudioPrepareCommand
   | AudioBankPrepareCommand
@@ -52,7 +65,9 @@ export type AudioCommand =
   | AudioPauseCommand
   | AudioStopCommand
   | AudioVolumeCommand
-  | AudioSeekCommand;
+  | AudioSeekCommand
+  | AudioClockPingCommand
+  | AudioClockUpdateCommand;
 
 export interface AudioReadyEvent {
   v: 1;
@@ -92,12 +107,22 @@ export interface AudioBankErrorEvent {
   code: string;
 }
 
+export interface AudioClockPongEvent {
+  v: 1;
+  type: 'audio-clock-pong';
+  requestId: string;
+  hostSentAt: number;
+  phoneReceivedAt: number;
+  phoneSentAt: number;
+}
+
 export type AudioEvent =
   | AudioReadyEvent
   | AudioErrorEvent
   | AudioBankProgressEvent
   | AudioBankReadyEvent
-  | AudioBankErrorEvent;
+  | AudioBankErrorEvent
+  | AudioClockPongEvent;
 
 const MAP_ID_RE = /^[a-z0-9][a-z0-9_-]{0,119}$/i;
 const REQUEST_ID_RE = /^[a-zA-Z0-9_-]{1,48}$/;
@@ -125,6 +150,12 @@ export function isAudioCommand(value: unknown): value is AudioCommand {
   }
   if (type === 'audio-seek') return isFiniteNumber(command['offsetSec'], 0, 86_400);
   if (type === 'audio-volume') return isFiniteNumber(command['volume'], 0, 1);
+  if (type === 'audio-clock-ping') {
+    return typeof command['requestId'] === 'string'
+      && REQUEST_ID_RE.test(command['requestId'])
+      && isFiniteNumber(command['hostSentAt'], 0, Number.MAX_SAFE_INTEGER);
+  }
+  if (type === 'audio-clock-update') return isFiniteNumber(command['offsetMs'], -86_400_000, 86_400_000);
   return type === 'audio-pause' || type === 'audio-stop';
 }
 
@@ -145,6 +176,12 @@ export function isAudioEvent(value: unknown): value is AudioEvent {
   if (typeof event['requestId'] !== 'string' || !REQUEST_ID_RE.test(event['requestId'])) return false;
   if (type === 'audio-bank-error') {
     return typeof event['code'] === 'string' && ERROR_CODE_RE.test(event['code']);
+  }
+  if (type === 'audio-clock-pong') {
+    return isFiniteNumber(event['hostSentAt'], 0, Number.MAX_SAFE_INTEGER)
+      && isFiniteNumber(event['phoneReceivedAt'], 0, Number.MAX_SAFE_INTEGER)
+      && isFiniteNumber(event['phoneSentAt'], 0, Number.MAX_SAFE_INTEGER)
+      && event['phoneSentAt'] >= event['phoneReceivedAt'];
   }
   if (type === 'audio-bank-progress') {
     return isFiniteNumber(event['loadedAssets'], 0, 1_000)

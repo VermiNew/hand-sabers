@@ -14,11 +14,48 @@ let pcMusicMuted = false;
 let activeBankRequestId = '';
 let bankRequestCounter = 0;
 let bankInactivityTimer: ReturnType<typeof setTimeout> | null = null;
+let clockSyncTimer: ReturnType<typeof setTimeout> | null = null;
+const clockSamples: Array<{ offsetMs: number; rttMs: number }> = [];
+let clockRequestCounter = 0;
 const BANK_INACTIVITY_TIMEOUT_MS = 45_000;
 
 function clearBankInactivityTimer(): void {
   if (bankInactivityTimer) clearTimeout(bankInactivityTimer);
   bankInactivityTimer = null;
+}
+
+function clearClockSync(): void {
+  if (clockSyncTimer) clearTimeout(clockSyncTimer);
+  clockSyncTimer = null;
+  clockSamples.length = 0;
+}
+
+function sendClockProbe(remaining = 5): void {
+  if (remaining <= 0 || !phoneAudioReady) return;
+  const hostSentAt = Date.now();
+  sendAudioCommand({
+    v: 1,
+    type: 'audio-clock-ping',
+    requestId: `clock-${(++clockRequestCounter).toString(36)}`,
+    hostSentAt,
+  });
+  clockSyncTimer = setTimeout(() => sendClockProbe(remaining - 1), 250);
+}
+
+function recordClockPong(event: Extract<AudioEvent, { type: 'audio-clock-pong' }>): void {
+  const hostReceivedAt = Date.now();
+  const rttMs = (hostReceivedAt - event.hostSentAt) - (event.phoneSentAt - event.phoneReceivedAt);
+  if (rttMs < 0 || rttMs > 5_000) return;
+  const offsetMs = ((event.phoneReceivedAt - event.hostSentAt) + (event.phoneSentAt - hostReceivedAt)) / 2;
+  clockSamples.push({ offsetMs, rttMs });
+  clockSamples.sort((left, right) => left.rttMs - right.rttMs);
+  if (clockSamples.length > 8) clockSamples.length = 8;
+  const best = clockSamples.slice(0, 3).map(sample => sample.offsetMs).sort((a, b) => a - b);
+  const stableOffsetMs = best[Math.floor(best.length / 2)] ?? 0;
+  sendAudioCommand({ v: 1, type: 'audio-clock-update', offsetMs: stableOffsetMs });
+  window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-clock', {
+    detail: { offsetMs: stableOffsetMs, rttMs, samples: clockSamples.length },
+  }));
 }
 
 function failActiveBank(code: string): void {
@@ -44,6 +81,7 @@ export function setHostAudioSocket(socket: WebSocket | null): void {
     phoneAudioReady = false;
     activeBankRequestId = '';
     clearBankInactivityTimer();
+    clearClockSync();
     restorePcAudio();
   }
 }
@@ -76,6 +114,8 @@ export function sendAudioCommand(cmd: AudioCommand): boolean {
 /** Called when the phone confirms audio is ready — mute PC music. */
 export function onPhoneAudioReady(): void {
   phoneAudioReady = true;
+  clearClockSync();
+  sendClockProbe();
   if (getSettings().phoneAudioOutput) {
     syncPhoneAudioVolume();
     mutePcAudio();
@@ -86,11 +126,16 @@ export function onPhoneAudioReady(): void {
 /** Called when phone audio has an error or disconnects — restore PC audio. */
 export function onPhoneAudioError(): void {
   phoneAudioReady = false;
+  clearClockSync();
   restorePcAudio();
 }
 
 /** Apply validated preload status from the currently paired phone. */
 export function onPhoneAudioEvent(event: AudioEvent): void {
+  if (event.type === 'audio-clock-pong') {
+    recordClockPong(event);
+    return;
+  }
   if (event.type === 'audio-ready') {
     if (!activeBankRequestId) onPhoneAudioReady();
     return;
