@@ -300,6 +300,7 @@ export function initInterfaceSounds(root: ParentNode = document): void {
     const target = event.target instanceof Element ? event.target.closest(selector) : null;
     if (!target) return;
     initAudio();
+    if (target.matches('[data-audio-test]')) return;
     playInterfaceSound(target.matches('[data-sound="back"]') ? 'back' : 'activate');
   });
 }

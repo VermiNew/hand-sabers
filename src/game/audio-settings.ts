@@ -7,7 +7,15 @@ import {
   startMetronomeCalibration,
   stopMetronome,
 } from './audio-calibration.ts';
-import { getMasterMeterLevels, setMusicVolume, setSfxVolume, setSoundVolume, setVolume } from './audio.ts';
+import {
+  getMasterMeterLevels,
+  playAudioTestRecipe,
+  setMusicVolume,
+  setSfxVolume,
+  setSoundVolume,
+  setVolume,
+} from './audio.ts';
+import type { ProceduralAudioRecipe } from '../remote/audio-bank-manifest.ts';
 import { narratorQuick } from './narrator.ts';
 import {
   isPhoneAudioActive,
@@ -39,6 +47,14 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
   const masterMeterValue = document.getElementById('menuMasterAudioMeterValue');
   const phoneMeter = document.getElementById('menuPhoneAudioMeter');
   const phoneMeterValue = document.getElementById('menuPhoneAudioMeterValue');
+  const recipeTestButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-audio-test]')];
+
+  for (const button of recipeTestButtons) {
+    button.addEventListener('click', () => {
+      const recipe = button.dataset['audioTest'] as ProceduralAudioRecipe | undefined;
+      if (recipe) playAudioTestRecipe(recipe);
+    });
+  }
 
   if (masterMeter) {
     masterMeter.setAttribute('aria-label', t('settings.audio.masterMeter'));
