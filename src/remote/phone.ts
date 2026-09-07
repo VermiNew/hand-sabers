@@ -72,6 +72,12 @@ const phoneAudio = initPhoneAudio(
       } catch { /* ignore */ }
     }
   },
+  (event) => {
+    if (trackingSocket?.readyState !== WebSocket.OPEN) return;
+    try {
+      trackingSocket.send(JSON.stringify(event));
+    } catch { /* ignore */ }
+  },
 );
 
 // Add "Enable audio" button to the phone page

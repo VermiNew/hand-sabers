@@ -2,6 +2,7 @@
 import { getCanonicalMapAudioUrl } from '../core/map-format.ts';
 import type { AudioCommand } from './audio-protocol.ts';
 import { isAudioCommand } from './audio-protocol.ts';
+import { preparePhoneAudioBank, type PreparedPhoneAudioBank } from './phone-audio-bank.ts';
 
 /**
  * Phone-side remote audio player.
@@ -10,7 +11,11 @@ import { isAudioCommand } from './audio-protocol.ts';
  * and plays map audio locally on the phone. Requires a user tap to satisfy
  * mobile autoplay policies.
  */
-export function initPhoneAudio(onReady: () => void, onError: (code: string) => void): {
+export function initPhoneAudio(
+  onReady: () => void,
+  onError: (code: string) => void,
+  onBankEvent: (event: Record<string, unknown>) => void = () => {},
+): {
   handleCommand(raw: unknown): void;
   setLatencyMs(ms: number): void;
   enableAudio(): Promise<boolean>;
@@ -20,6 +25,71 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
   let loaded = false;
   let userEnabled = false;
   let prepareVersion = 0;
+  let prepareController: AbortController | null = null;
+  let musicObjectUrl = '';
+  let preparedBank: PreparedPhoneAudioBank | null = null;
+  let bankRequestId = '';
+
+  function reportBankReady(): void {
+    if (!userEnabled || !loaded || !preparedBank || !bankRequestId) return;
+    onBankEvent({
+      v: 1,
+      type: 'audio-bank-ready',
+      requestId: bankRequestId,
+      bankId: preparedBank.manifest.bankId,
+      cachedAssets: preparedBank.cachedAssets,
+      totalAssets: preparedBank.manifest.assets.length,
+      totalBytes: preparedBank.manifest.totalBytes,
+    });
+  }
+
+  function loadAudioSource(source: string, version: number, bankMode: boolean): void {
+    const el = ensureAudioElement();
+    loaded = false;
+    el.addEventListener('canplay', () => {
+      if (version !== prepareVersion || audioEl !== el) return;
+      loaded = true;
+      if (bankMode) reportBankReady();
+      else if (userEnabled) onReady();
+    }, { once: true });
+    el.addEventListener('error', () => {
+      if (version !== prepareVersion || audioEl !== el) return;
+      onError('LOAD_FAILED');
+    }, { once: true });
+    el.src = source;
+    el.load();
+  }
+
+  async function prepareBank(command: Extract<AudioCommand, { type: 'audio-bank-prepare' }>): Promise<void> {
+    const version = ++prepareVersion;
+    prepareController?.abort();
+    prepareController = new AbortController();
+    preparedBank = null;
+    bankRequestId = command.requestId;
+    loaded = false;
+    setLatencyMs(command.latencyMs);
+    try {
+      const bank = await preparePhoneAudioBank(command.mapId, prepareController.signal, progress => {
+        if (version !== prepareVersion) return;
+        onBankEvent({ v: 1, type: 'audio-bank-progress', requestId: command.requestId, ...progress });
+      });
+      if (version !== prepareVersion) {
+        URL.revokeObjectURL(bank.musicObjectUrl);
+        return;
+      }
+      if (musicObjectUrl) URL.revokeObjectURL(musicObjectUrl);
+      musicObjectUrl = bank.musicObjectUrl;
+      preparedBank = bank;
+      loadAudioSource(musicObjectUrl, version, true);
+    } catch (error) {
+      if (version !== prepareVersion || (error instanceof DOMException && error.name === 'AbortError')) return;
+      const code = error instanceof Error && /^[A-Z0-9_]{1,64}$/.test(error.message)
+        ? error.message
+        : 'BANK_PREPARE_FAILED';
+      onBankEvent({ v: 1, type: 'audio-bank-error', requestId: command.requestId, code });
+      onError(code);
+    }
+  }
 
   function ensureAudioElement(): HTMLAudioElement {
     if (!audioEl) {
@@ -34,27 +104,27 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
     if (!isAudioCommand(raw)) return;
     const cmd = raw as AudioCommand;
 
+    if (cmd.type === 'audio-bank-prepare') {
+      void prepareBank(cmd);
+      return;
+    }
+
     if (cmd.type === 'audio-prepare') {
       const version = ++prepareVersion;
+      prepareController?.abort();
+      preparedBank = null;
+      bankRequestId = '';
+      if (musicObjectUrl) {
+        URL.revokeObjectURL(musicObjectUrl);
+        musicObjectUrl = '';
+      }
       const audioUrl = getCanonicalMapAudioUrl(cmd.mapId);
       if (!audioUrl) {
         loaded = false;
         onError('INVALID_AUDIO_URL');
         return;
       }
-      const el = ensureAudioElement();
-      loaded = false;
-      el.addEventListener('canplay', () => {
-        if (version !== prepareVersion || audioEl !== el) return;
-        loaded = true;
-        if (userEnabled) onReady();
-      }, { once: true });
-      el.addEventListener('error', () => {
-        if (version !== prepareVersion || audioEl !== el) return;
-        onError('LOAD_FAILED');
-      }, { once: true });
-      el.src = audioUrl;
-      el.load();
+      loadAudioSource(audioUrl, version, false);
       // Apply latency compensation from host settings
       if (typeof cmd.latencyMs === 'number') setLatencyMs(cmd.latencyMs);
       return;
@@ -104,7 +174,8 @@ export function initPhoneAudio(onReady: () => void, onError: (code: string) => v
       await el.play();
       el.pause();
       userEnabled = true;
-      onReady();
+      if (preparedBank) reportBankReady();
+      else onReady();
       return true;
     } catch {
       userEnabled = false;
