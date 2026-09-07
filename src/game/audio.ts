@@ -195,12 +195,12 @@ function playSoftTone(
   oscillator.stop(start + duration);
 }
 
-export function playInterfaceSound(kind: InterfaceSoundKind = 'activate'): void {
-  if (!ctx) return;
-  const now = performance.now();
-  const minInterval = kind === 'hover' ? 65 : 24;
-  if (now - lastInterfaceSoundAt < minInterval) return;
-  lastInterfaceSoundAt = now;
+function remoteInterfaceVolume(): number {
+  const settings = getSettings();
+  return clamp01(settings.volume, 0.8) * clamp01(settings.interfaceSoundVolume, 0.8);
+}
+
+function playInterfaceSoundLocal(kind: InterfaceSoundKind): void {
   if (kind === 'hover') {
     playSoftTone(360, 0.055, 0.03, 'sine', 420);
   } else if (kind === 'back') {
@@ -211,13 +211,31 @@ export function playInterfaceSound(kind: InterfaceSoundKind = 'activate'): void 
   }
 }
 
+export function playInterfaceSound(kind: InterfaceSoundKind = 'activate'): void {
+  if (!ctx) return;
+  const now = performance.now();
+  const minInterval = kind === 'hover' ? 65 : 24;
+  if (now - lastInterfaceSoundAt < minInterval) return;
+  lastInterfaceSoundAt = now;
+  const recipe = kind === 'hover' ? 'interface-hover' : kind === 'back' ? 'interface-back' : 'interface-activate';
+  const playLocal = (): void => playInterfaceSoundLocal(kind);
+  if (!playPhoneSound(recipe, 0, remoteInterfaceVolume(), 20, playLocal)) playLocal();
+}
+
 export function playTypingTick(character: string): void {
   if (!ctx || !character.trim()) return;
   const now = performance.now();
   if (now - lastTypingSoundAt < 22) return;
   lastTypingSoundAt = now;
   const variation = character.charCodeAt(0) % 5;
-  playSoftTone(520 + variation * 14, 0.035, 0.006, 'sine', 470 + variation * 10);
+  const playLocal = (): void => playSoftTone(
+    520 + variation * 14,
+    0.035,
+    0.006,
+    'sine',
+    470 + variation * 10,
+  );
+  if (!playPhoneSound('typing-tick', variation, remoteInterfaceVolume(), 20, playLocal)) playLocal();
 }
 
 export function initInterfaceSounds(root: ParentNode = document): void {
