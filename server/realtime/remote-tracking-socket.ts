@@ -75,12 +75,34 @@ function finiteInRange(value: unknown, min: number, max: number): boolean {
   return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
 }
 
+const REQUEST_ID_RE = /^[a-zA-Z0-9_-]{1,48}$/;
+const SHA256_RE = /^[a-f0-9]{64}$/;
+const ERROR_CODE_RE = /^[A-Z0-9_]{1,64}$/;
+
 function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): boolean {
   if (value['v'] !== PROTOCOL_VERSION || typeof value['type'] !== 'string') return false;
   const type = value['type'];
   if (peer.role === 'phone') {
     return type === 'audio-ready'
-      || (type === 'audio-error' && typeof value['code'] === 'string' && /^[A-Z0-9_]{1,64}$/.test(value['code']))
+      || (type === 'audio-error' && typeof value['code'] === 'string' && ERROR_CODE_RE.test(value['code']))
+      || (type === 'audio-bank-error'
+        && typeof value['requestId'] === 'string' && REQUEST_ID_RE.test(value['requestId'])
+        && typeof value['code'] === 'string' && ERROR_CODE_RE.test(value['code']))
+      || (type === 'audio-bank-progress'
+        && typeof value['requestId'] === 'string' && REQUEST_ID_RE.test(value['requestId'])
+        && finiteInRange(value['loadedAssets'], 0, 1_000)
+        && finiteInRange(value['totalAssets'], 1, 1_000)
+        && (value['loadedAssets'] as number) <= (value['totalAssets'] as number)
+        && finiteInRange(value['loadedBytes'], 0, 1_000_000_000)
+        && finiteInRange(value['totalBytes'], 0, 1_000_000_000)
+        && (value['loadedBytes'] as number) <= (value['totalBytes'] as number))
+      || (type === 'audio-bank-ready'
+        && typeof value['requestId'] === 'string' && REQUEST_ID_RE.test(value['requestId'])
+        && typeof value['bankId'] === 'string' && SHA256_RE.test(value['bankId'])
+        && finiteInRange(value['cachedAssets'], 0, 1_000)
+        && finiteInRange(value['totalAssets'], 1, 1_000)
+        && (value['cachedAssets'] as number) <= (value['totalAssets'] as number)
+        && finiteInRange(value['totalBytes'], 0, 1_000_000_000))
       || (type === 'tracking-metrics'
         && (value['captureAgeMs'] === null || finiteInRange(value['captureAgeMs'], 0, 5_000))
         && finiteInRange(value['detectionMs'], 0, 5_000)
@@ -101,6 +123,13 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
     return typeof value['mapId'] === 'string'
       && /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(value['mapId'])
       && finiteInRange(value['latencyMs'], 0, 1_000);
+  }
+  if (type === 'audio-bank-prepare') {
+    return typeof value['mapId'] === 'string'
+      && /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(value['mapId'])
+      && finiteInRange(value['latencyMs'], 0, 1_000)
+      && typeof value['requestId'] === 'string'
+      && REQUEST_ID_RE.test(value['requestId']);
   }
   if (type === 'audio-play') {
     return finiteInRange(value['offsetSec'], 0, 86_400)
