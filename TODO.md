@@ -23,10 +23,12 @@
 - [x] Dodać wizualny marker `hit plane` w trybie `?dev`
 - [x] Podgląd najbliższych 3 beatów: czas nuty, delta ms, strona, typ
 
-## 5. Trzy modele mieczy
+## 5. Modele mieczy i picker 3D
 
-- [x] Zaimplementować wybór spośród 3 modeli geometrii miecza (np. klasyczny, szeroki, cienki)
-- [x] Picker modelu w ustawieniach z podglądem 3D
+- [x] Zaimplementować sześć odrębnych modeli geometrii miecza: Classic, Wide, Thin, Prism, Edge i Pulse — każdy ma własną długość, profil, końcówkę, jelce i akcenty rękojeści.
+- [x] Dodać lekki system efektów mieczy: aura i iskry oraz animowany pierścień energii Pulse, respektujące istniejące ustawienie glintów/profile wydajności.
+- [x] Pozwolić ustawić inny model dla lewej i prawej dłoni, z migracją starego wspólnego `saberModel` oraz zgodnym importem/eksportem ustawień.
+- [x] Zastąpić mały picker pełnoekranowym podglądem 3D z wyborem dłoni, zatwierdzaniem/anulowaniem, drag/touch rotate, zoomem, responsywnością i zwalnianiem kontekstu WebGL po zamknięciu.
 
 ## 6. Więcej kolorów i lepszy picker
 
@@ -453,6 +455,27 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
   - [x] Przełączać wyjście podczas działania, wymagać prawdziwej aktywacji audio na telefonie i zawsze przywracać aktualną głośność PC jako fallback.
   - [ ] Przetestować cały przepływ na fizycznych telefonach z iOS i Androidem, również po blokadzie ekranu oraz zmianie głośnika/słuchawek Bluetooth — **zablokowane brakiem dostępu do tych urządzeń w środowisku agenta**.
 - [x] Pokazywać jednoznacznie miejsce wykonywania ML dla kamery telefonu: „ML: komputer”, „ML: telefon” albo oczekiwanie na telefon. Etykieta aktualizuje się dla trybu Auto, Kamera PC i Telefon wraz ze stanem połączenia.
+- [ ] Zbudować jeden kompletny hub „Telefon” dla wspólnego parowania kamery i audio, bez tworzenia oddzielnych, konkurujących sesji.
+  - [ ] Dodać tryb „Telefon jako kamera — ML na komputerze”: telefon przesyła zoptymalizowane klatki, komputer wykonuje HandLandmarker, a UI ostrzega o koszcie kodowania/sieci dla starszych telefonów.
+  - [x] Zachować działający tryb „Telefon jako kamera — ML na telefonie”: telefon wykonuje HandLandmarker i przesyła wyłącznie landmarki.
+  - [ ] Udostępnić oba miejsca wykonywania ML w nowym hubie jako jasny wybór: komputer dla mocniejszego PC albo telefon dla mocniejszego urządzenia mobilnego.
+  - [ ] Pozwolić niezależnie włączyć rolę kamery, rolę wyjścia audio albo obie role na tym samym sparowanym telefonie; pokazywać osobny stan każdej roli oraz wspólny stan połączenia.
+  - [ ] Dodać negocjację możliwości telefonu (WebCodecs/media constraints, Web Audio, formaty audio, pamięć/cache) i bezpieczny fallback zamiast pozostawiania użytkownika w nieskończonym ładowaniu.
+  - [ ] Ujednolicić rozłączanie, reconnect i wygasanie sesji dla obu ról oraz raportować czytelny kod błędu po stronie telefonu, klienta PC i serwera.
+- [ ] Rozszerzyć „Audio na telefonie” z samej muzyki do kompletnego, synchronizowanego banku dźwięków gry.
+  - [ ] Zbudować wersjonowany manifest wszystkich assetów audio (interfejs, muzyka, trafienia, pudła, bomby, combo, milestone i pozostałe efekty) z rozmiarem oraz hashem treści.
+  - [ ] Preloadować tylko brakujące assety do trwałego cache telefonu, pokazywać postęp w bajtach i liczbie dźwięków oraz weryfikować integralność przed oznaczeniem telefonu jako gotowego.
+  - [ ] Zamiast polegać na natychmiastowym evencie WebSocket synchronizować zegary i planować odtwarzanie w Web Audio na konkretny timestamp; mierzyć odchylenie i nie deklarować celu ±20 ms bez pomiaru na realnym urządzeniu.
+  - [ ] Zapewnić idempotentne eventy audio z numerem sekwencji, deduplikacją, potwierdzeniem, obsługą spóźnionych/utraconych eventów oraz bezpiecznym fallbackiem na audio komputera.
+  - [ ] Dodać w ustawieniach test każdego dźwięku osobno oraz miernik dB master/audio telefonu z segmentami zielony–żółty–czerwony i wskaźnikiem przesteru.
+  - [ ] Obsłużyć zmianę głośności, pauzę, seek, tempo, powrót z blokady ekranu i przełączenie słuchawek bez rozjechania timeline'u.
+- [ ] Dodać barierę gotowości przed rundą Multiplayer dla mapy, trackingu i audio wszystkich graczy.
+  - [ ] Serwer ma rozpocząć rundę dopiero po potwierdzeniu gotowości wymaganych zasobów przez wszystkie aktywne sesje; rozłączenie lub zmiana mapy unieważnia poprzednią gotowość.
+  - [ ] Pokazać ekran „Sesje graczy ładują się… proszę czekać”, spinner, progressbar `gotowi/wszyscy`, stan każdego gracza i przycisk „Opuść lobby”.
+  - [ ] Dodać tekst wyjaśniający możliwość wyjścia przy błędzie lub zbyt długim oczekiwaniu 😎, timeouty z czytelnym powodem oraz możliwość ponowienia bez restartu całego lobby.
+  - [ ] Użyć spójnego, profesjonalnego ekranu ładowania także w Singleplayerze, z etapami przygotowania mapy, audio, trackingu i sceny.
+- [ ] Dodać telemetrię jakości telefonu: czas pobierania/preloadu, cache hit-rate, RTT/jitter, drift zegara, opóźnienie zaplanowane/rzeczywiste audio, dropy klatek i czas ML; dane diagnostyczne mają być widoczne lokalnie i raportowane do serwera bez tokenów ani surowego obrazu.
+- [ ] Zweryfikować cały hub na fizycznych urządzeniach iOS/Android (słabe i mocne), w Wi‑Fi 2,4/5 GHz, z głośnikiem oraz słuchawkami Bluetooth; zapisać P50/P95 i potwierdzić lub skorygować budżet ±20 ms.
 - [ ] Zmierzyć i zoptymalizować end-to-end latency remote tracking — **instrumentacja gotowa; zablokowane pomiarami na dwóch klasach fizycznych telefonów**.
   - [x] Dodać diagnostykę etapów: wiek ostatniej klatki kamery, ML i kodowanie na telefonie, częstotliwość oraz rozmiar pakietów, kolejkę WebSocket, lokalne odrzucenia, braki sekwencji, szacowane WS→PC i telefon-send→zastosowanie pozycji. Przy rozbieżnych zegarach wynik sieci jest jawnie ukrywany zamiast fałszowany.
   - [x] Usunąć dodatkowy interwał opóźnienia: wynik Workera jest stosowany natychmiast po odpowiedzi, a nie dopiero przy następnym wykryciu.
