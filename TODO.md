@@ -105,6 +105,7 @@
 - [x] Profilowanie — znaleźć główne wąskie gardła na niskich ustawieniach — [wyniki](docs/performance-profiling.md)
 - [x] Dalsze obniżanie jakości grafiki (wyłączenie mgły, siatek, efektów)
 - [x] Adaptive quality — automatyczne obniżanie gdy FPS spada poniżej progu
+- [x] Obniżyć koszt renderowania aktywnych kostek bez usuwania obrysu, strzałek, odbić ani mechaniki — korpusy używają lżejszego materiału Phong o zachowanym kolorze, emisji i połysku; kontrolowany benchmark 30 kostek na identycznej scenie obniżył średni koszt zsynchronizowanego renderu z 6,27 ms do 4,40 ms (około 30%), a p90 z 22,5 ms do 10,9 ms. Rzeczywisty FPS pozostaje zależny od GPU i wymaga potwierdzenia na docelowym komputerze.
 
 ## 15. Kamera/ML na telefon (remote tracking)
 

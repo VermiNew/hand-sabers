@@ -15,8 +15,8 @@ const BOMB_GEO = new THREE.IcosahedronGeometry(0.22, 1);
 const BOMB_SPIKE_GEO = new THREE.ConeGeometry(0.04, 0.14, 4);
 
 const materials = {
-  blockL: new THREE.MeshStandardMaterial({ color: THEME.left, emissive: THEME.left, emissiveIntensity: 0.62, roughness: 0.28, metalness: 0.58 }),
-  blockR: new THREE.MeshStandardMaterial({ color: THEME.right, emissive: THEME.right, emissiveIntensity: 0.62, roughness: 0.28, metalness: 0.58 }),
+  blockL: new THREE.MeshPhongMaterial({ color: THEME.left, emissive: THEME.left, emissiveIntensity: 0.55, shininess: 80, specular: 0xb8c8dc }),
+  blockR: new THREE.MeshPhongMaterial({ color: THEME.right, emissive: THEME.right, emissiveIntensity: 0.55, shininess: 80, specular: 0xb8c8dc }),
   outlineL: new THREE.MeshBasicMaterial({ color: THEME.left, transparent: true, opacity: 0.25, side: THREE.BackSide }),
   outlineR: new THREE.MeshBasicMaterial({ color: THEME.right, transparent: true, opacity: 0.25, side: THREE.BackSide }),
   arrow: new THREE.MeshBasicMaterial({ color: THEME.white, transparent: true, opacity: 0.9 }),
