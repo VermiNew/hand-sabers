@@ -126,7 +126,10 @@ export interface Settings {
   musicReactiveIntensity: number;
   saberColorLeft: string;
   saberColorRight: string;
+  /** Legacy shared value kept for settings-file compatibility. */
   saberModel: string;
+  saberModelLeft: string;
+  saberModelRight: string;
   beatLimitEnabled: boolean;
   maxBeats: number;
     interfaceSoundVolume: number;

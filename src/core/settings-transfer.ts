@@ -27,6 +27,8 @@ const ENUM_VALUES: Partial<Record<keyof Settings, readonly unknown[]>> = {
   calibrationMode: ['auto', 'manual'],
   devAccent: ['green', 'blue', 'purple', 'pink', 'orange', 'yellow'],
   saberModel: ['classic', 'wide', 'thin', 'prism', 'edge', 'pulse'],
+  saberModelLeft: ['classic', 'wide', 'thin', 'prism', 'edge', 'pulse'],
+  saberModelRight: ['classic', 'wide', 'thin', 'prism', 'edge', 'pulse'],
   arenaTheme: ['cosmic', 'sunset', 'neon', 'forest', 'arctic'],
   avatar: ['default', 'cat', 'rocket', 'star', 'music', 'bolt', 'diamond', 'forest'],
   noteSpeed: [0.75, 1, 1.35, 1.75],
@@ -162,6 +164,10 @@ export function parseSettingsImport(text: string): SettingsTransferDocument {
   if (!('customDecorativeLights' in settingsRecord)) {
     settingsRecord['customDecorativeLights'] = getSettings().customDecorativeLights;
   }
+  // Shared-model exports predate independent left and right saber choices.
+  const legacySaberModel = settingsRecord['saberModel'] ?? 'classic';
+  if (!('saberModelLeft' in settingsRecord)) settingsRecord['saberModelLeft'] = legacySaberModel;
+  if (!('saberModelRight' in settingsRecord)) settingsRecord['saberModelRight'] = legacySaberModel;
   const allowedKeys = Object.keys(DEFAULTS) as Array<keyof Settings>;
   if (!hasOnlyKeys(settingsRecord, allowedKeys)) throw new Error('SETTINGS_UNKNOWN_FIELD');
   for (const key of allowedKeys) {

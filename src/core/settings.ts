@@ -66,6 +66,8 @@ export const DEFAULTS: Settings = {
   saberColorLeft: '#36f2a1',
   saberColorRight: '#2f7cff',
   saberModel: 'classic',
+  saberModelLeft: 'classic',
+  saberModelRight: 'classic',
   beatLimitEnabled: true,
   maxBeats: 10_000,
   developerMode: false,
@@ -170,8 +172,18 @@ function normalizeFavoriteMapIds(value: unknown): string[] {
   return [...new Set(ids)].slice(0, 500);
 }
 
+const SABER_MODELS = ['classic', 'wide', 'thin', 'prism', 'edge', 'pulse'] as const;
+
+function normalizeSaberModel(value: unknown, fallback = 'classic'): string {
+  return SABER_MODELS.includes(value as typeof SABER_MODELS[number]) ? String(value) : fallback;
+}
+
 function normalizeSettings(value: Partial<Settings>): Settings {
   const normalized = { ...DEFAULTS, ...value };
+  const legacySaberModel = normalizeSaberModel(value.saberModel);
+  normalized.saberModel = legacySaberModel;
+  normalized.saberModelLeft = normalizeSaberModel(value.saberModelLeft, legacySaberModel);
+  normalized.saberModelRight = normalizeSaberModel(value.saberModelRight, legacySaberModel);
   normalized.performanceMode = normalizePerformanceMode(normalized.performanceMode);
   normalized.noteSpeed = normalizeNoteSpeed(normalized.noteSpeed);
   normalized.hitboxSensitivity = normalizeHitboxSensitivity(normalized.hitboxSensitivity);
