@@ -19,6 +19,8 @@ let clockSyncTimer: ReturnType<typeof setTimeout> | null = null;
 const clockSamples: Array<{ offsetMs: number; rttMs: number }> = [];
 let clockRequestCounter = 0;
 let soundSequence = 0;
+const pendingSoundFallbacks = new Map<number, { timer: ReturnType<typeof setTimeout>; play: () => void }>();
+const SOUND_ACK_TIMEOUT_MS = 30;
 const BANK_INACTIVITY_TIMEOUT_MS = 45_000;
 
 function clearBankInactivityTimer(): void {
@@ -30,6 +32,14 @@ function clearClockSync(): void {
   if (clockSyncTimer) clearTimeout(clockSyncTimer);
   clockSyncTimer = null;
   clockSamples.length = 0;
+}
+
+function clearSoundFallbacks(play = false): void {
+  for (const pending of pendingSoundFallbacks.values()) {
+    clearTimeout(pending.timer);
+    if (play) pending.play();
+  }
+  pendingSoundFallbacks.clear();
 }
 
 function sendClockProbe(remaining = 5): void {
@@ -84,6 +94,7 @@ export function setHostAudioSocket(socket: WebSocket | null): void {
     activeBankRequestId = '';
     clearBankInactivityTimer();
     clearClockSync();
+    clearSoundFallbacks(true);
     restorePcAudio();
   }
 }
@@ -129,6 +140,7 @@ export function onPhoneAudioReady(): void {
 export function onPhoneAudioError(): void {
   phoneAudioReady = false;
   clearClockSync();
+  clearSoundFallbacks(true);
   restorePcAudio();
 }
 
@@ -148,6 +160,12 @@ export function onPhoneAudioEvent(event: AudioEvent): void {
     return;
   }
   if (event.type === 'audio-sfx-ack') {
+    const pending = pendingSoundFallbacks.get(event.sequence);
+    if (pending) {
+      clearTimeout(pending.timer);
+      pendingSoundFallbacks.delete(event.sequence);
+      if (event.status === 'unavailable') pending.play();
+    }
     window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-sfx-ack', { detail: event }));
     return;
   }
@@ -172,19 +190,31 @@ export function playPhoneSound(
   recipe: ProceduralAudioRecipe,
   variant = 0,
   volume = 1,
-  leadMs = 60,
+  leadMs = 20,
+  fallback?: () => void,
 ): boolean {
   if (!isPhoneAudioActive() || clockSamples.length < 3) return false;
   soundSequence = soundSequence >= Number.MAX_SAFE_INTEGER ? 1 : soundSequence + 1;
-  return sendAudioCommand({
+  const sequence = soundSequence;
+  const sent = sendAudioCommand({
     v: 1,
     type: 'audio-sfx',
-    sequence: soundSequence,
+    sequence,
     recipe,
     variant: Math.max(0, Math.min(1_000, variant)),
     volume: Math.max(0, Math.min(1, volume)),
-    hostTime: Date.now() + Math.max(20, Math.min(250, leadMs)),
+    hostTime: Date.now() + Math.max(0, Math.min(250, leadMs)),
   });
+  if (sent && fallback) {
+    const timer = setTimeout(() => {
+      const pending = pendingSoundFallbacks.get(sequence);
+      if (!pending) return;
+      pendingSoundFallbacks.delete(sequence);
+      pending.play();
+    }, SOUND_ACK_TIMEOUT_MS);
+    pendingSoundFallbacks.set(sequence, { timer, play: fallback });
+  }
+  return sent;
 }
 
 /** Prepare phone for audio playback using the map's canonical server endpoint. */

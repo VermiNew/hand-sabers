@@ -1,5 +1,6 @@
 import { getSettings } from '../core/settings.ts';
 import type { Settings } from '../types/index.js';
+import { playPhoneSound } from '../remote/host-audio.ts';
 
 type AudioContextConstructor = new () => AudioContext;
 
@@ -261,7 +262,12 @@ function rampGain(
   gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, end * vol), now + duration);
 }
 
-export function playBeat(): void {
+function remoteSfxVolume(key: SoundVolumeKey): number {
+  const settings = getSettings();
+  return clamp01(settings.volume, 0.8) * clamp01(settings.sfxVolume, 1) * getSoundVolume(key, 1);
+}
+
+function playBeatLocal(): void {
   if (!ctx) return;
   const now = ctx.currentTime + 0.02;
   const osc  = ctx.createOscillator();
@@ -274,7 +280,11 @@ export function playBeat(): void {
   osc.start(now); osc.stop(now + 0.15);
 }
 
-export function playHit(combo: number): void {
+export function playBeat(): void {
+  if (!playPhoneSound('beat', 0, remoteSfxVolume('beatSoundVolume'), 20, playBeatLocal)) playBeatLocal();
+}
+
+function playHitLocal(): void {
   if (!ctx) return;
   const now = ctx.currentTime + 0.02;
 
@@ -286,7 +296,11 @@ export function playHit(combo: number): void {
   rampGain(gainHit, now, 0.33, 0.01, 0.15, 'hitSoundVolume');
   oscHit.connect(gainHit); connectSfx(gainHit);
   oscHit.start(now); oscHit.stop(now + 0.15);
+}
 
+function playComboLocal(combo: number): void {
+  if (!ctx) return;
+  const now = ctx.currentTime + 0.02;
   const oscCombo  = ctx.createOscillator();
   const gainCombo = ctx.createGain();
   oscCombo.type = 'sine';
@@ -296,7 +310,13 @@ export function playHit(combo: number): void {
   oscCombo.start(now); oscCombo.stop(now + 0.3);
 }
 
-export function playMiss(): void {
+export function playHit(combo: number): void {
+  if (!playPhoneSound('hit', 0, remoteSfxVolume('hitSoundVolume'), 20, playHitLocal)) playHitLocal();
+  const playLocal = (): void => playComboLocal(combo);
+  if (!playPhoneSound('combo', combo, remoteSfxVolume('comboSoundVolume'), 20, playLocal)) playLocal();
+}
+
+function playMissLocal(): void {
   if (!ctx) return;
   const now  = ctx.currentTime + 0.02;
   const osc  = ctx.createOscillator();
@@ -309,7 +329,11 @@ export function playMiss(): void {
   osc.start(now); osc.stop(now + 0.22);
 }
 
-export function playBomb(): void {
+export function playMiss(): void {
+  if (!playPhoneSound('miss', 0, remoteSfxVolume('missSoundVolume'), 20, playMissLocal)) playMissLocal();
+}
+
+function playBombLocal(): void {
   if (!ctx) return;
   const now  = ctx.currentTime + 0.02;
   const buf  = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
@@ -321,6 +345,10 @@ export function playBomb(): void {
   rampGain(gain, now, 0.4, 0.001, 0.18, 'bombSoundVolume');
   src.connect(gain); connectSfx(gain);
   src.start(now);
+}
+
+export function playBomb(): void {
+  if (!playPhoneSound('bomb', 0, remoteSfxVolume('bombSoundVolume'), 20, playBombLocal)) playBombLocal();
 }
 
 // ── Odtwarzanie audio z mapy ──────────────────────────────────────────────────
@@ -438,7 +466,7 @@ export function getMusicFrequencyLevels(): MusicFrequencyLevels {
 }
 
 // ── Combo milestone sound ─────────────────────────────────────────────────────
-export function playMilestone(combo: number): void {
+function playMilestoneLocal(combo: number): void {
   if (!ctx) return;
   const now  = ctx.currentTime + 0.02;
   const freq = combo >= 50 ? 1200 : combo >= 25 ? 900 : 660;
@@ -455,4 +483,9 @@ export function playMilestone(combo: number): void {
     osc.start(now + i * 0.07);
     osc.stop(now + i * 0.07 + 0.22);
   }
+}
+
+export function playMilestone(combo: number): void {
+  const playLocal = (): void => playMilestoneLocal(combo);
+  if (!playPhoneSound('milestone', combo, remoteSfxVolume('milestoneSoundVolume'), 20, playLocal)) playLocal();
 }
