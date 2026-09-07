@@ -19,6 +19,7 @@ import { registerMapReadRoutes } from './routes/maps-read.js';
 import { registerMapWriteRoutes } from './routes/maps-write.js';
 import { registerRoomRoutes } from './routes/room-routes.js';
 import { registerTrackingSessionRoutes } from './routes/tracking-session-routes.js';
+import { registerAudioBankRoutes } from './routes/audio-bank.js';
 import { FileMutex, KeyedMutex, RateLimiter } from './utils.js';
 import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
@@ -189,6 +190,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetLocks, mapCatalogLock });
+registerAudioBankRoutes({ app, mapStorage, audioStorage, mapAssetLocks });
 
 registerMapWriteRoutes({
   app,

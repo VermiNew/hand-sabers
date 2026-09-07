@@ -463,7 +463,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
   - [ ] Dodać negocjację możliwości telefonu (WebCodecs/media constraints, Web Audio, formaty audio, pamięć/cache) i bezpieczny fallback zamiast pozostawiania użytkownika w nieskończonym ładowaniu.
   - [ ] Ujednolicić rozłączanie, reconnect i wygasanie sesji dla obu ról oraz raportować czytelny kod błędu po stronie telefonu, klienta PC i serwera.
 - [ ] Rozszerzyć „Audio na telefonie” z samej muzyki do kompletnego, synchronizowanego banku dźwięków gry.
-  - [ ] Zbudować wersjonowany manifest wszystkich assetów audio (interfejs, muzyka, trafienia, pudła, bomby, combo, milestone i pozostałe efekty) z rozmiarem oraz hashem treści.
+  - [x] Zbudować wersjonowany manifest wszystkich assetów audio (interfejs, muzyka, trafienia, pudła, bomby, combo, milestone i pozostałe efekty) z rozmiarem oraz hashem treści. — endpoint banku zwraca muzykę mapy z faktycznym rozmiarem i SHA-256 oraz kompletny katalog obecnych dźwięków proceduralnych z wersją receptury i osobnym hashem; identyfikator całego banku zmienia się wraz z dowolnym assetem.
   - [ ] Preloadować tylko brakujące assety do trwałego cache telefonu, pokazywać postęp w bajtach i liczbie dźwięków oraz weryfikować integralność przed oznaczeniem telefonu jako gotowego.
   - [ ] Zamiast polegać na natychmiastowym evencie WebSocket synchronizować zegary i planować odtwarzanie w Web Audio na konkretny timestamp; mierzyć odchylenie i nie deklarować celu ±20 ms bez pomiaru na realnym urządzeniu.
   - [ ] Zapewnić idempotentne eventy audio z numerem sekwencji, deduplikacją, potwierdzeniem, obsługą spóźnionych/utraconych eventów oraz bezpiecznym fallbackiem na audio komputera.
