@@ -7,7 +7,7 @@ import {
   startMetronomeCalibration,
   stopMetronome,
 } from './audio-calibration.ts';
-import { setMusicVolume, setSfxVolume, setSoundVolume, setVolume } from './audio.ts';
+import { getMasterMeterLevels, setMusicVolume, setSfxVolume, setSoundVolume, setVolume } from './audio.ts';
 import { narratorQuick } from './narrator.ts';
 import {
   isPhoneAudioActive,
@@ -35,6 +35,24 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
   const phoneLatencyInput = document.getElementById('menuPhoneAudioLatency') as HTMLInputElement | null;
   const phoneLatencyValue = document.getElementById('menuPhoneAudioLatencyValue');
   const interfaceSoundInput = document.getElementById('menuInterfaceSoundVolume') as HTMLInputElement | null;
+  const masterMeter = document.getElementById('menuMasterAudioMeter');
+  const masterMeterValue = document.getElementById('menuMasterAudioMeterValue');
+
+  if (masterMeter) {
+    masterMeter.setAttribute('aria-label', t('settings.audio.masterMeter'));
+    const updateMeter = (): void => {
+      if (masterMeter.offsetParent !== null) {
+        const levels = getMasterMeterLevels();
+        const normalized = Math.max(0, Math.min(1, (levels.db + 60) / 60));
+        masterMeter.style.setProperty('--audio-level', String(normalized));
+        masterMeter.classList.toggle('is-clipping', levels.clipping);
+        masterMeter.setAttribute('aria-valuenow', levels.db.toFixed(1));
+        if (masterMeterValue) masterMeterValue.textContent = `${levels.db.toFixed(1)} dB`;
+      }
+      requestAnimationFrame(updateMeter);
+    };
+    requestAnimationFrame(updateMeter);
+  }
 
   if (volumeInput) {
     volumeInput.value = String(settings.volume ?? 0.8);

@@ -270,6 +270,7 @@
     },
     "audio": {
       "interfaceSounds": "Interface",
+      "masterMeter": "Poziom master audio",
       "individualSounds": "Poszczególne dźwięki",
       "music": "Muzyka",
       "sfx": "Efekty",
@@ -280,7 +281,7 @@
       "metronomeCalibration": "Kalibracja metronomem",
       "metronomeStop": "Zatrzymaj metronom",
       "phoneOutput": "Audio na telefonie",
-      "phoneOutputDesc": "Muzyka gra na telefonie zamiast na komputerze",
+      "phoneOutputDesc": "Muzyka, interfejs i efekty gry są odtwarzane na telefonie",
       "phoneLatency": "Opóźnienie telefonu (ms)"
     },
     "performance": {

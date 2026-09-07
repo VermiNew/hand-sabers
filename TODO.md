@@ -475,6 +475,8 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
     - [ ] Raportować rzeczywisty błąd startu i potwierdzić budżet na fizycznych urządzeniach.
   - [x] Zapewnić idempotentne eventy audio z numerem sekwencji, deduplikacją, potwierdzeniem, obsługą spóźnionych/utraconych eventów oraz bezpiecznym fallbackiem na audio komputera. — telefon deduplikuje ruchomym oknem 256 sekwencji i odsyła wynik planowania; host nie wyłącza lokalnego efektu bez stabilnego zegara, a po wysłaniu przywraca go przy `unavailable`, braku ACK lub rozłączeniu. Diagnostyka ACK pozostaje dostępna jako zdarzenie lokalne.
   - [ ] Dodać w ustawieniach test każdego dźwięku osobno oraz miernik dB master/audio telefonu z segmentami zielony–żółty–czerwony i wskaźnikiem przesteru.
+    - [x] Dodać miernik master PC oparty na rzeczywistych próbkach wyjścia AudioContext: RMS w dB, peak/clipping, segmenty zielony–żółty–czerwony, dostępne `role="meter"` i responsywny układ. Dźwięk testowy i metronom przechodzą teraz przez globalny master zamiast omijać mikser.
+    - [ ] Dodać analogiczny miernik telefonu oraz osobne przyciski testowe dla wszystkich receptur.
   - [ ] Obsłużyć zmianę głośności, pauzę, seek, tempo, powrót z blokady ekranu i przełączenie słuchawek bez rozjechania timeline'u.
 - [ ] Dodać barierę gotowości przed rundą Multiplayer dla mapy, trackingu i audio wszystkich graczy.
   - [ ] Serwer ma rozpocząć rundę dopiero po potwierdzeniu gotowości wymaganych zasobów przez wszystkie aktywne sesje; rozłączenie lub zmiana mapy unieważnia poprzednią gotowość.

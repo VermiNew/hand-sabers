@@ -42,6 +42,8 @@ export async function resumeAudioContext(): Promise<boolean> {
 
 // ── Globalny mixer ────────────────────────────────────────────────────────────
 let masterGain: GainNode | null = null;
+let masterAnalyser: AnalyserNode | null = null;
+let masterTimeData: Float32Array<ArrayBuffer> | null = null;
 let musicGain:  GainNode | null = null;
 let sfxGain:    GainNode | null = null;
 let musicAnalyser: AnalyserNode | null = null;
@@ -90,7 +92,14 @@ function ensureAudioGraph(): void {
   if (!ctx) return;
   if (!masterGain) {
     masterGain = ctx.createGain();
-    masterGain.connect(ctx.destination);
+  }
+  if (!masterAnalyser) {
+    masterAnalyser = ctx.createAnalyser();
+    masterAnalyser.fftSize = 256;
+    masterAnalyser.smoothingTimeConstant = 0.72;
+    masterGain.connect(masterAnalyser);
+    masterAnalyser.connect(ctx.destination);
+    masterTimeData = new Float32Array(masterAnalyser.fftSize);
   }
   if (!musicGain) {
     musicGain = ctx.createGain();
@@ -193,6 +202,34 @@ function playSoftTone(
   connectInterface(gain);
   oscillator.start(start);
   oscillator.stop(start + duration);
+}
+
+/** Connect utility audio (tests/calibration) through the same master meter and gain. */
+export function connectToMasterOutput(node: AudioNode): void {
+  ensureAudioGraph();
+  if (!ctx) return;
+  node.connect(masterGain ?? ctx.destination);
+}
+
+export interface AudioMeterLevels {
+  db: number;
+  peak: number;
+  clipping: boolean;
+}
+
+export function getMasterMeterLevels(): AudioMeterLevels {
+  if (!masterAnalyser || !masterTimeData) return { db: -60, peak: 0, clipping: false };
+  masterAnalyser.getFloatTimeDomainData(masterTimeData);
+  let sumSquares = 0;
+  let peak = 0;
+  for (const sample of masterTimeData) {
+    const absolute = Math.abs(sample);
+    sumSquares += sample * sample;
+    if (absolute > peak) peak = absolute;
+  }
+  const rms = Math.sqrt(sumSquares / masterTimeData.length);
+  const db = Math.max(-60, Math.min(0, 20 * Math.log10(Math.max(rms, 0.001))));
+  return { db, peak, clipping: peak >= 0.98 };
 }
 
 function remoteInterfaceVolume(): number {

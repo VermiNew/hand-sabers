@@ -327,6 +327,23 @@ body.settings-modal-open #camPanel {
 }
 .sp-action-btn:disabled:hover { background: rgba(148,163,184,0.05); border-color: rgba(148,163,184,0.1); }
 
+.audio-meter-row {
+  display:grid; grid-template-columns:110px minmax(100px,1fr) 64px; align-items:center; gap:12px;
+  padding:10px 16px 13px; border-top:1px solid rgba(255,255,255,0.05);
+}
+.audio-meter-label,.audio-meter-value { color:rgba(148,163,184,0.62); font:600 9px 'JetBrains Mono',monospace; letter-spacing:.5px; }
+.audio-meter-value { text-align:right; font-variant-numeric:tabular-nums; }
+.audio-meter { --audio-level:0; position:relative; height:9px; overflow:hidden; border-radius:3px; background:repeating-linear-gradient(90deg,#142033 0 7px,transparent 7px 9px); }
+.audio-meter::before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,#35e69a 0 68%,#ffd45c 68% 86%,#ff526d 86%); opacity:.18; }
+.audio-meter-fill { position:absolute; inset:0; transform:scaleX(var(--audio-level)); transform-origin:left; background:linear-gradient(90deg,#35e69a 0 68%,#ffd45c 68% 86%,#ff526d 86%); transition:transform 70ms linear; }
+.audio-meter-clip { position:absolute; top:1px; right:1px; width:5px; height:7px; border-radius:1px; background:#55202a; }
+.audio-meter.is-clipping .audio-meter-clip { background:#ff2f50; box-shadow:0 0 8px rgba(255,47,80,.85); }
+
+@media (max-width:560px) {
+  .audio-meter-row { grid-template-columns:1fr 58px; }
+  .audio-meter-label { grid-column:1 / -1; }
+}
+
 /* ── Profile tab in settings ── */
 .profile-settings-hero {
   display: flex;

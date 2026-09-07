@@ -270,6 +270,7 @@
     },
     "audio": {
       "interfaceSounds": "Interface",
+      "masterMeter": "Master audio level",
       "individualSounds": "Individual sounds",
       "music": "Music",
       "sfx": "Effects",
@@ -280,7 +281,7 @@
       "metronomeCalibration": "Metronome calibration",
       "metronomeStop": "Stop metronome",
       "phoneOutput": "Phone audio output",
-      "phoneOutputDesc": "Music plays on the phone instead of the computer",
+      "phoneOutputDesc": "Music, interface and gameplay effects play on the phone",
       "phoneLatency": "Phone latency (ms)"
     },
     "performance": {

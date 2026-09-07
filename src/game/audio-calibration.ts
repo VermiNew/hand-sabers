@@ -1,4 +1,4 @@
-import { initAudio, resumeAudioContext, getAudioContext } from './audio.ts';
+import { connectToMasterOutput, initAudio, resumeAudioContext, getAudioContext } from './audio.ts';
 import { t } from '../i18n/index.ts';
 import {
   BEAT_INTERVAL,
@@ -82,7 +82,7 @@ export function playTestSound(): void {
   gain.gain.linearRampToValueAtTime(0.3, now + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
   osc.connect(gain);
-  gain.connect(ctx.destination);
+  connectToMasterOutput(gain);
   osc.start(now);
   osc.stop(now + 0.2);
 }
@@ -284,7 +284,7 @@ export async function startMetronomeCalibration(
     gain.gain.linearRampToValueAtTime(accent ? 0.25 : 0.15, audioTime + 0.005);
     gain.gain.exponentialRampToValueAtTime(0.001, audioTime + 0.05);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    connectToMasterOutput(gain);
     osc.start(audioTime);
     osc.stop(audioTime + 0.05);
 
