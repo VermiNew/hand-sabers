@@ -1,5 +1,6 @@
 ﻿import { getSettings } from '../core/settings.ts';
 import type { AudioCommand, AudioEvent } from './audio-protocol.ts';
+import type { ProceduralAudioRecipe } from './audio-bank-manifest.ts';
 
 /**
  * Host-side remote audio controller.
@@ -17,6 +18,7 @@ let bankInactivityTimer: ReturnType<typeof setTimeout> | null = null;
 let clockSyncTimer: ReturnType<typeof setTimeout> | null = null;
 const clockSamples: Array<{ offsetMs: number; rttMs: number }> = [];
 let clockRequestCounter = 0;
+let soundSequence = 0;
 const BANK_INACTIVITY_TIMEOUT_MS = 45_000;
 
 function clearBankInactivityTimer(): void {
@@ -145,6 +147,10 @@ export function onPhoneAudioEvent(event: AudioEvent): void {
     else onPhoneAudioError();
     return;
   }
+  if (event.type === 'audio-sfx-ack') {
+    window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-sfx-ack', { detail: event }));
+    return;
+  }
   if (event.requestId !== activeBankRequestId) return;
   if (event.type === 'audio-bank-progress') {
     armBankInactivityTimer();
@@ -159,6 +165,26 @@ export function onPhoneAudioEvent(event: AudioEvent): void {
   clearBankInactivityTimer();
   onPhoneAudioReady();
   window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-bank-ready', { detail: event }));
+}
+
+/** Schedule a procedural effect only after the phone clock has stable samples. */
+export function playPhoneSound(
+  recipe: ProceduralAudioRecipe,
+  variant = 0,
+  volume = 1,
+  leadMs = 60,
+): boolean {
+  if (!isPhoneAudioActive() || clockSamples.length < 3) return false;
+  soundSequence = soundSequence >= Number.MAX_SAFE_INTEGER ? 1 : soundSequence + 1;
+  return sendAudioCommand({
+    v: 1,
+    type: 'audio-sfx',
+    sequence: soundSequence,
+    recipe,
+    variant: Math.max(0, Math.min(1_000, variant)),
+    volume: Math.max(0, Math.min(1, volume)),
+    hostTime: Date.now() + Math.max(20, Math.min(250, leadMs)),
+  });
 }
 
 /** Prepare phone for audio playback using the map's canonical server endpoint. */

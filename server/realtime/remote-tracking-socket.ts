@@ -78,6 +78,10 @@ function finiteInRange(value: unknown, min: number, max: number): boolean {
 const REQUEST_ID_RE = /^[a-zA-Z0-9_-]{1,48}$/;
 const SHA256_RE = /^[a-f0-9]{64}$/;
 const ERROR_CODE_RE = /^[A-Z0-9_]{1,64}$/;
+const AUDIO_RECIPE_SET = new Set([
+  'interface-hover', 'interface-activate', 'interface-back', 'typing-tick',
+  'beat', 'hit', 'combo', 'miss', 'bomb', 'milestone',
+]);
 
 function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): boolean {
   if (value['v'] !== PROTOCOL_VERSION || typeof value['type'] !== 'string') return false;
@@ -109,6 +113,11 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
         && finiteInRange(value['phoneReceivedAt'], 0, Number.MAX_SAFE_INTEGER)
         && finiteInRange(value['phoneSentAt'], 0, Number.MAX_SAFE_INTEGER)
         && (value['phoneSentAt'] as number) >= (value['phoneReceivedAt'] as number))
+      || (type === 'audio-sfx-ack'
+        && Number.isSafeInteger(value['sequence'])
+        && finiteInRange(value['sequence'], 1, Number.MAX_SAFE_INTEGER)
+        && ['scheduled', 'late', 'duplicate', 'unavailable'].includes(String(value['status']))
+        && finiteInRange(value['latenessMs'], 0, 60_000))
       || (type === 'tracking-metrics'
         && (value['captureAgeMs'] === null || finiteInRange(value['captureAgeMs'], 0, 5_000))
         && finiteInRange(value['detectionMs'], 0, 5_000)
@@ -148,6 +157,14 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
       && finiteInRange(value['hostSentAt'], 0, Number.MAX_SAFE_INTEGER);
   }
   if (type === 'audio-clock-update') return finiteInRange(value['offsetMs'], -86_400_000, 86_400_000);
+  if (type === 'audio-sfx') {
+    return Number.isSafeInteger(value['sequence'])
+      && finiteInRange(value['sequence'], 1, Number.MAX_SAFE_INTEGER)
+      && typeof value['recipe'] === 'string' && AUDIO_RECIPE_SET.has(value['recipe'])
+      && finiteInRange(value['variant'], 0, 1_000)
+      && finiteInRange(value['volume'], 0, 1)
+      && finiteInRange(value['hostTime'], 0, Number.MAX_SAFE_INTEGER);
+  }
   if (type === 'audio-seek') return finiteInRange(value['offsetSec'], 0, 86_400);
   if (type === 'audio-volume') return finiteInRange(value['volume'], 0, 1);
   return type === 'audio-pause' || type === 'audio-stop';

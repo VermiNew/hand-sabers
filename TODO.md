@@ -469,7 +469,8 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
     - [ ] Pokazać raportowany postęp preloadu w docelowym hubie telefonu oraz ekranie oczekiwania przed rundą.
   - [ ] Zamiast polegać na natychmiastowym evencie WebSocket synchronizować zegary i planować odtwarzanie w Web Audio na konkretny timestamp; mierzyć odchylenie i nie deklarować celu ±20 ms bez pomiaru na realnym urządzeniu.
     - [x] Synchronizować zegar host–telefon próbkami NTP-style: oddzielić czas przetwarzania telefonu od RTT, wybierać medianę trzech próbek o najniższym RTT, przekazywać offset z powrotem na telefon i publikować lokalną diagnostykę. Odtwarzanie muzyki nie zakłada już zgodnych zegarów urządzeń.
-    - [ ] Planować efekty proceduralne w `AudioContext` telefonu na przyszły timestamp, raportować rzeczywisty błąd startu i potwierdzić budżet na fizycznych urządzeniach.
+    - [x] Dodać telefoniczny renderer Web Audio wszystkich 10 obecnych receptur, planowanie według zsynchronizowanego timestampu, numery sekwencji, bufor deduplikacji oraz potwierdzenia `scheduled`/`late`/`duplicate`/`unavailable`. Efekty PC pozostają aktywne do ukończenia integracji.
+    - [ ] Podłączyć eventy gameplayu i interfejsu, raportować rzeczywisty błąd startu i potwierdzić budżet na fizycznych urządzeniach.
   - [ ] Zapewnić idempotentne eventy audio z numerem sekwencji, deduplikacją, potwierdzeniem, obsługą spóźnionych/utraconych eventów oraz bezpiecznym fallbackiem na audio komputera.
   - [ ] Dodać w ustawieniach test każdego dźwięku osobno oraz miernik dB master/audio telefonu z segmentami zielony–żółty–czerwony i wskaźnikiem przesteru.
   - [ ] Obsłużyć zmianę głośności, pauzę, seek, tempo, powrót z blokady ekranu i przełączenie słuchawek bez rozjechania timeline'u.

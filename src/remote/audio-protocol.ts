@@ -58,6 +58,16 @@ export interface AudioClockUpdateCommand {
   offsetMs: number;
 }
 
+export interface AudioSfxCommand {
+  v: 1;
+  type: 'audio-sfx';
+  sequence: number;
+  recipe: string;
+  variant: number;
+  volume: number;
+  hostTime: number;
+}
+
 export type AudioCommand =
   | AudioPrepareCommand
   | AudioBankPrepareCommand
@@ -67,7 +77,8 @@ export type AudioCommand =
   | AudioVolumeCommand
   | AudioSeekCommand
   | AudioClockPingCommand
-  | AudioClockUpdateCommand;
+  | AudioClockUpdateCommand
+  | AudioSfxCommand;
 
 export interface AudioReadyEvent {
   v: 1;
@@ -116,18 +127,31 @@ export interface AudioClockPongEvent {
   phoneSentAt: number;
 }
 
+export interface AudioSfxAckEvent {
+  v: 1;
+  type: 'audio-sfx-ack';
+  sequence: number;
+  status: 'scheduled' | 'late' | 'duplicate' | 'unavailable';
+  latenessMs: number;
+}
+
 export type AudioEvent =
   | AudioReadyEvent
   | AudioErrorEvent
   | AudioBankProgressEvent
   | AudioBankReadyEvent
   | AudioBankErrorEvent
-  | AudioClockPongEvent;
+  | AudioClockPongEvent
+  | AudioSfxAckEvent;
 
 const MAP_ID_RE = /^[a-z0-9][a-z0-9_-]{0,119}$/i;
 const REQUEST_ID_RE = /^[a-zA-Z0-9_-]{1,48}$/;
 const SHA256_RE = /^[a-f0-9]{64}$/;
 const ERROR_CODE_RE = /^[A-Z0-9_]{1,64}$/;
+const AUDIO_RECIPE_SET = new Set([
+  'interface-hover', 'interface-activate', 'interface-back', 'typing-tick',
+  'beat', 'hit', 'combo', 'miss', 'bomb', 'milestone',
+]);
 
 /** Type guard for audio commands received by the phone. */
 export function isAudioCommand(value: unknown): value is AudioCommand {
@@ -156,6 +180,14 @@ export function isAudioCommand(value: unknown): value is AudioCommand {
       && isFiniteNumber(command['hostSentAt'], 0, Number.MAX_SAFE_INTEGER);
   }
   if (type === 'audio-clock-update') return isFiniteNumber(command['offsetMs'], -86_400_000, 86_400_000);
+  if (type === 'audio-sfx') {
+    return Number.isSafeInteger(command['sequence'])
+      && isFiniteNumber(command['sequence'], 1, Number.MAX_SAFE_INTEGER)
+      && typeof command['recipe'] === 'string' && AUDIO_RECIPE_SET.has(command['recipe'])
+      && isFiniteNumber(command['variant'], 0, 1_000)
+      && isFiniteNumber(command['volume'], 0, 1)
+      && isFiniteNumber(command['hostTime'], 0, Number.MAX_SAFE_INTEGER);
+  }
   return type === 'audio-pause' || type === 'audio-stop';
 }
 
@@ -172,6 +204,12 @@ export function isAudioEvent(value: unknown): value is AudioEvent {
   if (type === 'audio-ready') return true;
   if (type === 'audio-error') {
     return typeof event['code'] === 'string' && ERROR_CODE_RE.test(event['code']);
+  }
+  if (type === 'audio-sfx-ack') {
+    return Number.isSafeInteger(event['sequence'])
+      && isFiniteNumber(event['sequence'], 1, Number.MAX_SAFE_INTEGER)
+      && ['scheduled', 'late', 'duplicate', 'unavailable'].includes(String(event['status']))
+      && isFiniteNumber(event['latenessMs'], 0, 60_000);
   }
   if (typeof event['requestId'] !== 'string' || !REQUEST_ID_RE.test(event['requestId'])) return false;
   if (type === 'audio-bank-error') {

@@ -3,6 +3,8 @@ import { getCanonicalMapAudioUrl } from '../core/map-format.ts';
 import type { AudioCommand } from './audio-protocol.ts';
 import { isAudioCommand } from './audio-protocol.ts';
 import { preparePhoneAudioBank, type PreparedPhoneAudioBank } from './phone-audio-bank.ts';
+import { createPhoneSoundEngine } from './phone-audio-sfx.ts';
+import type { ProceduralAudioRecipe } from './audio-bank-manifest.ts';
 
 /**
  * Phone-side remote audio player.
@@ -30,6 +32,9 @@ export function initPhoneAudio(
   let preparedBank: PreparedPhoneAudioBank | null = null;
   let bankRequestId = '';
   let hostClockOffsetMs = 0;
+  const soundEngine = createPhoneSoundEngine();
+  const receivedSoundSequences = new Set<number>();
+  const soundSequenceOrder: number[] = [];
 
   function reportBankReady(): void {
     if (!userEnabled || !loaded || !preparedBank || !bankRequestId) return;
@@ -124,6 +129,30 @@ export function initPhoneAudio(
     }
     if (cmd.type === 'audio-clock-update') {
       hostClockOffsetMs = cmd.offsetMs;
+      soundEngine.setHostClockOffset(cmd.offsetMs);
+      return;
+    }
+    if (cmd.type === 'audio-sfx') {
+      if (receivedSoundSequences.has(cmd.sequence)) {
+        onBankEvent({ v: 1, type: 'audio-sfx-ack', sequence: cmd.sequence, status: 'duplicate', latenessMs: 0 });
+        return;
+      }
+      receivedSoundSequences.add(cmd.sequence);
+      soundSequenceOrder.push(cmd.sequence);
+      if (soundSequenceOrder.length > 256) receivedSoundSequences.delete(soundSequenceOrder.shift()!);
+      const result = soundEngine.schedule({
+        recipe: cmd.recipe as ProceduralAudioRecipe,
+        variant: cmd.variant,
+        volume: cmd.volume,
+        hostTime: cmd.hostTime,
+      });
+      onBankEvent({
+        v: 1,
+        type: 'audio-sfx-ack',
+        sequence: cmd.sequence,
+        status: result?.status ?? 'unavailable',
+        latenessMs: result?.latenessMs ?? 0,
+      });
       return;
     }
 
@@ -197,6 +226,7 @@ export function initPhoneAudio(
       el.muted = true;
       await el.play();
       el.pause();
+      if (!await soundEngine.enable()) throw new Error('SFX_ENABLE_FAILED');
       userEnabled = true;
       if (preparedBank) reportBankReady();
       else onReady();
