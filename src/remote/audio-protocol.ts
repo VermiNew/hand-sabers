@@ -23,6 +23,15 @@ export interface AudioPlayCommand {
   playbackRate: number;
 }
 
+export interface AudioSyncCommand {
+  v: 1;
+  type: 'audio-sync';
+  sequence: number;
+  offsetSec: number;
+  serverTime: number;
+  playbackRate: number;
+}
+
 export interface AudioPauseCommand {
   v: 1;
   type: 'audio-pause';
@@ -72,6 +81,7 @@ export type AudioCommand =
   | AudioPrepareCommand
   | AudioBankPrepareCommand
   | AudioPlayCommand
+  | AudioSyncCommand
   | AudioPauseCommand
   | AudioStopCommand
   | AudioVolumeCommand
@@ -150,6 +160,14 @@ export interface AudioResyncRequestEvent {
   reason: 'visibility' | 'page-show' | 'device-change';
 }
 
+export interface AudioSyncStatusEvent {
+  v: 1;
+  type: 'audio-sync-status';
+  sequence: number;
+  driftMs: number;
+  correction: 'none' | 'rate' | 'seek' | 'resume';
+}
+
 export type AudioEvent =
   | AudioReadyEvent
   | AudioErrorEvent
@@ -159,7 +177,8 @@ export type AudioEvent =
   | AudioClockPongEvent
   | AudioSfxAckEvent
   | AudioMeterEvent
-  | AudioResyncRequestEvent;
+  | AudioResyncRequestEvent
+  | AudioSyncStatusEvent;
 
 const MAP_ID_RE = /^[a-z0-9][a-z0-9_-]{0,119}$/i;
 const REQUEST_ID_RE = /^[a-zA-Z0-9_-]{1,48}$/;
@@ -184,8 +203,12 @@ export function isAudioCommand(value: unknown): value is AudioCommand {
       && isFiniteNumber(command['latencyMs'], 0, 1_000)
       && bankFieldsValid;
   }
-  if (type === 'audio-play') {
-    return isFiniteNumber(command['offsetSec'], 0, 86_400)
+  if (type === 'audio-play' || type === 'audio-sync') {
+    const syncFieldsValid = type !== 'audio-sync'
+      || (Number.isSafeInteger(command['sequence'])
+        && isFiniteNumber(command['sequence'], 1, Number.MAX_SAFE_INTEGER));
+    return syncFieldsValid
+      && isFiniteNumber(command['offsetSec'], 0, 86_400)
       && isFiniteNumber(command['serverTime'], 0, Number.MAX_SAFE_INTEGER)
       && isFiniteNumber(command['playbackRate'], 0.5, 1.5);
   }
@@ -236,6 +259,12 @@ export function isAudioEvent(value: unknown): value is AudioEvent {
   }
   if (type === 'audio-resync-request') {
     return ['visibility', 'page-show', 'device-change'].includes(String(event['reason']));
+  }
+  if (type === 'audio-sync-status') {
+    return Number.isSafeInteger(event['sequence'])
+      && isFiniteNumber(event['sequence'], 1, Number.MAX_SAFE_INTEGER)
+      && isFiniteNumber(event['driftMs'], -60_000, 60_000)
+      && ['none', 'rate', 'seek', 'resume'].includes(String(event['correction']));
   }
   if (typeof event['requestId'] !== 'string' || !REQUEST_ID_RE.test(event['requestId'])) return false;
   if (type === 'audio-bank-error') {

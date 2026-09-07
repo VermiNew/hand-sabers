@@ -146,6 +146,10 @@ export function onPhoneAudioError(): void {
 
 /** Apply validated preload status from the currently paired phone. */
 export function onPhoneAudioEvent(event: AudioEvent): void {
+  if (event.type === 'audio-sync-status') {
+    window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-sync-status', { detail: event }));
+    return;
+  }
   if (event.type === 'audio-resync-request') {
     window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-resync', { detail: event }));
     return;

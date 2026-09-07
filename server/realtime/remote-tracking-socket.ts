@@ -125,6 +125,11 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
         && finiteInRange(value['sampledAt'], 0, Number.MAX_SAFE_INTEGER))
       || (type === 'audio-resync-request'
         && ['visibility', 'page-show', 'device-change'].includes(String(value['reason'])))
+      || (type === 'audio-sync-status'
+        && Number.isSafeInteger(value['sequence'])
+        && finiteInRange(value['sequence'], 1, Number.MAX_SAFE_INTEGER)
+        && finiteInRange(value['driftMs'], -60_000, 60_000)
+        && ['none', 'rate', 'seek', 'resume'].includes(String(value['correction'])))
       || (type === 'tracking-metrics'
         && (value['captureAgeMs'] === null || finiteInRange(value['captureAgeMs'], 0, 5_000))
         && finiteInRange(value['detectionMs'], 0, 5_000)
@@ -153,8 +158,12 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
       && typeof value['requestId'] === 'string'
       && REQUEST_ID_RE.test(value['requestId']);
   }
-  if (type === 'audio-play') {
-    return finiteInRange(value['offsetSec'], 0, 86_400)
+  if (type === 'audio-play' || type === 'audio-sync') {
+    const syncFieldsValid = type !== 'audio-sync'
+      || (Number.isSafeInteger(value['sequence'])
+        && finiteInRange(value['sequence'], 1, Number.MAX_SAFE_INTEGER));
+    return syncFieldsValid
+      && finiteInRange(value['offsetSec'], 0, 86_400)
       && finiteInRange(value['serverTime'], 0, Number.MAX_SAFE_INTEGER)
       && finiteInRange(value['playbackRate'], 0.5, 1.5);
   }
