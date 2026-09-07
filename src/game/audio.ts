@@ -1,6 +1,7 @@
 import { getSettings } from '../core/settings.ts';
 import type { Settings } from '../types/index.js';
 import { playPhoneSound } from '../remote/host-audio.ts';
+import type { ProceduralAudioRecipe } from '../remote/audio-bank-manifest.ts';
 
 type AudioContextConstructor = new () => AudioContext;
 
@@ -265,14 +266,18 @@ export function playTypingTick(character: string): void {
   if (now - lastTypingSoundAt < 22) return;
   lastTypingSoundAt = now;
   const variation = character.charCodeAt(0) % 5;
-  const playLocal = (): void => playSoftTone(
+  const playLocal = (): void => playTypingTickLocal(variation);
+  if (!playPhoneSound('typing-tick', variation, remoteInterfaceVolume(), 20, playLocal)) playLocal();
+}
+
+function playTypingTickLocal(variation: number): void {
+  playSoftTone(
     520 + variation * 14,
     0.035,
     0.006,
     'sine',
     470 + variation * 10,
   );
-  if (!playPhoneSound('typing-tick', variation, remoteInterfaceVolume(), 20, playLocal)) playLocal();
 }
 
 export function initInterfaceSounds(root: ParentNode = document): void {
@@ -543,4 +548,38 @@ function playMilestoneLocal(combo: number): void {
 export function playMilestone(combo: number): void {
   const playLocal = (): void => playMilestoneLocal(combo);
   if (!playPhoneSound('milestone', combo, remoteSfxVolume('milestoneSoundVolume'), 20, playLocal)) playLocal();
+}
+
+/** Preview one catalog recipe through the same phone-or-PC route used by gameplay. */
+export function playAudioTestRecipe(recipe: ProceduralAudioRecipe): void {
+  initAudio();
+  if (recipe === 'interface-hover' || recipe === 'interface-activate' || recipe === 'interface-back') {
+    const kind: InterfaceSoundKind = recipe === 'interface-hover'
+      ? 'hover'
+      : recipe === 'interface-back' ? 'back' : 'activate';
+    const playLocal = (): void => playInterfaceSoundLocal(kind);
+    if (!playPhoneSound(recipe, 0, remoteInterfaceVolume(), 20, playLocal)) playLocal();
+    return;
+  }
+  if (recipe === 'typing-tick') {
+    const variation = 2;
+    const playLocal = (): void => playTypingTickLocal(variation);
+    if (!playPhoneSound(recipe, variation, remoteInterfaceVolume(), 20, playLocal)) playLocal();
+    return;
+  }
+
+  const gameplay: Record<Exclude<ProceduralAudioRecipe,
+    'interface-hover' | 'interface-activate' | 'interface-back' | 'typing-tick'>,
+    { variant: number; volumeKey: SoundVolumeKey; playLocal: () => void }> = {
+    beat: { variant: 0, volumeKey: 'beatSoundVolume', playLocal: playBeatLocal },
+    hit: { variant: 0, volumeKey: 'hitSoundVolume', playLocal: playHitLocal },
+    combo: { variant: 10, volumeKey: 'comboSoundVolume', playLocal: () => playComboLocal(10) },
+    miss: { variant: 0, volumeKey: 'missSoundVolume', playLocal: playMissLocal },
+    bomb: { variant: 0, volumeKey: 'bombSoundVolume', playLocal: playBombLocal },
+    milestone: { variant: 25, volumeKey: 'milestoneSoundVolume', playLocal: () => playMilestoneLocal(25) },
+  };
+  const sound = gameplay[recipe];
+  if (!playPhoneSound(recipe, sound.variant, remoteSfxVolume(sound.volumeKey), 20, sound.playLocal)) {
+    sound.playLocal();
+  }
 }
