@@ -308,10 +308,10 @@ function processDetectionResult(
     });
     worker.postMessage({ type: 'setState', payload: { appState: state.appState, oneHandMode: state.oneHandMode || null } });
     if (trackingSource === 'remote') remoteWorkerSentAtQueue.push(remoteSentAtEpochMs);
-    worker.postMessage({ type: 'analyze', payload: { candidates } });
+    worker.postMessage({ type: 'analyze', payload: { candidates, now } });
   } else if (worker) {
     if (trackingSource === 'remote') remoteWorkerSentAtQueue.push(remoteSentAtEpochMs);
-    worker.postMessage({ type: 'analyze', payload: { candidates: [] } });
+    worker.postMessage({ type: 'analyze', payload: { candidates: [], now } });
   }
 
   if (state.appState === S.CALIB && result.landmarks?.length) {

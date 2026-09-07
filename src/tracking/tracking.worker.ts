@@ -1,3 +1,5 @@
+import { Vec3OneEuroFilter } from './one-euro-filter.ts';
+
 const S_PLAYING = 'playing';
 
 interface Pos3 { x: number; y: number; z: number }
@@ -18,7 +20,6 @@ interface Calib {
 }
 interface SlotResult { pos: Pos3 | null; quat: QuatRepr | null; conf: number }
 interface QuatRepr { bladeDir: Pos3; rollDir: Pos3 }
-interface SmoothBuf extends Array<Pos3> { _idx?: number }
 
 let calibration: Calib | null = null;
 let appState    = 'loading';
@@ -26,43 +27,73 @@ let sensitivity = 1.0;
 let flipCamera  = false;
 let oneHandMode: string | null = null;
 
-const SMOOTH_MIN = 2;
-const SMOOTH_MAX = 8;
-const lBuf: SmoothBuf = [];
-const rBuf: SmoothBuf = [];
+// --- Smoothing / continuity tuning -----------------------------------------
+// Position: lower minCutoff = smoother hold, higher beta = less lag on fast swings.
+const POS_MIN_CUTOFF = 1.2;
+const POS_BETA       = 0.6;
+// Orientation (blade/roll direction vectors, filtered per-component then re-normalized).
+const DIR_MIN_CUTOFF = 1.5;
+const DIR_BETA       = 0.5;
+// How long to keep reporting the last known pose after detection drops out for
+// a frame or two (occlusion, a bad ML frame) before actually going "inactive".
+const HAND_LOSS_GRACE_MS = 130;
+// How close (world units) a new candidate must be to a slot's last known
+// position to be treated as "the same hand" instead of re-shuffling L/R.
+const SLOT_STICKY_RADIUS = 0.6;
+// -----------------------------------------------------------------------------
 
-function clearBuf(buf: SmoothBuf): void {
-  buf.length = 0;
-  delete buf._idx;
+interface HandSlotState {
+  posFilter:   Vec3OneEuroFilter;
+  bladeFilter: Vec3OneEuroFilter;
+  rollFilter:  Vec3OneEuroFilter;
+  lastPos:     Pos3 | null;
+  lastQuat:    QuatRepr | null;
+  lastSeenMs:  number;
+  hasData:     boolean;
 }
 
-function computeSmoothSize(buf: SmoothBuf, newPos: Pos3): number {
-  if (!buf.length) return SMOOTH_MAX;
-  const prev = buf[buf._idx !== undefined && buf._idx > 0 ? buf._idx - 1 : buf.length - 1];
-  if (!prev) return SMOOTH_MAX;
-  const dx = newPos.x - prev.x, dy = newPos.y - prev.y;
-  const speed = Math.sqrt(dx * dx + dy * dy);
-  if (speed > 0.08) return SMOOTH_MIN;
-  if (speed > 0.04) return 4;
-  return SMOOTH_MAX;
+function createSlotState(): HandSlotState {
+  return {
+    posFilter:   new Vec3OneEuroFilter(POS_MIN_CUTOFF, POS_BETA),
+    bladeFilter: new Vec3OneEuroFilter(DIR_MIN_CUTOFF, DIR_BETA),
+    rollFilter:  new Vec3OneEuroFilter(DIR_MIN_CUTOFF, DIR_BETA),
+    lastPos:     null,
+    lastQuat:    null,
+    lastSeenMs:  -Infinity,
+    hasData:     false,
+  };
 }
 
-function avg(buf: SmoothBuf): Pos3 | null {
-  if (!buf.length) return null;
-  const r = { x: 0, y: 0, z: 0 };
-  for (const p of buf) { r.x += p.x; r.y += p.y; r.z += p.z; }
-  r.x /= buf.length; r.y /= buf.length; r.z /= buf.length;
-  return r;
+const lSlot: HandSlotState = createSlotState();
+const rSlot: HandSlotState = createSlotState();
+
+function resetSlot(slot: HandSlotState): void {
+  slot.posFilter.reset();
+  slot.bladeFilter.reset();
+  slot.rollFilter.reset();
+  slot.lastPos    = null;
+  slot.lastQuat   = null;
+  slot.lastSeenMs = -Infinity;
+  slot.hasData    = false;
 }
 
-function push(buf: SmoothBuf, val: Pos3, size: number): void {
-  if (buf.length < size) {
-    buf.push(val);
-    return;
-  }
-  const idx = buf._idx ?? 0;
-  buf[idx] = val;
-  buf._idx = (idx + 1) % size;
+function normalize3(v: Pos3): Pos3 {
+  const len = Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z) || 1;
+  return { x: v.x / len, y: v.y / len, z: v.z / len };
+}
+
+// Re-orthogonalize rollDir against bladeDir (Gram-Schmidt) after each has been
+// filtered independently, so the pair stays a valid perpendicular basis
+// instead of just "approximately" perpendicular.
+function orthonormalize(roll: Pos3, blade: Pos3): Pos3 {
+  const d = roll.x * blade.x + roll.y * blade.y + roll.z * blade.z;
+  const proj = { x: roll.x - d * blade.x, y: roll.y - d * blade.y, z: roll.z - d * blade.z };
+  return normalize3(proj);
+}
+
+function distSq(a: Pos3, b: Pos3): number {
+  const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+  return dx * dx + dy * dy + dz * dz;
 }
 
 function dist(a: Landmark, b: Landmark): number {
@@ -199,6 +230,23 @@ function candidateWorldPos(candidate: Candidate, calib: Calib | null): Pos3 | nu
   return mapToWorld(candidate.landmarks[0]!, calib);
 }
 
+/**
+ * CHANGED: step 1 (confident, distinct handedness labels) is untouched from
+ * the original — it's the most reliable signal and should stay first. Only
+ * step 3, the fallback used when labels are missing/ambiguous (typically
+ * right when hands overlap or briefly occlude — exactly when the old
+ * x-sort-only fallback was most likely to flicker), now prefers whichever
+ * candidate is closest to each slot's last known position over blind x-sort.
+ *
+ * Caveat worth playtesting explicitly: this helps with brief label dropouts
+ * while hands stay reasonably separated. It does NOT reliably resolve a true,
+ * sustained hand-crossing, or the case where both hands sit very close
+ * together under heavy noise — a stress-test showed position-only continuity
+ * can actually compound errors there (it starts trusting its own possibly-
+ * wrong last position). That's an inherent limit of position-only data
+ * association, not something SLOT_STICKY_RADIUS alone fixes — tune/verify it
+ * against your own cross-hand gameplay patterns.
+ */
 function assignCandidatesToWorldSlots(unique: Candidate[], calib: Calib | null): { leftCand: Candidate | null; rightCand: Candidate | null } {
   if (!unique.length) return { leftCand: null, rightCand: null };
 
@@ -208,56 +256,84 @@ function assignCandidatesToWorldSlots(unique: Candidate[], calib: Calib | null):
 
   if (!mapped.length) return { leftCand: null, rightCand: null };
 
+  // 1) Strongest signal (unchanged): trust distinct, confident handedness labels outright.
   const labeled = mapped
     .map(item => ({ ...item, side: candidateHandSide(item.candidate) }))
     .filter((item): item is typeof item & { side: string } => item.side !== null);
   const labeledLeft  = labeled.find(item => item.side === 'left');
   const labeledRight = labeled.find(item => item.side === 'right');
   if (labeledLeft && labeledRight && labeledLeft.candidate !== labeledRight.candidate) {
-    return {
-      leftCand: labeledLeft.candidate,
-      rightCand: labeledRight.candidate,
-    };
+    return { leftCand: labeledLeft.candidate, rightCand: labeledRight.candidate };
   }
 
-  mapped.sort((a, b) => a.pos.x - b.pos.x);
-
-  if (mapped.length === 1) {
-    const only = mapped[0]!;
-    return only.pos.x <= 0
-      ? { leftCand: only.candidate, rightCand: null }
-      : { leftCand: null, rightCand: only.candidate };
-  }
-
-  return {
-    leftCand:  mapped[0]!.candidate,
-    rightCand: mapped[mapped.length - 1]!.candidate,
+  // 2) Labels missing/ambiguous this frame: prefer continuity with last known
+  // position over blind x-sort (see caveat above).
+  let remaining = [...mapped];
+  const tryStick = (slot: HandSlotState): Candidate | null => {
+    if (!slot.hasData || !slot.lastPos || !remaining.length) return null;
+    const lastPos = slot.lastPos;
+    const sorted = [...remaining].sort((a, b) => distSq(a.pos, lastPos) - distSq(b.pos, lastPos));
+    const closest = sorted[0]!;
+    if (distSq(closest.pos, lastPos) >= SLOT_STICKY_RADIUS * SLOT_STICKY_RADIUS) return null;
+    remaining = remaining.filter(item => item !== closest);
+    return closest.candidate;
   };
+  let leftCand  = tryStick(lSlot);
+  let rightCand = tryStick(rSlot);
+
+  // 3) Anything still unresolved (brand-new hand, nothing to stick to yet): x-sort.
+  remaining.sort((a, b) => a.pos.x - b.pos.x);
+  if (!leftCand && !rightCand && remaining.length === 1) {
+    if (remaining[0]!.pos.x <= 0) leftCand = remaining[0]!.candidate;
+    else rightCand = remaining[0]!.candidate;
+  } else {
+    if (!leftCand && remaining.length)  leftCand  = remaining[0]!.candidate;
+    if (!rightCand && remaining.length) rightCand = remaining[remaining.length - 1]!.candidate;
+  }
+
+  return { leftCand, rightCand };
 }
 
-function applyCandidateToSlot(candidate: Candidate | null, slot: 'left' | 'right', calib: Calib | null): SlotResult {
-  const buf = slot === 'left' ? lBuf : rBuf;
-  if (!candidate) {
-    clearBuf(buf);
-    return { pos: null, quat: null, conf: 0 };
+/**
+ * CHANGED: replaced the fixed-size ring-buffer average (which, on every
+ * resize, could keep stale slots and drop the newest samples — worst right
+ * when the hand starts moving fast) with a One Euro Filter per axis. Also now
+ * filters bladeDir/rollDir (previously unsmoothed) and holds the last known
+ * pose for HAND_LOSS_GRACE_MS instead of nulling the saber the instant a
+ * single frame fails to detect a hand.
+ */
+function applyCandidateToSlot(candidate: Candidate | null, slot: 'left' | 'right', calib: Calib | null, now: number): SlotResult {
+  const slotState = slot === 'left' ? lSlot : rSlot;
+
+  if (candidate) {
+    const wrist    = candidate.landmarks[0]!;
+    const worldPos = mapToWorld(wrist, calib);
+    const rawQuat  = computeQuaternion(candidate.landmarks);
+
+    const filteredPos   = slotState.posFilter.filter(worldPos, now);
+    const filteredBlade = normalize3(slotState.bladeFilter.filter(rawQuat.bladeDir, now));
+    const filteredRoll  = orthonormalize(slotState.rollFilter.filter(rawQuat.rollDir, now), filteredBlade);
+    const filteredQuat: QuatRepr = { bladeDir: filteredBlade, rollDir: filteredRoll };
+
+    slotState.lastPos    = filteredPos;
+    slotState.lastQuat   = filteredQuat;
+    slotState.lastSeenMs = now;
+    slotState.hasData    = true;
+
+    return { pos: filteredPos, quat: filteredQuat, conf: candidate.score ?? 0 };
   }
 
-  const wrist     = candidate.landmarks[0]!;
-  const worldPos  = mapToWorld(wrist, calib);
-  const smoothSize = computeSmoothSize(buf, worldPos);
-  if (buf.length > smoothSize) {
-    buf.splice(0, buf.length - smoothSize);
-    delete buf._idx;
+  if (slotState.hasData && now - slotState.lastSeenMs <= HAND_LOSS_GRACE_MS) {
+    // Brief dropout: keep reporting the last known pose so the saber doesn't
+    // flicker out for a single bad ML frame.
+    return { pos: slotState.lastPos, quat: slotState.lastQuat, conf: 0 };
   }
-  push(buf, worldPos, smoothSize);
-  return {
-    pos:  avg(buf),
-    quat: computeQuaternion(candidate.landmarks),
-    conf: candidate.score ?? 0,
-  };
+
+  resetSlot(slotState);
+  return { pos: null, quat: null, conf: 0 };
 }
 
-function analyzeHands(candidates: Candidate[], currentAppState: string, calib: Calib | null): object {
+function analyzeHands(candidates: Candidate[], currentAppState: string, calib: Calib | null, now: number): object {
   const unique = dedupeHands(candidates, currentAppState);
 
   let leftCand:  Candidate | null = null;
@@ -267,10 +343,10 @@ function analyzeHands(candidates: Candidate[], currentAppState: string, calib: C
     const selected = strongestCandidate(unique);
     if (oneHandMode === 'left') {
       leftCand = selected;
-      clearBuf(rBuf);
+      resetSlot(rSlot);
     } else {
       rightCand = selected;
-      clearBuf(lBuf);
+      resetSlot(lSlot);
     }
   } else {
     const slots = assignCandidatesToWorldSlots(unique, calib);
@@ -278,8 +354,8 @@ function analyzeHands(candidates: Candidate[], currentAppState: string, calib: C
     rightCand = slots.rightCand;
   }
 
-  const left  = applyCandidateToSlot(leftCand,  'left',  calib);
-  const right = applyCandidateToSlot(rightCand, 'right', calib);
+  const left  = applyCandidateToSlot(leftCand,  'left',  calib, now);
+  const right = applyCandidateToSlot(rightCand, 'right', calib, now);
 
   return {
     leftPos:  left.pos,
@@ -307,8 +383,8 @@ self.onmessage = (e: MessageEvent<{ type: string; payload: Record<string, unknow
 
   if (type === 'setCalibration') {
     calibration = payload as unknown as Calib | null;
-    clearBuf(lBuf);
-    clearBuf(rBuf);
+    resetSlot(lSlot);
+    resetSlot(rSlot);
     return;
   }
 
@@ -320,10 +396,16 @@ self.onmessage = (e: MessageEvent<{ type: string; payload: Record<string, unknow
   }
 
   if (type === 'analyze') {
+    // Prefer the timestamp the frame was captured at (passed from the main
+    // thread) over performance.now() taken here, since postMessage queuing
+    // can add a variable delay that would otherwise throw off the filters'
+    // speed estimate.
+    const now = typeof payload['now'] === 'number' ? (payload['now'] as number) : performance.now();
     const result = analyzeHands(
       (payload['candidates'] as Candidate[]),
       appState,
-      calibration
+      calibration,
+      now,
     );
     (self as unknown as { postMessage: (msg: unknown) => void }).postMessage({ type: 'result', payload: result });
     return;
