@@ -21,11 +21,8 @@ function applySaberColor(side: SaberSide, hex: string): void {
 export function applySaberAppearance(settings: Settings): void {
   if (settings.saberColorLeft) applySaberColor('left', settings.saberColorLeft);
   if (settings.saberColorRight) applySaberColor('right', settings.saberColorRight);
-  if (settings.saberModel) {
-    const model = settings.saberModel as SaberModel;
-    setSaberModel('left', model);
-    setSaberModel('right', model);
-  }
+  setSaberModel('left', (settings.saberModelLeft || settings.saberModel || 'classic') as SaberModel);
+  setSaberModel('right', (settings.saberModelRight || settings.saberModel || 'classic') as SaberModel);
 }
 
 export function initSaberSettings(settings: Settings): SaberSettingsController {
@@ -91,11 +88,15 @@ export function initSaberSettings(settings: Settings): SaberSettingsController {
   }
 
   function syncModelPicker(): void {
-    const model = (settings.saberModel || 'classic') as SaberModel;
-    setSaberModel('left', model);
-    setSaberModel('right', model);
+    const leftModel = (settings.saberModelLeft || settings.saberModel || 'classic') as SaberModel;
+    const rightModel = (settings.saberModelRight || settings.saberModel || 'classic') as SaberModel;
+    setSaberModel('left', leftModel);
+    setSaberModel('right', rightModel);
     modelPicker?.querySelectorAll<HTMLElement>('[data-saber-model]').forEach(button => {
-      button.classList.toggle('is-active', button.dataset['saberModel'] === model);
+      button.classList.toggle(
+        'is-active',
+        leftModel === rightModel && button.dataset['saberModel'] === leftModel,
+      );
     });
   }
 
@@ -104,7 +105,11 @@ export function initSaberSettings(settings: Settings): SaberSettingsController {
       const model = button.dataset['saberModel'] as SaberModel | undefined;
       if (!model) return;
       settings.saberModel = model;
+      settings.saberModelLeft = model;
+      settings.saberModelRight = model;
       setSetting('saberModel', model);
+      setSetting('saberModelLeft', model);
+      setSetting('saberModelRight', model);
       syncModelPicker();
     });
   });
