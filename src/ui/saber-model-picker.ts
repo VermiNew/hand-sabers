@@ -50,6 +50,38 @@ function createPreviewScene(mount: HTMLElement, model: SaberModel, color: string
   let saber = createSaber(new THREE.Color(color).getHex(), model);
   rig.add(saber);
 
+  let dragging = false;
+  let lastPointerX = 0;
+  let lastPointerY = 0;
+  let cameraDistance = 2.75;
+  const canvas = renderer.domElement;
+  canvas.style.touchAction = 'none';
+  canvas.addEventListener('pointerdown', event => {
+    dragging = true;
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+    canvas.setPointerCapture(event.pointerId);
+  });
+  canvas.addEventListener('pointermove', event => {
+    if (!dragging) return;
+    rig.rotation.y += (event.clientX - lastPointerX) * 0.007;
+    rig.rotation.x = THREE.MathUtils.clamp(
+      rig.rotation.x + (event.clientY - lastPointerY) * 0.005,
+      -0.65,
+      0.45,
+    );
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+  });
+  const stopDragging = (): void => { dragging = false; };
+  canvas.addEventListener('pointerup', stopDragging);
+  canvas.addEventListener('pointercancel', stopDragging);
+  canvas.addEventListener('wheel', event => {
+    event.preventDefault();
+    cameraDistance = THREE.MathUtils.clamp(cameraDistance * (1 + event.deltaY * 0.001), 1.6, 4.2);
+    camera.position.z = cameraDistance;
+  }, { passive: false });
+
   let frameId = 0;
   let lastTime = performance.now();
   const resize = (): void => {
@@ -64,7 +96,7 @@ function createPreviewScene(mount: HTMLElement, model: SaberModel, color: string
   resize();
 
   const render = (now: number): void => {
-    rig.rotation.y += Math.min(32, now - lastTime) * 0.00028;
+    if (!dragging) rig.rotation.y += Math.min(32, now - lastTime) * 0.00028;
     lastTime = now;
     (saber.userData as SaberUserData).update(now / 1000);
     renderer.render(scene, camera);
@@ -84,7 +116,8 @@ function createPreviewScene(mount: HTMLElement, model: SaberModel, color: string
         applySaberModel(saber, nextModel);
       }
       const length = Number(saber.userData['bladeLength']) || 1.1;
-      camera.position.z = 1.75 + length * 0.95;
+      cameraDistance = 1.75 + length * 0.95;
+      camera.position.z = cameraDistance;
     },
     dispose(): void {
       cancelAnimationFrame(frameId);

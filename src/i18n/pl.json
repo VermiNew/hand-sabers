@@ -418,6 +418,7 @@
       "saberPickerTitle": "Wybierz modele mieczy",
       "saberPickerDesc": "Każda dłoń może używać innej sylwetki. Wybór zobaczysz od razu w podglądzie.",
       "saberPickerHint": "Wybory zostaną zapisane dopiero po zastosowaniu.",
+      "saberPickerControls": "Przeciągnij, aby obrócić · użyj kółka, aby przybliżyć",
       "preview": "Podgląd",
       "modelClassic": "Klasyczny",
       "modelWide": "Szeroki",

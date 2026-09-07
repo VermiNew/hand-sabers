@@ -418,6 +418,7 @@
       "saberPickerTitle": "Choose saber models",
       "saberPickerDesc": "Each hand can use a different silhouette. Your choice appears in the preview immediately.",
       "saberPickerHint": "Choices are saved only after you apply them.",
+      "saberPickerControls": "Drag to rotate · use the mouse wheel to zoom",
       "preview": "Preview",
       "modelClassic": "Classic",
       "modelWide": "Wide",
