@@ -13,6 +13,7 @@ import {
 import {
   applySaberModel,
   createSaber,
+  setSaberVisualColor,
   type SaberModel,
   type SaberUserData,
 } from './saber-visual.ts';
@@ -344,10 +345,8 @@ export function setSaberColor(side: 'left' | 'right', hex: string): void {
   const colorDef   = SABER_COLORS.find(c => c.hex.toLowerCase() === String(hex).toLowerCase());
   const colorHex   = colorDef?.hex ?? hex;
   const color      = new THREE.Color(colorHex);
-  const ud         = saber.userData as SaberUserData;
 
-  if (ud.bladeGlow) ud.bladeGlow.color.set(color);
-  if (ud.outerGlow) ud.outerGlow.color.set(color);
+  setSaberVisualColor(saber, color.getHex());
 
   light.color.set(color);
 
@@ -381,7 +380,6 @@ export function setSaberColor(side: 'left' | 'right', hex: string): void {
     ribMat.needsUpdate = true;
   }
 
-  ud.color = new THREE.Color(colorHex).getHex();
   publishSaberColorCss(side, color);
 }
 
@@ -491,8 +489,10 @@ export function updateLightReflections(
   const rMotion = THREE.MathUtils.clamp(rVel.length() * 12, 0, 1);
   const trailIntensity = THREE.MathUtils.clamp(perfProfile.saberTrailIntensity || 0, 0, 1.25);
   const motionGlow = perfProfile.saberTrails ? 0.22 * trailIntensity : 0;
-  (lSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + lMotion * motionGlow;
-  (rSaber.userData as SaberUserData).outerGlow.opacity = 0.18 + rMotion * motionGlow;
+  const leftSaberData = lSaber.userData as SaberUserData;
+  const rightSaberData = rSaber.userData as SaberUserData;
+  leftSaberData.outerGlow.opacity = leftSaberData.outerGlowBaseOpacity + lMotion * motionGlow;
+  rightSaberData.outerGlow.opacity = rightSaberData.outerGlowBaseOpacity + rMotion * motionGlow;
   if (!perfProfile.floorGlows && !perfProfile.saberGlints) return;
   const energy = THREE.MathUtils.clamp(musicEnergy, 0, 1.5);
   const beat = THREE.MathUtils.clamp(beatPulse, 0, 1.5);
