@@ -271,6 +271,7 @@
     "audio": {
       "interfaceSounds": "Interface",
       "masterMeter": "Poziom master audio",
+      "phoneMeter": "Poziom audio telefonu",
       "individualSounds": "Poszczególne dźwięki",
       "music": "Muzyka",
       "sfx": "Efekty",

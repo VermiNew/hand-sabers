@@ -118,6 +118,11 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
         && finiteInRange(value['sequence'], 1, Number.MAX_SAFE_INTEGER)
         && ['scheduled', 'late', 'duplicate', 'unavailable'].includes(String(value['status']))
         && finiteInRange(value['latenessMs'], 0, 60_000))
+      || (type === 'audio-meter'
+        && finiteInRange(value['db'], -60, 0)
+        && finiteInRange(value['peak'], 0, 4)
+        && typeof value['clipping'] === 'boolean'
+        && finiteInRange(value['sampledAt'], 0, Number.MAX_SAFE_INTEGER))
       || (type === 'tracking-metrics'
         && (value['captureAgeMs'] === null || finiteInRange(value['captureAgeMs'], 0, 5_000))
         && finiteInRange(value['detectionMs'], 0, 5_000)

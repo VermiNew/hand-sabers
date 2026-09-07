@@ -338,6 +338,7 @@ body.settings-modal-open #camPanel {
 .audio-meter-fill { position:absolute; inset:0; transform:scaleX(var(--audio-level)); transform-origin:left; background:linear-gradient(90deg,#35e69a 0 68%,#ffd45c 68% 86%,#ff526d 86%); transition:transform 70ms linear; }
 .audio-meter-clip { position:absolute; top:1px; right:1px; width:5px; height:7px; border-radius:1px; background:#55202a; }
 .audio-meter.is-clipping .audio-meter-clip { background:#ff2f50; box-shadow:0 0 8px rgba(255,47,80,.85); }
+.audio-meter.is-remote:not(.has-signal) { filter:saturate(.2); opacity:.55; }
 
 @media (max-width:560px) {
   .audio-meter-row { grid-template-columns:1fr 58px; }

@@ -35,6 +35,15 @@ export function initPhoneAudio(
   const soundEngine = createPhoneSoundEngine();
   const receivedSoundSequences = new Set<number>();
   const soundSequenceOrder: number[] = [];
+  let meterTimer: ReturnType<typeof setInterval> | null = null;
+
+  function startMeterReporting(): void {
+    if (meterTimer) return;
+    meterTimer = setInterval(() => {
+      const levels = soundEngine.getMeterLevels();
+      onBankEvent({ v: 1, type: 'audio-meter', ...levels, sampledAt: Date.now() });
+    }, 125);
+  }
 
   function reportBankReady(): void {
     if (!userEnabled || !loaded || !preparedBank || !bankRequestId) return;
@@ -227,6 +236,8 @@ export function initPhoneAudio(
       await el.play();
       el.pause();
       if (!await soundEngine.enable()) throw new Error('SFX_ENABLE_FAILED');
+      soundEngine.attachMediaElement(el);
+      startMeterReporting();
       userEnabled = true;
       if (preparedBank) reportBankReady();
       else onReady();

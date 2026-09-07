@@ -214,6 +214,14 @@
                 <span class="sp-knob"></span>
               </label>
             </div>
+            <div class="audio-meter-row">
+              <span class="audio-meter-label" data-i18n="settings.audio.phoneMeter">Poziom telefonu</span>
+              <div class="audio-meter is-remote" id="menuPhoneAudioMeter" role="meter" aria-label="Poziom audio telefonu" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="-60">
+                <span class="audio-meter-fill"></span>
+                <span class="audio-meter-clip" aria-hidden="true"></span>
+              </div>
+              <output class="audio-meter-value" id="menuPhoneAudioMeterValue">— dB</output>
+            </div>
             <div class="sp-row">
               <span class="sp-label" data-i18n="settings.audio.phoneLatency">Opóźnienie telefonu (ms)</span>
               <div class="sp-slider-wrap sp-slider-accent"><input id="menuPhoneAudioLatency" type="range" min="0" max="500" step="10"></div>

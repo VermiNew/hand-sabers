@@ -17,11 +17,17 @@ export interface PhoneSoundScheduleResult {
 
 export function createPhoneSoundEngine(): {
   enable(): Promise<boolean>;
+  attachMediaElement(element: HTMLMediaElement): void;
   setHostClockOffset(offsetMs: number): void;
   schedule(sound: ScheduledPhoneSound): PhoneSoundScheduleResult | null;
+  getMeterLevels(): { db: number; peak: number; clipping: boolean };
 } {
   let context: AudioContext | null = null;
   let hostClockOffsetMs = 0;
+  let output: GainNode | null = null;
+  let analyser: AnalyserNode | null = null;
+  let meterData: Float32Array<ArrayBuffer> | null = null;
+  let mediaSource: MediaElementAudioSourceNode | null = null;
 
   function ensureContext(): AudioContext | null {
     if (context && context.state !== 'closed') return context;
@@ -29,7 +35,17 @@ export function createPhoneSoundEngine(): {
       || (window as typeof window & { webkitAudioContext?: AudioContextConstructor }).webkitAudioContext;
     if (!AudioContextCtor) return null;
     context = new AudioContextCtor();
+    output = context.createGain();
+    analyser = context.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.72;
+    output.connect(analyser).connect(context.destination);
+    meterData = new Float32Array(analyser.fftSize);
     return context;
+  }
+
+  function connectOutput(node: AudioNode): void {
+    if (output) node.connect(output);
   }
 
   function tone(
@@ -49,7 +65,8 @@ export function createPhoneSoundEngine(): {
     gain.gain.setValueAtTime(0.0001, start);
     gain.gain.linearRampToValueAtTime(Math.max(0.0001, volume), start + Math.min(0.008, duration / 3));
     gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-    oscillator.connect(gain).connect(audio.destination);
+    oscillator.connect(gain);
+    connectOutput(gain);
     oscillator.start(start);
     oscillator.stop(start + duration);
   }
@@ -81,7 +98,8 @@ export function createPhoneSoundEngine(): {
         source.buffer = buffer;
         gain.gain.setValueAtTime(0.4 * volume, start);
         gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.18);
-        source.connect(gain).connect(audio.destination);
+        source.connect(gain);
+        connectOutput(gain);
         source.start(start);
         break;
       }
@@ -103,6 +121,12 @@ export function createPhoneSoundEngine(): {
       if (audio.state === 'suspended') await audio.resume();
       return audio.state === 'running';
     },
+    attachMediaElement(element): void {
+      const audio = ensureContext();
+      if (!audio || mediaSource) return;
+      mediaSource = audio.createMediaElementSource(element);
+      connectOutput(mediaSource);
+    },
     setHostClockOffset(offsetMs): void {
       hostClockOffsetMs = offsetMs;
     },
@@ -115,6 +139,22 @@ export function createPhoneSoundEngine(): {
       const scheduledFor = audio.currentTime + delaySec;
       render(audio, scheduledFor, sound);
       return { status: latenessMs > 20 ? 'late' : 'scheduled', scheduledFor, latenessMs };
+    },
+    getMeterLevels(): { db: number; peak: number; clipping: boolean } {
+      if (!analyser || !meterData) return { db: -60, peak: 0, clipping: false };
+      analyser.getFloatTimeDomainData(meterData);
+      let sumSquares = 0;
+      let peak = 0;
+      for (const sample of meterData) {
+        sumSquares += sample * sample;
+        peak = Math.max(peak, Math.abs(sample));
+      }
+      const rms = Math.sqrt(sumSquares / meterData.length);
+      return {
+        db: Math.max(-60, Math.min(0, 20 * Math.log10(Math.max(rms, 0.001)))),
+        peak,
+        clipping: peak >= 0.98,
+      };
     },
   };
 }

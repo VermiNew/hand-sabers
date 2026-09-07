@@ -271,6 +271,7 @@
     "audio": {
       "interfaceSounds": "Interface",
       "masterMeter": "Master audio level",
+      "phoneMeter": "Phone audio level",
       "individualSounds": "Individual sounds",
       "music": "Music",
       "sfx": "Effects",

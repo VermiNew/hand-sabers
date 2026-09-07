@@ -135,6 +135,15 @@ export interface AudioSfxAckEvent {
   latenessMs: number;
 }
 
+export interface AudioMeterEvent {
+  v: 1;
+  type: 'audio-meter';
+  db: number;
+  peak: number;
+  clipping: boolean;
+  sampledAt: number;
+}
+
 export type AudioEvent =
   | AudioReadyEvent
   | AudioErrorEvent
@@ -142,7 +151,8 @@ export type AudioEvent =
   | AudioBankReadyEvent
   | AudioBankErrorEvent
   | AudioClockPongEvent
-  | AudioSfxAckEvent;
+  | AudioSfxAckEvent
+  | AudioMeterEvent;
 
 const MAP_ID_RE = /^[a-z0-9][a-z0-9_-]{0,119}$/i;
 const REQUEST_ID_RE = /^[a-zA-Z0-9_-]{1,48}$/;
@@ -210,6 +220,12 @@ export function isAudioEvent(value: unknown): value is AudioEvent {
       && isFiniteNumber(event['sequence'], 1, Number.MAX_SAFE_INTEGER)
       && ['scheduled', 'late', 'duplicate', 'unavailable'].includes(String(event['status']))
       && isFiniteNumber(event['latenessMs'], 0, 60_000);
+  }
+  if (type === 'audio-meter') {
+    return isFiniteNumber(event['db'], -60, 0)
+      && isFiniteNumber(event['peak'], 0, 4)
+      && typeof event['clipping'] === 'boolean'
+      && isFiniteNumber(event['sampledAt'], 0, Number.MAX_SAFE_INTEGER);
   }
   if (typeof event['requestId'] !== 'string' || !REQUEST_ID_RE.test(event['requestId'])) return false;
   if (type === 'audio-bank-error') {

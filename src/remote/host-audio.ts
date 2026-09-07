@@ -146,6 +146,10 @@ export function onPhoneAudioError(): void {
 
 /** Apply validated preload status from the currently paired phone. */
 export function onPhoneAudioEvent(event: AudioEvent): void {
+  if (event.type === 'audio-meter') {
+    window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-meter', { detail: event }));
+    return;
+  }
   if (event.type === 'audio-clock-pong') {
     recordClockPong(event);
     return;

@@ -37,6 +37,8 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
   const interfaceSoundInput = document.getElementById('menuInterfaceSoundVolume') as HTMLInputElement | null;
   const masterMeter = document.getElementById('menuMasterAudioMeter');
   const masterMeterValue = document.getElementById('menuMasterAudioMeterValue');
+  const phoneMeter = document.getElementById('menuPhoneAudioMeter');
+  const phoneMeterValue = document.getElementById('menuPhoneAudioMeterValue');
 
   if (masterMeter) {
     masterMeter.setAttribute('aria-label', t('settings.audio.masterMeter'));
@@ -52,6 +54,20 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
       requestAnimationFrame(updateMeter);
     };
     requestAnimationFrame(updateMeter);
+  }
+
+  if (phoneMeter) {
+    phoneMeter.setAttribute('aria-label', t('settings.audio.phoneMeter'));
+    window.addEventListener('hand-sabers:phone-audio-meter', event => {
+      const detail = (event as CustomEvent<{ db: number; clipping: boolean }>).detail;
+      if (!detail || !Number.isFinite(detail.db)) return;
+      const db = Math.max(-60, Math.min(0, detail.db));
+      phoneMeter.style.setProperty('--audio-level', String((db + 60) / 60));
+      phoneMeter.classList.toggle('is-clipping', detail.clipping);
+      phoneMeter.classList.add('has-signal');
+      phoneMeter.setAttribute('aria-valuenow', db.toFixed(1));
+      if (phoneMeterValue) phoneMeterValue.textContent = `${db.toFixed(1)} dB`;
+    });
   }
 
   if (volumeInput) {
