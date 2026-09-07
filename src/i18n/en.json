@@ -763,9 +763,15 @@
     "confirmNo": "CANCEL",
     "newCode": "GENERATE NEW CODE",
     "phoneAudioTitle": "AUDIO OUTPUT",
-    "phoneAudioDesc": "Enable music playback on your phone. Requires user interaction.",
+    "phoneAudioDesc": "Enable music and the sound bank on your phone. Requires user interaction.",
     "phoneAudioEnable": "Enable audio",
-    "phoneAudioEnabled": "Audio enabled"
+    "phoneAudioEnabled": "Audio enabled",
+    "phoneAudioPreloadAria": "Audio bank preparation progress",
+    "phoneAudioPreloading": "DOWNLOADING AND VERIFYING",
+    "phoneAudioVerified": "AUDIO BANK READY",
+    "phoneAudioSoundCount": "{{count}} sounds",
+    "phoneAudioPreloadError": "AUDIO PREPARATION FAILED",
+    "phoneAudioPcFallback": "PC audio active"
   },
   "hud": {
     "progress": "PROGRESS",

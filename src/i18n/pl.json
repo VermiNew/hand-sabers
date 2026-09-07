@@ -763,9 +763,15 @@
     "confirmNo": "ANULUJ",
     "newCode": "UTWÓRZ NOWY KOD",
     "phoneAudioTitle": "WYJŚCIE AUDIO",
-    "phoneAudioDesc": "Włącz odtwarzanie muzyki na telefonie. Wymaga interakcji użytkownika.",
+    "phoneAudioDesc": "Włącz odtwarzanie muzyki i banku dźwięków na telefonie. Wymaga interakcji użytkownika.",
     "phoneAudioEnable": "Włącz audio",
-    "phoneAudioEnabled": "Audio włączone"
+    "phoneAudioEnabled": "Audio włączone",
+    "phoneAudioPreloadAria": "Postęp przygotowania banku audio",
+    "phoneAudioPreloading": "POBIERANIE I WERYFIKACJA",
+    "phoneAudioVerified": "BANK AUDIO GOTOWY",
+    "phoneAudioSoundCount": "{{count}} dźwięków",
+    "phoneAudioPreloadError": "NIE UDAŁO SIĘ PRZYGOTOWAĆ AUDIO",
+    "phoneAudioPcFallback": "Aktywny dźwięk PC"
   },
   "hud": {
     "progress": "POSTĘP",

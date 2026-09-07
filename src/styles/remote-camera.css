@@ -59,3 +59,13 @@ button:disabled { opacity:.45; }
 .remote-audio-enable { width:100%; padding:10px; border:1px solid rgba(47,124,255,.5); border-radius:8px; background:rgba(47,124,255,.12); color:var(--main-light,#7ec0ff); font:800 11px 'Oxanium',sans-serif; letter-spacing:1px; cursor:pointer; transition:background .15s ease; }
 .remote-audio-enable:hover:not(:disabled) { background:rgba(47,124,255,.2); }
 .remote-audio-enable:disabled { opacity:.5; cursor:default; }
+.remote-audio-preload { margin:12px 0; padding:10px; border:1px solid rgba(126,184,255,.14); border-radius:8px; background:rgba(2,8,17,.7); }
+.remote-audio-preload-status { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; color:#91a3b8; font-size:9px; letter-spacing:.4px; }
+.remote-audio-preload-status span { min-width:0; }
+.remote-audio-preload-status strong { flex:none; margin:0; color:#d8eaff; font:700 8px 'JetBrains Mono',monospace; letter-spacing:-.2px; text-align:right; white-space:nowrap; }
+.remote-audio-preload progress { display:block; width:100%; height:6px; overflow:hidden; border:0; border-radius:999px; background:#142033; accent-color:#36f2a1; }
+.remote-audio-preload progress::-webkit-progress-bar { border-radius:999px; background:#142033; }
+.remote-audio-preload progress::-webkit-progress-value { border-radius:999px; background:linear-gradient(90deg,#2f7cff,#36f2a1); }
+.remote-audio-preload progress::-moz-progress-bar { border-radius:999px; background:linear-gradient(90deg,#2f7cff,#36f2a1); }
+.remote-audio-preload[data-state="ready"] .remote-audio-preload-status span { color:#36f2a1; }
+.remote-audio-preload[data-state="error"] .remote-audio-preload-status span { color:#ff9aa5; }

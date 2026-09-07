@@ -197,9 +197,13 @@ export function initPhoneAudio(
 /** UI helper: adds an "Enable audio" button to the phone page. */
 export function setupPhoneAudioUI(
   onEnable: () => Promise<boolean>,
-): void {
+): {
+  setProgress(loadedAssets: number, totalAssets: number, loadedBytes: number, totalBytes: number): void;
+  setReady(totalAssets: number): void;
+  setError(): void;
+} | null {
   const container = document.querySelector('.remote-card');
-  if (!container) return;
+  if (!container) return null;
 
   const section = document.createElement('div');
   section.className = 'remote-audio-section';
@@ -216,6 +220,23 @@ export function setupPhoneAudioUI(
   btn.className = 'remote-audio-enable';
   btn.textContent = t('remoteTracking.phoneAudioEnable');
 
+  const preload = document.createElement('div');
+  preload.className = 'remote-audio-preload';
+  preload.hidden = true;
+
+  const preloadStatus = document.createElement('div');
+  preloadStatus.className = 'remote-audio-preload-status';
+  preloadStatus.setAttribute('role', 'status');
+
+  const preloadLabel = document.createElement('span');
+  const preloadValue = document.createElement('strong');
+  preloadStatus.append(preloadLabel, preloadValue);
+
+  const progress = document.createElement('progress');
+  progress.max = 1;
+  progress.value = 0;
+  progress.setAttribute('aria-label', t('remoteTracking.phoneAudioPreloadAria'));
+
   btn.addEventListener('click', async () => {
     btn.disabled = true;
     const enabled = await onEnable();
@@ -223,6 +244,34 @@ export function setupPhoneAudioUI(
     if (enabled) btn.textContent = t('remoteTracking.phoneAudioEnabled');
   });
 
-  section.append(title, desc, btn);
+  preload.append(preloadStatus, progress);
+  section.append(title, desc, preload, btn);
   container.append(section);
+
+  const formatBytes = (bytes: number): string => `${(Math.max(0, bytes) / 1024 / 1024).toFixed(1)} MB`;
+  return {
+    setProgress(loadedAssets, totalAssets, loadedBytes, totalBytes): void {
+      preload.hidden = false;
+      preload.dataset['state'] = 'loading';
+      preloadLabel.textContent = t('remoteTracking.phoneAudioPreloading');
+      preloadValue.textContent = `${loadedAssets}/${totalAssets} · ${formatBytes(loadedBytes)}/${formatBytes(totalBytes)}`;
+      progress.max = Math.max(1, totalBytes);
+      progress.value = Math.min(progress.max, Math.max(0, loadedBytes));
+    },
+    setReady(totalAssets): void {
+      preload.hidden = false;
+      preload.dataset['state'] = 'ready';
+      preloadLabel.textContent = t('remoteTracking.phoneAudioVerified');
+      preloadValue.textContent = t('remoteTracking.phoneAudioSoundCount').replace('{{count}}', String(totalAssets));
+      progress.max = 1;
+      progress.value = 1;
+    },
+    setError(): void {
+      preload.hidden = false;
+      preload.dataset['state'] = 'error';
+      preloadLabel.textContent = t('remoteTracking.phoneAudioPreloadError');
+      preloadValue.textContent = t('remoteTracking.phoneAudioPcFallback');
+      progress.removeAttribute('value');
+    },
+  };
 }

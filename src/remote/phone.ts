@@ -55,6 +55,8 @@ const phoneTracking = initPhoneTracking(
   },
 );
 
+let phoneAudioUi: ReturnType<typeof setupPhoneAudioUI> = null;
+
 // Phone audio player — receives commands from host via tracking channel
 const phoneAudio = initPhoneAudio(
   () => {
@@ -66,6 +68,7 @@ const phoneAudio = initPhoneAudio(
     }
   },
   (code) => {
+    phoneAudioUi?.setError();
     if (trackingSocket?.readyState === WebSocket.OPEN) {
       try {
         trackingSocket.send(JSON.stringify({ v: 1, type: 'audio-error', code }));
@@ -73,6 +76,18 @@ const phoneAudio = initPhoneAudio(
     }
   },
   (event) => {
+    if (event['type'] === 'audio-bank-progress') {
+      phoneAudioUi?.setProgress(
+        Number(event['loadedAssets']),
+        Number(event['totalAssets']),
+        Number(event['loadedBytes']),
+        Number(event['totalBytes']),
+      );
+    } else if (event['type'] === 'audio-bank-ready') {
+      phoneAudioUi?.setReady(Number(event['totalAssets']));
+    } else if (event['type'] === 'audio-bank-error') {
+      phoneAudioUi?.setError();
+    }
     if (trackingSocket?.readyState !== WebSocket.OPEN) return;
     try {
       trackingSocket.send(JSON.stringify(event));
@@ -81,7 +96,7 @@ const phoneAudio = initPhoneAudio(
 );
 
 // Add "Enable audio" button to the phone page
-setupPhoneAudioUI(() => phoneAudio.enableAudio());
+phoneAudioUi = setupPhoneAudioUI(() => phoneAudio.enableAudio());
 
 function applyTranslations(): void {
   document.documentElement.lang = getCurrentLang();
