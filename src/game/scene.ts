@@ -386,7 +386,11 @@ export function setSaberColor(side: 'left' | 'right', hex: string): void {
 export type { SaberModel } from './saber-visual.ts';
 
 export function setSaberModel(side: 'left' | 'right', model: SaberModel): void {
-  applySaberModel(side === 'left' ? lSaber : rSaber, model);
+  const saber = side === 'left' ? lSaber : rSaber;
+  applySaberModel(saber, model);
+  const userData = saber.userData as SaberUserData;
+  userData.sparkPoints.visible = Boolean(perfProfile.saberGlints);
+  userData.pulseRing.visible = Boolean(perfProfile.saberGlints) && userData.pulseEnabled;
 }
 
 export function animateIdleSabers(t: number): void {
@@ -491,6 +495,8 @@ export function updateLightReflections(
   const motionGlow = perfProfile.saberTrails ? 0.22 * trailIntensity : 0;
   const leftSaberData = lSaber.userData as SaberUserData;
   const rightSaberData = rSaber.userData as SaberUserData;
+  leftSaberData.update(t);
+  rightSaberData.update(t);
   leftSaberData.outerGlow.opacity = leftSaberData.outerGlowBaseOpacity + lMotion * motionGlow;
   rightSaberData.outerGlow.opacity = rightSaberData.outerGlowBaseOpacity + rMotion * motionGlow;
   if (!perfProfile.floorGlows && !perfProfile.saberGlints) return;
@@ -584,6 +590,8 @@ function applyDecorVisibility(): void {
   scene.fog             = perfProfile.fog ? sceneFog : null;
   for (const s of [lSaber, rSaber]) {
     const ud = s.userData as SaberUserData;
+    ud.sparkPoints.visible = Boolean(perfProfile.saberGlints);
+    ud.pulseRing.visible = Boolean(perfProfile.saberGlints) && ud.pulseEnabled;
     if (!perfProfile.saberGlints) {
       ud.shineMat.opacity  = 0;
       ud.shine2Mat.opacity = 0;

@@ -1,5 +1,11 @@
 import * as THREE from 'three';
-import { applySaberModel, createSaber, disposeSaber, type SaberModel } from '../game/saber-visual.ts';
+import {
+  applySaberModel,
+  createSaber,
+  disposeSaber,
+  type SaberModel,
+  type SaberUserData,
+} from '../game/saber-visual.ts';
 import { t } from '../i18n/index.ts';
 import { createModalTransition } from './modal-transition.ts';
 
@@ -60,6 +66,7 @@ function createPreviewScene(mount: HTMLElement, model: SaberModel, color: string
   const render = (now: number): void => {
     rig.rotation.y += Math.min(32, now - lastTime) * 0.00028;
     lastTime = now;
+    (saber.userData as SaberUserData).update(now / 1000);
     renderer.render(scene, camera);
     frameId = requestAnimationFrame(render);
   };

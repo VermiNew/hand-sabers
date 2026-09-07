@@ -24,6 +24,8 @@ interface SaberModelSpec {
   tipSize: number;
   guardScale: number;
   accent: SaberAccent;
+  pulse: boolean;
+  sparkCount: number;
 }
 
 export interface SaberUserData {
@@ -47,6 +49,12 @@ export interface SaberUserData {
   emitterMesh: THREE.Mesh;
   accessoryGroup: THREE.Group;
   outerGlowBaseOpacity: number;
+  sparkPoints: THREE.Points;
+  pulseRing: THREE.Mesh;
+  pulseRingMat: THREE.MeshBasicMaterial;
+  pulseEnabled: boolean;
+  dotTexture: THREE.DataTexture;
+  update(elapsedSeconds: number): void;
 }
 
 const SABER_MODELS: Record<SaberModel, SaberModelSpec> = {
@@ -55,42 +63,42 @@ const SABER_MODELS: Record<SaberModel, SaberModelSpec> = {
     coreTop: 0.007, coreBase: 0.010, glowTop: 0.022, glowBase: 0.027,
     outerTop: 0.038, outerBase: 0.045, auraTop: 0.058, auraBase: 0.066,
     glowOpacity: 0.78, outerOpacity: 0.26, auraOpacity: 0.10,
-    tip: 'dome', tipSize: 1, guardScale: 1, accent: 'none',
+    tip: 'dome', tipSize: 1, guardScale: 1, accent: 'none', pulse: false, sparkCount: 26,
   },
   wide: {
     length: 1, segments: 10, depth: 1,
     coreTop: 0.014, coreBase: 0.017, glowTop: 0.040, glowBase: 0.046,
     outerTop: 0.062, outerBase: 0.070, auraTop: 0.086, auraBase: 0.096,
     glowOpacity: 0.85, outerOpacity: 0.32, auraOpacity: 0.13,
-    tip: 'dome', tipSize: 1.3, guardScale: 1.35, accent: 'bands',
+    tip: 'dome', tipSize: 1.3, guardScale: 1.35, accent: 'bands', pulse: false, sparkCount: 34,
   },
   thin: {
     length: 1.28, segments: 8, depth: 1,
     coreTop: 0.003, coreBase: 0.008, glowTop: 0.010, glowBase: 0.019,
     outerTop: 0.018, outerBase: 0.031, auraTop: 0.028, auraBase: 0.045,
     glowOpacity: 0.72, outerOpacity: 0.20, auraOpacity: 0.08,
-    tip: 'cone', tipSize: 1.6, guardScale: 0.72, accent: 'pommel',
+    tip: 'cone', tipSize: 1.6, guardScale: 0.72, accent: 'pommel', pulse: false, sparkCount: 14,
   },
   prism: {
     length: 1.16, segments: 5, depth: 1,
     coreTop: 0.008, coreBase: 0.010, glowTop: 0.026, glowBase: 0.030,
     outerTop: 0.044, outerBase: 0.050, auraTop: 0.066, auraBase: 0.074,
     glowOpacity: 0.80, outerOpacity: 0.30, auraOpacity: 0.12,
-    tip: 'dome', tipSize: 1.1, guardScale: 1.05, accent: 'gem',
+    tip: 'dome', tipSize: 1.1, guardScale: 1.05, accent: 'gem', pulse: false, sparkCount: 20,
   },
   edge: {
     length: 1.06, segments: 4, depth: 0.34,
     coreTop: 0.011, coreBase: 0.014, glowTop: 0.027, glowBase: 0.032,
     outerTop: 0.045, outerBase: 0.052, auraTop: 0.066, auraBase: 0.075,
     glowOpacity: 0.82, outerOpacity: 0.28, auraOpacity: 0.10,
-    tip: 'cone', tipSize: 1.2, guardScale: 1.1, accent: 'fins',
+    tip: 'cone', tipSize: 1.2, guardScale: 1.1, accent: 'fins', pulse: false, sparkCount: 22,
   },
   pulse: {
     length: 1.05, segments: 16, depth: 1,
     coreTop: 0.010, coreBase: 0.011, glowTop: 0.034, glowBase: 0.037,
     outerTop: 0.058, outerBase: 0.064, auraTop: 0.086, auraBase: 0.094,
     glowOpacity: 0.78, outerOpacity: 0.30, auraOpacity: 0.13,
-    tip: 'dome', tipSize: 1.15, guardScale: 1, accent: 'rings',
+    tip: 'dome', tipSize: 1.15, guardScale: 1, accent: 'rings', pulse: true, sparkCount: 30,
   },
 };
 
@@ -201,6 +209,38 @@ function buildAccessories(target: THREE.Group, hex: number, accent: SaberAccent)
     pommel.position.y = -0.29;
     target.add(pommel);
   }
+}
+
+function createDotTexture(size = 24): THREE.DataTexture {
+  const data = new Uint8Array(size * size * 4);
+  const center = (size - 1) / 2;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const distance = Math.min(1, Math.hypot((x - center) / center, (y - center) / center));
+      const offset = (y * size + x) * 4;
+      data[offset] = data[offset + 1] = data[offset + 2] = 255;
+      data[offset + 3] = Math.round(255 * Math.pow(1 - distance, 2));
+    }
+  }
+  const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function buildSparkGeometry(count: number, length: number, radius: number): THREE.BufferGeometry {
+  const positions = new Float32Array(count * 3);
+  for (let index = 0; index < count; index++) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = radius * (0.5 + Math.random() * 0.8);
+    positions[index * 3] = Math.cos(angle) * distance;
+    positions[index * 3 + 1] = Math.random() * length;
+    positions[index * 3 + 2] = Math.sin(angle) * distance;
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  return geometry;
 }
 
 export function createSaber(hex: number, model: SaberModel = 'classic'): THREE.Group {
@@ -317,6 +357,25 @@ export function createSaber(hex: number, model: SaberModel = 'classic'): THREE.G
   const accessoryGroup = new THREE.Group();
   g.add(accessoryGroup);
 
+  const dotTexture = createDotTexture();
+  const sparkPoints = new THREE.Points(
+    new THREE.BufferGeometry(),
+    new THREE.PointsMaterial({
+      size: 0.012, map: dotTexture, color: hex, transparent: true, opacity: 0.88,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+    }),
+  );
+  g.add(sparkPoints);
+
+  const pulseRingMat = new THREE.MeshBasicMaterial({
+    color: hex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+    depthWrite: false, side: THREE.DoubleSide, toneMapped: false,
+  });
+  const pulseRing = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.006, 8, 20), pulseRingMat);
+  pulseRing.rotation.x = Math.PI / 2;
+  pulseRing.visible = false;
+  bladeGlow.add(pulseRing);
+
   g.frustumCulled = false;
   g.userData = {
     bladeGlow: bgMat2, outerGlow: ogMat,
@@ -327,6 +386,8 @@ export function createSaber(hex: number, model: SaberModel = 'classic'): THREE.G
     model, auraGlow: auraMat, auraGlowMesh,
     guardMesh, emitterMesh, accessoryGroup,
     outerGlowBaseOpacity: 0.22,
+    sparkPoints, pulseRing, pulseRingMat, pulseEnabled: false, dotTexture,
+    update: () => {},
   } satisfies SaberUserData;
   applySaberModel(g, model);
   return g;
@@ -339,6 +400,8 @@ export function setSaberVisualColor(saber: THREE.Group, hex: number): void {
   userData.bladeGlow.color.copy(color);
   userData.outerGlow.color.copy(color);
   userData.auraGlow.color.copy(color);
+  (userData.sparkPoints.material as THREE.PointsMaterial).color.copy(color);
+  userData.pulseRingMat.color.copy(color);
   (userData.bladeCoreMesh.material as THREE.MeshBasicMaterial).color.copy(
     color.clone().lerp(new THREE.Color(0xffffff), 0.82),
   );
@@ -367,6 +430,7 @@ export function disposeSaber(saber: THREE.Group): void {
   });
   geometries.forEach(geometry => geometry.dispose());
   materials.forEach(material => material.dispose());
+  (saber.userData as Partial<SaberUserData>).dotTexture?.dispose();
 }
 
 export function applySaberModel(saber: THREE.Group, model: SaberModel): void {
@@ -406,6 +470,14 @@ export function applySaberModel(saber: THREE.Group, model: SaberModel): void {
   }
   buildAccessories(userData.accessoryGroup, userData.color, spec.accent);
 
+  userData.sparkPoints.geometry.dispose();
+  userData.sparkPoints.geometry = buildSparkGeometry(spec.sparkCount, spec.length, spec.outerTop * 1.45);
+  userData.sparkPoints.position.y = 0.02;
+  userData.pulseRing.geometry.dispose();
+  userData.pulseRing.geometry = new THREE.TorusGeometry(spec.glowTop * 1.6, spec.glowTop * 0.4, 8, 20);
+  userData.pulseEnabled = spec.pulse;
+  userData.pulseRing.visible = spec.pulse;
+
   userData.shineMesh.position.set(spec.outerTop * 1.4, bladeCenter, spec.outerTop * 1.1);
   userData.shineMesh.scale.set(1, spec.length / 1.1, 1);
   userData.shine2Mesh.position.set(spec.outerTop * 1.4, bladeCenter + halfLength * 0.4, spec.outerTop * 1.1);
@@ -416,5 +488,13 @@ export function applySaberModel(saber: THREE.Group, model: SaberModel): void {
   userData.wireMesh.position.y = bladeCenter;
   userData.bladeLength = spec.length;
   userData.model = model;
+  userData.update = elapsedSeconds => {
+    userData.sparkPoints.rotation.y = elapsedSeconds * 0.7;
+    userData.sparkPoints.position.y = 0.02 + Math.sin(elapsedSeconds * 1.8) * 0.008;
+    if (!userData.pulseEnabled) return;
+    const progress = (elapsedSeconds * 0.55) % 1;
+    userData.pulseRing.position.y = -halfLength + progress * spec.length;
+    userData.pulseRingMat.opacity = Math.sin(progress * Math.PI) * 0.55;
+  };
   setSaberVisualColor(saber, userData.color);
 }
