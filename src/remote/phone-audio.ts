@@ -32,6 +32,7 @@ export function initPhoneAudio(
   let preparedBank: PreparedPhoneAudioBank | null = null;
   let bankRequestId = '';
   let hostClockOffsetMs = 0;
+  let lastSyncSequence = 0;
   const soundEngine = createPhoneSoundEngine();
   const receivedSoundSequences = new Set<number>();
   const soundSequenceOrder: number[] = [];
@@ -131,6 +132,50 @@ export function initPhoneAudio(
     return audioEl;
   }
 
+  function targetPlaybackTime(
+    offsetSec: number,
+    serverTime: number,
+    playbackRate: number,
+    maxTransitMs: number,
+  ): number {
+    const estimatedHostNow = Date.now() - hostClockOffsetMs;
+    const elapsedMs = estimatedHostNow - serverTime;
+    const transitSec = elapsedMs >= 0 && elapsedMs <= maxTransitMs
+      ? elapsedMs / 1000 * playbackRate
+      : 0;
+    return Math.max(0, offsetSec + latencyMs / 1000 + transitSec);
+  }
+
+  function applyPlaybackSync(command: Extract<AudioCommand, { type: 'audio-sync' }>): void {
+    if (!audioEl || command.sequence <= lastSyncSequence) return;
+    lastSyncSequence = command.sequence;
+    const el = audioEl;
+    const baseRate = Math.max(0.5, Math.min(1.5, command.playbackRate || 1));
+    const targetTime = targetPlaybackTime(command.offsetSec, command.serverTime, baseRate, 60_000);
+    const driftSec = targetTime - el.currentTime;
+    const driftMs = Math.max(-60_000, Math.min(60_000, driftSec * 1000));
+    let correction: 'none' | 'rate' | 'seek' | 'resume' = 'none';
+
+    if (el.paused) {
+      el.currentTime = targetTime;
+      el.playbackRate = baseRate;
+      correction = 'resume';
+      void el.play().catch(() => onError('PLAY_FAILED'));
+    } else if (Math.abs(driftSec) >= 0.25) {
+      el.currentTime = targetTime;
+      el.playbackRate = baseRate;
+      correction = 'seek';
+    } else if (Math.abs(driftSec) >= 0.015) {
+      const rateAdjustment = Math.max(-0.025, Math.min(0.025, driftSec * 0.25));
+      el.playbackRate = Math.max(0.5, Math.min(1.5, baseRate + rateAdjustment));
+      correction = 'rate';
+    } else {
+      el.playbackRate = baseRate;
+    }
+
+    onBankEvent({ v: 1, type: 'audio-sync-status', sequence: command.sequence, driftMs, correction });
+  }
+
   function handleCommand(raw: unknown): void {
     if (!isAudioCommand(raw)) return;
     const cmd = raw as AudioCommand;
@@ -177,11 +222,13 @@ export function initPhoneAudio(
     }
 
     if (cmd.type === 'audio-bank-prepare') {
+      lastSyncSequence = 0;
       void prepareBank(cmd);
       return;
     }
 
     if (cmd.type === 'audio-prepare') {
+      lastSyncSequence = 0;
       const version = ++prepareVersion;
       prepareController?.abort();
       preparedBank = null;
@@ -204,16 +251,15 @@ export function initPhoneAudio(
 
     if (!loaded || !userEnabled || !audioEl) return;
 
+    if (cmd.type === 'audio-sync') {
+      applyPlaybackSync(cmd);
+      return;
+    }
+
     switch (cmd.type) {
       case 'audio-play': {
         const el = audioEl;
-        const estimatedHostNow = Date.now() - hostClockOffsetMs;
-        const elapsedMs = estimatedHostNow - cmd.serverTime;
-        const networkDelaySec = elapsedMs >= 0 && elapsedMs <= 5_000
-          ? elapsedMs / 1000 * cmd.playbackRate
-          : 0;
-        const targetTime = cmd.offsetSec + latencyMs / 1000 + networkDelaySec;
-        el.currentTime = Math.max(0, targetTime);
+        el.currentTime = targetPlaybackTime(cmd.offsetSec, cmd.serverTime, cmd.playbackRate, 5_000);
         el.playbackRate = Math.max(0.5, Math.min(1.5, cmd.playbackRate || 1));
         void el.play().catch(() => onError('PLAY_FAILED'));
         break;
