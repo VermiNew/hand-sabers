@@ -68,9 +68,14 @@ export function initPhoneAudio(
     bankRequestId = command.requestId;
     loaded = false;
     setLatencyMs(command.latencyMs);
+    let lastProgressSentAt = -Infinity;
     try {
       const bank = await preparePhoneAudioBank(command.mapId, prepareController.signal, progress => {
         if (version !== prepareVersion) return;
+        const now = performance.now();
+        const complete = progress.loadedAssets === progress.totalAssets;
+        if (!complete && now - lastProgressSentAt < 250) return;
+        lastProgressSentAt = now;
         onBankEvent({ v: 1, type: 'audio-bank-progress', requestId: command.requestId, ...progress });
       });
       if (version !== prepareVersion) {

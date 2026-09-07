@@ -465,6 +465,8 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [ ] Rozszerzyć „Audio na telefonie” z samej muzyki do kompletnego, synchronizowanego banku dźwięków gry.
   - [x] Zbudować wersjonowany manifest wszystkich assetów audio (interfejs, muzyka, trafienia, pudła, bomby, combo, milestone i pozostałe efekty) z rozmiarem oraz hashem treści. — endpoint banku zwraca muzykę mapy z faktycznym rozmiarem i SHA-256 oraz kompletny katalog obecnych dźwięków proceduralnych z wersją receptury i osobnym hashem; identyfikator całego banku zmienia się wraz z dowolnym assetem.
   - [ ] Preloadować tylko brakujące assety do trwałego cache telefonu, pokazywać postęp w bajtach i liczbie dźwięków oraz weryfikować integralność przed oznaczeniem telefonu jako gotowego.
+    - [x] Telefon pobiera manifest, rozpoznaje cache po hashu, weryfikuje rozmiar i SHA-256 także dla wpisu z cache, raportuje ograniczony częstotliwościowo postęp oraz potwierdza gotowość z `requestId`; brak Cache Storage działa jako bezpieczny fallback pamięciowy, a timeout/błąd/rozłączenie pozostawia audio na PC.
+    - [ ] Pokazać raportowany postęp preloadu w docelowym hubie telefonu oraz ekranie oczekiwania przed rundą.
   - [ ] Zamiast polegać na natychmiastowym evencie WebSocket synchronizować zegary i planować odtwarzanie w Web Audio na konkretny timestamp; mierzyć odchylenie i nie deklarować celu ±20 ms bez pomiaru na realnym urządzeniu.
   - [ ] Zapewnić idempotentne eventy audio z numerem sekwencji, deduplikacją, potwierdzeniem, obsługą spóźnionych/utraconych eventów oraz bezpiecznym fallbackiem na audio komputera.
   - [ ] Dodać w ustawieniach test każdego dźwięku osobno oraz miernik dB master/audio telefonu z segmentami zielony–żółty–czerwony i wskaźnikiem przesteru.

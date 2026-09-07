@@ -1,5 +1,5 @@
 ﻿import { getSettings } from '../core/settings.ts';
-import type { AudioCommand } from './audio-protocol.ts';
+import type { AudioCommand, AudioEvent } from './audio-protocol.ts';
 
 /**
  * Host-side remote audio controller.
@@ -11,6 +11,30 @@ import type { AudioCommand } from './audio-protocol.ts';
 let hostSocket: WebSocket | null = null;
 let phoneAudioReady = false;
 let pcMusicMuted = false;
+let activeBankRequestId = '';
+let bankRequestCounter = 0;
+let bankInactivityTimer: ReturnType<typeof setTimeout> | null = null;
+const BANK_INACTIVITY_TIMEOUT_MS = 45_000;
+
+function clearBankInactivityTimer(): void {
+  if (bankInactivityTimer) clearTimeout(bankInactivityTimer);
+  bankInactivityTimer = null;
+}
+
+function failActiveBank(code: string): void {
+  const requestId = activeBankRequestId;
+  activeBankRequestId = '';
+  clearBankInactivityTimer();
+  onPhoneAudioError();
+  window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-bank-error', {
+    detail: { requestId, code },
+  }));
+}
+
+function armBankInactivityTimer(): void {
+  clearBankInactivityTimer();
+  bankInactivityTimer = setTimeout(() => failActiveBank('PRELOAD_TIMEOUT'), BANK_INACTIVITY_TIMEOUT_MS);
+}
 
 /** Set the host tracking socket so we can send commands to the phone. */
 export function setHostAudioSocket(socket: WebSocket | null): void {
@@ -18,6 +42,8 @@ export function setHostAudioSocket(socket: WebSocket | null): void {
   if (!socket) {
     // Phone disconnected — restore PC audio
     phoneAudioReady = false;
+    activeBankRequestId = '';
+    clearBankInactivityTimer();
     restorePcAudio();
   }
 }
@@ -63,10 +89,49 @@ export function onPhoneAudioError(): void {
   restorePcAudio();
 }
 
+/** Apply validated preload status from the currently paired phone. */
+export function onPhoneAudioEvent(event: AudioEvent): void {
+  if (event.type === 'audio-ready') {
+    if (!activeBankRequestId) onPhoneAudioReady();
+    return;
+  }
+  if (event.type === 'audio-error') {
+    if (activeBankRequestId) failActiveBank(event.code);
+    else onPhoneAudioError();
+    return;
+  }
+  if (event.requestId !== activeBankRequestId) return;
+  if (event.type === 'audio-bank-progress') {
+    armBankInactivityTimer();
+    window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-bank-progress', { detail: event }));
+    return;
+  }
+  if (event.type === 'audio-bank-error') {
+    failActiveBank(event.code);
+    return;
+  }
+  activeBankRequestId = '';
+  clearBankInactivityTimer();
+  onPhoneAudioReady();
+  window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-bank-ready', { detail: event }));
+}
+
 /** Prepare phone for audio playback using the map's canonical server endpoint. */
 export function preparePhoneAudio(mapId: string): boolean {
   const latencyMs = getSettings().phoneAudioLatencyMs ?? 0;
-  return sendAudioCommand({ v: 1, type: 'audio-prepare', mapId, latencyMs });
+  phoneAudioReady = false;
+  restorePcAudio();
+  activeBankRequestId = `${Date.now().toString(36)}-${(++bankRequestCounter).toString(36)}`;
+  const sent = sendAudioCommand({
+    v: 1,
+    type: 'audio-bank-prepare',
+    mapId,
+    latencyMs,
+    requestId: activeBankRequestId,
+  });
+  if (sent) armBankInactivityTimer();
+  else activeBankRequestId = '';
+  return sent;
 }
 
 /** Tell phone to start playing at a given offset. */
