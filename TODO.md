@@ -479,6 +479,8 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
     - [x] Dodać analogiczny miernik telefonu: wspólny analizator muzyki i efektów raportuje do hosta RMS w dB, peak oraz clipping w walidowanych próbkach 8 Hz; ustawienia pokazują dostępny miernik zielony–żółty–czerwony bez sugerowania pomiaru fizycznego wyjścia Bluetooth.
     - [x] Dodać osobne przyciski testowe dla wszystkich 10 receptur, korzystające z tej samej ścieżki telefon/PC i tych samych ustawień głośności co właściwa rozgrywka.
   - [ ] Obsłużyć zmianę głośności, pauzę, seek, tempo, powrót z blokady ekranu i przełączenie słuchawek bez rozjechania timeline'u.
+    - [x] Po `visibilitychange`, `pageshow` lub `devicechange` telefon wysyła walidowaną prośbę o resynchronizację; host ponownie przesyła głośność oraz aktualny stan pauzy albo czas i tempo odtwarzania.
+    - [ ] Dodać pomiar i okresową korektę dryfu podczas aktywnego odtwarzania oraz potwierdzić zachowanie po blokadzie ekranu i zmianie słuchawek na fizycznych urządzeniach.
 - [ ] Dodać barierę gotowości przed rundą Multiplayer dla mapy, trackingu i audio wszystkich graczy.
   - [ ] Serwer ma rozpocząć rundę dopiero po potwierdzeniu gotowości wymaganych zasobów przez wszystkie aktywne sesje; rozłączenie lub zmiana mapy unieważnia poprzednią gotowość.
   - [ ] Pokazać ekran „Sesje graczy ładują się… proszę czekać”, spinner, progressbar `gotowi/wszyscy`, stan każdego gracza i przycisk „Opuść lobby”.

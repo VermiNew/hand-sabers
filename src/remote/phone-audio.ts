@@ -37,6 +37,17 @@ export function initPhoneAudio(
   const soundSequenceOrder: number[] = [];
   let meterTimer: ReturnType<typeof setInterval> | null = null;
 
+  function requestResync(reason: 'visibility' | 'page-show' | 'device-change'): void {
+    if (!userEnabled) return;
+    onBankEvent({ v: 1, type: 'audio-resync-request', reason });
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) requestResync('visibility');
+  });
+  window.addEventListener('pageshow', () => requestResync('page-show'));
+  navigator.mediaDevices?.addEventListener('devicechange', () => requestResync('device-change'));
+
   function startMeterReporting(): void {
     if (meterTimer) return;
     meterTimer = setInterval(() => {

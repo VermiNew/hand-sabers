@@ -144,6 +144,12 @@ export interface AudioMeterEvent {
   sampledAt: number;
 }
 
+export interface AudioResyncRequestEvent {
+  v: 1;
+  type: 'audio-resync-request';
+  reason: 'visibility' | 'page-show' | 'device-change';
+}
+
 export type AudioEvent =
   | AudioReadyEvent
   | AudioErrorEvent
@@ -152,7 +158,8 @@ export type AudioEvent =
   | AudioBankErrorEvent
   | AudioClockPongEvent
   | AudioSfxAckEvent
-  | AudioMeterEvent;
+  | AudioMeterEvent
+  | AudioResyncRequestEvent;
 
 const MAP_ID_RE = /^[a-z0-9][a-z0-9_-]{0,119}$/i;
 const REQUEST_ID_RE = /^[a-zA-Z0-9_-]{1,48}$/;
@@ -226,6 +233,9 @@ export function isAudioEvent(value: unknown): value is AudioEvent {
       && isFiniteNumber(event['peak'], 0, 4)
       && typeof event['clipping'] === 'boolean'
       && isFiniteNumber(event['sampledAt'], 0, Number.MAX_SAFE_INTEGER);
+  }
+  if (type === 'audio-resync-request') {
+    return ['visibility', 'page-show', 'device-change'].includes(String(event['reason']));
   }
   if (typeof event['requestId'] !== 'string' || !REQUEST_ID_RE.test(event['requestId'])) return false;
   if (type === 'audio-bank-error') {
