@@ -19,6 +19,7 @@ let clockSyncTimer: ReturnType<typeof setTimeout> | null = null;
 const clockSamples: Array<{ offsetMs: number; rttMs: number }> = [];
 let clockRequestCounter = 0;
 let soundSequence = 0;
+let playbackSyncSequence = 0;
 const pendingSoundFallbacks = new Map<number, { timer: ReturnType<typeof setTimeout>; play: () => void }>();
 const SOUND_ACK_TIMEOUT_MS = 30;
 const BANK_INACTIVITY_TIMEOUT_MS = 45_000;
@@ -250,6 +251,20 @@ export function preparePhoneAudio(mapId: string): boolean {
 /** Tell phone to start playing at a given offset. */
 export function playPhoneAudio(offsetSec: number, serverTime: number, playbackRate = 1): boolean {
   return sendAudioCommand({ v: 1, type: 'audio-play', offsetSec, serverTime, playbackRate });
+}
+
+/** Send a periodic timeline snapshot once the host/phone clock estimate is stable. */
+export function syncPhoneAudioPlayback(offsetSec: number, serverTime: number, playbackRate = 1): boolean {
+  if (!isPhoneAudioActive() || clockSamples.length < 3) return false;
+  playbackSyncSequence = playbackSyncSequence >= Number.MAX_SAFE_INTEGER ? 1 : playbackSyncSequence + 1;
+  return sendAudioCommand({
+    v: 1,
+    type: 'audio-sync',
+    sequence: playbackSyncSequence,
+    offsetSec: Math.max(0, Math.min(86_400, offsetSec)),
+    serverTime: Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, serverTime)),
+    playbackRate: Math.max(0.5, Math.min(1.5, playbackRate)),
+  });
 }
 
 /** Tell phone to pause audio. */

@@ -4,6 +4,7 @@ import {
   playPhoneAudio,
   preparePhoneAudio,
   stopPhoneAudio,
+  syncPhoneAudioPlayback,
   syncPhoneAudioVolume,
 } from '../remote/host-audio.ts';
 import { state } from '../core/state.ts';
@@ -11,6 +12,14 @@ import type { Settings } from '../types/index.js';
 import { getMapAudioPlaybackState, setMusicVolume } from './audio.ts';
 
 export function initPhoneAudioEvents(settings: Settings): void {
+  window.setInterval(() => {
+    if (document.hidden || !isPhoneAudioActive()) return;
+    const playback = getMapAudioPlaybackState();
+    if (playback.playing) {
+      syncPhoneAudioPlayback(playback.currentTime, Date.now(), playback.playbackRate);
+    }
+  }, 1_000);
+
   window.addEventListener('hand-sabers:phone-audio-connected', () => {
     if (settings.phoneAudioOutput && state.map?.id && !state.map.localOnly) {
       preparePhoneAudio(state.map.id);

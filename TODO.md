@@ -481,7 +481,8 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
     - [x] Dodać osobne przyciski testowe dla wszystkich 10 receptur, korzystające z tej samej ścieżki telefon/PC i tych samych ustawień głośności co właściwa rozgrywka.
   - [ ] Obsłużyć zmianę głośności, pauzę, seek, tempo, powrót z blokady ekranu i przełączenie słuchawek bez rozjechania timeline'u.
     - [x] Po `visibilitychange`, `pageshow` lub `devicechange` telefon wysyła walidowaną prośbę o resynchronizację; host ponownie przesyła głośność oraz aktualny stan pauzy albo czas i tempo odtwarzania.
-    - [ ] Dodać pomiar i okresową korektę dryfu podczas aktywnego odtwarzania oraz potwierdzić zachowanie po blokadzie ekranu i zmianie słuchawek na fizycznych urządzeniach.
+    - [x] Dodać programowy pomiar i okresową korektę dryfu podczas aktywnego odtwarzania: po stabilizacji zegara host wysyła numerowany snapshot co sekundę; telefon ignoruje duplikaty, przy dryfie 15–250 ms łagodnie koryguje tempo maksymalnie o 2,5%, powyżej 250 ms wykonuje seek, wznawia zatrzymany element i raportuje rodzaj korekty oraz zmierzone odchylenie.
+    - [ ] Potwierdzić zachowanie po blokadzie ekranu i zmianie słuchawek oraz rzeczywisty budżet opóźnienia na fizycznych urządzeniach — **zablokowane brakiem dostępu do docelowego telefonu/słuchawek; nie deklarować ±20 ms wyłącznie na podstawie pomiaru programowego**.
 - [ ] Dodać barierę gotowości przed rundą Multiplayer dla mapy, trackingu i audio wszystkich graczy.
   - [ ] Serwer ma rozpocząć rundę dopiero po potwierdzeniu gotowości wymaganych zasobów przez wszystkie aktywne sesje; rozłączenie lub zmiana mapy unieważnia poprzednią gotowość.
   - [ ] Pokazać ekran „Sesje graczy ładują się… proszę czekać”, spinner, progressbar `gotowi/wszyscy`, stan każdego gracza i przycisk „Opuść lobby”.
