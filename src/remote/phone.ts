@@ -150,6 +150,7 @@ function connectTrackingChannel(next: PhoneCredential): void {
         status.dataset['state'] = 'connected';
         statusText.textContent = t('remoteTracking.streamConnected');
         phoneTracking.setPeerConnected(true);
+        phoneAudio.setPeerConnected(true);
         try {
           socket.send(JSON.stringify(phoneCapabilities));
         } catch { /* reconnect will retry capability negotiation */ }
@@ -158,6 +159,7 @@ function connectTrackingChannel(next: PhoneCredential): void {
         status.dataset['state'] = 'ready';
         statusText.textContent = t('remoteTracking.waitingForComputer');
         phoneTracking.setPeerConnected(false);
+        phoneAudio.setPeerConnected(false);
       }
       if (event.type === 'error') {
         authenticationRejected = true;
@@ -174,6 +176,7 @@ function connectTrackingChannel(next: PhoneCredential): void {
       if (trackingSocket !== socket) return;
       trackingSocket = null;
       phoneTracking.setPeerConnected(false);
+      phoneAudio.setPeerConnected(false);
       if (credential !== next) return;
       if (Date.now() >= next.expiresAt) {
         credential = null;

@@ -29,6 +29,7 @@ export function initPhoneAudio(
 ): {
   handleCommand(raw: unknown): void;
   setLatencyMs(ms: number): void;
+  setPeerConnected(connected: boolean): void;
   enableAudio(): Promise<boolean>;
 } {
   let audioEl: HTMLAudioElement | null = null;
@@ -46,6 +47,7 @@ export function initPhoneAudio(
   const receivedSoundSequences = new Set<number>();
   const soundSequenceOrder: number[] = [];
   let meterTimer: ReturnType<typeof setInterval> | null = null;
+  let peerConnected = false;
 
   function requestResync(reason: 'visibility' | 'page-show' | 'device-change'): void {
     if (!userEnabled) return;
@@ -59,11 +61,28 @@ export function initPhoneAudio(
   navigator.mediaDevices?.addEventListener('devicechange', () => requestResync('device-change'));
 
   function startMeterReporting(): void {
-    if (meterTimer) return;
+    if (meterTimer || !peerConnected) return;
     meterTimer = setInterval(() => {
       const levels = soundEngine.getMeterLevels();
       onBankEvent({ v: 1, type: 'audio-meter', ...levels, sampledAt: Date.now() });
     }, 125);
+  }
+
+  function stopMeterReporting(): void {
+    if (meterTimer) clearInterval(meterTimer);
+    meterTimer = null;
+  }
+
+  function setPeerConnected(connected: boolean): void {
+    peerConnected = connected;
+    if (connected && userEnabled) {
+      startMeterReporting();
+      return;
+    }
+    if (!connected) {
+      stopMeterReporting();
+      audioEl?.pause();
+    }
   }
 
   function reportBankReady(): void {
@@ -317,7 +336,7 @@ export function initPhoneAudio(
     }
   }
 
-  return { handleCommand, setLatencyMs, enableAudio };
+  return { handleCommand, setLatencyMs, setPeerConnected, enableAudio };
 }
 
 /** UI helper: adds an "Enable audio" button to the phone page. */
