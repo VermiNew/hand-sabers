@@ -3,6 +3,7 @@ import type { GameState } from '../core/state.ts';
 import { t } from '../i18n/index.ts';
 import { renderSingleplayerResults, renderMultiplayerResults } from '../game/results.ts';
 import type { RoomSnapshot } from '../multiplayer/protocol.ts';
+import type { AudioBankErrorEvent, AudioBankProgressEvent, AudioBankReadyEvent } from '../remote/audio-protocol.ts';
 
 interface UiRefs {
   overlay:         HTMLElement | null;
@@ -16,6 +17,7 @@ interface UiRefs {
   ovProgressPct:   HTMLElement | null;
   ovRoundPrep:     HTMLElement | null;
   ovRoundMapTitle: HTMLElement | null;
+  ovRoundAudioDetail: HTMLElement | null;
   goTitle:         HTMLElement | null;
   goBody:          HTMLElement | null;
   ovBtn:           HTMLElement | null;
@@ -75,6 +77,7 @@ export const ui: UiRefs = {
   ovProgressPct:   document.getElementById('ovProgressPct'),
   ovRoundPrep:     document.getElementById('ovRoundPrep'),
   ovRoundMapTitle: document.getElementById('ovRoundMapTitle'),
+  ovRoundAudioDetail: document.getElementById('ovRoundAudioDetail'),
   goTitle:         document.getElementById('goTitle'),
   goBody:          document.getElementById('goBody'),
   ovBtn:           document.getElementById('ovBtn'),
@@ -267,10 +270,51 @@ export function setRoundPreparationProgress(ratio: number): void {
   if (ui.ovProgressPct) ui.ovProgressPct.textContent = `${pct}%`;
 }
 
+export function setRoundPreparationAudioDetail(detail: string): void {
+  if (ui.ovRoundAudioDetail) ui.ovRoundAudioDetail.textContent = detail;
+}
+
+let roundPreparationAudioProgressInitialized = false;
+
+export function initRoundPreparationAudioProgress(): void {
+  if (roundPreparationAudioProgressInitialized) return;
+  roundPreparationAudioProgressInitialized = true;
+  window.addEventListener('hand-sabers:phone-audio-bank-progress', event => {
+    if (!document.body.classList.contains('round-prep-open')) return;
+    const detail = (event as CustomEvent<AudioBankProgressEvent>).detail;
+    const useBytes = detail.totalBytes > 0;
+    const ratio = useBytes
+      ? detail.loadedBytes / detail.totalBytes
+      : detail.loadedAssets / Math.max(1, detail.totalAssets);
+    setRoundPreparationProgress(0.25 + Math.max(0, Math.min(1, ratio)) * 0.25);
+    setRoundPreparationAudioDetail(t('remoteTracking.audioProgress', {
+      loaded: detail.loadedAssets,
+      total: detail.totalAssets,
+      loadedMb: (detail.loadedBytes / 1024 / 1024).toFixed(1),
+      totalMb: (detail.totalBytes / 1024 / 1024).toFixed(1),
+    }));
+  });
+  window.addEventListener('hand-sabers:phone-audio-bank-ready', event => {
+    if (!document.body.classList.contains('round-prep-open')) return;
+    const detail = (event as CustomEvent<AudioBankReadyEvent>).detail;
+    setRoundPreparationProgress(0.5);
+    setRoundPreparationAudioDetail(t('remoteTracking.audioBankReady', {
+      total: detail.totalAssets,
+      cached: detail.cachedAssets,
+    }));
+  });
+  window.addEventListener('hand-sabers:phone-audio-bank-error', event => {
+    if (!document.body.classList.contains('round-prep-open')) return;
+    const detail = (event as CustomEvent<AudioBankErrorEvent>).detail;
+    setRoundPreparationAudioDetail(t('remoteTracking.audioBankFallback', { code: detail.code }));
+  });
+}
+
 export function hideRoundPreparation(): void {
   document.body.classList.remove('round-prep-open');
   ui.overlay?.classList.remove('is-round-prep');
   if (ui.ovRoundPrep) ui.ovRoundPrep.hidden = true;
+  setRoundPreparationAudioDetail('');
 }
 
 export function showCameraError(err: unknown): void {

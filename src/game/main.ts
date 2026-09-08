@@ -1,7 +1,8 @@
 import { S, state } from '../core/state.ts';
 import {
   ui, updateHUD, clearDangerPulse, showGameOver, hideHandsPaused, showMapTitle, hidePauseMenu, fadeTransition,
-  hideRoundPreparation, setRoundPreparationProgress, setRoundPreparationStage, showRoundPreparation,
+  hideRoundPreparation, initRoundPreparationAudioProgress, setRoundPreparationAudioDetail,
+  setRoundPreparationProgress, setRoundPreparationStage, showRoundPreparation,
 } from '../ui/ui.ts';
 import {
   renderer, cam3d, bgMat,
@@ -54,6 +55,12 @@ import { initPhoneAudioEvents } from './phone-audio-events.ts';
 import { initStartupGuidance } from './startup-guidance.ts';
 import { initMapSelectionEvents } from './map-selection-events.ts';
 import { initNarratorPauseEvents } from './narrator-pause-events.ts';
+import {
+  isPhoneAudioActive,
+  isPhoneAudioPreparationPending,
+  preparePhoneAudio,
+  waitForPhoneAudioPreparation,
+} from '../remote/host-audio.ts';
 import { updateArenaReactiveFrame } from './arena-reactive-frame.ts';
 import { updateFrameEffects } from './frame-effects.ts';
 import { renderAndReportFrame } from './frame-renderer.ts';
@@ -128,6 +135,7 @@ function applyTranslations(): void {
 
 applyTranslations();
 initInterfaceSounds();
+initRoundPreparationAudioProgress();
 
 let multiplayerRoundSession: MultiplayerRoundSession;
 
@@ -200,8 +208,9 @@ multiplayerRoundSession = createMultiplayerRoundSession({
   startWithCalibration: () => startFromMainMenu({ calibrate: true }),
 });
 
-
+let roundPreparationId = 0;
 async function beginPlaying(): Promise<void> {
+  const preparationId = ++roundPreparationId;
   gamePauseController.reset();
   calibrationUI.hidePanel();
   showOverlay();
@@ -212,14 +221,34 @@ async function beginPlaying(): Promise<void> {
   hidePauseMenu();
   gamePauseController.reset();
   state.pauseReason  = PAUSE_REASONS.NONE;
+  state.appState = S.LOADING;
   mapNarratorTimeline.reset(state.map?.narratorCues ?? []);
 
   setRoundPreparationStage('map', 'active');
   setRoundPreparationStage('map', 'done');
   setRoundPreparationProgress(0.25);
   setRoundPreparationStage('audio', 'active');
+  setRoundPreparationAudioDetail(t('overlay.roundAudioPreparing'));
   if (state.map) {
     await ensureCurrentMapAudio(settings);
+    if (preparationId !== roundPreparationId) return;
+    if (settings.phoneAudioOutput && state.map.id && !state.map.localOnly) {
+      if (isPhoneAudioActive()) {
+        setRoundPreparationAudioDetail(t('overlay.roundAudioPhoneReady'));
+      } else {
+        const pending = isPhoneAudioPreparationPending() || preparePhoneAudio(state.map.id);
+        if (pending) {
+          setRoundPreparationAudioDetail(t('remoteTracking.rolePreparingAudio'));
+          const result = await waitForPhoneAudioPreparation();
+          if (preparationId !== roundPreparationId) return;
+          if (result !== 'ready') setRoundPreparationAudioDetail(t('overlay.roundAudioPcFallback'));
+        } else {
+          setRoundPreparationAudioDetail(t('overlay.roundAudioPcFallback'));
+        }
+      }
+    } else {
+      setRoundPreparationAudioDetail(t('overlay.roundAudioPcReady'));
+    }
     setRoundPreparationStage('audio', 'done');
     setRoundPreparationProgress(0.5);
     setRoundPreparationStage('tracking', 'active');
@@ -230,6 +259,7 @@ async function beginPlaying(): Promise<void> {
     mapTimeline.start(performance.now());
     showMapTitle(state.map.meta?.title ?? t('game.unknownTrack'));
   } else {
+    setRoundPreparationAudioDetail(t('overlay.roundAudioPcReady'));
     setRoundPreparationStage('audio', 'done');
     setRoundPreparationProgress(0.5);
     setRoundPreparationStage('tracking', 'done');
@@ -497,6 +527,7 @@ pauseMapsButton?.addEventListener('click', () => {
 });
 
 function returnToMainMenu(): void {
+  roundPreparationId++;
   mapNarratorTimeline.reset();
   gamePauseController.reset();
   clearDangerPulse();

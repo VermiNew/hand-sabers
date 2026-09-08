@@ -93,6 +93,7 @@ export function setHostAudioSocket(socket: WebSocket | null): void {
   hostSocket = socket;
   if (!socket) {
     // Phone disconnected — restore PC audio
+    if (activeBankRequestId) failActiveBank('PHONE_DISCONNECTED');
     phoneAudioSupported = null;
     phoneAudioReady = false;
     activeBankRequestId = '';
@@ -117,6 +118,35 @@ export function setPhoneAudioCapabilities(capabilities: PhoneCapabilitiesEvent |
 /** Whether phone audio output is enabled in settings AND phone is ready. */
 export function isPhoneAudioActive(): boolean {
   return getSettings().phoneAudioOutput && phoneAudioReady;
+}
+
+export function isPhoneAudioPreparationPending(): boolean {
+  return Boolean(activeBankRequestId);
+}
+
+export function waitForPhoneAudioPreparation(): Promise<'ready' | 'error' | 'idle'> {
+  if (phoneAudioReady) return Promise.resolve('ready');
+  if (!activeBankRequestId) return Promise.resolve('idle');
+  const requestId = activeBankRequestId;
+  return new Promise(resolve => {
+    const finish = (result: 'ready' | 'error') => {
+      window.clearTimeout(timeout);
+      window.removeEventListener('hand-sabers:phone-audio-bank-ready', handleReady);
+      window.removeEventListener('hand-sabers:phone-audio-bank-error', handleError);
+      resolve(result);
+    };
+    const handleReady = (event: Event) => {
+      const detail = (event as CustomEvent<{ requestId: string }>).detail;
+      if (detail?.requestId === requestId) finish('ready');
+    };
+    const handleError = (event: Event) => {
+      const detail = (event as CustomEvent<{ requestId: string }>).detail;
+      if (detail?.requestId === requestId) finish('error');
+    };
+    const timeout = window.setTimeout(() => finish('error'), BANK_INACTIVITY_TIMEOUT_MS + 1_000);
+    window.addEventListener('hand-sabers:phone-audio-bank-ready', handleReady);
+    window.addEventListener('hand-sabers:phone-audio-bank-error', handleError);
+  });
 }
 
 /** Apply an output change immediately, keeping the PC as the reliable fallback. */

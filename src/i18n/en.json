@@ -840,7 +840,11 @@
     "roundStageMap": "Map",
     "roundStageAudio": "Audio",
     "roundStageTracking": "Tracking",
-    "roundStageScene": "Scene"
+    "roundStageScene": "Scene",
+    "roundAudioPreparing": "Preparing audio…",
+    "roundAudioPhoneReady": "Phone audio ready",
+    "roundAudioPcReady": "Computer audio ready",
+    "roundAudioPcFallback": "Phone unavailable — computer audio active"
   },
   "calib": {
     "abort": "CANCEL",
