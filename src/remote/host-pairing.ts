@@ -9,6 +9,14 @@ import {
 } from './host-session.ts';
 import type { RemoteTrackingSessionState } from './host-session.ts';
 import { createModalTransition } from '../ui/modal-transition.ts';
+import {
+  getSettings,
+  SETTINGS_CHANGED_EVENT,
+  setSetting,
+  type SettingsChangedDetail,
+} from '../core/settings.ts';
+import { supportsPhoneAudio, type PhoneCapabilitiesEvent } from './phone-capabilities.ts';
+import type { TrackingSourcePreference } from '../types/index.js';
 
 export { isRemoteTrackingConnected, sendPhoneTrackingOptions } from './host-session.ts';
 
@@ -38,6 +46,12 @@ export function initRemoteTrackingPairing(): void {
   const confirmYesButton = element<HTMLButtonElement>('remoteTrackingConfirmYes');
   const confirmNoButton = element<HTMLButtonElement>('remoteTrackingConfirmNo');
   const newCodeButton = element<HTMLButtonElement>('remoteTrackingNewCode');
+  const cameraRoleCard = element<HTMLElement>('remoteCameraRoleCard');
+  const cameraRoleToggle = element<HTMLInputElement>('remoteCameraRole');
+  const cameraRoleStatus = element<HTMLElement>('remoteCameraRoleStatus');
+  const audioRoleCard = element<HTMLElement>('remoteAudioRoleCard');
+  const audioRoleToggle = element<HTMLInputElement>('remoteAudioRole');
+  const audioRoleStatus = element<HTMLElement>('remoteAudioRoleStatus');
   if (!openButton || !overlay || !closeButton || !createButton || !sessionPanel || !qr || !code || !phoneLink || !status || !statusText || !errorMessage) return;
   const modal = createModalTransition({
     overlay,
@@ -62,8 +76,46 @@ export function initRemoteTrackingPairing(): void {
     statusText.textContent = t(messageKey);
   };
 
+  let currentPhase = getRemoteTrackingSessionState().phase;
+  let phoneAudioReady = false;
+  let phoneAudioSupported: boolean | null = null;
+  let lastPhoneTrackingSource: TrackingSourcePreference = getSettings().trackingSource === 'camera'
+    ? 'phone'
+    : getSettings().trackingSource;
+
+  const renderRoles = () => {
+    const settings = getSettings();
+    const connected = currentPhase === 'connected';
+    const cameraEnabled = settings.trackingSource !== 'camera';
+    const audioEnabled = settings.phoneAudioOutput;
+    if (cameraRoleToggle) cameraRoleToggle.checked = cameraEnabled;
+    if (audioRoleToggle) audioRoleToggle.checked = audioEnabled;
+    if (cameraRoleCard && cameraRoleStatus) {
+      cameraRoleCard.dataset['state'] = cameraEnabled ? connected ? 'ready' : 'waiting' : 'off';
+      cameraRoleStatus.textContent = t(cameraEnabled
+        ? connected ? 'remoteTracking.roleReady' : 'remoteTracking.roleWaitingPhone'
+        : 'remoteTracking.roleDisabled');
+    }
+    if (audioRoleCard && audioRoleStatus) {
+      const state = !audioEnabled ? 'off' : phoneAudioSupported === false ? 'error' : phoneAudioReady ? 'ready' : 'waiting';
+      audioRoleCard.dataset['state'] = state;
+      audioRoleStatus.textContent = t(!audioEnabled
+        ? 'remoteTracking.roleDisabled'
+        : phoneAudioSupported === false
+          ? 'remoteTracking.roleUnsupported'
+          : phoneAudioReady
+            ? 'remoteTracking.roleReady'
+            : connected ? 'remoteTracking.roleWaitingActivation' : 'remoteTracking.roleWaitingPhone');
+    }
+  };
+
   const render = (sessionState: RemoteTrackingSessionState) => {
     const { session, phase, error } = sessionState;
+    currentPhase = phase;
+    if (phase !== 'connected') {
+      phoneAudioReady = false;
+      phoneAudioSupported = null;
+    }
     errorMessage.textContent = error ? t(`remoteTracking.${error}`) : '';
     errorMessage.hidden = !error;
     sessionPanel.hidden = !session;
@@ -95,6 +147,7 @@ export function initRemoteTrackingPairing(): void {
     if (approvalDenyButton) approvalDenyButton.disabled = false;
     if (confirmPanel && !connected) confirmPanel.hidden = true;
     if (newCodeButton) newCodeButton.hidden = phase !== 'claimed';
+    renderRoles();
   };
 
   const open = () => {
@@ -120,6 +173,48 @@ export function initRemoteTrackingPairing(): void {
   });
   window.addEventListener('hand-sabers:remote-session-state', event => {
     render((event as CustomEvent<RemoteTrackingSessionState>).detail);
+  });
+  window.addEventListener(SETTINGS_CHANGED_EVENT, event => {
+    const { changedKeys } = (event as CustomEvent<SettingsChangedDetail>).detail;
+    if (changedKeys.includes('trackingSource') || changedKeys.includes('phoneAudioOutput')) renderRoles();
+  });
+  window.addEventListener('hand-sabers:phone-capabilities', event => {
+    const capabilities = (event as CustomEvent<PhoneCapabilitiesEvent>).detail;
+    phoneAudioSupported = supportsPhoneAudio(capabilities);
+    renderRoles();
+  });
+  window.addEventListener('hand-sabers:phone-audio-ready', () => {
+    phoneAudioReady = true;
+    renderRoles();
+  });
+  window.addEventListener('hand-sabers:phone-audio-error', () => {
+    phoneAudioReady = false;
+    renderRoles();
+  });
+
+  cameraRoleToggle?.addEventListener('change', () => {
+    const settings = getSettings();
+    if (!cameraRoleToggle.checked && settings.trackingSource !== 'camera') {
+      lastPhoneTrackingSource = settings.trackingSource;
+    }
+    const value: TrackingSourcePreference = cameraRoleToggle.checked ? lastPhoneTrackingSource : 'camera';
+    const sourceInput = element<HTMLSelectElement>('menuTrackingSource');
+    if (sourceInput) {
+      sourceInput.value = value;
+      sourceInput.dispatchEvent(new Event('change'));
+    }
+    if (getSettings().trackingSource !== value) setSetting('trackingSource', value);
+    renderRoles();
+  });
+  audioRoleToggle?.addEventListener('change', () => {
+    const enabled = audioRoleToggle.checked;
+    const audioInput = element<HTMLInputElement>('menuPhoneAudioOutput');
+    if (audioInput) {
+      audioInput.checked = enabled;
+      audioInput.dispatchEvent(new Event('change'));
+    }
+    if (getSettings().phoneAudioOutput !== enabled) setSetting('phoneAudioOutput', enabled);
+    renderRoles();
   });
 
   disconnectButton?.addEventListener('click', () => {

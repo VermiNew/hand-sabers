@@ -506,7 +506,7 @@
           </div>
         </div>
 
-        <!-- TAB: TELEFON KAMERA -->
+        <!-- TAB: TELEFON -->
         <div class="sp-tab" data-tab="remoteTracking">
           <h2 class="sp-tab-title" data-i18n="settings.sections.remoteTracking">Kamera w telefonie</h2>
           <div class="sp-group">
@@ -715,9 +715,33 @@
         <span class="rt-status-dot" aria-hidden="true"></span>
         <strong id="remoteTrackingStatusText" data-i18n="remoteTracking.hostIdle">SESJA NIEAKTYWNA</strong>
       </div>
+      <div class="rt-roles">
+        <article class="rt-role" id="remoteCameraRoleCard" data-state="off">
+          <span class="material-symbols-rounded rt-role-icon" aria-hidden="true">videocam</span>
+          <div class="rt-role-copy">
+            <strong id="remoteCameraRoleTitle" data-i18n="remoteTracking.cameraRole">KAMERA I ŚLEDZENIE</strong>
+            <span id="remoteCameraRoleStatus">WYŁĄCZONE</span>
+          </div>
+          <label class="sp-switch">
+            <input type="checkbox" id="remoteCameraRole" aria-labelledby="remoteCameraRoleTitle">
+            <span class="sp-knob"></span>
+          </label>
+        </article>
+        <article class="rt-role" id="remoteAudioRoleCard" data-state="off">
+          <span class="material-symbols-rounded rt-role-icon" aria-hidden="true">headphones</span>
+          <div class="rt-role-copy">
+            <strong id="remoteAudioRoleTitle" data-i18n="remoteTracking.audioRole">WYJŚCIE AUDIO</strong>
+            <span id="remoteAudioRoleStatus">WYŁĄCZONE</span>
+          </div>
+          <label class="sp-switch">
+            <input type="checkbox" id="remoteAudioRole" aria-labelledby="remoteAudioRoleTitle">
+            <span class="sp-knob"></span>
+          </label>
+        </article>
+      </div>
       <button class="rt-primary" id="remoteTrackingCreate" type="button" data-i18n="remoteTracking.createSession">UTWÓRZ SESJĘ</button>
       <div class="rt-session" id="remoteTrackingSession" hidden>
-        <img id="remoteTrackingQr" alt="QR telefonu jako kamery">
+        <img id="remoteTrackingQr" alt="QR parowania telefonu">
         <div class="rt-code-block">
           <span data-i18n="remoteTracking.pairingCode">KOD PAROWANIA</span>
           <strong id="remoteTrackingCode">------</strong>
