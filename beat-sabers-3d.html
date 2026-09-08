@@ -1189,6 +1189,31 @@
 
       <div class="ov-load-detail" id="ovLoadDetail"></div>
 
+      <div class="ov-round-prep" id="ovRoundPrep" hidden>
+        <div class="ov-round-prep-head">
+          <span data-i18n="overlay.roundPreparation">PRZYGOTOWANIE RUNDY</span>
+          <strong id="ovRoundMapTitle">—</strong>
+        </div>
+        <ol class="ov-round-stages" aria-label="Etapy przygotowania rundy" data-i18n-aria-label="overlay.roundStagesLabel">
+          <li id="ovRoundStageMap" data-state="waiting">
+            <span class="material-symbols-rounded" aria-hidden="true">map</span>
+            <span data-i18n="overlay.roundStageMap">Mapa</span>
+          </li>
+          <li id="ovRoundStageAudio" data-state="waiting">
+            <span class="material-symbols-rounded" aria-hidden="true">graphic_eq</span>
+            <span data-i18n="overlay.roundStageAudio">Audio</span>
+          </li>
+          <li id="ovRoundStageTracking" data-state="waiting">
+            <span class="material-symbols-rounded" aria-hidden="true">back_hand</span>
+            <span data-i18n="overlay.roundStageTracking">Tracking</span>
+          </li>
+          <li id="ovRoundStageScene" data-state="waiting">
+            <span class="material-symbols-rounded" aria-hidden="true">deployed_code</span>
+            <span data-i18n="overlay.roundStageScene">Scena</span>
+          </li>
+        </ol>
+      </div>
+
       <div class="ov-load-progress" id="ovProgress" style="display:none">
         <div class="ov-load-progress-track">
           <div class="ov-load-progress-fill" id="ovBar" style="width:0%"></div>

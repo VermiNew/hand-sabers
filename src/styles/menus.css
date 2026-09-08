@@ -658,6 +658,50 @@ body.narrator-open #camPanel {
   min-height:1em; white-space:pre-line; line-height:1.6;
 }
 
+.ov-round-prep {
+  width:100%; padding:18px;
+  border:1px solid rgba(126,184,255,0.18); border-radius:14px;
+  background:rgba(8,13,24,0.72); box-shadow:0 18px 50px rgba(0,0,0,0.28);
+  text-align:left;
+}
+.ov-round-prep-head { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+.ov-round-prep-head > span {
+  color:var(--dim); font-size:10px; letter-spacing:3px; text-transform:uppercase;
+}
+.ov-round-prep-head > strong {
+  overflow:hidden; color:#fff; font-family:'Oxanium',sans-serif; font-size:16px;
+  letter-spacing:1px; text-overflow:ellipsis; white-space:nowrap;
+}
+.ov-round-stages {
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;
+  margin:0; padding:0; list-style:none;
+}
+.ov-round-stages li {
+  display:flex; min-width:0; flex-direction:column; align-items:center; gap:7px;
+  padding:12px 8px; border:1px solid rgba(148,163,184,0.1); border-radius:10px;
+  color:var(--dim); font-size:10px; letter-spacing:1px; text-align:center; text-transform:uppercase;
+  transition:border-color .2s ease,background .2s ease,color .2s ease;
+}
+.ov-round-stages .material-symbols-rounded { font-size:21px; }
+.ov-round-stages li[data-state="active"] {
+  border-color:rgba(47,124,255,0.48); background:rgba(47,124,255,0.1); color:#b9d7ff;
+}
+.ov-round-stages li[data-state="active"] .material-symbols-rounded { animation:pulseIcon 1.2s ease-in-out infinite; }
+.ov-round-stages li[data-state="done"] {
+  border-color:rgba(54,242,161,0.3); background:rgba(54,242,161,0.07); color:var(--accent);
+}
+#overlay.is-round-prep .ov-load-spinner,
+#overlay.is-round-prep .ov-load-step,
+#overlay.is-round-prep .ov-load-detail,
+#overlay.is-round-prep .ov-load-footer { display:none !important; }
+#overlay.is-round-prep .ov-round-prep { display:block; }
+body.round-prep-open #camPanel { visibility:hidden; }
+
+@media (max-width:560px) {
+  .ov-round-stages { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .ov-round-prep { padding:14px; }
+}
+
 /* Progress bar */
 .ov-load-progress {
   width:100%; display:flex; flex-direction:column; gap:8px; align-items:stretch;

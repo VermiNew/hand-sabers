@@ -833,7 +833,14 @@
     "initializingWorkerDetail": "Starting background processing",
     "allReady": "All ready!",
     "allReadyDetail": "Proceeding to calibration…",
-    "abort": "ABORT"
+    "abort": "ABORT",
+    "preparingRound": "Preparing the round…",
+    "roundPreparation": "ROUND PREPARATION",
+    "roundStagesLabel": "Round preparation stages",
+    "roundStageMap": "Map",
+    "roundStageAudio": "Audio",
+    "roundStageTracking": "Tracking",
+    "roundStageScene": "Scene"
   },
   "calib": {
     "abort": "CANCEL",

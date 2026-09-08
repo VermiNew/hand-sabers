@@ -1,5 +1,8 @@
 import { S, state } from '../core/state.ts';
-import { ui, updateHUD, clearDangerPulse, showGameOver, hideHandsPaused, showMapTitle, hidePauseMenu, fadeTransition } from '../ui/ui.ts';
+import {
+  ui, updateHUD, clearDangerPulse, showGameOver, hideHandsPaused, showMapTitle, hidePauseMenu, fadeTransition,
+  hideRoundPreparation, setRoundPreparationProgress, setRoundPreparationStage, showRoundPreparation,
+} from '../ui/ui.ts';
 import {
   renderer, cam3d, bgMat,
   lTarget, rTarget,
@@ -146,6 +149,7 @@ function showOverlay(): void {
 
 function hideOverlay(): void {
   if (!ui.overlay) return;
+  hideRoundPreparation();
   ui.overlay.classList.remove('show', 'is-gameover', 'is-victory', 'is-defeat');
 }
 
@@ -200,26 +204,45 @@ multiplayerRoundSession = createMultiplayerRoundSession({
 async function beginPlaying(): Promise<void> {
   gamePauseController.reset();
   calibrationUI.hidePanel();
-  hideOverlay();
+  showOverlay();
+  showRoundPreparation(state.map?.meta?.title ?? t('game.unknownTrack'));
   if (ui.hud)                       ui.hud.style.display        = 'flex';
   if (ui.mapProgress && state.map)  ui.mapProgress.style.display = 'flex';
   hideHandsPaused();
   hidePauseMenu();
   gamePauseController.reset();
   state.pauseReason  = PAUSE_REASONS.NONE;
-  state.appState     = S.PLAYING;
   mapNarratorTimeline.reset(state.map?.narratorCues ?? []);
 
+  setRoundPreparationStage('map', 'active');
+  setRoundPreparationStage('map', 'done');
+  setRoundPreparationProgress(0.25);
+  setRoundPreparationStage('audio', 'active');
   if (state.map) {
     await ensureCurrentMapAudio(settings);
+    setRoundPreparationStage('audio', 'done');
+    setRoundPreparationProgress(0.5);
+    setRoundPreparationStage('tracking', 'active');
+    setRoundPreparationStage('tracking', 'done');
+    setRoundPreparationProgress(0.75);
+    setRoundPreparationStage('scene', 'active');
     resetMapSpawn();
     mapTimeline.start(performance.now());
     showMapTitle(state.map.meta?.title ?? t('game.unknownTrack'));
   } else {
+    setRoundPreparationStage('audio', 'done');
+    setRoundPreparationProgress(0.5);
+    setRoundPreparationStage('tracking', 'done');
+    setRoundPreparationProgress(0.75);
+    setRoundPreparationStage('scene', 'active');
     mapTimeline.reset();
   }
 
+  setRoundPreparationStage('scene', 'done');
+  setRoundPreparationProgress(1);
+  state.appState = S.PLAYING;
   startGameplay();
+  hideOverlay();
   if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
 }
 

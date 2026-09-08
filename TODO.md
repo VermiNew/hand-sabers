@@ -491,7 +491,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
   - [ ] Serwer ma rozpocząć rundę dopiero po potwierdzeniu gotowości wymaganych zasobów przez wszystkie aktywne sesje; rozłączenie lub zmiana mapy unieważnia poprzednią gotowość.
   - [ ] Pokazać ekran „Sesje graczy ładują się… proszę czekać”, spinner, progressbar `gotowi/wszyscy`, stan każdego gracza i przycisk „Opuść lobby”.
   - [ ] Dodać tekst wyjaśniający możliwość wyjścia przy błędzie lub zbyt długim oczekiwaniu 😎, timeouty z czytelnym powodem oraz możliwość ponowienia bez restartu całego lobby.
-  - [ ] Użyć spójnego, profesjonalnego ekranu ładowania także w Singleplayerze, z etapami przygotowania mapy, audio, trackingu i sceny.
+  - [x] Użyć spójnego, profesjonalnego ekranu ładowania także w Singleplayerze, z etapami przygotowania mapy, audio, trackingu i sceny. — start rundy pokazuje rzeczywiste etapy na responsywnym overlayu, utrzymuje go podczas `ensureCurrentMapAudio()` i zamyka dopiero bezpośrednio przed `startGameplay()`; anulowanie sprząta stan widoku, a panel kamery nie nachodzi na ekran.
 - [ ] Dodać telemetrię jakości telefonu: czas pobierania/preloadu, cache hit-rate, RTT/jitter, drift zegara, opóźnienie zaplanowane/rzeczywiste audio, dropy klatek i czas ML; dane diagnostyczne mają być widoczne lokalnie i raportowane do serwera bez tokenów ani surowego obrazu.
 - [ ] Zweryfikować cały hub na fizycznych urządzeniach iOS/Android (słabe i mocne), w Wi‑Fi 2,4/5 GHz, z głośnikiem oraz słuchawkami Bluetooth; zapisać P50/P95 i potwierdzić lub skorygować budżet ±20 ms.
 - [ ] Zmierzyć i zoptymalizować end-to-end latency remote tracking — **instrumentacja gotowa; zablokowane pomiarami na dwóch klasach fizycznych telefonów**.

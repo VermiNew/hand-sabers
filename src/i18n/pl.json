@@ -833,7 +833,14 @@
     "initializingWorkerDetail": "Uruchamianie przetwarzania w tle",
     "allReady": "Wszystko gotowe!",
     "allReadyDetail": "Przejście do kalibracji…",
-    "abort": "ANULUJ"
+    "abort": "ANULUJ",
+    "preparingRound": "Przygotowujemy rundę…",
+    "roundPreparation": "PRZYGOTOWANIE RUNDY",
+    "roundStagesLabel": "Etapy przygotowania rundy",
+    "roundStageMap": "Mapa",
+    "roundStageAudio": "Audio",
+    "roundStageTracking": "Tracking",
+    "roundStageScene": "Scena"
   },
   "calib": {
     "abort": "ANULUJ",

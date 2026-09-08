@@ -14,6 +14,8 @@ interface UiRefs {
   ovProgress:      HTMLElement | null;
   ovBar:           HTMLElement | null;
   ovProgressPct:   HTMLElement | null;
+  ovRoundPrep:     HTMLElement | null;
+  ovRoundMapTitle: HTMLElement | null;
   goTitle:         HTMLElement | null;
   goBody:          HTMLElement | null;
   ovBtn:           HTMLElement | null;
@@ -71,6 +73,8 @@ export const ui: UiRefs = {
   ovProgress:      document.getElementById('ovProgress'),
   ovBar:           document.getElementById('ovBar'),
   ovProgressPct:   document.getElementById('ovProgressPct'),
+  ovRoundPrep:     document.getElementById('ovRoundPrep'),
+  ovRoundMapTitle: document.getElementById('ovRoundMapTitle'),
   goTitle:         document.getElementById('goTitle'),
   goBody:          document.getElementById('goBody'),
   ovBtn:           document.getElementById('ovBtn'),
@@ -221,6 +225,52 @@ export function setLoadingProgress(title: string, detail: string, ratio: number 
   if (ui.ovProgressPct) ui.ovProgressPct.textContent = ratio === null ? '' : `${pct}%`;
   if (ui.ovInstr) ui.ovInstr.textContent = title;
   if (ui.ovLoadDetail) ui.ovLoadDetail.textContent = detail;
+}
+
+export type RoundPreparationStage = 'map' | 'audio' | 'tracking' | 'scene';
+export type RoundPreparationStageState = 'waiting' | 'active' | 'done';
+
+const roundStageIds: Record<RoundPreparationStage, string> = {
+  map: 'ovRoundStageMap',
+  audio: 'ovRoundStageAudio',
+  tracking: 'ovRoundStageTracking',
+  scene: 'ovRoundStageScene',
+};
+
+export function showRoundPreparation(mapTitle: string): void {
+  document.body.classList.add('round-prep-open');
+  ui.overlay?.classList.remove('is-gameover', 'is-victory', 'is-defeat');
+  ui.overlay?.classList.add('is-round-prep');
+  if (ui.ovRoundPrep) ui.ovRoundPrep.hidden = false;
+  if (ui.ovRoundMapTitle) ui.ovRoundMapTitle.textContent = mapTitle;
+  if (ui.spinner) ui.spinner.style.display = '';
+  if (ui.ovProgress) ui.ovProgress.style.display = 'block';
+  if (ui.ovInstr) ui.ovInstr.textContent = t('overlay.preparingRound');
+  for (const stage of Object.keys(roundStageIds) as RoundPreparationStage[]) {
+    setRoundPreparationStage(stage, 'waiting');
+  }
+  setRoundPreparationProgress(0);
+}
+
+export function setRoundPreparationStage(
+  stage: RoundPreparationStage,
+  stageState: RoundPreparationStageState,
+): void {
+  document.getElementById(roundStageIds[stage])?.setAttribute('data-state', stageState);
+}
+
+export function setRoundPreparationProgress(ratio: number): void {
+  const normalized = Math.max(0, Math.min(1, ratio));
+  const pct = Math.round(normalized * 100);
+  ui.ovProgress?.classList.remove('indeterminate');
+  if (ui.ovBar) ui.ovBar.style.width = `${pct}%`;
+  if (ui.ovProgressPct) ui.ovProgressPct.textContent = `${pct}%`;
+}
+
+export function hideRoundPreparation(): void {
+  document.body.classList.remove('round-prep-open');
+  ui.overlay?.classList.remove('is-round-prep');
+  if (ui.ovRoundPrep) ui.ovRoundPrep.hidden = true;
 }
 
 export function showCameraError(err: unknown): void {
