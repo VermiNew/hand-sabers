@@ -20,6 +20,7 @@ export type PauseReason = 'hands' | 'manual' | 'focus' | 'narrator' | null;
 export type OneHandMode = 'left' | 'right' | null;
 export type SaberSide = 'left' | 'right';
 export type TrackingSourcePreference = 'auto' | 'camera' | 'phone';
+export type PhoneCameraProcessing = 'phone' | 'computer';
 export type GameMode = 'normal' | 'no-arrows' | 'pro' | 'speed-trials' | 'spatial';
 
 // ── Geometry ──────────────────────────────────────────────────────────────────
@@ -140,6 +141,7 @@ export interface Settings {
   hitboxSensitivity: number;
   trainingMode: boolean;
   trackingSource: TrackingSourcePreference;
+  phoneCameraProcessing: PhoneCameraProcessing;
   handDetectionConfidence: number;
   handPresenceConfidence: number;
   handTrackingConfidence: number;
