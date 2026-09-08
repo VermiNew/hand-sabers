@@ -12,6 +12,12 @@ export interface MultiplayerRules {
   noteSpeed: 0.75 | 1 | 1.35 | 1.75;
 }
 
+export interface MultiplayerResourceReadiness {
+  map: boolean;
+  audio: boolean;
+  tracking: boolean;
+}
+
 export interface MultiplayerRoundStart {
   mapId: string;
   mode: 'coop' | 'score-attack';

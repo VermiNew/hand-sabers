@@ -625,11 +625,23 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   gameModeSelect.addEventListener('change', sendRules);
   noteSpeedSelect.addEventListener('change', sendRules);
   window.addEventListener('hand-sabers:multiplayer-prepared', event => {
-    const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
-    if (typeof mapId !== 'string' || mapId !== pendingPreparationMapId || currentRoom?.mapId !== mapId) return;
+    const detail = (event as CustomEvent<{
+      mapId?: unknown;
+      readiness?: { map?: unknown; audio?: unknown; tracking?: unknown };
+    }>).detail;
+    const mapId = detail?.mapId;
+    const readiness = detail?.readiness;
+    if (
+      typeof mapId !== 'string'
+      || mapId !== pendingPreparationMapId
+      || currentRoom?.mapId !== mapId
+      || readiness?.map !== true
+      || readiness.audio !== true
+      || readiness.tracking !== true
+    ) return;
     pendingPreparationMapId = '';
     clearPreparationTimeout();
-    sendControl({ type: 'ready', ready: true });
+    sendControl({ type: 'ready', ready: true, readiness });
   });
   window.addEventListener('hand-sabers:multiplayer-prepare-error', event => {
     if (!pendingPreparationMapId) return;

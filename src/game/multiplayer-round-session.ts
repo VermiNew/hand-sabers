@@ -15,8 +15,18 @@ import type { GamePauseController } from './game-pause-controller.ts';
 import { clearGameplayEntities, resetMapSpawn, resetMenuDemo, startGameplay } from './gameplay.ts';
 import { ensureCurrentMapAudio, loadMapById } from './map-session.ts';
 import type { MapTimeline } from './map-timeline.ts';
-import type { MultiplayerRoundStart, MultiplayerRules } from './multiplayer-events.ts';
+import type {
+  MultiplayerResourceReadiness,
+  MultiplayerRoundStart,
+  MultiplayerRules,
+} from './multiplayer-events.ts';
 import type { MultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
+import {
+  isPhoneAudioActive,
+  isPhoneAudioPreparationPending,
+  preparePhoneAudio,
+  waitForPhoneAudioPreparation,
+} from '../remote/host-audio.ts';
 
 interface MultiplayerRoundSessionOptions {
   calibrationController: CalibrationController;
@@ -54,6 +64,7 @@ export function createMultiplayerRoundSession({
   let rules: MultiplayerRules | null = null;
   let preparationMapId = '';
   let preparationId = 0;
+  let preparationReadiness: MultiplayerResourceReadiness = { map: false, audio: false, tracking: false };
   let singleplayerRules: Pick<Settings, 'gameMode' | 'noteSpeed'> | null = null;
 
   function restoreSingleplayerRules(): void {
@@ -71,7 +82,10 @@ export function createMultiplayerRoundSession({
 
   function completePreparation(): boolean {
     if (!preparationMapId) return false;
+    preparationReadiness.tracking = calibrationController.isReady();
+    if (!Object.values(preparationReadiness).every(Boolean)) return false;
     const mapId = preparationMapId;
+    const readiness = { ...preparationReadiness };
     preparationMapId = '';
     calibrationUI.hidePanel();
     hideOverlay();
@@ -81,7 +95,7 @@ export function createMultiplayerRoundSession({
     document.body.classList.add('menu-open');
     resetMenuDemo();
     showMultiplayerOverlay();
-    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepared', { detail: { mapId } }));
+    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepared', { detail: { mapId, readiness } }));
     return true;
   }
 
@@ -89,6 +103,7 @@ export function createMultiplayerRoundSession({
     cancelPreparation(): void {
       preparationId++;
       preparationMapId = '';
+      preparationReadiness = { map: false, audio: false, tracking: false };
     },
     completePreparation,
     finish(progress): { trainingMode: boolean } {
@@ -112,18 +127,27 @@ export function createMultiplayerRoundSession({
     leave(): void {
       preparationId++;
       preparationMapId = '';
+      preparationReadiness = { map: false, audio: false, tracking: false };
       if (active) window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));
       restoreSingleplayerRules();
     },
     async prepare(mapId): Promise<void> {
       const currentPreparationId = ++preparationId;
       preparationMapId = mapId;
+      preparationReadiness = { map: false, audio: false, tracking: false };
       try {
         initAudio();
         if (!await loadMapById(mapId)) throw new Error('MAP_NOT_FOUND');
         if (currentPreparationId !== preparationId) return;
+        preparationReadiness.map = true;
         await ensureCurrentMapAudio(settings);
         if (currentPreparationId !== preparationId) return;
+        if (settings.phoneAudioOutput && state.map?.id === mapId && !state.map.localOnly && !isPhoneAudioActive()) {
+          const pending = isPhoneAudioPreparationPending() || preparePhoneAudio(mapId);
+          if (pending) await waitForPhoneAudioPreparation();
+          if (currentPreparationId !== preparationId) return;
+        }
+        preparationReadiness.audio = true;
         if (calibrationController.isReady()) {
           completePreparation();
           return;
