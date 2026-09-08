@@ -15,6 +15,7 @@ let phoneAudioReady = false;
 let pcMusicMuted = false;
 let activeBankRequestId = '';
 let bankRequestCounter = 0;
+let bankStartedAt: number | null = null;
 let bankInactivityTimer: ReturnType<typeof setTimeout> | null = null;
 let clockSyncTimer: ReturnType<typeof setTimeout> | null = null;
 const clockSamples: Array<{ offsetMs: number; rttMs: number }> = [];
@@ -67,19 +68,24 @@ function recordClockPong(event: Extract<AudioEvent, { type: 'audio-clock-pong' }
   if (clockSamples.length > 8) clockSamples.length = 8;
   const best = clockSamples.slice(0, 3).map(sample => sample.offsetMs).sort((a, b) => a - b);
   const stableOffsetMs = best[Math.floor(best.length / 2)] ?? 0;
+  const selectedRtts = clockSamples.slice(0, 3).map(sample => sample.rttMs);
+  const meanRtt = selectedRtts.reduce((sum, value) => sum + value, 0) / selectedRtts.length;
+  const jitterMs = Math.sqrt(selectedRtts.reduce((sum, value) => sum + (value - meanRtt) ** 2, 0) / selectedRtts.length);
   sendAudioCommand({ v: 1, type: 'audio-clock-update', offsetMs: stableOffsetMs });
   window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-clock', {
-    detail: { offsetMs: stableOffsetMs, rttMs, samples: clockSamples.length },
+    detail: { offsetMs: stableOffsetMs, rttMs, jitterMs, samples: clockSamples.length },
   }));
 }
 
 function failActiveBank(code: string): void {
   const requestId = activeBankRequestId;
+  const preloadMs = bankStartedAt === null ? null : performance.now() - bankStartedAt;
   activeBankRequestId = '';
+  bankStartedAt = null;
   clearBankInactivityTimer();
   onPhoneAudioError();
   window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-bank-error', {
-    detail: { requestId, code },
+    detail: { requestId, code, preloadMs },
   }));
 }
 
@@ -97,6 +103,7 @@ export function setHostAudioSocket(socket: WebSocket | null): void {
     phoneAudioSupported = null;
     phoneAudioReady = false;
     activeBankRequestId = '';
+    bankStartedAt = null;
     clearBankInactivityTimer();
     clearClockSync();
     clearSoundFallbacks(true);
@@ -238,9 +245,17 @@ export function onPhoneAudioEvent(event: AudioEvent): void {
     return;
   }
   activeBankRequestId = '';
+  const preloadMs = bankStartedAt === null ? null : performance.now() - bankStartedAt;
+  bankStartedAt = null;
   clearBankInactivityTimer();
   onPhoneAudioReady();
-  window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-bank-ready', { detail: event }));
+  window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-bank-ready', {
+    detail: {
+      ...event,
+      preloadMs,
+      cacheHitRate: event.totalAssets > 0 ? event.cachedAssets / event.totalAssets : 0,
+    },
+  }));
 }
 
 /** Schedule a procedural effect only after the phone clock has stable samples. */
@@ -295,8 +310,13 @@ export function preparePhoneAudio(mapId: string): boolean {
     latencyMs,
     requestId: activeBankRequestId,
   });
-  if (sent) armBankInactivityTimer();
-  else activeBankRequestId = '';
+  if (sent) {
+    bankStartedAt = performance.now();
+    armBankInactivityTimer();
+  } else {
+    activeBankRequestId = '';
+    bankStartedAt = null;
+  }
   return sent;
 }
 

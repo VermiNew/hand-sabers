@@ -54,6 +54,8 @@ interface DevData {
   remoteApplyMs: string;
   remoteCaptureAgeMs: string; remoteDetectionMs: string; remoteEncodeMs: string;
   remoteBufferedBytes: number; remotePhoneDroppedPackets: number;
+  phonePreloadMs: string; phoneCacheHitRate: string; phoneAudioRttMs: string; phoneAudioJitterMs: string;
+  phoneClockOffsetMs: string; phoneAudioDriftMs: string; phoneSchedulerLatenessMs: string;
   wireframe: boolean; noFail: boolean; developerMode: boolean;
   sensitivity: number; flipCamera: boolean;
   volume: number; musicVolume: number; sfxVolume: number;
@@ -206,6 +208,8 @@ const devData: DevData = {
   remoteApplyMs: '—',
   remoteCaptureAgeMs: '—', remoteDetectionMs: '—', remoteEncodeMs: '—',
   remoteBufferedBytes: 0, remotePhoneDroppedPackets: 0,
+  phonePreloadMs: '—', phoneCacheHitRate: '—', phoneAudioRttMs: '—', phoneAudioJitterMs: '—',
+  phoneClockOffsetMs: '—', phoneAudioDriftMs: '—', phoneSchedulerLatenessMs: '—',
   wireframe: false, noFail: false, developerMode: false,
   sensitivity: 1.0, flipCamera: false,
   volume: 0.8, musicVolume: 1.0, sfxVolume: 1.0,
@@ -261,6 +265,25 @@ function bindRemoteMetrics(): void {
     devData.remoteEncodeMs = metrics.phoneEncodeMs === null ? '—' : `${metrics.phoneEncodeMs.toFixed(2)} ms`;
     devData.remoteBufferedBytes = metrics.phoneBufferedBytes;
     devData.remotePhoneDroppedPackets = metrics.phoneDroppedPackets;
+  });
+  window.addEventListener('hand-sabers:phone-audio-clock', event => {
+    const detail = (event as CustomEvent<{ offsetMs: number; rttMs: number; jitterMs: number }>).detail;
+    devData.phoneAudioRttMs = `${detail.rttMs.toFixed(1)} ms`;
+    devData.phoneAudioJitterMs = `${detail.jitterMs.toFixed(1)} ms`;
+    devData.phoneClockOffsetMs = `${detail.offsetMs.toFixed(1)} ms`;
+  });
+  window.addEventListener('hand-sabers:phone-audio-bank-ready', event => {
+    const detail = (event as CustomEvent<{ preloadMs: number | null; cacheHitRate: number }>).detail;
+    devData.phonePreloadMs = detail.preloadMs === null ? '—' : `${detail.preloadMs.toFixed(0)} ms`;
+    devData.phoneCacheHitRate = `${(detail.cacheHitRate * 100).toFixed(0)}%`;
+  });
+  window.addEventListener('hand-sabers:phone-audio-sync-status', event => {
+    const detail = (event as CustomEvent<{ driftMs: number }>).detail;
+    devData.phoneAudioDriftMs = `${detail.driftMs.toFixed(1)} ms`;
+  });
+  window.addEventListener('hand-sabers:phone-audio-sfx-ack', event => {
+    const detail = (event as CustomEvent<{ latenessMs: number }>).detail;
+    devData.phoneSchedulerLatenessMs = `${detail.latenessMs.toFixed(1)} ms`;
   });
 }
 
@@ -522,6 +545,14 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
 
     // ── SND ──
     const sound = tabs.pages[6]!;
+    sound.addMonitor(devData, 'phonePreloadMs', { label: 'Phone preload', interval: 500 });
+    sound.addMonitor(devData, 'phoneCacheHitRate', { label: 'Phone cache hit', interval: 500 });
+    sound.addMonitor(devData, 'phoneAudioRttMs', { label: 'Phone RTT', interval: 500 });
+    sound.addMonitor(devData, 'phoneAudioJitterMs', { label: 'Phone jitter', interval: 500 });
+    sound.addMonitor(devData, 'phoneClockOffsetMs', { label: 'Clock offset', interval: 500 });
+    sound.addMonitor(devData, 'phoneAudioDriftMs', { label: 'Timeline drift', interval: 500 });
+    sound.addMonitor(devData, 'phoneSchedulerLatenessMs', { label: 'Scheduler late', interval: 500 });
+    addSeparator(sound);
     sound.addInput(devData, 'volume', { label: 'Master', min: 0, max: 1, step: 0.05 }).on('change', ev => {
       setSetting('volume', Number(ev.value), 'devpanel');
       setVolume(Number(ev.value));
