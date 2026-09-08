@@ -931,6 +931,18 @@
           </div>
           <span class="mp-player-count" id="multiplayerPlayerCount">0 / 8</span>
         </header>
+        <aside class="mp-waiting-card" id="multiplayerWaiting" aria-live="polite" hidden>
+          <div class="mp-waiting-spinner" aria-hidden="true"></div>
+          <div class="mp-waiting-copy">
+            <strong data-i18n="multiplayer.sessionsLoading">Sesje graczy ładują się… proszę czekać.</strong>
+            <span data-i18n="multiplayer.waitingLeaveHint">Możesz opuścić lobby, jeśli wystąpi błąd lub ktoś ładuje się zbyt długo 😎</span>
+            <div class="mp-waiting-progress-row">
+              <progress id="multiplayerWaitingProgress" max="1" value="0" aria-label="Gotowość graczy" data-i18n-aria-label="multiplayer.playersReadiness"></progress>
+              <span id="multiplayerWaitingCount">0 / 0</span>
+            </div>
+          </div>
+          <button class="mp-secondary mp-danger" id="multiplayerWaitingLeave" type="button" data-i18n="multiplayer.leaveLobby">OPUŚĆ LOBBY</button>
+        </aside>
         <div class="mp-lobby-grid">
           <div>
             <span class="mp-label" data-i18n="multiplayer.players">GRACZE</span>

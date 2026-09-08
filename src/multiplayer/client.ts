@@ -110,6 +110,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const lobbyCode = element<HTMLElement>('multiplayerLobbyCode');
   const playerCount = element<HTMLElement>('multiplayerPlayerCount');
   const playerList = element<HTMLElement>('multiplayerPlayers');
+  const waitingCard = element<HTMLElement>('multiplayerWaiting');
+  const waitingProgress = element<HTMLProgressElement>('multiplayerWaitingProgress');
+  const waitingCount = element<HTMLElement>('multiplayerWaitingCount');
+  const waitingLeaveButton = element<HTMLButtonElement>('multiplayerWaitingLeave');
   const modeSelect = element<HTMLSelectElement>('multiplayerMode');
   const rulesPanel = element<HTMLFieldSetElement>('multiplayerRules');
   const trainingModeInput = element<HTMLInputElement>('multiplayerTrainingMode');
@@ -189,6 +193,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     lobbyCode.textContent = '—';
     playerCount.textContent = '0 / 8';
     playerList.replaceChildren();
+    waitingCard.hidden = true;
+    waitingProgress.max = 1;
+    waitingProgress.value = 0;
+    waitingCount.textContent = '0 / 0';
     mapPicker.setSelected(null);
     mapPicker.setEnabled(false);
     modeSelect.disabled = true;
@@ -275,6 +283,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     renderMultiplayerScores([lobbyScores, hudScores], snapshot);
   };
 
+  const renderWaitingState = (snapshot: RoomSnapshot) => {
+    const readyPlayers = snapshot.players.filter(player => player.ready).length;
+    waitingCard.hidden = !pendingPreparationMapId && readyPlayers === 0;
+    waitingProgress.max = Math.max(1, snapshot.players.length);
+    waitingProgress.value = readyPlayers;
+    waitingCount.textContent = `${readyPlayers} / ${snapshot.players.length}`;
+  };
+
   const announceRoundStarted = (snapshot: RoomSnapshot) => {
     const self = snapshot.players.find(player => player.id === currentPlayerId);
     if (!snapshot.round || snapshot.round.finishedAt !== null || !self?.playing || snapshot.round.id <= announcedRoundId) {
@@ -323,6 +339,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     noteSpeedSelect.value = String(snapshot.rules.noteSpeed);
     rulesPanel.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     const self = snapshot.players.find(player => player.id === currentPlayerId);
+    renderWaitingState(snapshot);
     readyButton.disabled = !snapshot.mapId || !self || Boolean(pendingPreparationMapId);
     readyButton.classList.toggle('is-ready', Boolean(self?.ready));
     readyButton.textContent = pendingPreparationMapId
@@ -544,10 +561,12 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     pendingPreparationMapId = mapId;
     readyButton.disabled = true;
     readyButton.textContent = t('multiplayer.preparing');
+    if (currentRoom) renderWaitingState(currentRoom);
     window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare', { detail: { mapId } }));
   });
   startButton.addEventListener('click', () => sendControl({ type: 'start-game' }));
   disconnectButton.addEventListener('click', disconnectRoom);
+  waitingLeaveButton.addEventListener('click', disconnectRoom);
   for (const button of voiceButtons) {
     button.addEventListener('click', () => {
       if (voiceChat?.isEnabled()) voiceChat.disable();
@@ -584,6 +603,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     pendingPreparationMapId = '';
     readyButton.disabled = false;
     readyButton.textContent = t('multiplayer.ready');
+    if (currentRoom) renderWaitingState(currentRoom);
     showMessage(t('multiplayer.prepareFailed'));
   });
   window.addEventListener('hand-sabers:multiplayer-leave', disconnectRoom);

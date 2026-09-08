@@ -133,6 +133,10 @@
     "calibratedState": "CALIBRATED",
     "calibratingState": "CALIBRATING…",
     "waitingCalibrationState": "WAITING FOR CALIBRATION",
+    "sessionsLoading": "Player sessions are loading… please wait.",
+    "waitingLeaveHint": "You can leave the lobby if an error occurs or someone takes too long to load 😎",
+    "playersReadiness": "Player readiness",
+    "leaveLobby": "LEAVE LOBBY",
     "mapsError": "Could not load the map list.",
     "errors": {
       "ROOM_NOT_FOUND": "Room not found. Check the code and make sure the room has not expired.",
