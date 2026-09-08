@@ -6,6 +6,7 @@ export const REMOTE_SESSION_ERROR_CODES = [
 ] as const;
 
 export type RemoteSessionErrorCode = typeof REMOTE_SESSION_ERROR_CODES[number];
+export type RemoteConnectionCode = RemoteSessionErrorCode | 'CONNECTION_LOST';
 
 export type RemoteConnectionErrorKey =
   | 'sessionExpired'
@@ -30,6 +31,10 @@ export function remoteConnectionErrorKey(code: RemoteSessionErrorCode | null): R
   if (code === 'UNAUTHORIZED') return 'sessionUnauthorized';
   if (code === 'SERVER_BUSY') return 'serverBusy';
   return 'connectionLost';
+}
+
+export function remoteConnectionCode(code: RemoteSessionErrorCode | null): RemoteConnectionCode {
+  return code ?? 'CONNECTION_LOST';
 }
 
 export function remoteReconnectDelay(attempt: number): number {

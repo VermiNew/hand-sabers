@@ -9,6 +9,7 @@ import {
   PHONE_CAMERA_FRAME_KIND,
   PHONE_CAMERA_FRAME_MAX_BYTES,
 } from '../../src/remote/camera-frame-protocol.js';
+import type { RemoteSessionErrorCode } from '../../src/remote/connection-policy.js';
 
 const PROTOCOL_VERSION = 1;
 const JOIN_TIMEOUT_MS = 10_000;
@@ -240,6 +241,10 @@ function send(socket: WebSocket, payload: object): void {
   }
 }
 
+function sendRemoteSessionError(socket: WebSocket, code: RemoteSessionErrorCode): void {
+  send(socket, { type: 'error', code });
+}
+
 export function registerRemoteTrackingServer(
   server: HttpServer | HttpsServer,
   sessions: TrackingSessionRegistry,
@@ -271,7 +276,7 @@ export function registerRemoteTrackingServer(
   const closeSessionPeers = (sessionId: string, reason: 'expired' | 'revoked') => {
     for (const [socket, peer] of peers) {
       if (peer.sessionId !== sessionId) continue;
-      send(socket, { type: 'error', code: reason === 'expired' ? 'SESSION_EXPIRED' : 'SESSION_REVOKED' });
+      sendRemoteSessionError(socket, reason === 'expired' ? 'SESSION_EXPIRED' : 'SESSION_REVOKED');
       try {
         socket.close(1008, reason === 'expired' ? 'Session expired' : 'Session revoked');
       } catch (error) {
@@ -365,7 +370,7 @@ export function registerRemoteTrackingServer(
           throw new Error('INVALID_JOIN');
         }
         if (peers.size >= MAX_CONNECTIONS) {
-          send(socket, { type: 'error', code: 'SERVER_BUSY' });
+          sendRemoteSessionError(socket, 'SERVER_BUSY');
           socket.close(1013, 'Server busy');
           return;
         }
@@ -387,7 +392,7 @@ export function registerRemoteTrackingServer(
         send(socket, { type: 'joined', role, expiresAt: status.expiresAt });
         notifyPair(sessionId);
       } catch {
-        send(socket, { type: 'error', code: 'UNAUTHORIZED' });
+        sendRemoteSessionError(socket, 'UNAUTHORIZED');
         socket.close(1008, 'Unauthorized');
       }
     });

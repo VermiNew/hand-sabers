@@ -2,8 +2,10 @@ import { openRemoteTrackingChannel } from './channel.ts';
 import {
   isTerminalRemoteSessionError,
   parseRemoteSessionErrorCode,
+  remoteConnectionCode,
   remoteConnectionErrorKey,
   remoteReconnectDelay,
+  type RemoteConnectionCode,
   type RemoteConnectionErrorKey,
   type RemoteSessionErrorCode,
 } from './connection-policy.ts';
@@ -43,6 +45,7 @@ export interface RemoteTrackingSessionState {
   session: RemoteTrackingSession | null;
   phase: RemoteTrackingSessionPhase;
   error: 'createFailed' | 'rateLimited' | 'statusFailed' | 'approvalFailed' | RemoteConnectionErrorKey | null;
+  errorCode: RemoteConnectionCode | null;
 }
 
 interface TrackingSessionResponse {
@@ -79,7 +82,7 @@ const CODE_RE = /^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/;
 let activeSession: ActiveSession | null = null;
 let remoteTrackingConnected = false;
 let initialized = false;
-let state: RemoteTrackingSessionState = { session: null, phase: 'idle', error: null };
+let state: RemoteTrackingSessionState = { session: null, phase: 'idle', error: null, errorCode: null };
 
 function createTrackingOptionsCommand(): TrackingOptionsCommand {
   const settings = getSettings();
@@ -114,8 +117,12 @@ function publicSession(session: ActiveSession | null): RemoteTrackingSession | n
   };
 }
 
-function dispatchState(phase: RemoteTrackingSessionPhase, error: RemoteTrackingSessionState['error'] = null): void {
-  state = { session: publicSession(activeSession), phase, error };
+function dispatchState(
+  phase: RemoteTrackingSessionPhase,
+  error: RemoteTrackingSessionState['error'] = null,
+  errorCode: RemoteConnectionCode | null = null,
+): void {
+  state = { session: publicSession(activeSession), phase, error, errorCode };
   window.dispatchEvent(new CustomEvent('hand-sabers:remote-session-state', { detail: state }));
 }
 
@@ -222,7 +229,7 @@ function startPolling(session: ActiveSession): void {
       if (activeSession !== session) return;
       if (Date.now() >= session.expiresAt) {
         clearActiveSession(true);
-        dispatchState('expired', 'sessionExpired');
+        dispatchState('expired', 'sessionExpired', 'SESSION_EXPIRED');
       } else {
         dispatchState(state.phase, 'statusFailed');
       }
@@ -286,10 +293,10 @@ function connectHostChannel(session: ActiveSession): void {
       if (Date.now() >= session.expiresAt) channelError = 'SESSION_EXPIRED';
       if (isTerminalRemoteSessionError(channelError)) {
         clearActiveSession(true);
-        dispatchState('expired', remoteConnectionErrorKey(channelError));
+        dispatchState('expired', remoteConnectionErrorKey(channelError), remoteConnectionCode(channelError));
         return;
       }
-      dispatchState('connecting', remoteConnectionErrorKey(channelError));
+      dispatchState('connecting', remoteConnectionErrorKey(channelError), remoteConnectionCode(channelError));
       const delay = remoteReconnectDelay(session.reconnectAttempt++);
       session.reconnectTimer = setTimeout(() => {
         if (activeSession === session) connectHostChannel(session);
@@ -377,7 +384,7 @@ export function initRemoteTrackingHost(): void {
   }).catch(() => {
     if (activeSession !== session) return;
     clearActiveSession(true);
-    dispatchState('expired', 'sessionExpired');
+    dispatchState('expired', 'sessionExpired', 'SESSION_EXPIRED');
   });
 }
 

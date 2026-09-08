@@ -152,7 +152,7 @@ export function initRemoteTrackingPairing(): void {
   };
 
   const render = (sessionState: RemoteTrackingSessionState) => {
-    const { session, phase, error } = sessionState;
+    const { session, phase, error, errorCode } = sessionState;
     currentPhase = phase;
     if (phase !== 'connected') {
       phoneAudioReady = false;
@@ -161,7 +161,7 @@ export function initRemoteTrackingPairing(): void {
     }
     errorMessage.textContent = error ? t(`remoteTracking.${error}`) : '';
     errorMessage.hidden = !error;
-    if (error) errorMessage.dataset['errorCode'] = error;
+    if (errorCode) errorMessage.dataset['errorCode'] = errorCode;
     else delete errorMessage.dataset['errorCode'];
     sessionPanel.hidden = !session;
     createButton.disabled = phase === 'connecting';
