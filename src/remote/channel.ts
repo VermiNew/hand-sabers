@@ -1,7 +1,9 @@
+import { parseRemoteSessionErrorCode, type RemoteSessionErrorCode } from './connection-policy.ts';
+
 export interface RemoteChannelEvent {
   type: string;
   peer?: unknown;
-  code?: unknown;
+  code?: unknown | RemoteSessionErrorCode;
   expiresAt?: unknown;
 }
 
@@ -46,6 +48,7 @@ export function openRemoteTrackingChannel(options: {
       }
       if (typeof event.data !== 'string') return;
       const payload = JSON.parse(event.data) as RemoteChannelEvent;
+      if (payload?.type === 'error') payload.code = parseRemoteSessionErrorCode(payload.code);
       if (payload && typeof payload.type === 'string') options.onEvent(payload);
     } catch (error) {
       reportError('message', error);

@@ -1,5 +1,12 @@
 import { getCurrentLang, t } from '../i18n/index.ts';
 import { openRemoteTrackingChannel } from './channel.ts';
+import {
+  isTerminalRemoteSessionError,
+  parseRemoteSessionErrorCode,
+  remoteConnectionErrorKey,
+  remoteReconnectDelay,
+  type RemoteSessionErrorCode,
+} from './connection-policy.ts';
 import { initPhoneTracking } from './phone-tracking.ts';
 import { initPhoneAudio, setupPhoneAudioUI } from './phone-audio.ts';
 import { isPhoneCameraProcessingCommand, isTrackingOptionsCommand } from './tracking-options-protocol.ts';
@@ -111,9 +118,11 @@ function applyTranslations(): void {
   });
 }
 
-function showError(message: string): void {
+function showError(message: string, code = ''): void {
   errorMessage.textContent = message;
   errorMessage.hidden = !message;
+  if (code) errorMessage.dataset['errorCode'] = code;
+  else delete errorMessage.dataset['errorCode'];
 }
 
 function clearReconnectTimer(): void {
@@ -129,7 +138,7 @@ function clearPendingClaim(): void {
 
 function connectTrackingChannel(next: PhoneCredential): void {
   clearReconnectTimer();
-  let authenticationRejected = false;
+  let channelError: RemoteSessionErrorCode | null = null;
   status.dataset['state'] = 'ready';
   statusText.textContent = reconnectAttempt > 0
     ? t('remoteTracking.reconnectingStream')
@@ -162,7 +171,7 @@ function connectTrackingChannel(next: PhoneCredential): void {
         phoneAudio.setPeerConnected(false);
       }
       if (event.type === 'error') {
-        authenticationRejected = true;
+        channelError = parseRemoteSessionErrorCode(event.code);
       }
       if (isTrackingOptionsCommand(event)) {
         phoneTracking.setModelOptions(event.options);
@@ -181,23 +190,23 @@ function connectTrackingChannel(next: PhoneCredential): void {
       phoneTracking.setPeerConnected(false);
       phoneAudio.setPeerConnected(false);
       if (credential !== next) return;
-      if (Date.now() >= next.expiresAt) {
+      if (Date.now() >= next.expiresAt) channelError = 'SESSION_EXPIRED';
+      if (isTerminalRemoteSessionError(channelError)) {
         credential = null;
+        codeForm.hidden = false;
+        ready.hidden = true;
+        claimButton.disabled = false;
         status.dataset['state'] = 'idle';
         statusText.textContent = t('remoteTracking.streamDisconnected');
-        showError(t('remoteTracking.sessionExpired'));
-        return;
-      }
-      if (authenticationRejected && reconnectAttempt >= 2) {
-        credential = null;
-        status.dataset['state'] = 'idle';
-        statusText.textContent = t('remoteTracking.streamDisconnected');
-        showError(t('remoteTracking.sessionExpired'));
+        const errorKey = remoteConnectionErrorKey(channelError);
+        showError(t(`remoteTracking.${errorKey}`), channelError ?? 'CONNECTION_LOST');
         return;
       }
       status.dataset['state'] = 'ready';
       statusText.textContent = t('remoteTracking.reconnectingStream');
-      const delay = Math.min(10_000, 750 * 2 ** reconnectAttempt++);
+      const errorKey = remoteConnectionErrorKey(channelError);
+      showError(t(`remoteTracking.${errorKey}`), channelError ?? 'CONNECTION_LOST');
+      const delay = remoteReconnectDelay(reconnectAttempt++);
       reconnectTimer = setTimeout(() => connectTrackingChannel(next), delay);
     },
   });

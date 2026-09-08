@@ -1,4 +1,12 @@
 import { openRemoteTrackingChannel } from './channel.ts';
+import {
+  isTerminalRemoteSessionError,
+  parseRemoteSessionErrorCode,
+  remoteConnectionErrorKey,
+  remoteReconnectDelay,
+  type RemoteConnectionErrorKey,
+  type RemoteSessionErrorCode,
+} from './connection-policy.ts';
 import { getSettings } from '../core/settings.ts';
 import { isAudioEvent } from './audio-protocol.ts';
 import { onPhoneAudioEvent, setHostAudioSocket, setPhoneAudioCapabilities } from './host-audio.ts';
@@ -34,7 +42,7 @@ export type RemoteTrackingSessionPhase =
 export interface RemoteTrackingSessionState {
   session: RemoteTrackingSession | null;
   phase: RemoteTrackingSessionPhase;
-  error: 'createFailed' | 'rateLimited' | 'sessionExpired' | 'statusFailed' | 'approvalFailed' | null;
+  error: 'createFailed' | 'rateLimited' | 'statusFailed' | 'approvalFailed' | RemoteConnectionErrorKey | null;
 }
 
 interface TrackingSessionResponse {
@@ -225,7 +233,7 @@ function startPolling(session: ActiveSession): void {
 function connectHostChannel(session: ActiveSession): void {
   if (session.reconnectTimer) clearTimeout(session.reconnectTimer);
   session.reconnectTimer = null;
-  let authenticationRejected = false;
+  let channelError: RemoteSessionErrorCode | null = null;
   dispatchState('connecting');
   const socket = openRemoteTrackingChannel({
     sessionId: session.id,
@@ -254,7 +262,7 @@ function connectHostChannel(session: ActiveSession): void {
         startPolling(session);
         setHostAudioSocket(null);
       } else if (event.type === 'error') {
-        authenticationRejected = true;
+        channelError = parseRemoteSessionErrorCode(event.code);
       } else if (isAudioEvent(event)) {
         onPhoneAudioEvent(event);
       } else if (isPhoneCapabilitiesEvent(event)) {
@@ -275,13 +283,14 @@ function connectHostChannel(session: ActiveSession): void {
       session.socket = null;
       setHostAudioSocket(null);
       setRemoteTrackingConnected(false);
-      if (Date.now() >= session.expiresAt || (authenticationRejected && session.reconnectAttempt >= 2)) {
+      if (Date.now() >= session.expiresAt) channelError = 'SESSION_EXPIRED';
+      if (isTerminalRemoteSessionError(channelError)) {
         clearActiveSession(true);
-        dispatchState('expired', 'sessionExpired');
+        dispatchState('expired', remoteConnectionErrorKey(channelError));
         return;
       }
-      dispatchState('connecting');
-      const delay = Math.min(10_000, 750 * 2 ** session.reconnectAttempt++);
+      dispatchState('connecting', remoteConnectionErrorKey(channelError));
+      const delay = remoteReconnectDelay(session.reconnectAttempt++);
       session.reconnectTimer = setTimeout(() => {
         if (activeSession === session) connectHostChannel(session);
       }, delay);

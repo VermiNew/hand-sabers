@@ -161,6 +161,8 @@ export function initRemoteTrackingPairing(): void {
     }
     errorMessage.textContent = error ? t(`remoteTracking.${error}`) : '';
     errorMessage.hidden = !error;
+    if (error) errorMessage.dataset['errorCode'] = error;
+    else delete errorMessage.dataset['errorCode'];
     sessionPanel.hidden = !session;
     createButton.disabled = phase === 'connecting';
     createButton.hidden = Boolean(session);
