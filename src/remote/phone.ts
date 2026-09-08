@@ -4,6 +4,7 @@ import { initPhoneTracking } from './phone-tracking.ts';
 import { initPhoneAudio, setupPhoneAudioUI } from './phone-audio.ts';
 import { isTrackingOptionsCommand } from './tracking-options-protocol.ts';
 import type { PhoneTrackingMetricsEvent } from './tracking-metrics.ts';
+import { detectPhoneCapabilities, supportsPhoneAudio } from './phone-capabilities.ts';
 
 interface PhoneCredential {
   id: string;
@@ -56,6 +57,7 @@ const phoneTracking = initPhoneTracking(
 );
 
 let phoneAudioUi: ReturnType<typeof setupPhoneAudioUI> = null;
+const phoneCapabilities = detectPhoneCapabilities();
 
 // Phone audio player — receives commands from host via tracking channel
 const phoneAudio = initPhoneAudio(
@@ -97,6 +99,9 @@ const phoneAudio = initPhoneAudio(
 
 // Add "Enable audio" button to the phone page
 phoneAudioUi = setupPhoneAudioUI(() => phoneAudio.enableAudio());
+if (!supportsPhoneAudio(phoneCapabilities)) {
+  phoneAudioUi?.setUnavailable(phoneCapabilities.audio.webAudio ? 'format' : 'webAudio');
+}
 
 function applyTranslations(): void {
   document.documentElement.lang = getCurrentLang();
@@ -145,6 +150,9 @@ function connectTrackingChannel(next: PhoneCredential): void {
         status.dataset['state'] = 'connected';
         statusText.textContent = t('remoteTracking.streamConnected');
         phoneTracking.setPeerConnected(true);
+        try {
+          socket.send(JSON.stringify(phoneCapabilities));
+        } catch { /* reconnect will retry capability negotiation */ }
       }
       if (event.type === 'peer-disconnected') {
         status.dataset['state'] = 'ready';

@@ -75,6 +75,29 @@ function finiteInRange(value: unknown, min: number, max: number): boolean {
   return typeof value === 'number' && Number.isFinite(value) && value >= min && value <= max;
 }
 
+function isBoolean(value: unknown): boolean {
+  return typeof value === 'boolean';
+}
+
+function isPhoneCapabilities(value: Record<string, unknown>): boolean {
+  const camera = value['camera'] as Record<string, unknown> | undefined;
+  const audio = value['audio'] as Record<string, unknown> | undefined;
+  const storage = value['storage'] as Record<string, unknown> | undefined;
+  return Boolean(camera && audio && storage
+    && isBoolean(camera['mediaDevices'])
+    && isBoolean(camera['webCodecs'])
+    && isBoolean(camera['widthConstraint'])
+    && isBoolean(camera['heightConstraint'])
+    && isBoolean(camera['frameRateConstraint'])
+    && isBoolean(camera['facingModeConstraint'])
+    && isBoolean(audio['webAudio'])
+    && isBoolean(audio['mpeg'])
+    && isBoolean(audio['ogg'])
+    && isBoolean(audio['wav'])
+    && isBoolean(storage['cacheStorage'])
+    && (storage['deviceMemoryGb'] === null || finiteInRange(storage['deviceMemoryGb'], 0.25, 64)));
+}
+
 const REQUEST_ID_RE = /^[a-zA-Z0-9_-]{1,48}$/;
 const SHA256_RE = /^[a-f0-9]{64}$/;
 const ERROR_CODE_RE = /^[A-Z0-9_]{1,64}$/;
@@ -87,7 +110,8 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
   if (value['v'] !== PROTOCOL_VERSION || typeof value['type'] !== 'string') return false;
   const type = value['type'];
   if (peer.role === 'phone') {
-    return type === 'audio-ready'
+    return (type === 'phone-capabilities' && isPhoneCapabilities(value))
+      || type === 'audio-ready'
       || (type === 'audio-error' && typeof value['code'] === 'string' && ERROR_CODE_RE.test(value['code']))
       || (type === 'audio-bank-error'
         && typeof value['requestId'] === 'string' && REQUEST_ID_RE.test(value['requestId'])

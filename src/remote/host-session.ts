@@ -1,8 +1,9 @@
 import { openRemoteTrackingChannel } from './channel.ts';
 import { getSettings } from '../core/settings.ts';
 import { isAudioEvent } from './audio-protocol.ts';
-import { onPhoneAudioEvent, setHostAudioSocket } from './host-audio.ts';
+import { onPhoneAudioEvent, setHostAudioSocket, setPhoneAudioCapabilities } from './host-audio.ts';
 import type { TrackingOptionsCommand } from './tracking-options-protocol.ts';
+import { isPhoneCapabilitiesEvent } from './phone-capabilities.ts';
 import {
   isPhoneTrackingMetricsEvent,
   recordPhoneTrackingMetrics,
@@ -247,6 +248,9 @@ function connectHostChannel(session: ActiveSession): void {
         authenticationRejected = true;
       } else if (isAudioEvent(event)) {
         onPhoneAudioEvent(event);
+      } else if (isPhoneCapabilitiesEvent(event)) {
+        setPhoneAudioCapabilities(event);
+        window.dispatchEvent(new CustomEvent('hand-sabers:phone-capabilities', { detail: event }));
       } else if (isPhoneTrackingMetricsEvent(event)) {
         recordPhoneTrackingMetrics(event);
       }

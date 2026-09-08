@@ -788,7 +788,9 @@
     "phoneAudioErrorNotAllowed": "Przeglądarka zablokowała start audio — dotknij ponownie przycisku",
     "phoneAudioErrorNotSupported": "Telefon nie obsługuje formatu tego dźwięku",
     "phoneAudioErrorAborted": "Uruchamianie audio zostało przerwane",
-    "phoneAudioErrorSfx": "Nie udało się uruchomić silnika efektów dźwiękowych"
+    "phoneAudioErrorSfx": "Nie udało się uruchomić silnika efektów dźwiękowych",
+    "phoneAudioUnavailable": "Audio niedostępne na tym telefonie",
+    "phoneAudioErrorWebAudio": "Przeglądarka telefonu nie obsługuje wymaganego Web Audio"
   },
   "hud": {
     "progress": "POSTĘP",

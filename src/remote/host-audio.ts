@@ -1,6 +1,7 @@
 ﻿import { getSettings } from '../core/settings.ts';
 import type { AudioCommand, AudioEvent } from './audio-protocol.ts';
 import type { ProceduralAudioRecipe } from './audio-bank-manifest.ts';
+import { supportsPhoneAudio, type PhoneCapabilitiesEvent } from './phone-capabilities.ts';
 
 /**
  * Host-side remote audio controller.
@@ -20,6 +21,7 @@ const clockSamples: Array<{ offsetMs: number; rttMs: number }> = [];
 let clockRequestCounter = 0;
 let soundSequence = 0;
 let playbackSyncSequence = 0;
+let phoneAudioSupported: boolean | null = null;
 const pendingSoundFallbacks = new Map<number, { timer: ReturnType<typeof setTimeout>; play: () => void }>();
 const SOUND_ACK_TIMEOUT_MS = 30;
 const BANK_INACTIVITY_TIMEOUT_MS = 45_000;
@@ -91,6 +93,7 @@ export function setHostAudioSocket(socket: WebSocket | null): void {
   hostSocket = socket;
   if (!socket) {
     // Phone disconnected — restore PC audio
+    phoneAudioSupported = null;
     phoneAudioReady = false;
     activeBankRequestId = '';
     clearBankInactivityTimer();
@@ -98,6 +101,17 @@ export function setHostAudioSocket(socket: WebSocket | null): void {
     clearSoundFallbacks(true);
     restorePcAudio();
   }
+}
+
+/** Apply the phone's validated feature report before attempting preload. */
+export function setPhoneAudioCapabilities(capabilities: PhoneCapabilitiesEvent | null): void {
+  phoneAudioSupported = capabilities ? supportsPhoneAudio(capabilities) : null;
+  if (phoneAudioSupported !== false) return;
+  if (activeBankRequestId) failActiveBank('AUDIO_NOT_SUPPORTED');
+  else onPhoneAudioError();
+  window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-error', {
+    detail: { v: 1, type: 'audio-error', code: 'AUDIO_NOT_SUPPORTED' },
+  }));
 }
 
 /** Whether phone audio output is enabled in settings AND phone is ready. */
@@ -233,6 +247,13 @@ export function playPhoneSound(
 
 /** Prepare phone for audio playback using the map's canonical server endpoint. */
 export function preparePhoneAudio(mapId: string): boolean {
+  if (phoneAudioSupported === false) {
+    window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-error', {
+      detail: { v: 1, type: 'audio-error', code: 'AUDIO_NOT_SUPPORTED' },
+    }));
+    restorePcAudio();
+    return false;
+  }
   const latencyMs = getSettings().phoneAudioLatencyMs ?? 0;
   phoneAudioReady = false;
   restorePcAudio();

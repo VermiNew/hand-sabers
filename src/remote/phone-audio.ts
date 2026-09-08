@@ -327,6 +327,7 @@ export function setupPhoneAudioUI(
   setProgress(loadedAssets: number, totalAssets: number, loadedBytes: number, totalBytes: number): void;
   setReady(totalAssets: number): void;
   setError(code?: string): void;
+  setUnavailable(reason: 'webAudio' | 'format'): void;
 } | null {
   const container = document.querySelector('.remote-card');
   if (!container) return null;
@@ -406,6 +407,17 @@ export function setupPhoneAudioUI(
               ? 'remoteTracking.phoneAudioErrorSfx'
               : 'remoteTracking.phoneAudioPcFallback';
       preloadValue.textContent = `${t(reasonKey)}${code ? ` (${code})` : ''}`;
+      progress.removeAttribute('value');
+    },
+    setUnavailable(reason): void {
+      btn.disabled = true;
+      btn.textContent = t('remoteTracking.phoneAudioUnavailable');
+      preload.hidden = false;
+      preload.dataset['state'] = 'error';
+      preloadLabel.textContent = t('remoteTracking.phoneAudioUnavailable');
+      preloadValue.textContent = t(reason === 'webAudio'
+        ? 'remoteTracking.phoneAudioErrorWebAudio'
+        : 'remoteTracking.phoneAudioErrorNotSupported');
       progress.removeAttribute('value');
     },
   };
