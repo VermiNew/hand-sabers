@@ -4,6 +4,11 @@ import type { Duplex } from 'node:stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { TrackingSessionRegistry } from './tracking-session-registry.js';
 import type { OriginPolicy } from '../origin-policy.js';
+import {
+  decodePhoneCameraFrame,
+  PHONE_CAMERA_FRAME_KIND,
+  PHONE_CAMERA_FRAME_MAX_BYTES,
+} from '../../src/remote/camera-frame-protocol.js';
 
 const PROTOCOL_VERSION = 1;
 const JOIN_TIMEOUT_MS = 10_000;
@@ -14,6 +19,7 @@ const MAX_PACKETS_PER_SECOND = 60;
 const MAX_TEXT_MESSAGES_PER_SECOND = 20;
 const MAX_TEXT_BURST_MESSAGES = 40;
 const MAX_TEXT_RATE_VIOLATIONS = 10;
+const MAX_TEXT_MESSAGE_BYTES = 1024;
 const MAX_OUTGOING_BUFFER_BYTES = 64 * 1024;
 
 export function isRemoteTrackingBufferAvailable(bufferedAmount: number): boolean {
@@ -31,11 +37,17 @@ interface Peer {
 }
 
 function validateTrackingPacket(packet: Buffer): void {
-  if ((packet.length !== 96 && packet.length !== 528) || packet[0] !== PROTOCOL_VERSION) {
+  if (packet[0] !== PROTOCOL_VERSION) {
     throw new Error('INVALID_PACKET');
   }
   const kind = packet[1];
-  if (kind !== 1 && kind !== 2) throw new Error('INVALID_PACKET');
+  if (kind === PHONE_CAMERA_FRAME_KIND) {
+    if (!decodePhoneCameraFrame(packet)) throw new Error('INVALID_PACKET');
+    return;
+  }
+  if ((packet.length !== 96 && packet.length !== 528) || (kind !== 1 && kind !== 2)) {
+    throw new Error('INVALID_PACKET');
+  }
   if ((kind === 1 && packet.length !== 96) || (kind === 2 && packet.length !== 528)) {
     throw new Error('INVALID_PACKET');
   }
@@ -230,7 +242,11 @@ export function registerRemoteTrackingServer(
   sessions: TrackingSessionRegistry,
   originPolicy: OriginPolicy,
 ): { close(): void } {
-  const webSocketServer = new WebSocketServer({ noServer: true, maxPayload: 1024, perMessageDeflate: false });
+  const webSocketServer = new WebSocketServer({
+    noServer: true,
+    maxPayload: PHONE_CAMERA_FRAME_MAX_BYTES,
+    perMessageDeflate: false,
+  });
   const peers = new Map<WebSocket, Peer>();
   const pendingHandshakes = new Map<WebSocket, string>();
 
@@ -308,9 +324,14 @@ export function registerRemoteTrackingServer(
         }
         return;
       }
+      const serialized = data.toString();
+      if (Buffer.byteLength(serialized, 'utf8') > MAX_TEXT_MESSAGE_BYTES) {
+        socket.close(1009, 'Text message too large');
+        return;
+      }
       if (peers.has(socket)) {
         try {
-          const value = JSON.parse(data.toString()) as Record<string, unknown>;
+          const value = JSON.parse(serialized) as Record<string, unknown>;
           const peer = peers.get(socket)!;
           if (!isAllowedRelayMessage(peer, value)) {
             socket.close(1008, 'Invalid message');
@@ -333,7 +354,7 @@ export function registerRemoteTrackingServer(
         return;
       }
       try {
-        const value = JSON.parse(data.toString()) as Record<string, unknown>;
+        const value = JSON.parse(serialized) as Record<string, unknown>;
         const sessionId = typeof value['sessionId'] === 'string' ? value['sessionId'] : '';
         const token = typeof value['token'] === 'string' ? value['token'] : '';
         const role = value['role'];

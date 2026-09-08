@@ -24,6 +24,7 @@
     "src/core/settings.ts",
     "src/core/saber-colors.ts",
     "src/core/translate.ts",
+    "src/remote/camera-frame-protocol.ts",
     "src/types/index.ts"
   ]
 }
