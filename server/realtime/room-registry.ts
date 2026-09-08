@@ -33,6 +33,7 @@ export type RoomErrorCode =
   | 'INVALID_MAP'
   | 'INVALID_MODE'
   | 'INVALID_RULES'
+  | 'INVALID_READINESS'
   | 'INVALID_SCORE';
 
 export class RoomError extends Error {
@@ -132,6 +133,25 @@ function parseReadiness(value: unknown, fallback: boolean): RoomPlayerReadiness 
     map: readiness['map'] === true,
     audio: readiness['audio'] === true,
     tracking: readiness['tracking'] === true,
+  };
+}
+
+function validateReadiness(value: unknown): RoomPlayerReadiness {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new RoomError('INVALID_READINESS');
+  }
+  const readiness = value as Record<string, unknown>;
+  if (
+    typeof readiness['map'] !== 'boolean'
+    || typeof readiness['audio'] !== 'boolean'
+    || typeof readiness['tracking'] !== 'boolean'
+  ) {
+    throw new RoomError('INVALID_READINESS');
+  }
+  return {
+    map: readiness['map'],
+    audio: readiness['audio'],
+    tracking: readiness['tracking'],
   };
 }
 
@@ -300,6 +320,20 @@ export class RoomRegistry {
     player.readiness = ready ? parseReadiness(readinessValue, true) : emptyReadiness();
     player.ready = ready
       && player.readiness.map
+      && player.readiness.audio
+      && player.readiness.tracking;
+    room.revision++;
+    return this.snapshot(room);
+  }
+
+  setResourceReadiness(code: string, playerId: string, readinessValue: unknown): RoomSnapshot {
+    const room = this.requireRoom(code);
+    const player = room.players.find(candidate => candidate.id === playerId);
+    if (!player) throw new RoomError('PLAYER_NOT_FOUND');
+    if (!room.mapId) throw new RoomError('MAP_REQUIRED');
+    if (room.round?.finishedAt === null) throw new RoomError('ROUND_ALREADY_STARTED');
+    player.readiness = validateReadiness(readinessValue);
+    player.ready = player.readiness.map
       && player.readiness.audio
       && player.readiness.tracking;
     room.revision++;

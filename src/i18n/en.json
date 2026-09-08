@@ -155,6 +155,7 @@
       "INVALID_MAP": "The selected map is invalid.",
       "INVALID_MODE": "The selected game mode is invalid.",
       "INVALID_RULES": "The selected gameplay rules are invalid.",
+      "INVALID_READINESS": "The resource preparation state is invalid.",
       "INVALID_SCORE": "The server rejected an invalid score.",
       "INVALID_CHAT": "The message is empty or exceeds 240 characters.",
       "CHAT_RATE_LIMIT": "You are sending messages too quickly. Wait a moment.",

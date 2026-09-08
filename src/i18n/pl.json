@@ -155,6 +155,7 @@
       "INVALID_MAP": "Wybrana mapa jest nieprawidłowa.",
       "INVALID_MODE": "Wybrany tryb gry jest nieprawidłowy.",
       "INVALID_RULES": "Wybrane zasady rozgrywki są nieprawidłowe.",
+      "INVALID_READINESS": "Stan przygotowania zasobów jest nieprawidłowy.",
       "INVALID_SCORE": "Serwer odrzucił nieprawidłowy wynik.",
       "INVALID_CHAT": "Wiadomość jest pusta albo przekracza 240 znaków.",
       "CHAT_RATE_LIMIT": "Wysyłasz wiadomości zbyt szybko. Poczekaj chwilę.",

@@ -80,9 +80,20 @@ export function createMultiplayerRoundSession({
     document.body.classList.toggle('training-mode', settings.trainingMode);
   }
 
+  function publishPreparationProgress(): void {
+    if (!preparationMapId) return;
+    window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-preparation-progress', {
+      detail: {
+        mapId: preparationMapId,
+        readiness: { ...preparationReadiness },
+      },
+    }));
+  }
+
   function completePreparation(): boolean {
     if (!preparationMapId) return false;
     preparationReadiness.tracking = calibrationController.isReady();
+    publishPreparationProgress();
     if (!Object.values(preparationReadiness).every(Boolean)) return false;
     const mapId = preparationMapId;
     const readiness = { ...preparationReadiness };
@@ -140,6 +151,7 @@ export function createMultiplayerRoundSession({
         if (!await loadMapById(mapId)) throw new Error('MAP_NOT_FOUND');
         if (currentPreparationId !== preparationId) return;
         preparationReadiness.map = true;
+        publishPreparationProgress();
         await ensureCurrentMapAudio(settings);
         if (currentPreparationId !== preparationId) return;
         if (settings.phoneAudioOutput && state.map?.id === mapId && !state.map.localOnly && !isPhoneAudioActive()) {
@@ -148,6 +160,7 @@ export function createMultiplayerRoundSession({
           if (currentPreparationId !== preparationId) return;
         }
         preparationReadiness.audio = true;
+        publishPreparationProgress();
         if (calibrationController.isReady()) {
           completePreparation();
           return;

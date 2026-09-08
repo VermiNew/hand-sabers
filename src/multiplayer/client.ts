@@ -576,6 +576,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     const mapId = currentRoom?.mapId;
     if (!mapId || pendingPreparationMapId) return;
     pendingPreparationMapId = mapId;
+    sendControl({ type: 'ready', ready: false });
     readyButton.disabled = true;
     readyButton.textContent = t('multiplayer.preparing');
     if (currentRoom) renderWaitingState(currentRoom);
@@ -585,6 +586,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       pendingPreparationMapId = '';
       preparationTimeout = null;
       window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-cancel'));
+      sendControl({ type: 'ready', ready: false });
       readyButton.disabled = false;
       readyButton.textContent = t('multiplayer.ready');
       if (currentRoom) renderWaitingState(currentRoom);
@@ -624,6 +626,21 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   noFailInput.addEventListener('change', sendRules);
   gameModeSelect.addEventListener('change', sendRules);
   noteSpeedSelect.addEventListener('change', sendRules);
+  window.addEventListener('hand-sabers:multiplayer-preparation-progress', event => {
+    const detail = (event as CustomEvent<{
+      mapId?: unknown;
+      readiness?: { map?: unknown; audio?: unknown; tracking?: unknown };
+    }>).detail;
+    const readiness = detail?.readiness;
+    if (
+      detail?.mapId !== pendingPreparationMapId
+      || currentRoom?.mapId !== detail.mapId
+      || typeof readiness?.map !== 'boolean'
+      || typeof readiness.audio !== 'boolean'
+      || typeof readiness.tracking !== 'boolean'
+    ) return;
+    sendControl({ type: 'resource-readiness', readiness });
+  });
   window.addEventListener('hand-sabers:multiplayer-prepared', event => {
     const detail = (event as CustomEvent<{
       mapId?: unknown;
@@ -647,6 +664,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     if (!pendingPreparationMapId) return;
     pendingPreparationMapId = '';
     clearPreparationTimeout();
+    sendControl({ type: 'ready', ready: false });
     readyButton.disabled = false;
     readyButton.textContent = t('multiplayer.ready');
     if (currentRoom) renderWaitingState(currentRoom);

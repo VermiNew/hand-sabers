@@ -270,6 +270,14 @@ export function registerRealtimeServer(
           ));
           return;
         }
+        if (type === 'resource-readiness') {
+          broadcast(client.roomCode, rooms.setResourceReadiness(
+            client.roomCode,
+            client.playerId,
+            message.readiness,
+          ));
+          return;
+        }
         if (type === 'set-profile') {
           broadcast(client.roomCode, rooms.setProfile(
             client.roomCode,
