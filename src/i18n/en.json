@@ -142,6 +142,11 @@
     "sessionsLoading": "Player sessions are loading… please wait.",
     "waitingLeaveHint": "You can leave the lobby if an error occurs or someone takes too long to load 😎",
     "playersReadiness": "Player readiness",
+    "resourceMap": "Map",
+    "resourceAudio": "Audio",
+    "resourceTracking": "Tracking",
+    "resourceReady": "Ready",
+    "resourceWaiting": "Waiting",
     "leaveLobby": "LEAVE LOBBY",
     "mapsError": "Could not load the map list.",
     "errors": {

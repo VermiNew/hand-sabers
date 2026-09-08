@@ -142,6 +142,11 @@
     "sessionsLoading": "Sesje graczy ładują się… proszę czekać.",
     "waitingLeaveHint": "Możesz opuścić lobby, jeśli wystąpi błąd lub ktoś ładuje się zbyt długo 😎",
     "playersReadiness": "Gotowość graczy",
+    "resourceMap": "Mapa",
+    "resourceAudio": "Audio",
+    "resourceTracking": "Śledzenie",
+    "resourceReady": "Gotowe",
+    "resourceWaiting": "Oczekiwanie",
     "leaveLobby": "OPUŚĆ LOBBY",
     "mapsError": "Nie udało się pobrać listy map.",
     "errors": {

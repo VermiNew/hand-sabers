@@ -45,7 +45,18 @@ export function renderRoomPlayerList(
     } else {
       state.textContent = t('multiplayer.waitingCalibrationState');
     }
-    row.append(identity, state);
+    const resources = document.createElement('span');
+    resources.className = 'mp-player-resources';
+    for (const resource of ['map', 'audio', 'tracking'] as const) {
+      const ready = player.readiness[resource];
+      const badge = document.createElement('span');
+      badge.className = `mp-resource-badge${ready ? ' is-ready' : ''}`;
+      badge.dataset['resource'] = resource;
+      badge.textContent = t(`multiplayer.resource${resource[0]!.toUpperCase()}${resource.slice(1)}`);
+      badge.title = t(ready ? 'multiplayer.resourceReady' : 'multiplayer.resourceWaiting');
+      resources.append(badge);
+    }
+    row.append(identity, resources, state);
     container.append(row);
   }
 }
