@@ -1,6 +1,8 @@
 import { t } from '../i18n/index.ts';
 import type { HandTrackingOptions } from './tracking-options-protocol.ts';
 import type { PhoneTrackingMetricsEvent } from './tracking-metrics.ts';
+import { encodePhoneCameraFrame } from './camera-frame-protocol.ts';
+import type { PhoneCameraProcessing } from '../types/index.js';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
@@ -117,12 +119,15 @@ export function initPhoneTracking(
 ): {
   setPeerConnected(connected: boolean): void;
   setModelOptions(options: HandTrackingOptions): void;
+  setProcessing(processing: PhoneCameraProcessing): void;
 } {
   const startButton = element<HTMLButtonElement>('remoteStartCamera');
   const preview = element<HTMLElement>('remoteTrackingPreview');
   const video = element<HTMLVideoElement>('remoteVideo');
   const canvas = element<HTMLCanvasElement>('remoteCanvas');
   const trackingStatus = element<HTMLElement>('remoteTrackingStatus');
+  const cameraNext = element<HTMLElement>('remoteCameraNext');
+  const privacy = element<HTMLElement>('remoteCameraPrivacy');
   const context = canvas.getContext('2d');
   let peerConnected = false;
   let started = false;
@@ -143,6 +148,10 @@ export function initPhoneTracking(
   let sentPackets = 0;
   let droppedPackets = 0;
   let modelOptions = { ...DEFAULT_HAND_TRACKING_OPTIONS };
+  let processing: PhoneCameraProcessing = 'phone';
+  let frameEncoding = false;
+  const frameCanvas = document.createElement('canvas');
+  const frameContext = frameCanvas.getContext('2d', { alpha: false });
 
   function stopCamera(): void {
     starting = false;
@@ -159,6 +168,7 @@ export function initPhoneTracking(
     activeStream?.getTracks().forEach(track => track.stop());
     activeStream = null;
     video.srcObject = null;
+    frameEncoding = false;
     preview.hidden = true;
     context?.clearRect(0, 0, canvas.width, canvas.height);
     startButton.disabled = !peerConnected;
@@ -186,6 +196,90 @@ export function initPhoneTracking(
       if (attempt !== startAttempt || !peerConnected) return;
       canvas.width = video.videoWidth || 640;
       canvas.height = video.videoHeight || 480;
+      const watchVideoFrame: VideoFrameRequestCallback = frameNow => {
+        lastCameraFrameAt = frameNow;
+        if (started && attempt === startAttempt) {
+          videoFrameCallback = video.requestVideoFrameCallback(watchVideoFrame);
+        }
+      };
+
+      if (processing === 'computer') {
+        if (!frameContext) throw new Error('CAMERA_FRAME_CANVAS_UNAVAILABLE');
+        const sourceWidth = video.videoWidth || 640;
+        const sourceHeight = video.videoHeight || 480;
+        const scale = Math.min(320 / sourceWidth, 240 / sourceHeight);
+        frameCanvas.width = Math.max(1, Math.round(sourceWidth * scale));
+        frameCanvas.height = Math.max(1, Math.round(sourceHeight * scale));
+        starting = false;
+        started = true;
+        trackingStatus.textContent = t('remoteTracking.streamingCameraToComputer');
+        if ('requestVideoFrameCallback' in video) {
+          videoFrameCallback = video.requestVideoFrameCallback(watchVideoFrame);
+        }
+        const streamFrame = (now: number): void => {
+          if (!started || attempt !== startAttempt) return;
+          if (peerConnected && !frameEncoding && now - lastDetectionAt >= 1000 / 15) {
+            lastDetectionAt = now;
+            frameEncoding = true;
+            const encodeStartedAt = performance.now();
+            const sentAtEpochMs = Date.now();
+            frameContext.drawImage(video, 0, 0, frameCanvas.width, frameCanvas.height);
+            frameCanvas.toBlob(blob => {
+              void (async () => {
+                try {
+                  if (!blob || !started || attempt !== startAttempt || processing !== 'computer') {
+                    droppedPackets++;
+                    return;
+                  }
+                  const jpeg = new Uint8Array(await blob.arrayBuffer());
+                  const packet = encodePhoneCameraFrame({
+                    sequence: sequence++,
+                    sentAtEpochMs,
+                    width: frameCanvas.width,
+                    height: frameCanvas.height,
+                    jpeg,
+                  });
+                  if (packet && sendPacket(packet)) sentPackets++;
+                  else droppedPackets++;
+                  metricsSamples++;
+                  encodeMsTotal += performance.now() - encodeStartedAt;
+                  if (Number.isFinite(lastCameraFrameAt)) {
+                    captureAgeMsTotal += Math.max(0, encodeStartedAt - lastCameraFrameAt);
+                    captureAgeSamples++;
+                  }
+                  const encodedAt = performance.now();
+                  if (encodedAt - metricsStartedAt >= 1_000) {
+                    sendMetrics({
+                      v: 1,
+                      type: 'tracking-metrics',
+                      captureAgeMs: captureAgeSamples ? captureAgeMsTotal / captureAgeSamples : null,
+                      detectionMs: 0,
+                      encodeMs: metricsSamples ? encodeMsTotal / metricsSamples : 0,
+                      bufferedBytes: 0,
+                      sentPackets,
+                      droppedPackets,
+                    });
+                    metricsStartedAt = encodedAt;
+                    metricsSamples = 0;
+                    encodeMsTotal = 0;
+                    captureAgeMsTotal = 0;
+                    captureAgeSamples = 0;
+                    sentPackets = 0;
+                    droppedPackets = 0;
+                  }
+                } catch {
+                  droppedPackets++;
+                } finally {
+                  frameEncoding = false;
+                }
+              })();
+            }, 'image/jpeg', 0.58);
+          }
+          animationFrame = requestAnimationFrame(streamFrame);
+        };
+        animationFrame = requestAnimationFrame(streamFrame);
+        return;
+      }
       const visionModule = await import(
         'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js' as string
       );
@@ -202,12 +296,6 @@ export function initPhoneTracking(
       starting = false;
       started = true;
       trackingStatus.textContent = t('remoteTracking.trackingActive');
-      const watchVideoFrame: VideoFrameRequestCallback = frameNow => {
-        lastCameraFrameAt = frameNow;
-        if (started && attempt === startAttempt) {
-          videoFrameCallback = video.requestVideoFrameCallback(watchVideoFrame);
-        }
-      };
       if ('requestVideoFrameCallback' in video) {
         videoFrameCallback = video.requestVideoFrameCallback(watchVideoFrame);
       }
@@ -287,6 +375,20 @@ export function initPhoneTracking(
     },
     setModelOptions(options: HandTrackingOptions): void {
       modelOptions = { ...options };
+    },
+    setProcessing(nextProcessing: PhoneCameraProcessing): void {
+      if (processing === nextProcessing) return;
+      processing = nextProcessing;
+      if (starting || started || activeStream) stopCamera();
+      trackingStatus.textContent = t(nextProcessing === 'computer'
+        ? 'remoteTracking.computerProcessingReady'
+        : 'remoteTracking.phoneProcessingReady');
+      cameraNext.textContent = t(nextProcessing === 'computer'
+        ? 'remoteTracking.cameraNextComputer'
+        : 'remoteTracking.cameraNext');
+      privacy.textContent = t(nextProcessing === 'computer'
+        ? 'remoteTracking.privacyComputer'
+        : 'remoteTracking.privacy');
     },
   };
 }

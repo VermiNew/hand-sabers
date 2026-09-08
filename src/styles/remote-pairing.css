@@ -37,6 +37,10 @@
 .rt-role[data-state="ready"] .rt-role-icon,.rt-role[data-state="ready"] .rt-role-copy span { color:var(--accent); }
 .rt-role[data-state="error"] { border-color:rgba(255,68,92,.28); }
 .rt-role[data-state="error"] .rt-role-icon,.rt-role[data-state="error"] .rt-role-copy span { color:#ff9aa5; }
+.rt-processing { grid-column:1/-1; display:grid; gap:6px; padding:10px 12px; border:1px solid rgba(148,163,184,.12); border-radius:9px; background:rgba(6,13,23,.5); }
+.rt-processing > span { color:var(--text); font:700 9px 'Oxanium',sans-serif; letter-spacing:.8px; text-transform:uppercase; }
+.rt-processing select { width:100%; min-height:34px; padding:0 9px; border:1px solid rgba(126,184,255,.2); border-radius:6px; background:#091322; color:var(--text); font:700 10px 'Oxanium',sans-serif; }
+.rt-processing small { color:var(--muted); font:600 8px/1.45 'JetBrains Mono',monospace; }
 .rt-audio-progress {
   grid-column:1/-1; display:grid; gap:8px; padding:11px 12px;
   border:1px solid rgba(126,184,255,.16); border-radius:9px; background:rgba(3,8,18,.72);

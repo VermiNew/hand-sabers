@@ -6,6 +6,7 @@ import {
   isRemoteTrackingConnected,
   respondToPhoneApproval,
   revokeRemoteTrackingSession,
+  sendPhoneCameraProcessing,
 } from './host-session.ts';
 import type { RemoteTrackingSessionState } from './host-session.ts';
 import { createModalTransition } from '../ui/modal-transition.ts';
@@ -18,7 +19,7 @@ import {
 import { supportsPhoneAudio, type PhoneCapabilitiesEvent } from './phone-capabilities.ts';
 import type { TrackingSourcePreference } from '../types/index.js';
 
-export { isRemoteTrackingConnected, sendPhoneTrackingOptions } from './host-session.ts';
+export { isRemoteTrackingConnected, sendPhoneCameraProcessing, sendPhoneTrackingOptions } from './host-session.ts';
 
 function element<T extends HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
@@ -49,6 +50,8 @@ export function initRemoteTrackingPairing(): void {
   const cameraRoleCard = element<HTMLElement>('remoteCameraRoleCard');
   const cameraRoleToggle = element<HTMLInputElement>('remoteCameraRole');
   const cameraRoleStatus = element<HTMLElement>('remoteCameraRoleStatus');
+  const cameraProcessing = element<HTMLSelectElement>('remoteCameraProcessing');
+  const cameraProcessingHint = element<HTMLElement>('remoteCameraProcessingHint');
   const audioRoleCard = element<HTMLElement>('remoteAudioRoleCard');
   const audioRoleToggle = element<HTMLInputElement>('remoteAudioRole');
   const audioRoleStatus = element<HTMLElement>('remoteAudioRoleStatus');
@@ -117,6 +120,12 @@ export function initRemoteTrackingPairing(): void {
       cameraRoleStatus.textContent = t(cameraEnabled
         ? connected ? 'remoteTracking.roleReady' : 'remoteTracking.roleWaitingPhone'
         : 'remoteTracking.roleDisabled');
+    }
+    if (cameraProcessing) cameraProcessing.value = settings.phoneCameraProcessing;
+    if (cameraProcessingHint) {
+      cameraProcessingHint.textContent = t(settings.phoneCameraProcessing === 'computer'
+        ? 'remoteTracking.processingComputerHint'
+        : 'remoteTracking.processingPhoneHint');
     }
     if (audioRoleCard && audioRoleStatus) {
       const state = !audioEnabled
@@ -210,7 +219,8 @@ export function initRemoteTrackingPairing(): void {
   });
   window.addEventListener(SETTINGS_CHANGED_EVENT, event => {
     const { changedKeys } = (event as CustomEvent<SettingsChangedDetail>).detail;
-    if (changedKeys.includes('trackingSource') || changedKeys.includes('phoneAudioOutput')) renderRoles();
+    if (changedKeys.includes('trackingSource') || changedKeys.includes('phoneAudioOutput') || changedKeys.includes('phoneCameraProcessing')) renderRoles();
+    if (changedKeys.includes('phoneCameraProcessing')) sendPhoneCameraProcessing();
   });
   window.addEventListener('hand-sabers:phone-capabilities', event => {
     const capabilities = (event as CustomEvent<PhoneCapabilitiesEvent>).detail;
@@ -295,6 +305,11 @@ export function initRemoteTrackingPairing(): void {
     }
     if (getSettings().phoneAudioOutput !== enabled) setSetting('phoneAudioOutput', enabled);
     if (!enabled) resetAudioProgress();
+    renderRoles();
+  });
+  cameraProcessing?.addEventListener('change', () => {
+    const value = cameraProcessing.value === 'computer' ? 'computer' : 'phone';
+    if (getSettings().phoneCameraProcessing !== value) setSetting('phoneCameraProcessing', value);
     renderRoles();
   });
 

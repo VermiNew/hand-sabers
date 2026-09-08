@@ -12,6 +12,7 @@ import { updateCalibrationSourceUI } from './calibration-source-ui.ts';
 import { loadHandLandmarker } from './mediapipe-loader.ts';
 import { createAutoFlipDetector } from './auto-flip.ts';
 import { CALIB_STEPS, renderCalibrationStep } from './calibration-step-ui.ts';
+import { decodePhoneCameraFrame, PHONE_CAMERA_FRAME_KIND } from '../remote/camera-frame-protocol.ts';
 export type { CalibStep } from './calibration-step-ui.ts';
 export { CALIB_STEPS } from './calibration-step-ui.ts';
 
@@ -61,6 +62,8 @@ const autoFlipDetector = createAutoFlipDetector();
 let trackingProfile          = getPerformanceProfile(getSettings());
 let dynamicDetectIntervalMs  = getDetectIntervalMs(trackingProfile);
 let trackingSource: 'camera' | 'remote' | null = null;
+let remoteFrameProcessing = false;
+let trackingGeneration = 0;
 
 function updateCalibrationSourceIndicator(remoteConnected = isRemoteTrackingConnected()): void {
   updateCalibrationSourceUI(trackingSource, remoteConnected);
@@ -327,10 +330,48 @@ function processDetectionResult(
   if (ui.dLat) ui.dLat.textContent = `${detectMs.toFixed(1)}ms`;
 }
 
+async function processRemoteCameraFrame(packet: ArrayBuffer): Promise<void> {
+  if (
+    remoteFrameProcessing
+    || !trackingActive
+    || trackingSource !== 'remote'
+    || getSettings().phoneCameraProcessing !== 'computer'
+    || !handLandmarker
+  ) return;
+  const frame = decodePhoneCameraFrame(new Uint8Array(packet));
+  if (!frame) return;
+  const generation = trackingGeneration;
+  remoteFrameProcessing = true;
+  try {
+    const jpegBuffer = frame.jpeg.slice().buffer as ArrayBuffer;
+    const bitmap = await createImageBitmap(new Blob([jpegBuffer], { type: 'image/jpeg' }));
+    try {
+      if (!trackingActive || trackingSource !== 'remote' || generation !== trackingGeneration) return;
+      const startedAt = performance.now();
+      const result = handLandmarker.detectForVideo(bitmap, startedAt) as DetectResult;
+      const detectMs = performance.now() - startedAt;
+      window.__lastDetectMs = detectMs;
+      if (ui.dDetect) ui.dDetect.textContent = `${detectMs.toFixed(1)}ms`;
+      processDetectionResult(result, startedAt, detectMs, frame.sentAtEpochMs);
+    } finally {
+      bitmap.close();
+    }
+  } catch (error) {
+    console.error('Remote camera frame processing failed:', error);
+  } finally {
+    remoteFrameProcessing = false;
+  }
+}
+
 window.addEventListener('hand-sabers:remote-tracking-packet', event => {
   if (!trackingActive || trackingSource !== 'remote') return;
-  const startedAt = performance.now();
   const packet = (event as CustomEvent<ArrayBuffer>).detail;
+  if (packet.byteLength < 2) return;
+  if (new DataView(packet).getUint8(1) === PHONE_CAMERA_FRAME_KIND) {
+    void processRemoteCameraFrame(packet);
+    return;
+  }
+  const startedAt = performance.now();
   const result = decodeRemoteLandmarks(packet);
   if (!result) return;
   const sentAtEpochMs = new DataView(packet).getFloat64(8, true);
@@ -472,6 +513,7 @@ function scheduleCalibAuto(): void {
 }
 
 export function stopTracking(): void {
+  trackingGeneration++;
   trackingActive     = false;
   trackingSource     = null;
   remoteWorkerSentAtQueue.length = 0;
@@ -513,6 +555,8 @@ export async function initMP(onReady: () => void): Promise<boolean> {
   const phoneRequiredButMissing = sourcePreference === 'phone' && !remoteConnected;
   const useRemoteTracking = sourcePreference === 'phone'
     || (sourcePreference === 'auto' && remoteConnected);
+  const processPhoneCameraOnComputer = useRemoteTracking
+    && getSettings().phoneCameraProcessing === 'computer';
   trackingSource = useRemoteTracking ? 'remote' : 'camera';
   updateCalibrationSourceIndicator(remoteConnected);
 
@@ -521,8 +565,14 @@ export async function initMP(onReady: () => void): Promise<boolean> {
   try {
     if (phoneRequiredButMissing) throw new Error(t('remoteTracking.phoneRequired'));
     if (useRemoteTracking) {
-      setLoadingProgress(t('remoteTracking.preparingPhoneData'), t('remoteTracking.preparingPhoneDataDetail'), null);
-      if (ui.dCam) ui.dCam.textContent = 'PHONE';
+      if (processPhoneCameraOnComputer) {
+        setLoadingProgress(t('overlay.loadingModel'), t('remoteTracking.preparingComputerModelDetail'), null);
+        handLandmarker = await loadHandLandmarker((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
+        if (ui.dCam) ui.dCam.textContent = 'PHONE → PC ML';
+      } else {
+        setLoadingProgress(t('remoteTracking.preparingPhoneData'), t('remoteTracking.preparingPhoneDataDetail'), null);
+        if (ui.dCam) ui.dCam.textContent = 'PHONE ML';
+      }
     } else {
       setLoadingProgress(t('overlay.loadingModel'), t('overlay.loadingRuntimeDetail'), null);
       handLandmarker = await loadHandLandmarker((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
@@ -537,7 +587,11 @@ export async function initMP(onReady: () => void): Promise<boolean> {
     if (!useRemoteTracking) scheduleDetect();
     setLoadingProgress(t('overlay.allReady'), t('overlay.allReadyDetail'), 1.0);
 
-    if (ui.dStatus) ui.dStatus.textContent = useRemoteTracking ? 'PHONE TRACKING' : 'TRACKING OK';
+    if (ui.dStatus) {
+      ui.dStatus.textContent = processPhoneCameraOnComputer
+        ? 'PHONE CAMERA / PC ML'
+        : useRemoteTracking ? 'PHONE TRACKING' : 'TRACKING OK';
+    }
     scheduleCalibAuto();
     onReady();
     return true;

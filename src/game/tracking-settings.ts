@@ -26,6 +26,8 @@ export function initTrackingSettings(
   const sourceInput = document.getElementById('menuTrackingSource') as HTMLSelectElement | null;
   const sourceHint = document.getElementById('menuTrackingSourceHint');
   const modelLocation = document.getElementById('menuTrackingModelLocation');
+  const processingInput = document.getElementById('menuPhoneCameraProcessing') as HTMLSelectElement | null;
+  const processingHint = document.getElementById('menuPhoneCameraProcessingHint');
   const flipCameraInput = document.getElementById('menuFlipCamera') as HTMLInputElement | null;
   const resetModelButton = document.getElementById('menuResetHandModelSettings') as HTMLButtonElement | null;
   const modelInputs: Array<[HandModelSettingKey, HTMLInputElement | null]> = [
@@ -46,12 +48,21 @@ export function initTrackingSettings(
     sourceHint.textContent = t(key);
     sourceHint.classList.toggle('is-error', source === 'phone' && !connected);
     if (modelLocation) {
-      const usesPhoneModel = source === 'phone' || (source === 'auto' && connected);
-      const modelKey = usesPhoneModel
-        ? connected ? 'remoteTracking.modelPhone' : 'remoteTracking.modelPhoneMissing'
+      const usesPhoneCamera = source === 'phone' || (source === 'auto' && connected);
+      const modelKey = usesPhoneCamera
+        ? connected
+          ? settings.phoneCameraProcessing === 'computer'
+            ? 'remoteTracking.modelPhoneComputer'
+            : 'remoteTracking.modelPhone'
+          : 'remoteTracking.modelPhoneMissing'
         : 'remoteTracking.modelLocal';
       modelLocation.textContent = t(modelKey);
-      modelLocation.classList.toggle('is-error', usesPhoneModel && !connected);
+      modelLocation.classList.toggle('is-error', usesPhoneCamera && !connected);
+    }
+    if (processingHint) {
+      processingHint.textContent = t(settings.phoneCameraProcessing === 'computer'
+        ? 'remoteTracking.processingComputerHint'
+        : 'remoteTracking.processingPhoneHint');
     }
   }
 
@@ -60,6 +71,15 @@ export function initTrackingSettings(
     const changed = settings.trackingSource !== value;
     settings.trackingSource = value;
     setSetting('trackingSource', value);
+    onSourceChange(changed);
+    updateSourceHint();
+  });
+
+  processingInput?.addEventListener('change', () => {
+    const value = processingInput.value === 'computer' ? 'computer' : 'phone';
+    const changed = settings.phoneCameraProcessing !== value;
+    settings.phoneCameraProcessing = value;
+    setSetting('phoneCameraProcessing', value);
     onSourceChange(changed);
     updateSourceHint();
   });
@@ -108,6 +128,7 @@ export function initTrackingSettings(
 
   function sync(): void {
     if (sourceInput) sourceInput.value = settings.trackingSource;
+    if (processingInput) processingInput.value = settings.phoneCameraProcessing;
     if (flipCameraInput) flipCameraInput.checked = settings.flipCamera;
     for (const [key, input] of modelInputs) {
       if (!input) continue;

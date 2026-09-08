@@ -521,6 +521,16 @@
             <p class="sp-hint" id="menuTrackingSourceHint"></p>
             <p class="sp-hint" id="menuTrackingModelLocation"></p>
           </div>
+          <div class="sp-group">
+            <div class="sp-select-row">
+              <span class="sp-label" data-i18n="remoteTracking.processingLabel">Obliczenia dla kamery telefonu</span>
+              <select id="menuPhoneCameraProcessing" class="sp-select">
+                <option value="phone" data-i18n="remoteTracking.processingPhone">ML na telefonie</option>
+                <option value="computer" data-i18n="remoteTracking.processingComputer">ML na komputerze</option>
+              </select>
+            </div>
+            <p class="sp-hint" id="menuPhoneCameraProcessingHint" data-i18n="remoteTracking.processingPhoneHint">Najmniejsze użycie sieci: telefon wysyła tylko współrzędne dłoni.</p>
+          </div>
           <div class="sp-group-title" data-i18n="remoteTracking.modelSettings">Model śledzenia dłoni</div>
           <div class="sp-group">
             <div class="sp-row">
@@ -727,6 +737,14 @@
             <span class="sp-knob"></span>
           </label>
         </article>
+        <label class="rt-processing" for="remoteCameraProcessing">
+          <span data-i18n="remoteTracking.processingLabel">Obliczenia dla kamery telefonu</span>
+          <select id="remoteCameraProcessing">
+            <option value="phone" data-i18n="remoteTracking.processingPhone">ML na telefonie</option>
+            <option value="computer" data-i18n="remoteTracking.processingComputer">ML na komputerze</option>
+          </select>
+          <small id="remoteCameraProcessingHint" data-i18n="remoteTracking.processingPhoneHint">Najmniejsze użycie sieci: telefon wysyła tylko współrzędne dłoni.</small>
+        </label>
         <article class="rt-role" id="remoteAudioRoleCard" data-state="off">
           <span class="material-symbols-rounded rt-role-icon" aria-hidden="true">headphones</span>
           <div class="rt-role-copy">

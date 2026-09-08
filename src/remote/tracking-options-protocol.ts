@@ -12,6 +12,12 @@ export interface TrackingOptionsCommand {
   options: HandTrackingOptions;
 }
 
+export interface PhoneCameraProcessingCommand {
+  v: 1;
+  type: 'phone-camera-processing';
+  processing: 'phone' | 'computer';
+}
+
 function isConfidence(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
 }
@@ -25,4 +31,12 @@ export function isTrackingOptionsCommand(value: unknown): value is TrackingOptio
   return isConfidence(values['handDetectionConfidence'])
     && isConfidence(values['handPresenceConfidence'])
     && isConfidence(values['handTrackingConfidence']);
+}
+
+export function isPhoneCameraProcessingCommand(value: unknown): value is PhoneCameraProcessingCommand {
+  if (!value || typeof value !== 'object') return false;
+  const command = value as Record<string, unknown>;
+  return command['v'] === 1
+    && command['type'] === 'phone-camera-processing'
+    && (command['processing'] === 'phone' || command['processing'] === 'computer');
 }

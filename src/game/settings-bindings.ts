@@ -74,6 +74,10 @@ export function initSettingsBindings({
 
   window.addEventListener(SETTINGS_CHANGED_EVENT, event => {
     const detail = (event as CustomEvent<SettingsChangedDetail>).detail;
+    if (detail?.changedKeys.includes('phoneCameraProcessing') && isTrackingStarted()) {
+      onStopTracking();
+      onCalibrationInvalidated();
+    }
     if (!detail || detail.source !== 'devpanel') return;
     const changed = new Set(detail.changedKeys);
     if (detail.changedKeys.some(key => audioKeys.has(key))) audioSettingsController.sync();

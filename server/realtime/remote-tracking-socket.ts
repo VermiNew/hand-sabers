@@ -182,6 +182,9 @@ function isAllowedRelayMessage(peer: Peer, value: Record<string, unknown>): bool
       && finiteInRange(settings['handPresenceConfidence'], 0, 1)
       && finiteInRange(settings['handTrackingConfidence'], 0, 1);
   }
+  if (type === 'phone-camera-processing') {
+    return value['processing'] === 'phone' || value['processing'] === 'computer';
+  }
   if (type === 'audio-prepare') {
     return typeof value['mapId'] === 'string'
       && /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(value['mapId'])

@@ -2,7 +2,7 @@ import { openRemoteTrackingChannel } from './channel.ts';
 import { getSettings } from '../core/settings.ts';
 import { isAudioEvent } from './audio-protocol.ts';
 import { onPhoneAudioEvent, setHostAudioSocket, setPhoneAudioCapabilities } from './host-audio.ts';
-import type { TrackingOptionsCommand } from './tracking-options-protocol.ts';
+import type { PhoneCameraProcessingCommand, TrackingOptionsCommand } from './tracking-options-protocol.ts';
 import { isPhoneCapabilitiesEvent } from './phone-capabilities.ts';
 import {
   isPhoneTrackingMetricsEvent,
@@ -83,6 +83,14 @@ function createTrackingOptionsCommand(): TrackingOptionsCommand {
       handPresenceConfidence: settings.handPresenceConfidence,
       handTrackingConfidence: settings.handTrackingConfidence,
     },
+  };
+}
+
+function createPhoneCameraProcessingCommand(): PhoneCameraProcessingCommand {
+  return {
+    v: 1,
+    type: 'phone-camera-processing',
+    processing: getSettings().phoneCameraProcessing,
   };
 }
 
@@ -238,6 +246,7 @@ function connectHostChannel(session: ActiveSession): void {
         session.pollTimer = null;
         setHostAudioSocket(session.socket);
         sendPhoneTrackingOptions();
+        sendPhoneCameraProcessing();
         window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-connected'));
       } else if (event.type === 'peer-disconnected') {
         setRemoteTrackingConnected(false);
@@ -308,6 +317,17 @@ export function sendPhoneTrackingOptions(): boolean {
   if (!remoteTrackingConnected || !socket || socket.readyState !== WebSocket.OPEN) return false;
   try {
     socket.send(JSON.stringify(createTrackingOptionsCommand()));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function sendPhoneCameraProcessing(): boolean {
+  const socket = activeSession?.socket;
+  if (!remoteTrackingConnected || !socket || socket.readyState !== WebSocket.OPEN) return false;
+  try {
+    socket.send(JSON.stringify(createPhoneCameraProcessingCommand()));
     return true;
   } catch {
     return false;
