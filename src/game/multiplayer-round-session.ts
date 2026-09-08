@@ -30,6 +30,7 @@ interface MultiplayerRoundSessionOptions {
 }
 
 export interface MultiplayerRoundSession {
+  cancelPreparation(): void;
   completePreparation(): boolean;
   finish(progress: number | undefined): { trainingMode: boolean };
   getTrainingMode(): boolean;
@@ -52,6 +53,7 @@ export function createMultiplayerRoundSession({
   let active = false;
   let rules: MultiplayerRules | null = null;
   let preparationMapId = '';
+  let preparationId = 0;
   let singleplayerRules: Pick<Settings, 'gameMode' | 'noteSpeed'> | null = null;
 
   function restoreSingleplayerRules(): void {
@@ -84,6 +86,10 @@ export function createMultiplayerRoundSession({
   }
 
   return {
+    cancelPreparation(): void {
+      preparationId++;
+      preparationMapId = '';
+    },
     completePreparation,
     finish(progress): { trainingMode: boolean } {
       const wasActive = active;
@@ -104,15 +110,20 @@ export function createMultiplayerRoundSession({
     getTrainingMode: () => active ? Boolean(rules?.trainingMode) : settings.trainingMode,
     isActive: () => active,
     leave(): void {
+      preparationId++;
+      preparationMapId = '';
       if (active) window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-leave'));
       restoreSingleplayerRules();
     },
     async prepare(mapId): Promise<void> {
+      const currentPreparationId = ++preparationId;
       preparationMapId = mapId;
       try {
         initAudio();
         if (!await loadMapById(mapId)) throw new Error('MAP_NOT_FOUND');
+        if (currentPreparationId !== preparationId) return;
         await ensureCurrentMapAudio(settings);
+        if (currentPreparationId !== preparationId) return;
         if (calibrationController.isReady()) {
           completePreparation();
           return;
@@ -120,9 +131,13 @@ export function createMultiplayerRoundSession({
         hideMultiplayerOverlay();
         await startWithCalibration();
       } catch (error) {
+        if (currentPreparationId !== preparationId) return;
         console.error('Multiplayer preparation failed:', error);
         preparationMapId = '';
-        window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error'));
+        const code = error instanceof Error && /^[A-Z0-9_]{1,64}$/.test(error.message)
+          ? error.message
+          : 'PREPARATION_FAILED';
+        window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-error', { detail: { code } }));
       }
     },
     async start(detail): Promise<void> {

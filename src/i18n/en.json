@@ -126,6 +126,12 @@
     "disconnect": "LEAVE ROOM",
     "preparing": "PREPARING…",
     "prepareFailed": "Could not prepare the map for play.",
+    "prepareTimeout": "Preparation took too long. Check the connection or phone audio and press Ready to try again.",
+    "prepareFailedWithReason": "The session could not be prepared: {{reason}}. Press Ready to retry without leaving the lobby.",
+    "prepareErrors": {
+      "MAP_NOT_FOUND": "the selected map was not found",
+      "PREPARATION_FAILED": "a map, audio, or tracking error occurred"
+    },
     "notReady": "CANCEL READY",
     "readyHint": "Changing the map resets every player's ready state.",
     "readyState": "READY",

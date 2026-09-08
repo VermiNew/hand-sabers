@@ -35,6 +35,7 @@ let pendingPreparationMapId = '';
 let announcedRoundId = 0;
 let lastFinishedRoundId = 0;
 let multiplayerModal: ModalTransitionController | null = null;
+const PREPARATION_TIMEOUT_MS = 45_000;
 
 function trySocketSend(target: WebSocket | null, payload: string | ArrayBuffer, context: string): boolean {
   if (target?.readyState !== WebSocket.OPEN) return false;
@@ -134,7 +135,13 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   let voiceChat: VoiceChatController | null = null;
   let voiceState: 'off' | 'starting' | 'on' | 'error' = 'off';
   let voiceErrorVisible = false;
+  let preparationTimeout: number | null = null;
   multiplayerModal = createModalTransition({ overlay, panel });
+
+  const clearPreparationTimeout = () => {
+    if (preparationTimeout !== null) window.clearTimeout(preparationTimeout);
+    preparationTimeout = null;
+  };
 
   const secureHostingWarning = document.createElement('aside');
   secureHostingWarning.className = 'mp-network-warning';
@@ -179,6 +186,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     currentRole = null;
     currentRoom = null;
     pendingPreparationMapId = '';
+    clearPreparationTimeout();
     announcedRoundId = 0;
     lastFinishedRoundId = 0;
     activeJoinUrl = '';
@@ -218,6 +226,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     renderVoiceControls('off');
   };
   const disconnectRoom = () => {
+    if (pendingPreparationMapId) {
+      pendingPreparationMapId = '';
+      clearPreparationTimeout();
+      window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-cancel'));
+    }
     if (socket?.readyState === WebSocket.OPEN || socket?.readyState === WebSocket.CONNECTING) {
       socket.close(1000, 'Left room');
       return;
@@ -275,7 +288,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   });
   const mapPicker = initMultiplayerMapPicker(mapId => {
     if (currentRole !== 'host') return;
+    if (pendingPreparationMapId) {
+      window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-cancel'));
+    }
     pendingPreparationMapId = '';
+    clearPreparationTimeout();
     sendControl({ type: 'set-map', mapId });
   });
 
@@ -562,6 +579,17 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     readyButton.disabled = true;
     readyButton.textContent = t('multiplayer.preparing');
     if (currentRoom) renderWaitingState(currentRoom);
+    clearPreparationTimeout();
+    preparationTimeout = window.setTimeout(() => {
+      if (pendingPreparationMapId !== mapId) return;
+      pendingPreparationMapId = '';
+      preparationTimeout = null;
+      window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-cancel'));
+      readyButton.disabled = false;
+      readyButton.textContent = t('multiplayer.ready');
+      if (currentRoom) renderWaitingState(currentRoom);
+      showMessage(t('multiplayer.prepareTimeout'));
+    }, PREPARATION_TIMEOUT_MS);
     window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare', { detail: { mapId } }));
   });
   startButton.addEventListener('click', () => sendControl({ type: 'start-game' }));
@@ -575,7 +603,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   }
   modeSelect.addEventListener('change', () => {
     if (currentRole !== 'host' || !['coop', 'score-attack'].includes(modeSelect.value)) return;
+    if (pendingPreparationMapId) {
+      window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-prepare-cancel'));
+    }
     pendingPreparationMapId = '';
+    clearPreparationTimeout();
     sendControl({ type: 'set-mode', mode: modeSelect.value });
   });
   const sendRules = () => {
@@ -596,15 +628,23 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
     if (typeof mapId !== 'string' || mapId !== pendingPreparationMapId || currentRoom?.mapId !== mapId) return;
     pendingPreparationMapId = '';
+    clearPreparationTimeout();
     sendControl({ type: 'ready', ready: true });
   });
-  window.addEventListener('hand-sabers:multiplayer-prepare-error', () => {
+  window.addEventListener('hand-sabers:multiplayer-prepare-error', event => {
     if (!pendingPreparationMapId) return;
     pendingPreparationMapId = '';
+    clearPreparationTimeout();
     readyButton.disabled = false;
     readyButton.textContent = t('multiplayer.ready');
     if (currentRoom) renderWaitingState(currentRoom);
-    showMessage(t('multiplayer.prepareFailed'));
+    const code = (event as CustomEvent<{ code?: unknown }>).detail?.code;
+    const reasonKey = typeof code === 'string' ? `multiplayer.prepareErrors.${code}` : '';
+    const translatedReason = reasonKey ? t(reasonKey) : '';
+    const reason = translatedReason && translatedReason !== reasonKey
+      ? translatedReason
+      : t('multiplayer.prepareErrors.PREPARATION_FAILED');
+    showMessage(t('multiplayer.prepareFailedWithReason', { reason }));
   });
   window.addEventListener('hand-sabers:multiplayer-leave', disconnectRoom);
 

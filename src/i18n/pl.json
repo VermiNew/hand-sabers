@@ -126,6 +126,12 @@
     "disconnect": "OPUŚĆ POKÓJ",
     "preparing": "PRZYGOTOWYWANIE…",
     "prepareFailed": "Nie udało się przygotować mapy do gry.",
+    "prepareTimeout": "Przygotowanie trwało zbyt długo. Sprawdź połączenie lub audio telefonu i naciśnij „Gotowy”, aby spróbować ponownie.",
+    "prepareFailedWithReason": "Nie udało się przygotować sesji: {{reason}}. Naciśnij „Gotowy”, aby spróbować ponownie bez opuszczania lobby.",
+    "prepareErrors": {
+      "MAP_NOT_FOUND": "nie znaleziono wybranej mapy",
+      "PREPARATION_FAILED": "wystąpił błąd mapy, audio lub trackingu"
+    },
     "notReady": "ANULUJ GOTOWOŚĆ",
     "readyHint": "Zmiana mapy resetuje gotowość wszystkich graczy.",
     "readyState": "GOTOWY",

@@ -21,11 +21,12 @@ export interface MultiplayerRoundStart {
 }
 
 interface MultiplayerEventsOptions {
+  onCancelPreparation(): void;
   onPrepare(mapId: string): void;
   onStart(detail: MultiplayerRoundStart): void;
 }
 
-export function initMultiplayerEvents({ onPrepare, onStart }: MultiplayerEventsOptions): void {
+export function initMultiplayerEvents({ onCancelPreparation, onPrepare, onStart }: MultiplayerEventsOptions): void {
   window.addEventListener('hand-sabers:multiplayer-prepare', event => {
     const mapId = (event as CustomEvent<{ mapId?: unknown }>).detail?.mapId;
     if (typeof mapId === 'string') onPrepare(mapId);
@@ -64,6 +65,8 @@ export function initMultiplayerEvents({ onPrepare, onStart }: MultiplayerEventsO
       });
     }
   });
+
+  window.addEventListener('hand-sabers:multiplayer-prepare-cancel', onCancelPreparation);
 
   window.addEventListener('hand-sabers:multiplayer-results', event => {
     const snapshot = (event as CustomEvent<{ snapshot?: unknown }>).detail?.snapshot;

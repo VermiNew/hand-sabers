@@ -784,6 +784,9 @@ initTutorialGameplayHud();
 registerMlAssetCache();
 initRemoteTrackingPairing();
 initMultiplayerEvents({
+  onCancelPreparation() {
+    multiplayerRoundSession.cancelPreparation();
+  },
   onPrepare(mapId) {
     runAsyncTask('multiplayer-prepare', () => multiplayerRoundSession.prepare(mapId));
   },
