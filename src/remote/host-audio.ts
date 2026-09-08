@@ -168,6 +168,7 @@ export function onPhoneAudioEvent(event: AudioEvent): void {
     return;
   }
   if (event.type === 'audio-error') {
+    window.dispatchEvent(new CustomEvent('hand-sabers:phone-audio-error', { detail: event }));
     if (activeBankRequestId) failActiveBank(event.code);
     else onPhoneAudioError();
     return;

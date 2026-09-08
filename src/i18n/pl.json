@@ -784,7 +784,11 @@
     "phoneAudioVerified": "BANK AUDIO GOTOWY",
     "phoneAudioSoundCount": "{{count}} dźwięków",
     "phoneAudioPreloadError": "NIE UDAŁO SIĘ PRZYGOTOWAĆ AUDIO",
-    "phoneAudioPcFallback": "Aktywny dźwięk PC"
+    "phoneAudioPcFallback": "Aktywny dźwięk PC",
+    "phoneAudioErrorNotAllowed": "Przeglądarka zablokowała start audio — dotknij ponownie przycisku",
+    "phoneAudioErrorNotSupported": "Telefon nie obsługuje formatu tego dźwięku",
+    "phoneAudioErrorAborted": "Uruchamianie audio zostało przerwane",
+    "phoneAudioErrorSfx": "Nie udało się uruchomić silnika efektów dźwiękowych"
   },
   "hud": {
     "progress": "POSTĘP",

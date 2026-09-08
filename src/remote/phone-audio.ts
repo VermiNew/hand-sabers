@@ -6,6 +6,15 @@ import { preparePhoneAudioBank, type PreparedPhoneAudioBank } from './phone-audi
 import { createPhoneSoundEngine } from './phone-audio-sfx.ts';
 import type { ProceduralAudioRecipe } from './audio-bank-manifest.ts';
 
+function getAudioStartErrorCode(error: unknown, fallback: 'PLAY_FAILED' | 'ENABLE_FAILED'): string {
+  const name = error instanceof DOMException ? error.name : '';
+  if (name === 'NotAllowedError') return 'AUDIO_NOT_ALLOWED';
+  if (name === 'NotSupportedError') return 'AUDIO_NOT_SUPPORTED';
+  if (name === 'AbortError') return 'AUDIO_ABORTED';
+  if (error instanceof Error && error.message === 'SFX_ENABLE_FAILED') return 'SFX_ENABLE_FAILED';
+  return fallback;
+}
+
 /**
  * Phone-side remote audio player.
  *
@@ -160,7 +169,7 @@ export function initPhoneAudio(
       el.currentTime = targetTime;
       el.playbackRate = baseRate;
       correction = 'resume';
-      void el.play().catch(() => onError('PLAY_FAILED'));
+      void el.play().catch(error => onError(getAudioStartErrorCode(error, 'PLAY_FAILED')));
     } else if (Math.abs(driftSec) >= 0.25) {
       el.currentTime = targetTime;
       el.playbackRate = baseRate;
@@ -261,7 +270,7 @@ export function initPhoneAudio(
         const el = audioEl;
         el.currentTime = targetPlaybackTime(cmd.offsetSec, cmd.serverTime, cmd.playbackRate, 5_000);
         el.playbackRate = Math.max(0.5, Math.min(1.5, cmd.playbackRate || 1));
-        void el.play().catch(() => onError('PLAY_FAILED'));
+        void el.play().catch(error => onError(getAudioStartErrorCode(error, 'PLAY_FAILED')));
         break;
       }
       case 'audio-pause':
@@ -299,9 +308,9 @@ export function initPhoneAudio(
       if (preparedBank) reportBankReady();
       else onReady();
       return true;
-    } catch {
+    } catch (error) {
       userEnabled = false;
-      onError('ENABLE_FAILED');
+      onError(getAudioStartErrorCode(error, 'ENABLE_FAILED'));
       return false;
     } finally {
       el.muted = muted;
@@ -317,7 +326,7 @@ export function setupPhoneAudioUI(
 ): {
   setProgress(loadedAssets: number, totalAssets: number, loadedBytes: number, totalBytes: number): void;
   setReady(totalAssets: number): void;
-  setError(): void;
+  setError(code?: string): void;
 } | null {
   const container = document.querySelector('.remote-card');
   if (!container) return null;
@@ -383,11 +392,20 @@ export function setupPhoneAudioUI(
       progress.max = 1;
       progress.value = 1;
     },
-    setError(): void {
+    setError(code?: string): void {
       preload.hidden = false;
       preload.dataset['state'] = 'error';
       preloadLabel.textContent = t('remoteTracking.phoneAudioPreloadError');
-      preloadValue.textContent = t('remoteTracking.phoneAudioPcFallback');
+      const reasonKey = code === 'AUDIO_NOT_ALLOWED'
+        ? 'remoteTracking.phoneAudioErrorNotAllowed'
+        : code === 'AUDIO_NOT_SUPPORTED'
+          ? 'remoteTracking.phoneAudioErrorNotSupported'
+          : code === 'AUDIO_ABORTED'
+            ? 'remoteTracking.phoneAudioErrorAborted'
+            : code === 'SFX_ENABLE_FAILED'
+              ? 'remoteTracking.phoneAudioErrorSfx'
+              : 'remoteTracking.phoneAudioPcFallback';
+      preloadValue.textContent = `${t(reasonKey)}${code ? ` (${code})` : ''}`;
       progress.removeAttribute('value');
     },
   };

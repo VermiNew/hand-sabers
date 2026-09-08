@@ -69,3 +69,5 @@ button:disabled { opacity:.45; }
 .remote-audio-preload progress::-moz-progress-bar { border-radius:999px; background:linear-gradient(90deg,#2f7cff,#36f2a1); }
 .remote-audio-preload[data-state="ready"] .remote-audio-preload-status span { color:#36f2a1; }
 .remote-audio-preload[data-state="error"] .remote-audio-preload-status span { color:#ff9aa5; }
+.remote-audio-preload[data-state="error"] .remote-audio-preload-status { align-items:flex-start; flex-direction:column; gap:4px; }
+.remote-audio-preload[data-state="error"] .remote-audio-preload-status strong { text-align:left; white-space:normal; line-height:1.4; overflow-wrap:anywhere; }

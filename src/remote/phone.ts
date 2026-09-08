@@ -68,7 +68,7 @@ const phoneAudio = initPhoneAudio(
     }
   },
   (code) => {
-    phoneAudioUi?.setError();
+    phoneAudioUi?.setError(code);
     if (trackingSocket?.readyState === WebSocket.OPEN) {
       try {
         trackingSocket.send(JSON.stringify({ v: 1, type: 'audio-error', code }));
@@ -86,7 +86,7 @@ const phoneAudio = initPhoneAudio(
     } else if (event['type'] === 'audio-bank-ready') {
       phoneAudioUi?.setReady(Number(event['totalAssets']));
     } else if (event['type'] === 'audio-bank-error') {
-      phoneAudioUi?.setError();
+      phoneAudioUi?.setError(String(event['code'] ?? 'BANK_PREPARE_FAILED'));
     }
     if (trackingSocket?.readyState !== WebSocket.OPEN) return;
     try {

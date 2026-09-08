@@ -784,7 +784,11 @@
     "phoneAudioVerified": "AUDIO BANK READY",
     "phoneAudioSoundCount": "{{count}} sounds",
     "phoneAudioPreloadError": "AUDIO PREPARATION FAILED",
-    "phoneAudioPcFallback": "PC audio active"
+    "phoneAudioPcFallback": "PC audio active",
+    "phoneAudioErrorNotAllowed": "The browser blocked audio startup — tap the button again",
+    "phoneAudioErrorNotSupported": "This phone does not support the audio format",
+    "phoneAudioErrorAborted": "Audio startup was interrupted",
+    "phoneAudioErrorSfx": "The sound effects engine could not be started"
   },
   "hud": {
     "progress": "PROGRESS",
