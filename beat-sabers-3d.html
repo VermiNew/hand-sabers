@@ -738,6 +738,13 @@
             <span class="sp-knob"></span>
           </label>
         </article>
+        <div class="rt-audio-progress" id="remoteAudioProgress" data-state="loading" aria-live="polite" hidden>
+          <div class="rt-audio-progress-copy">
+            <strong data-i18n="remoteTracking.audioPreparation">PRZYGOTOWANIE AUDIO</strong>
+            <span id="remoteAudioProgressText"></span>
+          </div>
+          <progress id="remoteAudioProgressBar" max="1" value="0" aria-label="Postęp przygotowania audio"></progress>
+        </div>
       </div>
       <button class="rt-primary" id="remoteTrackingCreate" type="button" data-i18n="remoteTracking.createSession">UTWÓRZ SESJĘ</button>
       <div class="rt-session" id="remoteTrackingSession" hidden>

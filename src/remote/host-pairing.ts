@@ -52,6 +52,9 @@ export function initRemoteTrackingPairing(): void {
   const audioRoleCard = element<HTMLElement>('remoteAudioRoleCard');
   const audioRoleToggle = element<HTMLInputElement>('remoteAudioRole');
   const audioRoleStatus = element<HTMLElement>('remoteAudioRoleStatus');
+  const audioProgress = element<HTMLElement>('remoteAudioProgress');
+  const audioProgressBar = element<HTMLProgressElement>('remoteAudioProgressBar');
+  const audioProgressText = element<HTMLElement>('remoteAudioProgressText');
   if (!openButton || !overlay || !closeButton || !createButton || !sessionPanel || !qr || !code || !phoneLink || !status || !statusText || !errorMessage) return;
   const modal = createModalTransition({
     overlay,
@@ -79,9 +82,28 @@ export function initRemoteTrackingPairing(): void {
   let currentPhase = getRemoteTrackingSessionState().phase;
   let phoneAudioReady = false;
   let phoneAudioSupported: boolean | null = null;
+  let audioPreloadState: 'idle' | 'loading' | 'ready' | 'error' = 'idle';
   let lastPhoneTrackingSource: TrackingSourcePreference = getSettings().trackingSource === 'camera'
     ? 'phone'
     : getSettings().trackingSource;
+
+  const interpolate = (key: string, values: Record<string, string | number>): string => {
+    let message = t(key);
+    for (const [name, value] of Object.entries(values)) {
+      message = message.replace(`{{${name}}}`, String(value));
+    }
+    return message;
+  };
+
+  const resetAudioProgress = () => {
+    audioPreloadState = 'idle';
+    if (audioProgress) audioProgress.hidden = true;
+    if (audioProgressBar) {
+      audioProgressBar.max = 1;
+      audioProgressBar.value = 0;
+    }
+    if (audioProgressText) audioProgressText.textContent = '';
+  };
 
   const renderRoles = () => {
     const settings = getSettings();
@@ -97,15 +119,26 @@ export function initRemoteTrackingPairing(): void {
         : 'remoteTracking.roleDisabled');
     }
     if (audioRoleCard && audioRoleStatus) {
-      const state = !audioEnabled ? 'off' : phoneAudioSupported === false ? 'error' : phoneAudioReady ? 'ready' : 'waiting';
-      audioRoleCard.dataset['state'] = state;
-      audioRoleStatus.textContent = t(!audioEnabled
+      const state = !audioEnabled
+        ? 'off'
+        : phoneAudioSupported === false || audioPreloadState === 'error'
+          ? 'error'
+          : audioPreloadState === 'loading'
+            ? 'waiting'
+            : phoneAudioReady ? 'ready' : 'waiting';
+      const statusKey = !audioEnabled
         ? 'remoteTracking.roleDisabled'
         : phoneAudioSupported === false
           ? 'remoteTracking.roleUnsupported'
-          : phoneAudioReady
-            ? 'remoteTracking.roleReady'
-            : connected ? 'remoteTracking.roleWaitingActivation' : 'remoteTracking.roleWaitingPhone');
+          : audioPreloadState === 'error'
+            ? 'remoteTracking.rolePcFallback'
+            : audioPreloadState === 'loading'
+              ? 'remoteTracking.rolePreparingAudio'
+              : phoneAudioReady
+                ? 'remoteTracking.roleReady'
+                : connected ? 'remoteTracking.roleWaitingActivation' : 'remoteTracking.roleWaitingPhone';
+      audioRoleCard.dataset['state'] = state;
+      audioRoleStatus.textContent = t(statusKey);
     }
   };
 
@@ -115,6 +148,7 @@ export function initRemoteTrackingPairing(): void {
     if (phase !== 'connected') {
       phoneAudioReady = false;
       phoneAudioSupported = null;
+      resetAudioProgress();
     }
     errorMessage.textContent = error ? t(`remoteTracking.${error}`) : '';
     errorMessage.hidden = !error;
@@ -191,6 +225,52 @@ export function initRemoteTrackingPairing(): void {
     phoneAudioReady = false;
     renderRoles();
   });
+  window.addEventListener('hand-sabers:phone-audio-bank-progress', event => {
+    if (!getSettings().phoneAudioOutput || !audioProgress || !audioProgressBar || !audioProgressText) return;
+    const detail = (event as CustomEvent<{
+      loadedAssets: number;
+      totalAssets: number;
+      loadedBytes: number;
+      totalBytes: number;
+    }>).detail;
+    audioPreloadState = 'loading';
+    audioProgress.hidden = false;
+    audioProgress.dataset['state'] = 'loading';
+    const useBytes = detail.totalBytes > 0;
+    audioProgressBar.max = Math.max(1, useBytes ? detail.totalBytes : detail.totalAssets);
+    audioProgressBar.value = Math.min(audioProgressBar.max, useBytes ? detail.loadedBytes : detail.loadedAssets);
+    audioProgressText.textContent = interpolate('remoteTracking.audioProgress', {
+      loaded: detail.loadedAssets,
+      total: detail.totalAssets,
+      loadedMb: (detail.loadedBytes / 1024 / 1024).toFixed(1),
+      totalMb: (detail.totalBytes / 1024 / 1024).toFixed(1),
+    });
+    renderRoles();
+  });
+  window.addEventListener('hand-sabers:phone-audio-bank-ready', event => {
+    if (!getSettings().phoneAudioOutput || !audioProgress || !audioProgressBar || !audioProgressText) return;
+    const detail = (event as CustomEvent<{ cachedAssets: number; totalAssets: number }>).detail;
+    audioPreloadState = 'ready';
+    audioProgress.hidden = false;
+    audioProgress.dataset['state'] = 'ready';
+    audioProgressBar.max = 1;
+    audioProgressBar.value = 1;
+    audioProgressText.textContent = interpolate('remoteTracking.audioBankReady', {
+      total: detail.totalAssets,
+      cached: detail.cachedAssets,
+    });
+    renderRoles();
+  });
+  window.addEventListener('hand-sabers:phone-audio-bank-error', event => {
+    if (!getSettings().phoneAudioOutput || !audioProgress || !audioProgressBar || !audioProgressText) return;
+    const detail = (event as CustomEvent<{ code: string }>).detail;
+    audioPreloadState = 'error';
+    audioProgress.hidden = false;
+    audioProgress.dataset['state'] = 'error';
+    audioProgressBar.removeAttribute('value');
+    audioProgressText.textContent = interpolate('remoteTracking.audioBankFallback', { code: detail.code });
+    renderRoles();
+  });
 
   cameraRoleToggle?.addEventListener('change', () => {
     const settings = getSettings();
@@ -214,6 +294,7 @@ export function initRemoteTrackingPairing(): void {
       audioInput.dispatchEvent(new Event('change'));
     }
     if (getSettings().phoneAudioOutput !== enabled) setSetting('phoneAudioOutput', enabled);
+    if (!enabled) resetAudioProgress();
     renderRoles();
   });
 
