@@ -14,6 +14,7 @@ export interface ClientMessage {
   avatar?: unknown;
   playerColor?: unknown;
   ready?: unknown;
+  readiness?: unknown;
   mapId?: unknown;
   mode?: unknown;
   trainingMode?: unknown;

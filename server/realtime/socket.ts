@@ -262,7 +262,12 @@ export function registerRealtimeServer(
         }
 
         if (type === 'ready') {
-          broadcast(client.roomCode, rooms.setReady(client.roomCode, client.playerId, message.ready === true));
+          broadcast(client.roomCode, rooms.setReady(
+            client.roomCode,
+            client.playerId,
+            message.ready === true,
+            message.readiness,
+          ));
           return;
         }
         if (type === 'set-profile') {

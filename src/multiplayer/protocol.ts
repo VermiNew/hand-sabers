@@ -52,6 +52,11 @@ export interface RoomPlayer {
   role: 'host' | 'guest';
   saber: 'left' | 'right' | 'both';
   ready: boolean;
+  readiness: {
+    map: boolean;
+    audio: boolean;
+    tracking: boolean;
+  };
   score: number;
   combo: number;
   lives: number;
@@ -79,6 +84,7 @@ export interface RoomSnapshot {
 export function parseRoomPlayer(value: unknown): RoomPlayer | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const player = value as Record<string, unknown>;
+  const readinessValue = player['readiness'];
   if (
     typeof player['id'] !== 'string'
     || player['id'].length > 64
@@ -107,6 +113,14 @@ export function parseRoomPlayer(value: unknown): RoomPlayer | null {
     || typeof player['finished'] !== 'boolean'
     || typeof player['playing'] !== 'boolean'
   ) return null;
+  const readiness = readinessValue && typeof readinessValue === 'object' && !Array.isArray(readinessValue)
+    ? readinessValue as Record<string, unknown>
+    : null;
+  if (readiness && (
+    typeof readiness['map'] !== 'boolean'
+    || typeof readiness['audio'] !== 'boolean'
+    || typeof readiness['tracking'] !== 'boolean'
+  )) return null;
   return {
     id: player['id'],
     streamId: player['streamId'] as number,
@@ -116,6 +130,13 @@ export function parseRoomPlayer(value: unknown): RoomPlayer | null {
     role: player['role'],
     saber: player['saber'],
     ready: player['ready'],
+    readiness: readiness
+      ? {
+          map: readiness['map'] as boolean,
+          audio: readiness['audio'] as boolean,
+          tracking: readiness['tracking'] as boolean,
+        }
+      : { map: player['ready'], audio: player['ready'], tracking: player['ready'] },
     score: player['score'] as number,
     combo: player['combo'] as number,
     lives: player['lives'] as number,

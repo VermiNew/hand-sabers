@@ -54,12 +54,19 @@ export interface RoomPlayer {
   role: 'host' | 'guest';
   saber: 'left' | 'right' | 'both';
   ready: boolean;
+  readiness: RoomPlayerReadiness;
   score: number;
   combo: number;
   lives: number;
   progress: number;
   finished: boolean;
   playing: boolean;
+}
+
+export interface RoomPlayerReadiness {
+  map: boolean;
+  audio: boolean;
+  tracking: boolean;
 }
 
 export type RoomMode = 'coop' | 'score-attack';
@@ -105,6 +112,27 @@ function maxPlayersForMode(mode: RoomMode): number {
 function saberForPlayer(mode: RoomMode, role: RoomPlayer['role']): RoomPlayer['saber'] {
   if (mode !== 'coop') return 'both';
   return role === 'host' ? 'left' : 'right';
+}
+
+function emptyReadiness(): RoomPlayerReadiness {
+  return { map: false, audio: false, tracking: false };
+}
+
+function resetReadiness(player: RoomPlayer): void {
+  player.ready = false;
+  player.readiness = emptyReadiness();
+}
+
+function parseReadiness(value: unknown, fallback: boolean): RoomPlayerReadiness {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { map: fallback, audio: fallback, tracking: fallback };
+  }
+  const readiness = value as Record<string, unknown>;
+  return {
+    map: readiness['map'] === true,
+    audio: readiness['audio'] === true,
+    tracking: readiness['tracking'] === true,
+  };
 }
 
 export interface CreatedRoom extends RoomSnapshot {
@@ -193,7 +221,7 @@ export class RoomRegistry {
       rules: { ...room.rules },
       maxPlayers: room.maxPlayers,
       round: room.round ? { ...room.round } : null,
-      players: room.players.map(player => ({ ...player })),
+      players: room.players.map(player => ({ ...player, readiness: { ...player.readiness } })),
     };
   }
 
@@ -225,6 +253,7 @@ export class RoomRegistry {
       role,
       saber: saberForPlayer(room.mode, role),
       ready: false,
+      readiness: emptyReadiness(),
       score: 0,
       combo: 0,
       lives: 10,
@@ -235,7 +264,7 @@ export class RoomRegistry {
     room.players.push(player);
     this.refreshExpiry(room);
     room.revision++;
-    return { player: { ...player }, snapshot: this.snapshot(room) };
+    return { player: { ...player, readiness: { ...player.readiness } }, snapshot: this.snapshot(room) };
   }
 
   touch(code: string, playerId: string, now = Date.now()): boolean {
@@ -263,12 +292,16 @@ export class RoomRegistry {
     return this.snapshot(room);
   }
 
-  setReady(code: string, playerId: string, ready: boolean): RoomSnapshot {
+  setReady(code: string, playerId: string, ready: boolean, readinessValue?: unknown): RoomSnapshot {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player) throw new RoomError('PLAYER_NOT_FOUND');
     if (ready && !room.mapId) throw new RoomError('MAP_REQUIRED');
-    player.ready = ready;
+    player.readiness = ready ? parseReadiness(readinessValue, true) : emptyReadiness();
+    player.ready = ready
+      && player.readiness.map
+      && player.readiness.audio
+      && player.readiness.tracking;
     room.revision++;
     return this.snapshot(room);
   }
@@ -294,7 +327,7 @@ export class RoomRegistry {
     if (!/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(normalizedMapId)) throw new RoomError('INVALID_MAP');
     room.mapId = normalizedMapId;
     room.round = null;
-    for (const roomPlayer of room.players) roomPlayer.ready = false;
+    for (const roomPlayer of room.players) resetReadiness(roomPlayer);
     room.revision++;
     return this.snapshot(room);
   }
@@ -310,7 +343,7 @@ export class RoomRegistry {
     room.round = null;
     for (const roomPlayer of room.players) {
       roomPlayer.saber = saberForPlayer(mode, roomPlayer.role);
-      roomPlayer.ready = false;
+      resetReadiness(roomPlayer);
     }
     room.revision++;
     return this.snapshot(room);
@@ -349,6 +382,7 @@ export class RoomRegistry {
       gameMode: rules.gameMode as RoomGameMode,
       noteSpeed: rules.noteSpeed as RoomRules['noteSpeed'],
     };
+    for (const roomPlayer of room.players) resetReadiness(roomPlayer);
     room.revision++;
     return this.snapshot(room);
   }
@@ -470,7 +504,7 @@ export class RoomRegistry {
       rules: { ...room.rules },
       maxPlayers: room.maxPlayers,
       round: room.round ? { ...room.round } : null,
-      players: room.players.map(player => ({ ...player })),
+      players: room.players.map(player => ({ ...player, readiness: { ...player.readiness } })),
     };
   }
 }
