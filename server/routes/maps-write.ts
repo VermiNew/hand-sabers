@@ -16,6 +16,7 @@ import {
 } from '../../src/core/zip-limits.js';
 import type { AudioMutation, AudioStorage, ZipAudioEntry } from '../storage/audio.js';
 import type { MapStorage } from '../storage/maps.js';
+import { MapLibraryQuotaError, type MapLibraryQuota } from '../storage/library-quota.js';
 import { errorMessage, getIp, parseJsonSafe, type FileMutex, type KeyedMutex } from '../utils.js';
 
 type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
@@ -26,6 +27,7 @@ interface MapWriteRoutesOptions {
   audioStorage: AudioStorage;
   mapAssetLocks: KeyedMutex;
   mapCatalogLock: FileMutex;
+  mapLibraryQuota: MapLibraryQuota;
   uploadAudio: RequestHandler;
   uploadFile: RequestHandler;
   uploadConcurrency: RequestHandler;
@@ -60,7 +62,8 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
-function mapWriteErrorStatus(error: unknown): 400 | 500 {
+function mapWriteErrorStatus(error: unknown): 400 | 500 | 507 {
+  if (error instanceof MapLibraryQuotaError) return 507;
   if (!(error instanceof Error)) return 400;
   if (error.message.startsWith('Nie udało się przywrócić')) return 500;
   const code = (error as NodeJS.ErrnoException).code;
@@ -81,6 +84,7 @@ export function registerMapWriteRoutes({
   audioStorage,
   mapAssetLocks,
   mapCatalogLock,
+  mapLibraryQuota,
   uploadAudio,
   uploadFile,
   uploadConcurrency,
@@ -88,6 +92,14 @@ export function registerMapWriteRoutes({
   parseJson,
   rateLimit,
 }: MapWriteRoutesOptions): void {
+  const withCatalogLock = async <T>(operation: () => Promise<T>): Promise<T> => {
+    const release = await mapCatalogLock.acquire();
+    try {
+      return await operation();
+    } finally {
+      release();
+    }
+  };
   const withMapLock = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
     const release = await mapAssetLocks.acquire(id);
     try {
@@ -96,23 +108,28 @@ export function registerMapWriteRoutes({
       release();
     }
   };
-  const withAudioRollback = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
-    const mutation = await audioStorage.beginMutation(id);
+  const withMapRollback = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
+    const mutation = await mapStorage.beginMutation(id);
     try {
       const result = await operation();
+      await mapLibraryQuota.assertWithinLimit();
       await mutation.commit();
       return result;
     } catch (error) {
       try {
         await mutation.rollback();
       } catch (rollbackError) {
-        console.error(`Map audio rollback failed for ${id}:`, rollbackError);
-        throw new Error(`Nie udało się przywrócić audio mapy ${id}.`, { cause: error });
+        console.error(`Map rollback failed for ${id}:`, rollbackError);
+        throw new Error(`Nie udało się przywrócić mapy ${id}.`, { cause: error });
       }
       throw error;
     }
   };
-  const withAssetRollback = async <T>(id: string, operation: () => Promise<T>): Promise<T> => {
+  const withAssetRollback = async <T>(
+    id: string,
+    operation: () => Promise<T>,
+    enforceQuota = true,
+  ): Promise<T> => {
     const mapMutation = await mapStorage.beginMutation(id);
     let audioMutation: AudioMutation;
     try {
@@ -123,6 +140,7 @@ export function registerMapWriteRoutes({
     }
     try {
       const result = await operation();
+      if (enforceQuota) await mapLibraryQuota.assertWithinLimit();
       await mapMutation.commit();
       await audioMutation.commit();
       return result;
@@ -153,7 +171,7 @@ export function registerMapWriteRoutes({
   app.post('/api/maps', limitMapSave, uploadConcurrency, parseJson, async (req, res) => {
     try {
       const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-      await withMapLock(map.id, () => mapStorage.write(map));
+      await withCatalogLock(() => withMapLock(map.id, () => withMapRollback(map.id, () => mapStorage.write(map))));
       res.json({ ok: true, id: map.id, beats: map.beats.length, storage: 'beatdata' });
     } catch (error) {
       res.status(mapWriteErrorStatus(error)).json({ error: errorMessage(error) });
@@ -166,11 +184,11 @@ export function registerMapWriteRoutes({
     try {
       const rawBody = req.body?.map ? parseJsonSafe(req.body.map) : req.body;
       const map = normalizeMap(rawBody, { requireBeats: false, maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-      const audio = await withMapLock(map.id, async () => {
+      const audio = await withCatalogLock(() => withMapLock(map.id, async () => {
         let persistedAudio = null;
         if (req.file) {
           assertFileSize(req.file);
-          persistedAudio = await withAudioRollback(map.id, async () => {
+          persistedAudio = await withAssetRollback(map.id, async () => {
             const audio = await audioStorage.persistFile(map, req.file!.path, req.file!.originalname);
             await mapStorage.write(map);
             return audio;
@@ -186,9 +204,9 @@ export function registerMapWriteRoutes({
             };
           }
         }
-        await mapStorage.write(map);
+        await withMapRollback(map.id, () => mapStorage.write(map));
         return persistedAudio;
-      });
+      }));
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio?.originalName ?? null, storage: 'beatdata', map });
     } catch (error) {
       res.status(mapWriteErrorStatus(error)).json({ error: errorMessage(error) });
@@ -225,11 +243,11 @@ export function registerMapWriteRoutes({
         );
         const rawMap = parseJsonSafe(rawMapText);
         const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-        const audio = await withMapLock(map.id, () => withAudioRollback(map.id, async () => {
+        const audio = await withCatalogLock(() => withMapLock(map.id, () => withAssetRollback(map.id, async () => {
           const persistedAudio = await audioStorage.persistZip(entries, map, outputBudget);
           await mapStorage.write(map);
           return persistedAudio;
-        }));
+        })));
         return res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio?.originalName ?? null, storage: 'beatdata', map });
       }
 
@@ -239,7 +257,7 @@ export function registerMapWriteRoutes({
 
       const rawMap = parseJsonSafe(uploadedBytes.toString('utf8'));
       const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-      await withMapLock(map.id, () => mapStorage.write(map));
+      await withCatalogLock(() => withMapLock(map.id, () => withMapRollback(map.id, () => mapStorage.write(map))));
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: null, storage: 'beatdata', map });
     } catch (error) {
       res.status(mapWriteErrorStatus(error)).json({ error: errorMessage(error) });
@@ -265,7 +283,7 @@ export function registerMapWriteRoutes({
           if (!removed) return false;
           await audioStorage.remove(id);
           return true;
-        }));
+        }, false));
       } finally {
         releaseCatalog();
       }

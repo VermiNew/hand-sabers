@@ -222,6 +222,7 @@ registerMapWriteRoutes({
   audioStorage,
   mapAssetLocks,
   mapCatalogLock,
+  mapLibraryQuota,
   uploadAudio: upload.single('audio'),
   uploadFile: upload.single('file'),
   uploadConcurrency: uploadConcurrency.middleware,
