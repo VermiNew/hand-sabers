@@ -1,5 +1,10 @@
 {
   "security": false,
+  "mapLibraryQuota": {
+    "maxBytes": 8589934592,
+    "maxMaps": 2000,
+    "maxAudioFiles": 2000
+  },
   "allowedOrigins": [
     "http://localhost:3000",
     "http://localhost:5173",

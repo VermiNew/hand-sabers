@@ -14,6 +14,7 @@ import {
 import { createMapStorage } from './storage/maps.js';
 import { createScoreStorage } from './storage/scores.js';
 import { createAudioStorage } from './storage/audio.js';
+import { createMapLibraryQuota, type MapLibraryQuotaLimits } from './storage/library-quota.js';
 import { registerScoreRoutes } from './routes/scores.js';
 import { registerMapReadRoutes } from './routes/maps-read.js';
 import { registerMapWriteRoutes } from './routes/maps-write.js';
@@ -37,13 +38,26 @@ const PROJECT_ROOT_CANDIDATES = [SOURCE_PROJECT_ROOT, COMPILED_PROJECT_ROOT];
 const PROJECT_ROOT = PROJECT_ROOT_CANDIDATES.find(candidate => existsSync(path.join(candidate, 'package.json')))
   || SOURCE_PROJECT_ROOT;
 const CONFIG_PATH = path.join(PROJECT_ROOT, 'config.json');
-const projectConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as { security?: unknown; allowedOrigins?: unknown };
+const projectConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as {
+  security?: unknown;
+  allowedOrigins?: unknown;
+  mapLibraryQuota?: unknown;
+};
 if (typeof projectConfig.security !== 'boolean') {
   throw new Error('config.json: pole "security" musi mieć wartość true albo false.');
 }
 if (projectConfig.allowedOrigins !== undefined
   && (!Array.isArray(projectConfig.allowedOrigins) || projectConfig.allowedOrigins.some(value => typeof value !== 'string'))) {
   throw new Error('config.json: pole "allowedOrigins" musi być tablicą adresów URL.');
+}
+const quotaConfig = projectConfig.mapLibraryQuota as Partial<MapLibraryQuotaLimits> | null;
+if (
+  !quotaConfig
+  || !Number.isSafeInteger(quotaConfig.maxBytes) || quotaConfig.maxBytes! < MAX_IMPORT_BYTES
+  || !Number.isSafeInteger(quotaConfig.maxMaps) || quotaConfig.maxMaps! < 1
+  || !Number.isSafeInteger(quotaConfig.maxAudioFiles) || quotaConfig.maxAudioFiles! < 1
+) {
+  throw new Error('config.json: pole "mapLibraryQuota" musi zawierać dodatnie limity maxBytes, maxMaps i maxAudioFiles.');
 }
 const securityEnabled = projectConfig.security;
 const originPolicy = createOriginPolicy(securityEnabled, (projectConfig.allowedOrigins ?? []) as string[]);
@@ -116,6 +130,14 @@ const upload = multer({
     if (ok) cb(null, true);
     else cb(new Error('Nieobsługiwany typ pliku. Dozwolone: .json, .zip i audio.'));
   },
+});
+const mapLibraryQuota = createMapLibraryQuota({
+  mapsDir: MAPS_DIR,
+  beatdataDir: MAP_BEATDATA_DIR,
+  audioDir: MAP_AUDIO_DIR,
+  legacyAudioDir: LEGACY_MAP_AUDIO_DIR,
+  limits: quotaConfig as MapLibraryQuotaLimits,
+  caseInsensitiveIds: caseInsensitiveMapIds,
 });
 const uploadConcurrency = createUploadConcurrencyGate({
   byteRateGraceMs: UPLOAD_RATE_GRACE_MS,
@@ -260,6 +282,11 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`W sieci lokalnej → ${protocol}://<twoje-ip-lub-hostname>:${PORT}`);
   console.log(`Zabezpieczenia wdrożeniowe: ${securityEnabled ? 'włączone' : 'wyłączone'} (config.json → security).`);
   if (!secure) console.log('Kamera telefonu poza localhost wymaga HTTPS (HAND_SABERS_TLS_CERT + HAND_SABERS_TLS_KEY).');
+  void mapLibraryQuota.usage().then(usage => {
+    const usedMiB = (usage.bytes / 1024 ** 2).toFixed(1);
+    const maxMiB = (mapLibraryQuota.limits.maxBytes / 1024 ** 2).toFixed(0);
+    console.log(`Biblioteka map: ${usage.maps}/${mapLibraryQuota.limits.maxMaps} map, ${usage.audioFiles}/${mapLibraryQuota.limits.maxAudioFiles} audio, ${usedMiB}/${maxMiB} MiB.`);
+  }).catch(error => console.error('Nie udało się odczytać użycia biblioteki map:', error));
 });
 
 function shutdown(signal: NodeJS.Signals): void {
