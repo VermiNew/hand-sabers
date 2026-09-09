@@ -25,6 +25,8 @@ interface ArchiveLike extends Readable {
 const require = createRequire(import.meta.url);
 const archiver: { ZipArchive: new (options?: unknown) => ArchiveLike } = require('archiver');
 const DOWNLOAD_TIMEOUT_MS = 5 * 60_000;
+const MAX_CONCURRENT_MAP_EXPORTS = 2;
+let activeMapExports = 0;
 
 function openPausedReadStream(filePath: string): Promise<ReadStream> {
   const stream = createReadStream(filePath);
@@ -118,6 +120,12 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
   app.get('/api/maps/:id/export.zip', async (req, res) => {
     const id = safeId(req.params['id']);
     if (!id) return res.status(400).json({ error: 'Nieprawidłowe id.' });
+    if (activeMapExports >= MAX_CONCURRENT_MAP_EXPORTS) {
+      return res.set('Retry-After', '2').status(503).json({
+        error: 'Serwer przygotowuje maksymalną liczbę archiwów. Spróbuj ponownie za chwilę.',
+      });
+    }
+    activeMapExports++;
     try {
       const snapshot = await withMapLock(id, async () => {
         if (res.destroyed) return null;
@@ -165,6 +173,8 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
     } catch (error) {
       if (!res.headersSent && !res.destroyed) res.status(500).json({ error: errorMessage(error) });
       else if (!res.destroyed) res.destroy(error instanceof Error ? error : undefined);
+    } finally {
+      activeMapExports = Math.max(0, activeMapExports - 1);
     }
   });
 
