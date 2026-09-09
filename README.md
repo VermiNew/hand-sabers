@@ -132,6 +132,8 @@ The server writes files to the `maps/` directory:
 - `maps/audio/<id>.<ext>` — map audio
 - `maps/_scores.json` — leaderboard
 
+`config.json` → `mapLibraryQuota` controls the shared persistent-library limit (`maxBytes`, `maxMaps`, `maxAudioFiles`). The default 8 GiB and 2000 maps/audio files leaves ample room for local development. A save or import that would exceed a limit returns HTTP 507 and is rolled back completely; existing files are never removed automatically, and manual map deletion remains available while over quota.
+
 If the API is unavailable, the app falls back to browser storage:
 
 - Maps and scores in `localStorage`

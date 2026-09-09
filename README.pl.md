@@ -132,6 +132,8 @@ Serwer zapisuje pliki w katalogu `maps/`:
 - `maps/audio/<id>.<ext>` — audio mapy
 - `maps/_scores.json` — leaderboard
 
+`config.json` → `mapLibraryQuota` ustawia wspólny limit trwałej biblioteki (`maxBytes`, `maxMaps`, `maxAudioFiles`). Domyślne 8 GiB oraz po 2000 map i plików audio zostawia duży zapas dla pracy lokalnej. Zapis lub import przekraczający limit zwraca HTTP 507 i jest w całości cofany; istniejące pliki nie są automatycznie usuwane, a ręczne usuwanie map pozostaje dostępne także po przekroczeniu limitu.
+
 Jeśli API nie działa, aplikacja używa fallbacku w przeglądarce:
 
 - Mapy i wyniki w `localStorage`
