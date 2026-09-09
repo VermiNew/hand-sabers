@@ -2,7 +2,9 @@ import express from 'express';
 import type { ErrorRequestHandler, Request } from 'express';
 import multer from 'multer';
 import { createServer as createHttpServer } from 'http';
+import type { IncomingMessage } from 'http';
 import { createServer as createHttpsServer } from 'https';
+import type { Duplex } from 'stream';
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'fs';
 import { randomUUID } from 'crypto';
 import path from 'path';
@@ -276,6 +278,14 @@ const server = secure
   : createHttpServer(app);
 const realtimeServer = registerRealtimeServer(server, rooms, originPolicy);
 const remoteTrackingServer = registerRemoteTrackingServer(server, trackingSessions, originPolicy, phoneQualityTelemetry);
+const rejectUnknownWebSocketUpgrade = (request: IncomingMessage, socket: Duplex): void => {
+  try {
+    const pathname = new URL(request.url || '/', 'http://localhost').pathname;
+    if (pathname === '/ws' || pathname === '/tracking-ws') return;
+  } catch {}
+  socket.destroy();
+};
+server.on('upgrade', rejectUnknownWebSocketUpgrade);
 const PORT = Number(process.env.PORT || 3000);
 server.listen(PORT, '0.0.0.0', () => {
   const protocol = secure ? 'https' : 'http';
@@ -294,6 +304,7 @@ function shutdown(signal: NodeJS.Signals): void {
   console.log(`\n${signal} — zamykam serwer…`);
   realtimeServer.close();
   remoteTrackingServer.close();
+  server.off('upgrade', rejectUnknownWebSocketUpgrade);
   limiter.destroy();
   rooms.destroy();
   trackingSessions.destroy();
