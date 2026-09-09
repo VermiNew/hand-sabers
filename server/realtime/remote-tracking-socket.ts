@@ -4,6 +4,7 @@ import type { Duplex } from 'node:stream';
 import { WebSocket, WebSocketServer } from 'ws';
 import type { TrackingSessionRegistry } from './tracking-session-registry.js';
 import type { OriginPolicy } from '../origin-policy.js';
+import type { PhoneQualityTelemetryStore } from './phone-quality-telemetry.js';
 import {
   decodePhoneCameraFrame,
   PHONE_CAMERA_FRAME_KIND,
@@ -249,6 +250,7 @@ export function registerRemoteTrackingServer(
   server: HttpServer | HttpsServer,
   sessions: TrackingSessionRegistry,
   originPolicy: OriginPolicy,
+  qualityTelemetry: PhoneQualityTelemetryStore,
 ): { close(): void } {
   const webSocketServer = new WebSocketServer({
     noServer: true,
@@ -274,6 +276,7 @@ export function registerRemoteTrackingServer(
   };
 
   const closeSessionPeers = (sessionId: string, reason: 'expired' | 'revoked') => {
+    qualityTelemetry.delete(sessionId);
     for (const [socket, peer] of peers) {
       if (peer.sessionId !== sessionId) continue;
       sendRemoteSessionError(socket, reason === 'expired' ? 'SESSION_EXPIRED' : 'SESSION_REVOKED');
@@ -352,6 +355,7 @@ export function registerRemoteTrackingServer(
             return;
           }
           peer.textRateViolations = Math.max(0, peer.textRateViolations - 1);
+          qualityTelemetry.record(peer.sessionId, peer.role, value);
           const counterpart = peerFor(peer.sessionId, peer.role === 'host' ? 'phone' : 'host');
           if (counterpart && counterpart.readyState === WebSocket.OPEN) {
             send(counterpart, value);
@@ -438,6 +442,7 @@ export function registerRemoteTrackingServer(
     close() {
       server.off('upgrade', handleUpgrade);
       stopListeningForInvalidation();
+      qualityTelemetry.clear();
       for (const socket of webSocketServer.clients) {
         try {
           socket.close(1001, 'Server shutdown');

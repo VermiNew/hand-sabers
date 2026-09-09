@@ -25,6 +25,7 @@ import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
 import { TrackingSessionRegistry } from './realtime/tracking-session-registry.js';
 import { registerRemoteTrackingServer } from './realtime/remote-tracking-socket.js';
+import { PhoneQualityTelemetryStore } from './realtime/phone-quality-telemetry.js';
 import { createUploadConcurrencyGate } from './upload-concurrency.js';
 import { createOriginPolicy } from './origin-policy.js';
 import { requireFrontendDist } from './static-root.js';
@@ -162,6 +163,7 @@ const mapAssetLocks = new KeyedMutex(id => caseInsensitiveMapIds ? id.toLowerCas
 const mapCatalogLock = new FileMutex();
 const rooms = new RoomRegistry();
 const trackingSessions = new TrackingSessionRegistry();
+const phoneQualityTelemetry = new PhoneQualityTelemetryStore();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
   limiter.check(ip, key, maxPerMinute);
 
@@ -245,7 +247,7 @@ const server = secure
   ? createHttpsServer({ cert: readFileSync(tlsCertPath!), key: readFileSync(tlsKeyPath!) }, app)
   : createHttpServer(app);
 const realtimeServer = registerRealtimeServer(server, rooms, originPolicy);
-const remoteTrackingServer = registerRemoteTrackingServer(server, trackingSessions, originPolicy);
+const remoteTrackingServer = registerRemoteTrackingServer(server, trackingSessions, originPolicy, phoneQualityTelemetry);
 const PORT = Number(process.env.PORT || 3000);
 server.listen(PORT, '0.0.0.0', () => {
   const protocol = secure ? 'https' : 'http';
