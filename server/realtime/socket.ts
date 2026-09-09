@@ -31,6 +31,10 @@ interface ClientState {
 
 function send(socket: WebSocket, payload: object): void {
   if (socket.readyState === WebSocket.OPEN) {
+    if (socket.bufferedAmount > MAX_OUTGOING_BUFFER_BYTES) {
+      socket.close(1013, 'Backpressure');
+      return;
+    }
     try {
       socket.send(JSON.stringify({ v: PROTOCOL_VERSION, ...payload }));
     } catch (error) {
