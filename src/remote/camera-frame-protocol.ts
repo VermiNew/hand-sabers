@@ -20,6 +20,44 @@ function hasJpegMarkers(bytes: Uint8Array): boolean {
     && bytes[bytes.length - 1] === 0xd9;
 }
 
+function isStartOfFrameMarker(marker: number): boolean {
+  return (marker >= 0xc0 && marker <= 0xc3)
+    || (marker >= 0xc5 && marker <= 0xc7)
+    || (marker >= 0xc9 && marker <= 0xcb)
+    || (marker >= 0xcd && marker <= 0xcf);
+}
+
+function readJpegDimensions(bytes: Uint8Array): { width: number; height: number } | null {
+  if (!hasJpegMarkers(bytes)) return null;
+  let offset = 2;
+  let dimensions: { width: number; height: number } | null = null;
+
+  while (offset < bytes.length - 2) {
+    if (bytes[offset] !== 0xff) return null;
+    while (bytes[offset] === 0xff) offset++;
+    if (offset >= bytes.length - 1) return null;
+    const marker = bytes[offset++]!;
+    if (marker === 0x00 || marker === 0xd8 || marker === 0xd9 || (marker >= 0xd0 && marker <= 0xd7)) {
+      return null;
+    }
+    if (marker === 0x01) continue;
+    if (offset + 2 > bytes.length) return null;
+    const segmentLength = (bytes[offset]! << 8) | bytes[offset + 1]!;
+    if (segmentLength < 2 || offset + segmentLength > bytes.length) return null;
+
+    if (isStartOfFrameMarker(marker)) {
+      if (dimensions || segmentLength < 8) return null;
+      const height = (bytes[offset + 3]! << 8) | bytes[offset + 4]!;
+      const width = (bytes[offset + 5]! << 8) | bytes[offset + 6]!;
+      if (width < 1 || height < 1) return null;
+      dimensions = { width, height };
+    }
+    if (marker === 0xda) return dimensions;
+    offset += segmentLength;
+  }
+  return null;
+}
+
 export function encodePhoneCameraFrame(frame: PhoneCameraFrame): ArrayBuffer | null {
   const packetLength = PHONE_CAMERA_FRAME_HEADER_BYTES + frame.jpeg.byteLength;
   if (
@@ -36,6 +74,8 @@ export function encodePhoneCameraFrame(frame: PhoneCameraFrame): ArrayBuffer | n
     || packetLength > PHONE_CAMERA_FRAME_MAX_BYTES
     || !hasJpegMarkers(frame.jpeg)
   ) return null;
+  const dimensions = readJpegDimensions(frame.jpeg);
+  if (!dimensions || dimensions.width !== frame.width || dimensions.height !== frame.height) return null;
 
   const packet = new Uint8Array(packetLength);
   const view = new DataView(packet.buffer);
@@ -73,5 +113,7 @@ export function decodePhoneCameraFrame(packet: Uint8Array): PhoneCameraFrame | n
     || height > PHONE_CAMERA_FRAME_MAX_HEIGHT
     || !hasJpegMarkers(jpeg)
   ) return null;
+  const dimensions = readJpegDimensions(jpeg);
+  if (!dimensions || dimensions.width !== width || dimensions.height !== height) return null;
   return { sequence, sentAtEpochMs, width, height, jpeg };
 }
