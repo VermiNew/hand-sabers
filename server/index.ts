@@ -218,7 +218,12 @@ registerScoreRoutes({
   rateLimit,
 });
 registerRoomRoutes({ app, rooms, rateLimit });
-registerTrackingSessionRoutes({ app, sessions: trackingSessions, rateLimit });
+registerTrackingSessionRoutes({
+  app,
+  sessions: trackingSessions,
+  qualityTelemetry: phoneQualityTelemetry,
+  rateLimit,
+});
 
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   uploadConcurrency.release(req);

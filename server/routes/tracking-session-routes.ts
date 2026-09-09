@@ -1,6 +1,7 @@
 import type { Express } from 'express';
 import QRCode from 'qrcode';
 import type { TrackingSessionRegistry } from '../realtime/tracking-session-registry.js';
+import type { PhoneQualityTelemetryStore } from '../realtime/phone-quality-telemetry.js';
 import { getIp } from '../utils.js';
 
 type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
@@ -8,6 +9,7 @@ type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
 interface TrackingSessionRoutesOptions {
   app: Express;
   sessions: TrackingSessionRegistry;
+  qualityTelemetry: PhoneQualityTelemetryStore;
   rateLimit: RateLimiter;
 }
 
@@ -25,6 +27,7 @@ function bearerToken(header: string | undefined): string {
 export function registerTrackingSessionRoutes({
   app,
   sessions,
+  qualityTelemetry,
   rateLimit,
 }: TrackingSessionRoutesOptions): void {
   app.post('/api/tracking-sessions', async (req, res) => {
@@ -129,6 +132,17 @@ export function registerTrackingSessionRoutes({
     );
     if (!status) return res.status(404).json({ error: 'TRACKING_SESSION_NOT_FOUND' });
     res.json(status);
+  });
+
+  app.get('/api/tracking-sessions/:id/quality', (req, res) => {
+    const ip = getIp(req);
+    if (rateLimit(ip, 'tracking-session-quality', 120)) {
+      return res.status(429).json({ error: 'RATE_LIMITED' });
+    }
+    const id = String(req.params['id'] || '');
+    const status = sessions.getStatus(id, bearerToken(req.get('authorization')));
+    if (!status) return res.status(404).json({ error: 'TRACKING_SESSION_NOT_FOUND' });
+    res.json({ v: 1, quality: qualityTelemetry.get(id) });
   });
 
   app.delete('/api/tracking-sessions/:id', (req, res) => {
