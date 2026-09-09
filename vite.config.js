@@ -40,7 +40,11 @@ export default defineConfig({
         entryFileNames: chunk => chunk.name === 'serviceWorker'
           ? 'service-worker.js'
           : 'assets/[name]-[hash].js',
-        manualChunks: id => id.includes('node_modules/three') ? 'three' : undefined,
+        manualChunks: id => {
+          const normalizedId = id.replaceAll('\\', '/');
+          if (normalizedId.endsWith('/three/examples/jsm/libs/stats.module.js')) return undefined;
+          return normalizedId.includes('/node_modules/three/') ? 'three' : undefined;
+        },
       },
     },
   },

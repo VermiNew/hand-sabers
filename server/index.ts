@@ -165,7 +165,7 @@ const CONTENT_SECURITY_POLICY = [
   "manifest-src 'self'",
   "media-src 'self' blob:",
   "object-src 'none'",
-  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://mrdoob.github.io",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "worker-src 'self' blob:",
 ].join('; ');

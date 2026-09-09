@@ -784,12 +784,11 @@ async function loadTweakpane(): Promise<(new (opts: { title: string; expanded: b
 }
 
 async function loadStatsJS(): Promise<(new () => StatsInstance) | null> {
-  return new Promise(resolve => {
-    if (window.Stats) { resolve(window.Stats); return; }
-    const s   = document.createElement('script');
-    s.src     = 'https://mrdoob.github.io/stats.js/build/stats.min.js';
-    s.onload  = () => resolve(window.Stats ?? null);
-    s.onerror = () => resolve(null);
-    document.head.appendChild(s);
-  });
+  if (window.Stats) return window.Stats;
+  try {
+    const { default: Stats } = await import('three/examples/jsm/libs/stats.module.js');
+    return Stats;
+  } catch {
+    return null;
+  }
 }
