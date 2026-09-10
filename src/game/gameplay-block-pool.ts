@@ -60,6 +60,39 @@ const freeBombs: PoolMesh[] = [];
 let currentColorLeft: number = THEME.left;
 let currentColorRight: number = THEME.right;
 
+interface BlockBodyBatch {
+  left: THREE.InstancedMesh;
+  right: THREE.InstancedMesh;
+  capacity: number;
+}
+
+function createBodyInstance(material: THREE.Material, capacity: number): THREE.InstancedMesh {
+  const instances = new THREE.InstancedMesh(BLOCK_GEO, material, capacity);
+  instances.count = 0;
+  instances.frustumCulled = false;
+  scene.add(instances);
+  return instances;
+}
+
+function createBodyBatch(capacity: number): BlockBodyBatch {
+  return {
+    left: createBodyInstance(materials.blockL, capacity),
+    right: createBodyInstance(materials.blockR, capacity),
+    capacity,
+  };
+}
+
+let bodyBatch = createBodyBatch(32);
+
+function ensureBodyBatchCapacity(required: number): void {
+  if (required <= bodyBatch.capacity) return;
+  const capacity = Math.max(required, bodyBatch.capacity * 2);
+  scene.remove(bodyBatch.left, bodyBatch.right);
+  bodyBatch.left.dispose();
+  bodyBatch.right.dispose();
+  bodyBatch = createBodyBatch(capacity);
+}
+
 function createNewBlock(): PoolMesh {
   const mesh = new THREE.Mesh(BLOCK_GEO, materials.blockL) as unknown as PoolMesh;
   mesh.add(new THREE.Mesh(BLOCK_OUTLINE_GEO, materials.outlineL));
@@ -67,6 +100,8 @@ function createNewBlock(): PoolMesh {
   arrow.position.set(0, 0, 0.22);
   arrow.rotation.x = -Math.PI / 2;
   mesh.add(arrow);
+  // The logical mesh owns transforms and children; its body is rendered by the shared instance batch.
+  mesh.layers.set(1);
   mesh.frustumCulled = true;
   mesh.__poolKind = 'block';
   mesh.__inFreeList = false;
@@ -102,6 +137,7 @@ export function acquireBlock(side: SaberSide): PoolMesh {
   mesh.__inFreeList = false;
   mesh.material = side === 'left' ? materials.blockL : materials.blockR;
   (mesh.children[0] as THREE.Mesh).material = side === 'left' ? materials.outlineL : materials.outlineR;
+  mesh.userData.side = side;
   mesh.visible = true;
   configureBlockArrow(mesh, 'any');
   return mesh;
@@ -121,6 +157,30 @@ export function releaseBlock(mesh: PoolMesh | null | undefined): void {
   mesh.__inFreeList = true;
   if (mesh.__poolKind === 'bomb') freeBombs.push(mesh);
   else freeBlocks.push(mesh);
+}
+
+export function syncBlockBodyInstances(): void {
+  let leftCount = 0;
+  let rightCount = 0;
+  for (const mesh of blockPool) {
+    if (mesh.visible && !mesh.__inFreeList) {
+      if (mesh.userData.side === 'right') rightCount++;
+      else leftCount++;
+    }
+  }
+  ensureBodyBatchCapacity(Math.max(leftCount, rightCount));
+  leftCount = 0;
+  rightCount = 0;
+  for (const mesh of blockPool) {
+    if (!mesh.visible || mesh.__inFreeList) continue;
+    mesh.updateMatrix();
+    if (mesh.userData.side === 'right') bodyBatch.right.setMatrixAt(rightCount++, mesh.matrix);
+    else bodyBatch.left.setMatrixAt(leftCount++, mesh.matrix);
+  }
+  bodyBatch.left.count = leftCount;
+  bodyBatch.right.count = rightCount;
+  bodyBatch.left.instanceMatrix.needsUpdate = leftCount > 0;
+  bodyBatch.right.instanceMatrix.needsUpdate = rightCount > 0;
 }
 
 export function prewarmBlockPool(blocks: number, bombs: number): void {
@@ -163,6 +223,9 @@ export function disposeBlockPool(): void {
   bombPool.length = 0;
   freeBlocks.length = 0;
   freeBombs.length = 0;
+  scene.remove(bodyBatch.left, bodyBatch.right);
+  bodyBatch.left.dispose();
+  bodyBatch.right.dispose();
   for (const geometry of [BLOCK_GEO, BLOCK_OUTLINE_GEO, BLOCK_ARROW_GEO, BOMB_GEO, BOMB_SPIKE_GEO, BOMB_SPIKES_GEO]) {
     geometry.dispose();
   }
