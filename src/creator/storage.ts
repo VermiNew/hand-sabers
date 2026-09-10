@@ -100,8 +100,10 @@ function downloadMapJsonFallback(mapToDownload: CreatorMap): void {
   const a    = document.createElement('a');
   a.href     = url;
   a.download = `${mapToDownload.meta?.title || 'map'}.json`;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 export async function saveMap(): Promise<void> {
@@ -157,8 +159,10 @@ export async function exportZip(callbacks: { onDecoded: () => void }): Promise<v
     const a    = document.createElement('a');
     a.href     = url;
     a.download = `${state.map.meta.title || 'map'}-${state.map.id}.zip`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
   } catch (err) {
     showAlert(t('creator.exportError') + (err as Error).message, { title: t('creator.exportErrorTitle') });
   }
