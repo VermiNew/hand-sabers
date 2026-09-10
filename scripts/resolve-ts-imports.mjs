@@ -1,6 +1,6 @@
-export async function resolve(specifier, context, nextResolve) {
+export function resolve(specifier, context, nextResolve) {
   try {
-    return await nextResolve(specifier, context);
+    return nextResolve(specifier, context);
   } catch (error) {
     if (
       error?.code === 'ERR_MODULE_NOT_FOUND'
@@ -13,7 +13,7 @@ export async function resolve(specifier, context, nextResolve) {
   }
 }
 
-export async function load(url, context, nextLoad) {
+export function load(url, context, nextLoad) {
   if (url.endsWith('.json')) {
     return nextLoad(url, {
       ...context,

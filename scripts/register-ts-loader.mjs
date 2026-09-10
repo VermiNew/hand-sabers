@@ -1,3 +1,4 @@
-import { register } from 'node:module';
+import { registerHooks } from 'node:module';
+import { load, resolve } from './resolve-ts-imports.mjs';
 
-register(new URL('./resolve-ts-imports.mjs', import.meta.url));
+registerHooks({ load, resolve });
