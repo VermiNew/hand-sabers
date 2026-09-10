@@ -58,18 +58,43 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
 
   if (masterMeter) {
     masterMeter.setAttribute('aria-label', t('settings.audio.masterMeter'));
-    const updateMeter = (): void => {
-      if (masterMeter.offsetParent !== null) {
-        const levels = getMasterMeterLevels();
-        const normalized = Math.max(0, Math.min(1, (levels.db + 60) / 60));
-        masterMeter.style.setProperty('--audio-level', String(normalized));
-        masterMeter.classList.toggle('is-clipping', levels.clipping);
-        masterMeter.setAttribute('aria-valuenow', levels.db.toFixed(1));
-        if (masterMeterValue) masterMeterValue.textContent = `${levels.db.toFixed(1)} dB`;
-      }
-      requestAnimationFrame(updateMeter);
+    const settingsBackdrop = document.getElementById('mainSettingsBackdrop');
+    const audioTab = masterMeter.closest<HTMLElement>('.sp-tab');
+    let meterFrame = 0;
+
+    const isMeterVisible = (): boolean => {
+      const settingsOpen = settingsBackdrop ? !settingsBackdrop.hidden : true;
+      const audioTabOpen = audioTab ? audioTab.classList.contains('is-active') : true;
+      return settingsOpen && audioTabOpen;
     };
-    requestAnimationFrame(updateMeter);
+    const updateMeter = (): void => {
+      meterFrame = 0;
+      if (!isMeterVisible()) return;
+      const levels = getMasterMeterLevels();
+      const normalized = Math.max(0, Math.min(1, (levels.db + 60) / 60));
+      masterMeter.style.setProperty('--audio-level', String(normalized));
+      masterMeter.classList.toggle('is-clipping', levels.clipping);
+      masterMeter.setAttribute('aria-valuenow', levels.db.toFixed(1));
+      if (masterMeterValue) masterMeterValue.textContent = `${levels.db.toFixed(1)} dB`;
+      meterFrame = requestAnimationFrame(updateMeter);
+    };
+
+    const syncMeterLoop = (): void => {
+      if (isMeterVisible()) {
+        if (!meterFrame) meterFrame = requestAnimationFrame(updateMeter);
+      } else if (meterFrame) {
+        cancelAnimationFrame(meterFrame);
+        meterFrame = 0;
+      }
+    };
+    const meterVisibilityObserver = new MutationObserver(syncMeterLoop);
+    if (settingsBackdrop) {
+      meterVisibilityObserver.observe(settingsBackdrop, { attributes: true, attributeFilter: ['hidden'] });
+    }
+    if (audioTab) {
+      meterVisibilityObserver.observe(audioTab, { attributes: true, attributeFilter: ['class'] });
+    }
+    syncMeterLoop();
   }
 
   if (phoneMeter) {
