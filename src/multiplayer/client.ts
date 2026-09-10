@@ -356,7 +356,13 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     lobby.hidden = false;
     lobbyCode.textContent = snapshot.code;
     playerCount.textContent = `${snapshot.players.length} / ${snapshot.maxPlayers}`;
-    renderRoomPlayerList(playerList, snapshot, currentPlayerId, pendingPreparationMapId);
+    renderRoomPlayerList(
+      playerList,
+      snapshot,
+      currentPlayerId,
+      pendingPreparationMapId,
+      currentRole === 'host' ? playerId => sendControl({ type: 'kick-player', targetPlayerId: playerId }) : undefined,
+    );
     voiceChat?.setRoom(snapshot);
     renderVoiceControls(voiceState);
 
@@ -491,6 +497,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
           }
         } else if (incoming.type === 'pong') {
           recordClockPong(incoming.sentAt, incoming.serverTime, Date.now());
+        } else if (incoming.type === 'kicked') {
+          showMessage(t('multiplayer.kickedFromRoom'));
         } else if (incoming.type === 'error') {
           showMessage(translateServerError(String(incoming.code || 'REQUEST_FAILED')));
         }

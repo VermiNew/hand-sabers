@@ -8,6 +8,7 @@ export function renderRoomPlayerList(
   snapshot: RoomSnapshot,
   currentPlayerId: string,
   pendingPreparationMapId: string,
+  onKickPlayer?: (playerId: string) => void,
 ): void {
   container.replaceChildren();
   for (const player of snapshot.players) {
@@ -57,6 +58,36 @@ export function renderRoomPlayerList(
       resources.append(badge);
     }
     row.append(identity, resources, state);
+    if (onKickPlayer && player.role === 'guest' && player.id !== currentPlayerId) {
+      const kickButton = document.createElement('button');
+      kickButton.type = 'button';
+      kickButton.className = 'mp-player-kick';
+      kickButton.title = t('multiplayer.kickPlayerAria', { name: player.name });
+      kickButton.setAttribute('aria-label', kickButton.title);
+      const icon = document.createElement('span');
+      icon.className = 'material-symbols-rounded';
+      icon.setAttribute('aria-hidden', 'true');
+      icon.textContent = 'person_remove';
+      const label = document.createElement('span');
+      label.textContent = t('multiplayer.kickPlayer');
+      kickButton.append(icon, label);
+      kickButton.addEventListener('click', () => {
+        if (kickButton.dataset['confirm'] === 'true') {
+          kickButton.disabled = true;
+          onKickPlayer(player.id);
+          return;
+        }
+        kickButton.dataset['confirm'] = 'true';
+        kickButton.classList.add('is-confirming');
+        label.textContent = t('multiplayer.confirmKick');
+        window.setTimeout(() => {
+          kickButton.dataset['confirm'] = 'false';
+          kickButton.classList.remove('is-confirming');
+          label.textContent = t('multiplayer.kickPlayer');
+        }, 3_500);
+      });
+      row.append(kickButton);
+    }
     container.append(row);
   }
 }
