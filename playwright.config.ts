@@ -3,6 +3,9 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
+  // Each page owns a live WebGL scene. Serial workers keep smoke tests stable
+  // on CI and headless machines where Chromium falls back to software GL.
+  workers: 1,
   forbidOnly: Boolean(process.env['CI']),
   retries: process.env['CI'] ? 1 : 0,
   reporter: 'list',
