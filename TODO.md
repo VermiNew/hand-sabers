@@ -426,6 +426,16 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Zamykać każde żądanie HTTP Upgrade spoza dokładnych ścieżek `/ws` i `/tracking-ws`; prawidłowe handshaki z query string nadal działają, a nieznane lub podobne ścieżki są natychmiast kończone.
 - [x] Zweryfikować remediację: `npm run lint`, `npm run build`, `npm run server:build`, 54/54 testy jednostkowe, pełny smoke serwera oraz skupione próby raw socket, wolnego WebSocket, JPEG, współbieżnych eksportów/manifestów i indeksu tytułów przeszły. Playwright pominięto, ponieważ te zmiany nie modyfikują UI, a nie udzielono nowej zgody na jego uruchomienie.
 
+### Końcowy audyt jakości — 2026-09-10
+
+- [x] Zweryfikować pełną lokalną ścieżkę jakości: lint i typecheck klienta/serwera, build z budżetem bundla, 54/54 testy jednostkowe, smoke skompilowanego serwera oraz rzeczywisty `npm start`. Endpointy `/`, `/api`, `/api/health` i `/api/maps` odpowiadają 200 przy domyślnym `security: false`.
+- [x] Zastąpić przestarzały asynchroniczny loader testów Node synchronicznym `registerHooks()` dostępnym w wymaganym Node 22.18+, bez zmiany sposobu rozwiązywania importów TypeScript i bez ostrzeżenia deprecation.
+- [x] Zatrzymywać miernik dB ustawień po zamknięciu panelu lub zmianie zakładki Audio; obserwator uruchamia RAF ponownie dopiero wtedy, gdy miernik jest rzeczywiście widoczny.
+- [x] Odroczyć zwolnienie adresów `blob:` eksportu mapy, ZIP i biblioteki do następnego zadania event loop, aby kliknięcie pobierania nie ścigało się z `URL.revokeObjectURL()`; rzeczywiste pobrania obu formatów przeszły w Chromium.
+- [x] Zaktualizować istniejący Multer z 2.2.0 do 2.3.0 po wykryciu podatności parsera multipart i sprzątania przerwanych uploadów; `npm audit` zgłasza 0 podatności, bez dodawania nowej zależności.
+- [x] Ustabilizować smoke Playwright aplikacji WebGL na maszynach bez fizycznego GPU: sceny są uruchamiane pojedynczym workerem zamiast przeciążać programowy renderer. Pełny zestaw menu, profilu, osiągnięć i Lyry przechodzi 4/4.
+- [ ] Zakończyć formalny skan bezpieczeństwa aktualnej rewizji i dopisać jego zweryfikowane wyniki; nie oznaczać audytu jako ukończonego bez kompletnego raportu.
+
 ### Świadomie zaakceptowane ryzyka i decyzje wdrożeniowe
 
 - [x] Na obecnym etapie nie dodawać uwierzytelniania mutacji map (`POST /api/maps`, `/save`, `/import`, `DELETE /api/maps/:id`), ponieważ serwer jest przeznaczony wyłącznie dla zaufanych znajomych. Kontrola `Origin` i limity IP nie są autoryzacją, dlatego tego wariantu nie wolno wystawiać publicznie bez ponownego otwarcia zadania i dodania modelu admin/ownership/read-only.
