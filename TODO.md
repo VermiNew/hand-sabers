@@ -48,7 +48,7 @@
 - [x] Poprawić system wydajności (profile, adaptive quality)
 - [x] Architektura remote tracking: obliczenia ML na telefonie → WebRTC/WebSocket → PC — [projekt](docs/remote-tracking.md)
 - [x] Cacheowanie modelu ML w przeglądarce (Service Worker / IndexedDB)
-- [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach – **zablokowane** (obecnie dostępny tylko model `float16`; brak alternatywnych modeli w MediaPipe)
+- [ ] Wybór modelu ML (lekki / dokładny) w ustawieniach — **zablokowane aktualną dystrybucją MediaPipe Tasks**: zweryfikowany 2026-09-10 oficjalny pakiet Web `hand_landmarker/float16/1` zawiera jeden detector oraz wyłącznie pełny model landmarków 5,48 MB; oficjalne adresy kompletnych pakietów `float32`, `int8` i `lite` zwracają 404. Google nadal publikuje starszy, pojedynczy `hand_landmark_lite.tflite`, ale nie kompletny pakiet Task; ręczne złożenie go z detectorem byłoby niewspieranym modelem wymagającym osobnej decyzji eksperymentalnej i testu runtime, a nie bezpiecznym przełącznikiem ustawień.
 - [x] Nowa strona/overlay "Pomoc" w menu — instrukcja gry + mini‑tutorial (PL i EN)
 
 ## 8. TODO techniczne (backlog)
