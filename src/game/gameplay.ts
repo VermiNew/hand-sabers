@@ -41,7 +41,7 @@ import {
   getHeldMaterial,
   prewarmBlockPool,
   releaseBlock,
-  syncBlockBodyInstances,
+  syncBlockVisualInstances,
   type PoolMesh,
 } from './gameplay-block-pool.ts';
 import {
@@ -175,7 +175,7 @@ const bladeHitboxes = { left: createBladeHitbox(), right: createBladeHitbox() };
 export function setGameOverHandler(fn: () => void): void { gameOverHandler = fn; }
 
 function publishGameplayStats() {
-  syncBlockBodyInstances();
+  syncBlockVisualInstances();
   window.__activeBlockCount = activeBlocks.length;
   let nearestZ = -Infinity;
   for (const entry of activeBlocks) {

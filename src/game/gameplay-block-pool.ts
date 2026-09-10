@@ -60,47 +60,68 @@ const freeBombs: PoolMesh[] = [];
 let currentColorLeft: number = THEME.left;
 let currentColorRight: number = THEME.right;
 
-interface BlockBodyBatch {
-  left: THREE.InstancedMesh;
-  right: THREE.InstancedMesh;
+interface BlockVisualBatch {
+  bodyLeft: THREE.InstancedMesh;
+  bodyRight: THREE.InstancedMesh;
+  outlineLeft: THREE.InstancedMesh;
+  outlineRight: THREE.InstancedMesh;
+  arrows: THREE.InstancedMesh;
   capacity: number;
 }
 
-function createBodyInstance(material: THREE.Material, capacity: number): THREE.InstancedMesh {
-  const instances = new THREE.InstancedMesh(BLOCK_GEO, material, capacity);
+function createVisualInstances(
+  geometry: THREE.BufferGeometry,
+  material: THREE.Material,
+  capacity: number,
+): THREE.InstancedMesh {
+  const instances = new THREE.InstancedMesh(geometry, material, capacity);
   instances.count = 0;
   instances.frustumCulled = false;
   scene.add(instances);
   return instances;
 }
 
-function createBodyBatch(capacity: number): BlockBodyBatch {
+function createVisualBatch(capacity: number): BlockVisualBatch {
   return {
-    left: createBodyInstance(materials.blockL, capacity),
-    right: createBodyInstance(materials.blockR, capacity),
+    bodyLeft: createVisualInstances(BLOCK_GEO, materials.blockL, capacity),
+    bodyRight: createVisualInstances(BLOCK_GEO, materials.blockR, capacity),
+    outlineLeft: createVisualInstances(BLOCK_OUTLINE_GEO, materials.outlineL, capacity),
+    outlineRight: createVisualInstances(BLOCK_OUTLINE_GEO, materials.outlineR, capacity),
+    arrows: createVisualInstances(BLOCK_ARROW_GEO, materials.arrow, capacity),
     capacity,
   };
 }
 
-let bodyBatch = createBodyBatch(32);
+let visualBatch = createVisualBatch(32);
+const blockArrowMatrix = new THREE.Matrix4();
 
-function ensureBodyBatchCapacity(required: number): void {
-  if (required <= bodyBatch.capacity) return;
-  const capacity = Math.max(required, bodyBatch.capacity * 2);
-  scene.remove(bodyBatch.left, bodyBatch.right);
-  bodyBatch.left.dispose();
-  bodyBatch.right.dispose();
-  bodyBatch = createBodyBatch(capacity);
+function setInstanceCount(instances: THREE.InstancedMesh, count: number): void {
+  instances.count = count;
+  instances.instanceMatrix.needsUpdate = count > 0;
+}
+
+function ensureVisualBatchCapacity(required: number): void {
+  if (required <= visualBatch.capacity) return;
+  const capacity = Math.max(required, visualBatch.capacity * 2);
+  const instances = Object.values(visualBatch).filter(
+    (value): value is THREE.InstancedMesh => value instanceof THREE.InstancedMesh,
+  );
+  scene.remove(...instances);
+  for (const instance of instances) instance.dispose();
+  visualBatch = createVisualBatch(capacity);
 }
 
 function createNewBlock(): PoolMesh {
   const mesh = new THREE.Mesh(BLOCK_GEO, materials.blockL) as unknown as PoolMesh;
-  mesh.add(new THREE.Mesh(BLOCK_OUTLINE_GEO, materials.outlineL));
+  const outline = new THREE.Mesh(BLOCK_OUTLINE_GEO, materials.outlineL);
+  outline.layers.set(1);
+  mesh.add(outline);
   const arrow = new THREE.Mesh(BLOCK_ARROW_GEO, materials.arrow);
   arrow.position.set(0, 0, 0.22);
   arrow.rotation.x = -Math.PI / 2;
+  arrow.layers.set(1);
   mesh.add(arrow);
-  // The logical mesh owns transforms and children; its body is rendered by the shared instance batch.
+  // The logical mesh owns transforms and cut state; the shared instance batch renders its visuals.
   mesh.layers.set(1);
   mesh.frustumCulled = true;
   mesh.__poolKind = 'block';
@@ -159,28 +180,43 @@ export function releaseBlock(mesh: PoolMesh | null | undefined): void {
   else freeBlocks.push(mesh);
 }
 
-export function syncBlockBodyInstances(): void {
+export function syncBlockVisualInstances(): void {
   let leftCount = 0;
   let rightCount = 0;
+  let arrowCount = 0;
   for (const mesh of blockPool) {
     if (mesh.visible && !mesh.__inFreeList) {
       if (mesh.userData.side === 'right') rightCount++;
       else leftCount++;
+      if (mesh.children[1]?.visible) arrowCount++;
     }
   }
-  ensureBodyBatchCapacity(Math.max(leftCount, rightCount));
+  ensureVisualBatchCapacity(Math.max(leftCount, rightCount, arrowCount));
   leftCount = 0;
   rightCount = 0;
+  arrowCount = 0;
   for (const mesh of blockPool) {
     if (!mesh.visible || mesh.__inFreeList) continue;
     mesh.updateMatrix();
-    if (mesh.userData.side === 'right') bodyBatch.right.setMatrixAt(rightCount++, mesh.matrix);
-    else bodyBatch.left.setMatrixAt(leftCount++, mesh.matrix);
+    if (mesh.userData.side === 'right') {
+      visualBatch.bodyRight.setMatrixAt(rightCount, mesh.matrix);
+      visualBatch.outlineRight.setMatrixAt(rightCount++, mesh.matrix);
+    } else {
+      visualBatch.bodyLeft.setMatrixAt(leftCount, mesh.matrix);
+      visualBatch.outlineLeft.setMatrixAt(leftCount++, mesh.matrix);
+    }
+    const arrow = mesh.children[1];
+    if (arrow?.visible) {
+      arrow.updateMatrix();
+      blockArrowMatrix.multiplyMatrices(mesh.matrix, arrow.matrix);
+      visualBatch.arrows.setMatrixAt(arrowCount++, blockArrowMatrix);
+    }
   }
-  bodyBatch.left.count = leftCount;
-  bodyBatch.right.count = rightCount;
-  bodyBatch.left.instanceMatrix.needsUpdate = leftCount > 0;
-  bodyBatch.right.instanceMatrix.needsUpdate = rightCount > 0;
+  setInstanceCount(visualBatch.bodyLeft, leftCount);
+  setInstanceCount(visualBatch.bodyRight, rightCount);
+  setInstanceCount(visualBatch.outlineLeft, leftCount);
+  setInstanceCount(visualBatch.outlineRight, rightCount);
+  setInstanceCount(visualBatch.arrows, arrowCount);
 }
 
 export function prewarmBlockPool(blocks: number, bombs: number): void {
@@ -223,9 +259,11 @@ export function disposeBlockPool(): void {
   bombPool.length = 0;
   freeBlocks.length = 0;
   freeBombs.length = 0;
-  scene.remove(bodyBatch.left, bodyBatch.right);
-  bodyBatch.left.dispose();
-  bodyBatch.right.dispose();
+  const instances = Object.values(visualBatch).filter(
+    (value): value is THREE.InstancedMesh => value instanceof THREE.InstancedMesh,
+  );
+  scene.remove(...instances);
+  for (const instance of instances) instance.dispose();
   for (const geometry of [BLOCK_GEO, BLOCK_OUTLINE_GEO, BLOCK_ARROW_GEO, BOMB_GEO, BOMB_SPIKE_GEO, BOMB_SPIKES_GEO]) {
     geometry.dispose();
   }
