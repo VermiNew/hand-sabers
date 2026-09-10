@@ -21,6 +21,7 @@ import type {
   MultiplayerRules,
 } from './multiplayer-events.ts';
 import type { MultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
+import { beginScoreSubmissionSession } from './score-submission.ts';
 import {
   isPhoneAudioActive,
   isPhoneAudioPreparationPending,
@@ -214,6 +215,7 @@ export function createMultiplayerRoundSession({
       document.body.classList.toggle('training-mode', detail.rules.trainingMode);
       document.body.dataset['gameMode'] = detail.rules.gameMode;
       document.body.dataset['multiplayerMode'] = detail.mode;
+      beginScoreSubmissionSession(state.map?.id, detail.rules.trainingMode, Boolean(state.map?.localOnly));
       resetMapSpawn();
       mapTimeline.startAt(detail.startAtPerformance);
       startGameplay(detail.saber);

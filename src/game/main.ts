@@ -42,7 +42,7 @@ import { createCalibrationController } from './calibration-controller.ts';
 import { MapTimeline } from './map-timeline.ts';
 import { initMapDrop } from './map-drop.ts';
 import { ensureCurrentMapAudio, tryLoadMapFromUrl } from './map-session.ts';
-import { submitScore } from './score-submission.ts';
+import { beginScoreSubmissionSession, submitScore } from './score-submission.ts';
 import { createRuntimeReporter } from './runtime-reporter.ts';
 import { createRenderLoop } from './render-loop.ts';
 import { createMultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
@@ -270,6 +270,7 @@ async function beginPlaying(): Promise<void> {
 
   setRoundPreparationStage('scene', 'done');
   setRoundPreparationProgress(1);
+  beginScoreSubmissionSession(state.map?.id, settings.trainingMode, Boolean(state.map?.localOnly));
   state.appState = S.PLAYING;
   startGameplay();
   hideOverlay();
