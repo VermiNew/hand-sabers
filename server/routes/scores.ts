@@ -109,9 +109,21 @@ export function registerScoreRoutes({ app, maps, storage, parseJson, rateLimit }
         return res.status(400).json({ error: 'Nieprawidłowe dane wyniku.' });
       }
 
-      const { mapId, player, score, combo, progress } = req.body;
+      const { mapId, player, score, combo, progress, sessionToken } = req.body;
+      if (typeof sessionToken !== 'string' || !/^[A-Za-z0-9_-]{32}$/.test(sessionToken)) {
+        return res.status(401).json({ error: 'Brak prawidłowej sesji wyniku.' });
+      }
+      const session = sessions.get(sessionToken);
+      if (!session || session.expiresAt <= Date.now()) {
+        sessions.delete(sessionToken);
+        return res.status(401).json({ error: 'Sesja wyniku wygasła lub została już użyta.' });
+      }
       if (typeof mapId !== 'string' || mapId.length > MAX_MAP_ID_LENGTH) {
         return res.status(400).json({ error: 'Nieprawidłowy identyfikator mapy.' });
+      }
+      const normalizedMapId = sanitizeMapId(mapId, 'random');
+      if (normalizedMapId !== session.mapId) {
+        return res.status(400).json({ error: 'Wynik nie pasuje do mapy przypisanej do sesji.' });
       }
       if (typeof player !== 'string' || player.length > MAX_PLAYER_NAME_LENGTH) {
         return res.status(400).json({ error: 'Nieprawidłowa nazwa gracza.' });
@@ -121,6 +133,9 @@ export function registerScoreRoutes({ app, maps, storage, parseJson, rateLimit }
       }
       if (typeof combo !== 'number' || !Number.isSafeInteger(combo) || combo < 0 || combo > MAX_COMBO) {
         return res.status(400).json({ error: 'Nieprawidłowe combo.' });
+      }
+      if (score > session.maxScore || combo > session.maxCombo) {
+        return res.status(400).json({ error: 'Wynik przekracza możliwy zakres tej mapy.' });
       }
 
       if (progress !== undefined && (
@@ -132,8 +147,9 @@ export function registerScoreRoutes({ app, maps, storage, parseJson, rateLimit }
         return res.status(400).json({ error: 'Nieprawidłowy postęp.' });
       }
 
+      sessions.delete(sessionToken);
       await storage.append({
-        mapId: sanitizeMapId(mapId, 'random'),
+        mapId: normalizedMapId,
         player: player.trim() || 'Gracz',
         score,
         combo,

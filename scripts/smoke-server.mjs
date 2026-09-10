@@ -384,7 +384,16 @@ try {
   const exportedZip = await JSZip.loadAsync(exported.body);
   if (!exportedZip.file('map.json') || !exportedZip.file('audio.ogg')) throw new Error('export zip missing map.json or audio');
 
-  await postJson('/api/scores', { mapId: 'smoke-map', player: 'Tester', score: 1234, combo: 5 });
+  const scoreSession = await postJson('/api/score-sessions', { mapId: 'smoke-map' }, 201);
+  const scorePayload = {
+    sessionToken: scoreSession.token,
+    mapId: 'smoke-map',
+    player: 'Tester',
+    score: 150,
+    combo: 1,
+  };
+  await postJson('/api/scores', scorePayload);
+  await postJson('/api/scores', scorePayload, 401);
 
   const mapsAfterSmokeWrites = await getJson('/api/maps');
   const leakedSmokeMap = mapsAfterSmokeWrites.find(item => ['smoke-map', 'creator-smoke', 'zip-smoke', 'bad-map'].includes(item.id));
