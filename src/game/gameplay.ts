@@ -294,7 +294,7 @@ function spawnBlock(side: SaberSide | null = null, isBomb = false, options: Spaw
     const geo = new THREE.BoxGeometry(0.38, 0.38, heldLen);
     const mat = getHeldMaterial(side);
     heldMesh = new THREE.Mesh(geo, mat);
-    heldMesh.frustumCulled = false;
+    heldMesh.frustumCulled = true;
     heldMesh.position.set(x, y, z - (heldLen * 0.5 + 0.19));
     scene.add(heldMesh);
   }

@@ -52,7 +52,7 @@ function createNewBlock(): PoolMesh {
   arrow.position.set(0, 0, 0.22);
   arrow.rotation.x = -Math.PI / 2;
   mesh.add(arrow);
-  mesh.frustumCulled = false;
+  mesh.frustumCulled = true;
   mesh.__poolKind = 'block';
   mesh.__inFreeList = false;
   scene.add(mesh);
@@ -69,7 +69,7 @@ function createNewBomb(): PoolMesh {
     spike.rotation.z = angle + Math.PI / 2;
     mesh.add(spike);
   }
-  mesh.frustumCulled = false;
+  mesh.frustumCulled = true;
   mesh.__poolKind = 'bomb';
   mesh.__inFreeList = false;
   scene.add(mesh);
