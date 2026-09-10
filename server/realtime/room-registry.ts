@@ -25,6 +25,8 @@ export type RoomErrorCode =
   | 'ROOM_FULL'
   | 'HOST_ALREADY_CONNECTED'
   | 'PLAYER_NOT_FOUND'
+  | 'PLAYER_BANNED'
+  | 'INVALID_MODERATION_TARGET'
   | 'MAP_REQUIRED'
   | 'PLAYERS_NOT_READY'
   | 'ROUND_ALREADY_STARTED'
@@ -104,6 +106,8 @@ interface RoomRecord extends RoomSnapshot {
   hostToken: string;
   joinToken: string;
   nextRoundId: number;
+  playerModerationIds: Map<string, string>;
+  bannedModerationIds: Set<string>;
 }
 
 function maxPlayersForMode(mode: RoomMode): number {
@@ -187,6 +191,10 @@ function sanitizePlayerName(name: string): string {
   return name.replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 32);
 }
 
+function sanitizeModerationId(value: unknown): string {
+  return typeof value === 'string' && /^[a-f0-9]{32}$/.test(value) ? value : '';
+}
+
 export class RoomRegistry {
   private readonly rooms = new Map<string, RoomRecord>();
   private readonly cleanupTimer: ReturnType<typeof setInterval>;
@@ -222,9 +230,11 @@ export class RoomRegistry {
       round: null,
       nextRoundId: 1,
       players: [],
+      playerModerationIds: new Map(),
+      bannedModerationIds: new Set(),
     };
     this.rooms.set(code, room);
-    return { ...room, rules: { ...room.rules } };
+    return { ...this.snapshot(room), hostToken: room.hostToken, joinToken: room.joinToken };
   }
 
   get(code: string): RoomSnapshot | null {
@@ -245,7 +255,14 @@ export class RoomRegistry {
     };
   }
 
-  join(code: string, token: string, requestedName: string, requestedAvatar: unknown, requestedColor: unknown): { player: RoomPlayer; snapshot: RoomSnapshot } {
+  join(
+    code: string,
+    token: string,
+    requestedName: string,
+    requestedAvatar: unknown,
+    requestedColor: unknown,
+    requestedModerationId?: unknown,
+  ): { player: RoomPlayer; snapshot: RoomSnapshot } {
     this.deleteExpired();
     const room = this.rooms.get(normalizeRoomCode(code));
     if (!room) throw new RoomError('ROOM_NOT_FOUND');
@@ -253,6 +270,10 @@ export class RoomRegistry {
       ? 'host'
       : tokensMatch(token, room.joinToken) ? 'guest' : null;
     if (!role) throw new RoomError('INVALID_ROOM_TOKEN');
+    const moderationId = sanitizeModerationId(requestedModerationId);
+    if (role === 'guest' && moderationId && room.bannedModerationIds.has(moderationId)) {
+      throw new RoomError('PLAYER_BANNED');
+    }
     if (room.players.length >= room.maxPlayers) throw new RoomError('ROOM_FULL');
     if (role === 'host' && room.players.some(player => player.role === 'host')) {
       throw new RoomError('HOST_ALREADY_CONNECTED');
@@ -282,6 +303,7 @@ export class RoomRegistry {
       playing: false,
     };
     room.players.push(player);
+    if (moderationId) room.playerModerationIds.set(player.id, moderationId);
     this.refreshExpiry(room);
     room.revision++;
     return { player: { ...player, readiness: { ...player.readiness } }, snapshot: this.snapshot(room) };
@@ -301,6 +323,7 @@ export class RoomRegistry {
     const index = room.players.findIndex(player => player.id === playerId);
     if (index < 0) return this.snapshot(room);
     room.players.splice(index, 1);
+    room.playerModerationIds.delete(playerId);
     if (
       room.round?.finishedAt === null
       && room.players.some(player => player.playing)
@@ -310,6 +333,19 @@ export class RoomRegistry {
     }
     room.revision++;
     return this.snapshot(room);
+  }
+
+  kickAndBan(code: string, hostPlayerId: string, targetPlayerId: string): RoomSnapshot {
+    const room = this.requireRoom(code);
+    const host = room.players.find(player => player.id === hostPlayerId);
+    if (!host || host.role !== 'host') throw new RoomError('HOST_ONLY');
+    const target = room.players.find(player => player.id === targetPlayerId);
+    if (!target || target.role !== 'guest' || target.id === hostPlayerId) {
+      throw new RoomError('INVALID_MODERATION_TARGET');
+    }
+    const moderationId = room.playerModerationIds.get(target.id);
+    if (moderationId) room.bannedModerationIds.add(moderationId);
+    return this.leave(room.code, target.id) ?? this.snapshot(room);
   }
 
   setReady(code: string, playerId: string, ready: boolean, readinessValue?: unknown): RoomSnapshot {

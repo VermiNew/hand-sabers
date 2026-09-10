@@ -204,6 +204,7 @@ export function registerRealtimeServer(
             String(message.name || ''),
             message.avatar,
             message.playerColor,
+            message.moderationId,
           );
           client.roomCode = joined.snapshot.code;
           client.playerId = joined.player.id;
@@ -307,6 +308,23 @@ export function registerRealtimeServer(
             gameMode: message.gameMode,
             noteSpeed: message.noteSpeed,
           }));
+          return;
+        }
+        if (type === 'kick-player') {
+          const targetPlayerId = String(message.targetPlayerId || '');
+          if (!targetPlayerId || targetPlayerId.length > 64) {
+            throw new RoomError('INVALID_MODERATION_TARGET');
+          }
+          const snapshot = rooms.kickAndBan(client.roomCode, client.playerId, targetPlayerId);
+          for (const [targetSocket, targetClient] of clients) {
+            if (targetClient.roomCode !== client.roomCode || targetClient.playerId !== targetPlayerId) continue;
+            targetClient.roomCode = null;
+            targetClient.playerId = null;
+            send(targetSocket, { type: 'kicked', code: 'PLAYER_BANNED' });
+            targetSocket.close(1008, 'Kicked by host');
+            break;
+          }
+          broadcast(client.roomCode, snapshot);
           return;
         }
         if (type === 'start-game') {

@@ -36,6 +36,20 @@ let announcedRoundId = 0;
 let lastFinishedRoundId = 0;
 let multiplayerModal: ModalTransitionController | null = null;
 const PREPARATION_TIMEOUT_MS = 45_000;
+const MODERATION_ID_STORAGE_KEY = 'hand-sabers.multiplayer-moderation-id.v1';
+
+function getModerationId(): string {
+  try {
+    const stored = localStorage.getItem(MODERATION_ID_STORAGE_KEY);
+    if (stored && /^[a-f0-9]{32}$/.test(stored)) return stored;
+  } catch {}
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  const id = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+  try {
+    localStorage.setItem(MODERATION_ID_STORAGE_KEY, id);
+  } catch {}
+  return id;
+}
 
 function trySocketSend(target: WebSocket | null, payload: string | ArrayBuffer, context: string): boolean {
   if (target?.readyState !== WebSocket.OPEN) return false;
@@ -416,6 +430,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         name,
         avatar: settings.avatar,
         playerColor: settings.playerColor,
+        moderationId: getModerationId(),
       }), 'join');
       if (!joined) {
         showMessage(t('multiplayer.connectionError'));
