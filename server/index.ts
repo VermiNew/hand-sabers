@@ -238,6 +238,7 @@ const SCORES_FILE = path.join(MAPS_DIR, '_scores.json');
 const scoreStorage = createScoreStorage(SCORES_FILE);
 registerScoreRoutes({
   app,
+  maps: mapStorage,
   storage: scoreStorage,
   parseJson: express.json({ limit: MAX_SCORE_JSON_BYTES }),
   rateLimit,

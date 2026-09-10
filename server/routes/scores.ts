@@ -1,5 +1,7 @@
 import type { Express, RequestHandler } from 'express';
+import { randomBytes } from 'node:crypto';
 import { isPlainObject, sanitizeMapId } from '../../src/core/map-format.js';
+import type { MapStorage } from '../storage/maps.js';
 import type { ScoreStorage } from '../storage/scores.js';
 import { errorMessage, getIp } from '../utils.js';
 
@@ -9,15 +11,33 @@ const MAX_PLAYER_NAME_LENGTH = 40;
 const MAX_MAP_ID_LENGTH = 64;
 const MAX_SCORE = 1_000_000_000;
 const MAX_COMBO = 1_000_000;
+const SCORE_SESSION_TTL_MS = 6 * 60 * 60 * 1000;
+const MAX_SCORE_SESSIONS = 4_096;
+
+interface ScoreSession {
+  mapId: string;
+  maxScore: number;
+  maxCombo: number;
+  expiresAt: number;
+}
 
 interface ScoreRoutesOptions {
   app: Express;
+  maps: MapStorage;
   storage: ScoreStorage;
   parseJson: RequestHandler;
   rateLimit: RateLimiter;
 }
 
-export function registerScoreRoutes({ app, storage, parseJson, rateLimit }: ScoreRoutesOptions): void {
+export function registerScoreRoutes({ app, maps, storage, parseJson, rateLimit }: ScoreRoutesOptions): void {
+  const sessions = new Map<string, ScoreSession>();
+
+  const pruneSessions = (now = Date.now()): void => {
+    for (const [token, session] of sessions) {
+      if (session.expiresAt <= now) sessions.delete(token);
+    }
+  };
+
   app.get('/api/scores', async (req, res) => {
     try {
       let scores = await storage.read();
@@ -42,6 +62,46 @@ export function registerScoreRoutes({ app, storage, parseJson, rateLimit }: Scor
     }
     next();
   };
+
+  app.post('/api/score-sessions', limitScoreSubmission, parseJson, async (req, res) => {
+    try {
+      if (!isPlainObject(req.body) || typeof req.body['mapId'] !== 'string') {
+        return res.status(400).json({ error: 'Nieprawidłowy identyfikator mapy.' });
+      }
+      const mapId = sanitizeMapId(req.body['mapId'], '');
+      if (!mapId || mapId !== req.body['mapId'] || mapId.length > MAX_MAP_ID_LENGTH) {
+        return res.status(400).json({ error: 'Nieprawidłowy identyfikator mapy.' });
+      }
+      const map = await maps.read(mapId);
+      if (!map) return res.status(404).json({ error: 'Nie znaleziono mapy.' });
+      const playableBeats = map.beats.filter(beat => beat.type !== 'bomb').length;
+      if (playableBeats < 1) return res.status(400).json({ error: 'Mapa nie zawiera grywalnych nut.' });
+
+      const now = Date.now();
+      pruneSessions(now);
+      if (sessions.size >= MAX_SCORE_SESSIONS) {
+        return res.status(503).json({ error: 'Serwer wyników jest chwilowo zajęty.' });
+      }
+      const token = randomBytes(24).toString('base64url');
+      const session: ScoreSession = {
+        mapId,
+        maxCombo: playableBeats,
+        // This deliberately overestimates every current scoring path while rejecting absurd totals.
+        maxScore: Math.min(MAX_SCORE, 300 * playableBeats * playableBeats),
+        expiresAt: now + SCORE_SESSION_TTL_MS,
+      };
+      sessions.set(token, session);
+      res.status(201).json({
+        token,
+        mapId: session.mapId,
+        maxScore: session.maxScore,
+        maxCombo: session.maxCombo,
+        expiresAt: new Date(session.expiresAt).toISOString(),
+      });
+    } catch (error) {
+      res.status(500).json({ error: errorMessage(error) });
+    }
+  });
 
   app.post('/api/scores', limitScoreSubmission, parseJson, async (req, res) => {
     try {
