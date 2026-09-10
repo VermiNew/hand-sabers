@@ -1,6 +1,7 @@
 import { normalizeCutDirection } from '../core/gameplay-rules.ts';
 import { THEME } from '../core/theme.ts';
 import type { SaberSide } from '../types/index.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { THREE, scene } from './scene.ts';
 
 export type PoolMesh = THREE.Mesh<THREE.BufferGeometry, THREE.Material> & {
@@ -13,6 +14,20 @@ const BLOCK_OUTLINE_GEO = new THREE.BoxGeometry(0.5, 0.5, 0.5);
 const BLOCK_ARROW_GEO = new THREE.ConeGeometry(0.07, 0.16, 4);
 const BOMB_GEO = new THREE.IcosahedronGeometry(0.22, 1);
 const BOMB_SPIKE_GEO = new THREE.ConeGeometry(0.04, 0.14, 4);
+const BOMB_SPIKES_GEO = (() => {
+  const spikes: THREE.BufferGeometry[] = [];
+  for (let index = 0; index < 6; index++) {
+    const angle = (index / 6) * Math.PI * 2;
+    const spike = BOMB_SPIKE_GEO.clone();
+    spike.rotateZ(angle + Math.PI / 2);
+    spike.translate(Math.cos(angle) * 0.22, Math.sin(angle) * 0.22, 0);
+    spikes.push(spike);
+  }
+  const merged = mergeGeometries(spikes, false);
+  for (const spike of spikes) spike.dispose();
+  if (!merged) throw new Error('Nie udało się utworzyć geometrii kolców bomby.');
+  return merged;
+})();
 
 const materials = {
   blockL: new THREE.MeshPhongMaterial({ color: THEME.left, emissive: THEME.left, emissiveIntensity: 0.55, shininess: 80, specular: 0xb8c8dc }),
@@ -62,13 +77,7 @@ function createNewBlock(): PoolMesh {
 
 function createNewBomb(): PoolMesh {
   const mesh = new THREE.Mesh(BOMB_GEO, materials.bomb) as unknown as PoolMesh;
-  for (let index = 0; index < 6; index++) {
-    const spike = new THREE.Mesh(BOMB_SPIKE_GEO, materials.bombSpike);
-    const angle = (index / 6) * Math.PI * 2;
-    spike.position.set(Math.cos(angle) * 0.22, Math.sin(angle) * 0.22, 0);
-    spike.rotation.z = angle + Math.PI / 2;
-    mesh.add(spike);
-  }
+  mesh.add(new THREE.Mesh(BOMB_SPIKES_GEO, materials.bombSpike));
   mesh.frustumCulled = true;
   mesh.__poolKind = 'bomb';
   mesh.__inFreeList = false;
@@ -154,7 +163,7 @@ export function disposeBlockPool(): void {
   bombPool.length = 0;
   freeBlocks.length = 0;
   freeBombs.length = 0;
-  for (const geometry of [BLOCK_GEO, BLOCK_OUTLINE_GEO, BLOCK_ARROW_GEO, BOMB_GEO, BOMB_SPIKE_GEO]) {
+  for (const geometry of [BLOCK_GEO, BLOCK_OUTLINE_GEO, BLOCK_ARROW_GEO, BOMB_GEO, BOMB_SPIKE_GEO, BOMB_SPIKES_GEO]) {
     geometry.dispose();
   }
   for (const material of Object.values(materials)) material.dispose();
