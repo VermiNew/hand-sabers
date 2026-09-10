@@ -68,7 +68,7 @@ interface ActiveBlock {
   isHeld: boolean;
   heldDuration: number;
   heldProgress: number;
-  heldMesh: THREE.Mesh | null;
+  heldMesh: THREE.Object3D | null;
   heldLen: number;
   heldDrainAccum: number;
 }
@@ -120,6 +120,41 @@ const PREWARM_TARGETS = {
   ultra:   { blocks: 18, bombs: 5, shards: 28 },
   maximum: { blocks: 24, bombs: 6, shards: 28 },
 };
+
+const heldGeometry = new THREE.BoxGeometry(0.38, 0.38, 1);
+
+interface HeldVisualBatch {
+  left: THREE.InstancedMesh;
+  right: THREE.InstancedMesh;
+  capacity: number;
+}
+
+function createHeldInstances(side: SaberSide, capacity: number): THREE.InstancedMesh {
+  const instances = new THREE.InstancedMesh(heldGeometry, getHeldMaterial(side), capacity);
+  instances.count = 0;
+  instances.frustumCulled = false;
+  scene.add(instances);
+  return instances;
+}
+
+function createHeldVisualBatch(capacity: number): HeldVisualBatch {
+  return {
+    left: createHeldInstances('left', capacity),
+    right: createHeldInstances('right', capacity),
+    capacity,
+  };
+}
+
+let heldVisualBatch = createHeldVisualBatch(8);
+
+function ensureHeldVisualCapacity(required: number): void {
+  if (required <= heldVisualBatch.capacity) return;
+  const capacity = Math.max(required, heldVisualBatch.capacity * 2);
+  scene.remove(heldVisualBatch.left, heldVisualBatch.right);
+  heldVisualBatch.left.dispose();
+  heldVisualBatch.right.dispose();
+  heldVisualBatch = createHeldVisualBatch(capacity);
+}
 
 function poolTargetsForCurrentGraphicsMode() {
   const perf = getPerformanceProfile(getSettings());
@@ -176,6 +211,7 @@ export function setGameOverHandler(fn: () => void): void { gameOverHandler = fn;
 
 function publishGameplayStats() {
   syncBlockVisualInstances();
+  syncHeldVisualInstances();
   window.__activeBlockCount = activeBlocks.length;
   let nearestZ = -Infinity;
   for (const entry of activeBlocks) {
@@ -215,9 +251,30 @@ export function startGameplay(sabers: SaberSide | 'both' = 'both') {
 
 function disposeHeldMesh(entry: ActiveBlock): void {
   if (!entry.heldMesh) return;
-  scene.remove(entry.heldMesh);
-  entry.heldMesh.geometry.dispose();
   entry.heldMesh = null;
+}
+
+function syncHeldVisualInstances(): void {
+  let leftCount = 0;
+  let rightCount = 0;
+  for (const entry of activeBlocks) {
+    if (!entry.heldMesh) continue;
+    if (entry.side === 'right') rightCount++;
+    else leftCount++;
+  }
+  ensureHeldVisualCapacity(Math.max(leftCount, rightCount));
+  leftCount = 0;
+  rightCount = 0;
+  for (const entry of activeBlocks) {
+    if (!entry.heldMesh) continue;
+    entry.heldMesh.updateMatrix();
+    if (entry.side === 'right') heldVisualBatch.right.setMatrixAt(rightCount++, entry.heldMesh.matrix);
+    else heldVisualBatch.left.setMatrixAt(leftCount++, entry.heldMesh.matrix);
+  }
+  heldVisualBatch.left.count = leftCount;
+  heldVisualBatch.right.count = rightCount;
+  heldVisualBatch.left.instanceMatrix.needsUpdate = leftCount > 0;
+  heldVisualBatch.right.instanceMatrix.needsUpdate = rightCount > 0;
 }
 
 export function clearGameplayEntities() {
@@ -291,14 +348,11 @@ function spawnBlock(side: SaberSide | null = null, isBomb = false, options: Spaw
   mesh.userData = { side, alive: true, isBomb, cut };
   if (!isBomb) configureBlockArrow(mesh, cut);
 
-  let heldMesh: THREE.Mesh | null = null;
+  let heldMesh: THREE.Object3D | null = null;
   if (heldLen > 0) {
-    const geo = new THREE.BoxGeometry(0.38, 0.38, heldLen);
-    const mat = getHeldMaterial(side);
-    heldMesh = new THREE.Mesh(geo, mat);
-    heldMesh.frustumCulled = true;
+    heldMesh = new THREE.Object3D();
     heldMesh.position.set(x, y, z - (heldLen * 0.5 + 0.19));
-    scene.add(heldMesh);
+    heldMesh.scale.z = heldLen;
   }
 
   activeBlocks.push({
@@ -686,6 +740,10 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
 
 export function disposeGameplayResources() {
   clearGameplayEntities();
+  scene.remove(heldVisualBatch.left, heldVisualBatch.right);
+  heldVisualBatch.left.dispose();
+  heldVisualBatch.right.dispose();
+  heldGeometry.dispose();
   disposeBlockPool();
   disposeHitEffects();
 }
