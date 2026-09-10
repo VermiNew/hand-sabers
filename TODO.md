@@ -416,6 +416,16 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Zaktualizować `SECURITY.md` do faktycznego ręcznego parowania: kod tworzy pending claim, host musi jawnie zatwierdzić, token telefonu jest wydawany jednokrotnie; QR nadal przenosi bezpośredni token telefonu.
 - [x] Zaktualizować podatne wersje przechodnie bez dodawania nowych pakietów — lockfile ma teraz `brace-expansion@5.0.9`, `qs@6.16.0`, `nanoid@3.3.18` i `postcss@8.5.28`; pełne `npm audit` zgłasza 0 podatności. Wcześniejszy audyt osiągalności dodatkowo potwierdził, że eksport Archiver dodaje jawne pliki bez globów, a Express używa prostego parsera query i body JSON.
 
+### Pełny audyt bezpieczeństwa — 2026-09-09
+
+- [x] Przeprowadzić pełny audyt rewizji `09df4f4eae2f8bd6d79ef598b924b0e9e231bf79` — potwierdzono pięć problemów średnich; raport nie wykazał ścieżki uruchomienia malware, potajemnego wysyłania obrazu kamery, traversal poza storage ani stored XSS.
+- [x] Usunąć nieprzypięty runtime Stats.js: panel deweloperski ładuje teraz lokalny, leniwy addon z zainstalowanego `three`, a CSP nie dopuszcza już `mrdoob.github.io`. Nie zamrożono aplikacji na starej wersji — addon aktualizuje się razem z kontrolowaną zależnością `three`.
+- [x] Walidować rzeczywiste wymiary JPEG telefonu przed natywnym dekoderem: parser SOF odrzuca brak lub duplikat nagłówka, uszkodzone segmenty i rozbieżność wymiarów z kopertą przy zachowaniu limitu 64 KiB oraz trybów baseline/progressive.
+- [x] Egzekwować backpressure dla wszystkich wiadomości JSON Multiplayer, w tym dużych `voice-signal`: wolny odbiorca jest kontrolowanie zamykany kodem `1013`, a pozostali gracze pozostają połączeni.
+- [x] Ograniczyć koszt publicznych odczytów map bez blokowania normalnej gry: maksymalnie dwa równoległe eksporty ZIP i dwa zimne hashe audio, anulowanie hasha po rozłączeniu, cache SHA-256 według metadanych pliku oraz unieważniany indeks tytułów zamiast skanowania katalogu dla każdego zapytania.
+- [x] Zamykać każde żądanie HTTP Upgrade spoza dokładnych ścieżek `/ws` i `/tracking-ws`; prawidłowe handshaki z query string nadal działają, a nieznane lub podobne ścieżki są natychmiast kończone.
+- [x] Zweryfikować remediację: `npm run lint`, `npm run build`, `npm run server:build`, 54/54 testy jednostkowe, pełny smoke serwera oraz skupione próby raw socket, wolnego WebSocket, JPEG, współbieżnych eksportów/manifestów i indeksu tytułów przeszły. Playwright pominięto, ponieważ te zmiany nie modyfikują UI, a nie udzielono nowej zgody na jego uruchomienie.
+
 ### Świadomie zaakceptowane ryzyka i decyzje wdrożeniowe
 
 - [x] Na obecnym etapie nie dodawać uwierzytelniania mutacji map (`POST /api/maps`, `/save`, `/import`, `DELETE /api/maps/:id`), ponieważ serwer jest przeznaczony wyłącznie dla zaufanych znajomych. Kontrola `Origin` i limity IP nie są autoryzacją, dlatego tego wariantu nie wolno wystawiać publicznie bez ponownego otwarcia zadania i dodania modelu admin/ownership/read-only.
