@@ -5,7 +5,7 @@ import { getCurrentMusicIntensity } from './music-visualizer.ts';
 import type { BladeHitbox } from './saber-hitbox.ts';
 import { THREE, scene } from './scene.ts';
 
-type ShardMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial> & { __inFreeList: boolean };
+type ShardObject = THREE.Object3D & { __inFreeList: boolean };
 
 const ENABLE_SPARK_DUST = false;
 const MAX_BURSTS = 1;
@@ -38,9 +38,51 @@ if (ENABLE_SPARK_DUST) scene.add(sparkSystem);
 let burstHead = 0;
 
 const shardGeometry = new THREE.BoxGeometry(1, 1, 1);
-const shardPool: ShardMesh[] = [];
-const freeShards: ShardMesh[] = [];
-const activeShards: ShardMesh[] = [];
+const shardOpacity = new THREE.InstancedBufferAttribute(new Float32Array(MAX_SHARDS), 1);
+const shardEmissive = new THREE.InstancedBufferAttribute(new Float32Array(MAX_SHARDS), 1);
+shardGeometry.setAttribute('instanceOpacity', shardOpacity);
+shardGeometry.setAttribute('instanceEmissive', shardEmissive);
+const shardMaterial = new THREE.MeshStandardMaterial({
+  color: 0xffffff,
+  emissive: 0xffffff,
+  emissiveIntensity: 1,
+  roughness: 0.34,
+  metalness: 0.34,
+  transparent: true,
+  opacity: 1,
+  depthWrite: false,
+});
+shardMaterial.onBeforeCompile = (shader) => {
+  shader.vertexShader = shader.vertexShader
+    .replace(
+      '#include <common>',
+      '#include <common>\nattribute float instanceOpacity;\nattribute float instanceEmissive;\nvarying float vShardOpacity;\nvarying float vShardEmissive;\nvarying vec3 vShardColor;',
+    )
+    .replace(
+      '#include <begin_vertex>',
+      '#include <begin_vertex>\nvShardOpacity = instanceOpacity;\nvShardEmissive = instanceEmissive;\nvShardColor = instanceColor;',
+    );
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      '#include <common>',
+      '#include <common>\nvarying float vShardOpacity;\nvarying float vShardEmissive;\nvarying vec3 vShardColor;',
+    )
+    .replace(
+      '#include <color_fragment>',
+      '#include <color_fragment>\ndiffuseColor.a *= vShardOpacity;\ntotalEmissiveRadiance *= vShardColor * vShardEmissive;',
+    );
+};
+shardMaterial.customProgramCacheKey = () => 'instanced-shards-v1';
+const shardBatch = new THREE.InstancedMesh(shardGeometry, shardMaterial, MAX_SHARDS);
+shardBatch.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(MAX_SHARDS * 3), 3);
+shardBatch.count = 0;
+shardBatch.frustumCulled = false;
+shardBatch.renderOrder = 12;
+scene.add(shardBatch);
+
+const shardPool: ShardObject[] = [];
+const freeShards: ShardObject[] = [];
+const activeShards: ShardObject[] = [];
 const tmpSliceDir = new THREE.Vector3();
 const tmpPushDir = new THREE.Vector3();
 const tmpRandomDir = new THREE.Vector3();
@@ -84,35 +126,23 @@ function burst(position: THREE.Vector3, colorHex: number, pushDirection: THREE.V
   }
 }
 
-function createNewShard(colorHex: number): ShardMesh {
-  const material = new THREE.MeshStandardMaterial({
-    color: colorHex,
-    emissive: colorHex,
-    emissiveIntensity: 0.9,
-    roughness: 0.34,
-    metalness: 0.34,
-    transparent: true,
-    opacity: 1,
-    depthWrite: false,
-  });
-  const shard = new THREE.Mesh(shardGeometry, material) as unknown as ShardMesh;
-  shard.frustumCulled = false;
-  shard.renderOrder = 12;
+function createNewShard(colorHex: number): ShardObject {
+  const shard = new THREE.Object3D() as ShardObject;
+  shard.userData.color = new THREE.Color(colorHex);
   shard.userData.velocity = new THREE.Vector3();
   shard.userData.rotVelocity = new THREE.Vector3();
   shard.userData.baseScale = new THREE.Vector3();
   shard.__inFreeList = false;
-  scene.add(shard);
   shardPool.push(shard);
   return shard;
 }
 
-function acquireShard(colorHex: number): ShardMesh {
+function acquireShard(colorHex: number): ShardObject {
   const shard = freeShards.pop() ?? createNewShard(colorHex);
   shard.__inFreeList = false;
-  shard.material.color.setHex(colorHex);
-  shard.material.emissive.setHex(colorHex);
-  shard.material.opacity = 1;
+  shard.userData.color.setHex(colorHex);
+  shard.userData.opacity = 1;
+  shard.userData.emissiveIntensity = 0.9;
   shard.visible = true;
   activeShards.push(shard);
   return shard;
@@ -128,6 +158,24 @@ function releaseShardAt(index: number): void {
   shard.visible = false;
   shard.__inFreeList = true;
   freeShards.push(shard);
+}
+
+function syncShardInstances(): void {
+  for (let index = 0; index < activeShards.length; index++) {
+    const shard = activeShards[index]!;
+    shard.updateMatrix();
+    shardBatch.setMatrixAt(index, shard.matrix);
+    shardBatch.setColorAt(index, shard.userData.color);
+    shardOpacity.setX(index, shard.userData.opacity);
+    shardEmissive.setX(index, shard.userData.emissiveIntensity);
+  }
+  shardBatch.count = activeShards.length;
+  if (activeShards.length > 0) {
+    shardBatch.instanceMatrix.needsUpdate = true;
+    shardBatch.instanceColor!.needsUpdate = true;
+    shardOpacity.needsUpdate = true;
+    shardEmissive.needsUpdate = true;
+  }
 }
 
 function computeSlicePush(hitbox: BladeHitbox | null | undefined): THREE.Vector3 {
@@ -205,6 +253,7 @@ export function shatterBlock(
     shard.userData.life = 0.42 + Math.random() * 0.22;
   }
   burst(tmpShardCenter, colorHex, tmpPushSnapshot);
+  syncShardInstances();
 }
 
 function updateShards(deltaScale: number): void {
@@ -226,9 +275,10 @@ function updateShards(deltaScale: number): void {
     const life = THREE.MathUtils.clamp(shard.userData.life, 0, 1);
     const pulse = 0.68 + life * 0.34;
     shard.scale.copy(shard.userData.baseScale).multiplyScalar(pulse);
-    shard.material.opacity = Math.min(0.92, life * 1.15);
-    shard.material.emissiveIntensity = 0.18 + life * 0.55;
+    shard.userData.opacity = Math.min(0.92, life * 1.15);
+    shard.userData.emissiveIntensity = 0.18 + life * 0.55;
   }
+  syncShardInstances();
 }
 
 export function updateSparks(deltaScale = 1): void {
@@ -275,6 +325,7 @@ export function clearHitEffects(): void {
   for (let slot = 0; slot < MAX_BURSTS; slot++) sparkLives[slot] = 0;
   sparkSystem.visible = false;
   while (activeShards.length) releaseShardAt(activeShards.length - 1);
+  shardBatch.count = 0;
 }
 
 export function getHitEffectCounts(): { active: number; prewarmed: number } {
@@ -283,13 +334,11 @@ export function getHitEffectCounts(): { active: number; prewarmed: number } {
 
 export function disposeHitEffects(): void {
   clearHitEffects();
+  scene.remove(shardBatch);
   shardGeometry.dispose();
+  shardMaterial.dispose();
   sparkGeometry.dispose();
   sparkMaterial.dispose();
-  for (const shard of shardPool) {
-    scene.remove(shard);
-    shard.material.dispose();
-  }
   shardPool.length = 0;
   freeShards.length = 0;
 }
