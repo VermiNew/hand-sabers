@@ -1,6 +1,7 @@
 import { copyFile, readdir, readFile, rename, unlink, writeFile } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import path from 'path';
+import { sanitizeMapId } from '../../src/core/map-format.js';
 import type { GameMap } from '../../src/types/index.js';
 
 export type StoredMap = GameMap & Record<string, unknown>;
@@ -21,6 +22,7 @@ export interface MapStorage {
   beginMutation(id: string): Promise<MapMutation>;
   write(map: StoredMap): Promise<void>;
   list(): Promise<StoredMapFile[]>;
+  findIdByTitle(title: string): Promise<string | null>;
   delete(id: string): Promise<boolean>;
 }
 
@@ -29,6 +31,11 @@ interface MapStorageOptions {
   beatdataDir: string;
   hiddenIds?: Iterable<string>;
   caseInsensitiveIds?: boolean;
+}
+
+interface TitleIndexSnapshot {
+  titles: Map<string, string>;
+  error: unknown | null;
 }
 
 function isMapFile(name: string): boolean {
@@ -56,8 +63,16 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [], caseIns
   const isHidden = (id: string): boolean => hiddenMapIds.has(idKey(id)) || idKey(id).startsWith('__smoke-');
   const mapFilePath = (id: string): string => path.join(beatdataDir, `${id}.json`);
   const legacyMapFilePath = (id: string): string => path.join(mapsDir, `${id}.json`);
+  let titleIndex: TitleIndexSnapshot | null = null;
+  let titleIndexBuild: { version: number; promise: Promise<TitleIndexSnapshot> } | null = null;
+  let titleIndexVersion = 0;
 
-  return {
+  const invalidateTitleIndex = (): void => {
+    titleIndex = null;
+    titleIndexVersion++;
+  };
+
+  const storage: MapStorage = {
     async read(id: string): Promise<StoredMap | null> {
       return await readJsonFile(mapFilePath(id)) || await readJsonFile(legacyMapFilePath(id));
     },
@@ -124,6 +139,7 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [], caseIns
               }
             }
           }
+          invalidateTitleIndex();
           finished = true;
           if (rollbackErrors.length) {
             throw new AggregateError(rollbackErrors, `Nie udało się w pełni przywrócić plików mapy ${id}.`);
@@ -138,6 +154,7 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [], caseIns
       try {
         await writeFile(tmpPath, JSON.stringify(map, null, 2));
         await rename(tmpPath, finalPath);
+        invalidateTitleIndex();
       } finally {
         await unlink(tmpPath).catch(error => {
           if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
@@ -176,12 +193,53 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [], caseIns
       return files;
     },
 
+    async findIdByTitle(title: string): Promise<string | null> {
+      const normalizedTitle = title.toLowerCase();
+      while (true) {
+        if (titleIndex) {
+          const id = titleIndex.titles.get(normalizedTitle);
+          if (id) return id;
+          if (titleIndex.error) throw titleIndex.error;
+          return null;
+        }
+        if (!titleIndexBuild) {
+          const version = titleIndexVersion;
+          const promise = (async () => {
+            const titles = new Map<string, string>();
+            for (const item of await storage.list()) {
+              const id = sanitizeMapId(item.id, '');
+              if (!id) continue;
+              try {
+                const map = await storage.read(id);
+                const mapTitle = map?.meta?.title?.toLowerCase();
+                if (mapTitle && !titles.has(mapTitle)) titles.set(mapTitle, id);
+              } catch (error) {
+                return { titles, error };
+              }
+            }
+            return { titles, error: null };
+          })();
+          titleIndexBuild = { version, promise };
+        }
+        const build = titleIndexBuild;
+        let builtIndex: TitleIndexSnapshot;
+        try {
+          builtIndex = await build.promise;
+        } finally {
+          if (titleIndexBuild === build) titleIndexBuild = null;
+        }
+        if (titleIndexVersion !== build.version) continue;
+        titleIndex = builtIndex;
+      }
+    },
+
     async delete(id: string): Promise<boolean> {
       let deleted = false;
       for (const filePath of [mapFilePath(id), legacyMapFilePath(id)]) {
         try {
           await unlink(filePath);
           deleted = true;
+          invalidateTitleIndex();
         } catch (error) {
           if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
         }
@@ -189,4 +247,5 @@ export function createMapStorage({ mapsDir, beatdataDir, hiddenIds = [], caseIns
       return deleted;
     },
   };
+  return storage;
 }

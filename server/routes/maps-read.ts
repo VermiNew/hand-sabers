@@ -100,16 +100,12 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
     try {
       const title = String(req.params['title'] ?? '').toLowerCase();
       if (!title) return res.status(400).json({ error: 'Brak tytułu.' });
-      const maps = await withCatalogLock(() => mapStorage.list());
-      let found: { map: StoredMap; id: string } | null = null;
-      for (const item of maps) {
-        const id = safeId(item.id);
-        if (!id) continue;
+      const found = await withCatalogLock(async () => {
+        const id = await mapStorage.findIdByTitle(title);
+        if (!id) return null;
         const map = await withMapLock(id, () => mapStorage.read(id));
-        if (map?.meta?.title?.toLowerCase() !== title) continue;
-        found = { map, id };
-        break;
-      }
+        return map ? { map, id } : null;
+      });
       if (found) return res.json(mapForResponse(found.map, found.id));
       res.status(404).json({ error: 'Nie znaleziono.' });
     } catch (error) {
