@@ -21,6 +21,7 @@ import { PAUSE_REASONS } from '../core/pause.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initHelpOverlay } from '../ui/help.ts';
+import { initAuthorOverlay } from '../ui/author.ts';
 import { initTutorialGameplayHud } from '../ui/tutorial-gameplay-hud.ts';
 import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay } from '../multiplayer/client.ts';
@@ -803,6 +804,7 @@ window.addEventListener('beforeunload', () => {
 });
 
 initHelpOverlay();
+initAuthorOverlay();
 initTutorialGameplayHud();
 registerMlAssetCache();
 initRemoteTrackingPairing();

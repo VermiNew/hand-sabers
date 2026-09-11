@@ -210,6 +210,14 @@
       "cameraAnswer": "Przy zwykłym śledzeniu obraz pozostaje na urządzeniu. Telefon może wysyłać klatki tylko w jawnie wybranym trybie „ML na komputerze”."
     }
   },
+  "author": {
+    "openHint": "Poznaj autora",
+    "close": "Zamknij informacje o autorze",
+    "eyebrow": "TWÓRCA HAND SABERS",
+    "bio": "Projektuję i rozwijam Hand Sabers — eksperymentalną grę rytmiczną sterowaną dłońmi, bez gogli VR.",
+    "linksLabel": "Linki autora",
+    "website": "STRONA WWW"
+  },
   "tutorial": {
     "start": "URUCHOM TUTORIAL",
     "skip": "POMIŃ",

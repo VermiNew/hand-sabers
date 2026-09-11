@@ -210,6 +210,14 @@
       "cameraAnswer": "With normal tracking, images stay on the device. A phone sends frames only in the explicitly selected “ML on computer” mode."
     }
   },
+  "author": {
+    "openHint": "Meet the creator",
+    "close": "Close creator information",
+    "eyebrow": "HAND SABERS CREATOR",
+    "bio": "I design and develop Hand Sabers — an experimental hand-controlled rhythm game that does not require a VR headset.",
+    "linksLabel": "Creator links",
+    "website": "WEBSITE"
+  },
   "tutorial": {
     "start": "START TUTORIAL",
     "skip": "SKIP",

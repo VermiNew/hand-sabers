@@ -56,8 +56,8 @@
 
     <div class="main-menu-footer">
       <button class="main-menu-dev main-menu-dev-btn" id="mainDevMode" type="button">[dev]</button>
-      <span class="main-menu-footer-sep">·</span>
-      <span class="main-menu-footer-version" data-text="CAMERA RHYTHM">CAMERA RHYTHM</span>
+      <span class="main-menu-footer-sep">*</span>
+      <button class="main-menu-footer-version" id="mainAuthor" type="button" data-text="MADE BY MICHAEL OSLIZLO" aria-haspopup="dialog" aria-controls="authorOverlay" data-i18n-title="author.openHint" title="Poznaj autora">MADE BY MICHAEL OSLIZLO</button>
     </div>
   </aside>
 
@@ -798,6 +798,29 @@
       <p class="rt-hint" id="remoteTrackingHint" data-i18n="remoteTracking.hostPrivacy">Sesja jest zapisana tylko w tej karcie. Możesz przechodzić między stronami bez rozłączania telefonu.</p>
       <p class="rt-error" id="remoteTrackingError" role="alert" hidden></p>
     </div>
+  </section>
+</div>
+
+<!-- AUTHOR -->
+<div id="authorOverlay" class="author-overlay" hidden>
+  <section class="author-card" role="dialog" aria-modal="true" aria-labelledby="authorTitle">
+    <button class="author-close" id="authorClose" type="button" data-i18n-aria-label="author.close" aria-label="Zamknij">
+      <span class="material-symbols-rounded" aria-hidden="true">close</span>
+    </button>
+    <div class="author-monogram" aria-hidden="true">MO</div>
+    <span class="author-eyebrow" data-i18n="author.eyebrow">TWÓRCA HAND SABERS</span>
+    <h2 id="authorTitle">MICHAEL OSLIZLO</h2>
+    <p data-i18n="author.bio">Projektuję i rozwijam Hand Sabers — eksperymentalną grę rytmiczną sterowaną dłońmi, bez gogli VR.</p>
+    <nav class="author-links" data-i18n-aria-label="author.linksLabel" aria-label="Linki autora">
+      <a href="https://github.com/VermiNew" target="_blank" rel="noopener noreferrer">
+        <span class="material-symbols-rounded" aria-hidden="true">code</span>
+        <span>GitHub</span>
+      </a>
+      <a href="https://verminew.github.io" target="_blank" rel="noopener noreferrer">
+        <span class="material-symbols-rounded" aria-hidden="true">language</span>
+        <span data-i18n="author.website">STRONA WWW</span>
+      </a>
+    </nav>
   </section>
 </div>
 
