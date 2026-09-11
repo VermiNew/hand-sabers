@@ -86,3 +86,18 @@ tracking-source setting. Remote landmark packets are decoded and passed to the
 same detection-result processing used by local MediaPipe output. Calibration
 remains on the PC because it maps normalized phone coordinates to the current
 game space.
+
+## Eksport raportu diagnostycznego
+
+1. Uruchom grę z parametrem `?dev`, sparuj telefon i wykonaj badaną czynność.
+2. W panelu developerskim otwórz kartę `SND` i wybierz `Eksport JSON` albo
+   `Eksport CSV`.
+3. Zapisz model telefonu, system, rodzaj sieci i wyjścia audio osobno w notatkach
+   do testu. Raport zawiera konfigurację przeglądarki, metryki lokalne oraz — gdy
+   sesja nadal działa — serwerowe P50/P95 dla RTT, dryfu, schedulera audio, wieku
+   klatki, ML i kodowania.
+
+Plik jest tworzony lokalnie w przeglądarce. Eksport serwerowy korzysta ze ścisłej
+listy dozwolonych pól; raport nie zawiera tokenów parowania ani klatek kamery.
+Sekcja `manualValidation` pozostaje celowo niepotwierdzona: wynik programowy nie
+zastępuje odsłuchu ani pomiaru na prawdziwym telefonie, głośniku lub słuchawkach.
