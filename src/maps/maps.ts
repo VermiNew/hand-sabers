@@ -4,6 +4,7 @@ import { t, translateDom } from '../i18n/index.ts';
 import { initRemoteTrackingHost } from '../remote/host-session.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
 import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
+import { initFrontendErrorBoundary } from '../ui/frontend-errors.ts';
 import { createMapPreviewController } from './preview.ts';
 import { loadSettings } from '../core/settings.ts';
 import { checkServerHealth, fetchJson, loadServerMaps, type MapEntry, type ScoreEntry } from './library-api.ts';
@@ -19,6 +20,7 @@ import {
 
 // ── i18n ─────────────────────────────────────────────────────────────────────
 
+initFrontendErrorBoundary();
 initPageInterfaceSounds();
 initRemoteTrackingHost();
 loadSettings();

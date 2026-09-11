@@ -6,6 +6,7 @@ import { showAlert, showToast } from './dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initRemoteTrackingHost } from '../remote/host-session.ts';
 import { initPageInterfaceSounds } from '../ui/interface-sounds.ts';
+import { initFrontendErrorBoundary } from '../ui/frontend-errors.ts';
 import { bindMetronome } from './metronome.ts';
 import { suggestMapDifficulty } from '../core/map-difficulty.ts';
 
@@ -86,6 +87,7 @@ function scheduleCreatorPreview3d(): void {
   }
 }
 
+initFrontendErrorBoundary();
 initPageInterfaceSounds();
 initRemoteTrackingHost();
 

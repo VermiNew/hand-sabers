@@ -4,8 +4,10 @@ import { initRemoteTrackingHost, isRemoteTrackingConnected } from './remote/host
 import { decodeRemoteLandmarks } from './tracking/realtime.ts';
 import type { TrackingSourcePreference } from './types/index.ts';
 import { initPageInterfaceSounds } from './ui/interface-sounds.ts';
+import { initFrontendErrorBoundary } from './ui/frontend-errors.ts';
 
 translateDom();
+initFrontendErrorBoundary();
 initPageInterfaceSounds();
 initRemoteTrackingHost();
 document.title = t('cameraDiagnostics.pageTitle');

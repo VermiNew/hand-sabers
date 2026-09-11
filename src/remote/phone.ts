@@ -11,6 +11,7 @@ import { initPhoneTracking } from './phone-tracking.ts';
 import { initPhoneAudio, setupPhoneAudioUI } from './phone-audio.ts';
 import { isPhoneCameraProcessingCommand, isTrackingOptionsCommand } from './tracking-options-protocol.ts';
 import type { PhoneTrackingMetricsEvent } from './tracking-metrics.ts';
+import { initFrontendErrorBoundary } from '../ui/frontend-errors.ts';
 import { detectPhoneCapabilities, supportsPhoneAudio } from './phone-capabilities.ts';
 
 interface PhoneCredential {
@@ -35,6 +36,8 @@ let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let claimPollTimer: ReturnType<typeof setTimeout> | null = null;
 let pendingClaim: PendingPhoneClaim | null = null;
 let reconnectAttempt = 0;
+
+initFrontendErrorBoundary();
 
 function element<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);

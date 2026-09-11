@@ -1,4 +1,5 @@
 @import './base.css';
+@import './frontend-errors.css';
 
 body {
   min-height:100vh;

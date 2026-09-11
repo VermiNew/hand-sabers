@@ -38,7 +38,15 @@
     "error": "ERROR",
     "loadFailed": "Failed to load model or dependencies.<br>Check your internet connection and refresh the page.",
     "cameraBusy": "Camera is busy.<br>Close other tabs/apps using the camera, then choose “Retry camera”.",
-    "cameraPermission": "Check camera permissions, then choose “Retry camera”."
+    "cameraPermission": "Check camera permissions, then choose “Retry camera”.",
+    "unknownError": "Unknown error",
+    "unexpectedTitle": "UNEXPECTED ERROR",
+    "unexpectedRecovery": "Try the last action again. If the problem returns, refresh the page and retain the technical details.",
+    "networkRecovery": "Check your connection and whether the Hand Sabers server is running, then try again.",
+    "cameraRecovery": "Close other apps using the camera, check permissions, and try again.",
+    "technicalDetails": "Technical details",
+    "dismiss": "Dismiss message",
+    "resourceFailed": "Could not load resource"
   },
   "game": {
     "unknownTrack": "Unknown track",

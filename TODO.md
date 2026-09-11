@@ -579,6 +579,7 @@ inspirację czytelnością HUD-u i głębią otoczenia z gry *Lockdown Protocol*
 
 1. [ ] Dodać czytelną, kontrolowaną obsługę błędów frontendu i backendu: zachować komunikat techniczny i stack dla diagnostyki, ale pokazywać użytkownikowi zrozumiały opis oraz możliwe rozwiązanie. Obsłużyć między innymi `EADDRINUSE` dla portu `3000` bez surowego zdarzenia `Unhandled 'error' event`.
    - [x] Przechwycić błędy startowego `listen`: `EADDRINUSE` i `EACCES` mają polski opis oraz rozwiązanie, pozostałe błędy zachowują kod, a pełny stack pozostaje pod nagłówkiem diagnostycznym. Nieprawidłowa wartość `PORT` jest odrzucana przed uruchomieniem. Kontrolowany test zajętego portu potwierdził komunikat bez nieobsłużonego zdarzenia i kod wyjścia `1`.
+   - [x] Dodać wspólną granicę nieobsłużonych błędów frontendu dla gry, biblioteki map, kreatora, diagnostyki i telefonu. Nie zastępuje precyzyjnych komunikatów funkcji; nieoczekiwany wyjątek pokazuje nieblokującą poradę, rozwijany i ograniczony długością stack oraz zamknięcie usuwające alert z drzewa dostępności. Smoke wymusił odrzuconą Promise na wszystkich pięciu stronach i potwierdził treść, stack oraz zamykanie.
 2. [ ] Zbudować telemetrię klient–serwer obejmującą stan połączenia, błędy, wydajność i jakość sieci, z jasno określonym zakresem, retencją oraz prywatnością.
 3. [ ] Dodać tryb obserwatora (`spectator`) do Multiplayera.
 4. [ ] Dodać tryb AUTO pozwalający komputerowi samodzielnie rozgrywać mapę.
