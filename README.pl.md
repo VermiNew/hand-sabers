@@ -1,5 +1,8 @@
 # Hand Sabers
 
+Chcesz pomóc w rozwoju projektu? Zobacz zasady współpracy w
+[CONTRIBUTING.md](CONTRIBUTING.md).
+
 Beat Saber bez VR: gra rytmiczna sterowana rękami przez kamerę. Frontend działa na Vite, backend to Express zapisujący mapy, audio i wyniki.
 
 > **English version:** [README.md](README.md)

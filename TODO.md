@@ -615,6 +615,6 @@ inspirację czytelnością HUD-u i głębią otoczenia z gry *Lockdown Protocol*
 35. [ ] Dodać dźwięk pisania na czacie oraz dźwięk nowej wiadomości zarówno w lobby, jak i podczas gry, z osobną możliwością wyciszenia.
 36. [ ] Opracować oryginalny kierunek HUD-u inspirowany czytelnością i osadzeniem interfejsu z *Lockdown Protocol*, bez kopiowania chronionych elementów.
 37. [ ] Zmienić stopkę `[dev] * CAMERA RHYTHM` na `[dev] * MADE BY MICHAEL OSLIZLO`; kliknięcie lub świadoma interakcja ma otwierać dopracowany modal autora z odnośnikami do `https://github.com/VermiNew` i `https://verminew.github.io`.
-38. [ ] Dodać plik opisujący zasady współpracy open-source dla przyszłych kontrybutorów.
+38. [x] Dodać plik opisujący zasady współpracy open-source dla przyszłych kontrybutorów. — `CONTRIBUTING.md` opisuje zgłoszenia, konfigurację lokalną, zakres zmian, język kodu/UI, prywatność, pełną weryfikację, Conventional Commits i wymagania PR; oba README prowadzą do dokumentu, a kwestie podatności odsyłają do istniejącego `SECURITY.md`.
 39. [ ] Dodać krótkie FAQ, między innymi odpowiedź, że gra nie zawiera mikropłatności ani modelu subskrypcyjnego.
 40. [ ] Przeanalizować ryzyko prawne nazwy „Hand Sabers” i podobieństwa rozgrywki do *Beat Saber* oraz omówić możliwe działania ograniczające ryzyko. Na tym etapie nie wdrażać zmian nazwy ani produktu.

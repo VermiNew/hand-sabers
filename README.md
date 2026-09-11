@@ -4,6 +4,9 @@ Beat Saber without VR: a rhythm game controlled by your hands via webcam. The fr
 
 > **Polish version:** [README.pl.md](README.pl.md)
 
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup,
+quality checks and pull request guidelines.
+
 ## Requirements
 
 - Node.js 22.18+
