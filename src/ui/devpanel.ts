@@ -22,6 +22,17 @@ import {
   REMOTE_TRACKING_METRICS_EVENT,
   type RemoteTrackingMetrics,
 } from '../remote/tracking-metrics.ts';
+import {
+  createPhoneDiagnosticsReport,
+  serializePhoneDiagnosticsCsv,
+  serializePhoneDiagnosticsJson,
+  type LocalPhoneDiagnostics,
+} from '../remote/diagnostics-report.ts';
+import {
+  fetchRemoteTrackingQuality,
+  getRemoteTrackingSessionState,
+  isRemoteTrackingConnected,
+} from '../remote/host-session.ts';
 
 // ── Typy ──────────────────────────────────────────────────────────────────────
 interface GameStats {
@@ -56,6 +67,7 @@ interface DevData {
   remoteBufferedBytes: number; remotePhoneDroppedPackets: number;
   phonePreloadMs: string; phoneCacheHitRate: string; phoneAudioRttMs: string; phoneAudioJitterMs: string;
   phoneClockOffsetMs: string; phoneAudioDriftMs: string; phoneSchedulerLatenessMs: string;
+  phoneReportStatus: string;
   wireframe: boolean; noFail: boolean; developerMode: boolean;
   sensitivity: number; flipCamera: boolean;
   volume: number; musicVolume: number; sfxVolume: number;
@@ -98,6 +110,7 @@ interface TweakpaneFolder {
   addMonitor(obj: DevData, key: string, opts?: Record<string, unknown>): void;
   addInput(obj: DevData, key: string, opts?: Record<string, unknown>): { on(event: string, cb: (ev: { value: unknown }) => void): void };
   addFolder?(opts: { title: string }): TweakpaneFolder;
+  addButton(opts: { title: string; label?: string }): { on(event: 'click', cb: () => void): void };
   addSeparator?(): void;
   addBlade?(opts: Record<string, unknown>): void;
 }
@@ -210,6 +223,7 @@ const devData: DevData = {
   remoteBufferedBytes: 0, remotePhoneDroppedPackets: 0,
   phonePreloadMs: '—', phoneCacheHitRate: '—', phoneAudioRttMs: '—', phoneAudioJitterMs: '—',
   phoneClockOffsetMs: '—', phoneAudioDriftMs: '—', phoneSchedulerLatenessMs: '—',
+  phoneReportStatus: 'Gotowy',
   wireframe: false, noFail: false, developerMode: false,
   sensitivity: 1.0, flipCamera: false,
   volume: 0.8, musicVolume: 1.0, sfxVolume: 1.0,
@@ -218,6 +232,30 @@ const devData: DevData = {
   mapTitle: '—', mapArtist: '—', mapDifficulty: '—', mapBpm: '—', mapDuration: '—', mapBeats: 0,
   appState: '—',
 };
+
+function emptyLocalPhoneDiagnostics(): LocalPhoneDiagnostics {
+  return {
+    packetRateHz: 0,
+    payloadBytes: 0,
+    estimatedNetworkMs: null,
+    droppedPackets: 0,
+    applyMs: null,
+    captureAgeMs: null,
+    detectionMs: null,
+    encodeMs: null,
+    bufferedBytes: 0,
+    phoneDroppedPackets: 0,
+    audioPreloadMs: null,
+    audioCacheHitRate: null,
+    audioRttMs: null,
+    audioJitterMs: null,
+    audioClockOffsetMs: null,
+    audioDriftMs: null,
+    audioSchedulerLatenessMs: null,
+  };
+}
+
+let localPhoneDiagnostics = emptyLocalPhoneDiagnostics();
 
 function syncDevDataFromSettings(settings: Settings): void {
   devData.sensitivity = settings.sensitivity;
@@ -254,6 +292,15 @@ function bindRemoteMetrics(): void {
   remoteMetricsBound = true;
   window.addEventListener(REMOTE_TRACKING_METRICS_EVENT, event => {
     const metrics = (event as CustomEvent<RemoteTrackingMetrics>).detail;
+    localPhoneDiagnostics.packetRateHz = metrics.packetRateHz;
+    localPhoneDiagnostics.payloadBytes = metrics.payloadBytes;
+    localPhoneDiagnostics.estimatedNetworkMs = metrics.estimatedNetworkMs;
+    localPhoneDiagnostics.droppedPackets = metrics.droppedPackets;
+    localPhoneDiagnostics.captureAgeMs = metrics.phoneCaptureAgeMs;
+    localPhoneDiagnostics.detectionMs = metrics.phoneDetectionMs;
+    localPhoneDiagnostics.encodeMs = metrics.phoneEncodeMs;
+    localPhoneDiagnostics.bufferedBytes = metrics.phoneBufferedBytes;
+    localPhoneDiagnostics.phoneDroppedPackets = metrics.phoneDroppedPackets;
     devData.remotePacketRateHz = +metrics.packetRateHz.toFixed(1);
     devData.remotePayloadBytes = metrics.payloadBytes;
     devData.remoteNetworkMs = metrics.estimatedNetworkMs === null
@@ -268,22 +315,33 @@ function bindRemoteMetrics(): void {
   });
   window.addEventListener('hand-sabers:phone-audio-clock', event => {
     const detail = (event as CustomEvent<{ offsetMs: number; rttMs: number; jitterMs: number }>).detail;
+    localPhoneDiagnostics.audioRttMs = detail.rttMs;
+    localPhoneDiagnostics.audioJitterMs = detail.jitterMs;
+    localPhoneDiagnostics.audioClockOffsetMs = detail.offsetMs;
     devData.phoneAudioRttMs = `${detail.rttMs.toFixed(1)} ms`;
     devData.phoneAudioJitterMs = `${detail.jitterMs.toFixed(1)} ms`;
     devData.phoneClockOffsetMs = `${detail.offsetMs.toFixed(1)} ms`;
   });
   window.addEventListener('hand-sabers:phone-audio-bank-ready', event => {
     const detail = (event as CustomEvent<{ preloadMs: number | null; cacheHitRate: number }>).detail;
+    localPhoneDiagnostics.audioPreloadMs = detail.preloadMs;
+    localPhoneDiagnostics.audioCacheHitRate = detail.cacheHitRate;
     devData.phonePreloadMs = detail.preloadMs === null ? '—' : `${detail.preloadMs.toFixed(0)} ms`;
     devData.phoneCacheHitRate = `${(detail.cacheHitRate * 100).toFixed(0)}%`;
   });
   window.addEventListener('hand-sabers:phone-audio-sync-status', event => {
     const detail = (event as CustomEvent<{ driftMs: number }>).detail;
+    localPhoneDiagnostics.audioDriftMs = detail.driftMs;
     devData.phoneAudioDriftMs = `${detail.driftMs.toFixed(1)} ms`;
   });
   window.addEventListener('hand-sabers:phone-audio-sfx-ack', event => {
     const detail = (event as CustomEvent<{ latenessMs: number }>).detail;
+    localPhoneDiagnostics.audioSchedulerLatenessMs = detail.latenessMs;
     devData.phoneSchedulerLatenessMs = `${detail.latenessMs.toFixed(1)} ms`;
+  });
+  window.addEventListener('hand-sabers:remote-tracking-state', event => {
+    const connected = (event as CustomEvent<{ connected?: unknown }>).detail?.connected === true;
+    if (!connected) localPhoneDiagnostics = emptyLocalPhoneDiagnostics();
   });
 }
 
@@ -352,6 +410,51 @@ function notifyTrackingSettings(patch: Record<string, unknown>): void {
 function addSeparator(folder: TweakpaneFolder): void {
   if (typeof folder.addSeparator === 'function') folder.addSeparator();
   else folder.addBlade?.({ view: 'separator' });
+}
+
+function downloadDiagnosticsFile(content: string, extension: 'json' | 'csv'): void {
+  const mime = extension === 'json' ? 'application/json' : 'text/csv';
+  const blob = new Blob([extension === 'csv' ? `\ufeff${content}` : content], { type: `${mime};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  anchor.href = url;
+  anchor.download = `hand-sabers-phone-diagnostics-${timestamp}.${extension}`;
+  document.body.append(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function exportPhoneDiagnostics(format: 'json' | 'csv'): Promise<void> {
+  devData.phoneReportStatus = 'Pobieranie danych…';
+  pane?.refresh();
+  let serverQuality: unknown = null;
+  let hasServerSnapshot = false;
+  try {
+    serverQuality = await fetchRemoteTrackingQuality();
+    hasServerSnapshot = serverQuality !== null;
+  } catch {
+    // A local report remains useful when the session expired or the server is temporarily unavailable.
+  }
+  const report = createPhoneDiagnosticsReport({
+    settings: getSettings(),
+    sessionPhase: getRemoteTrackingSessionState().phase,
+    connected: isRemoteTrackingConnected(),
+    local: {
+      ...localPhoneDiagnostics,
+      applyMs: window.__remoteTrackingApplyMs ?? null,
+    },
+    serverQuality,
+  });
+  downloadDiagnosticsFile(
+    format === 'json' ? serializePhoneDiagnosticsJson(report) : serializePhoneDiagnosticsCsv(report),
+    format,
+  );
+  devData.phoneReportStatus = hasServerSnapshot
+    ? `Zapisano ${format.toUpperCase()}`
+    : `Zapisano ${format.toUpperCase()} (dane lokalne)`;
+  pane?.refresh();
 }
 
 const drawingBufferSize = new Vector2();
@@ -552,6 +655,13 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
     sound.addMonitor(devData, 'phoneClockOffsetMs', { label: 'Clock offset', interval: 500 });
     sound.addMonitor(devData, 'phoneAudioDriftMs', { label: 'Timeline drift', interval: 500 });
     sound.addMonitor(devData, 'phoneSchedulerLatenessMs', { label: 'Scheduler late', interval: 500 });
+    sound.addMonitor(devData, 'phoneReportStatus', { label: 'Raport', interval: 500 });
+    sound.addButton({ title: 'Eksport JSON' }).on('click', () => {
+      void exportPhoneDiagnostics('json');
+    });
+    sound.addButton({ title: 'Eksport CSV' }).on('click', () => {
+      void exportPhoneDiagnostics('csv');
+    });
     addSeparator(sound);
     sound.addInput(devData, 'volume', { label: 'Master', min: 0, max: 1, step: 0.05 }).on('change', ev => {
       setSetting('volume', Number(ev.value), 'devpanel');
