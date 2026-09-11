@@ -202,7 +202,12 @@
     },
     "faq": {
       "title": "FAQ",
-      "body": "Gdy strony są odwrócone, włącz odwracanie kamery. Przy opóźnieniu dźwięku ustaw offset audio."
+      "paymentsQuestion": "Czy gra zawiera mikropłatności?",
+      "paymentsAnswer": "Nie. Hand Sabers nie zawiera mikropłatności ani subskrypcji.",
+      "vrQuestion": "Czy potrzebuję gogli VR?",
+      "vrAnswer": "Nie. Wystarczy obsługiwana przeglądarka i kamera.",
+      "cameraQuestion": "Czy obraz z kamery jest wysyłany?",
+      "cameraAnswer": "Przy zwykłym śledzeniu obraz pozostaje na urządzeniu. Telefon może wysyłać klatki tylko w jawnie wybranym trybie „ML na komputerze”."
     }
   },
   "tutorial": {

@@ -202,7 +202,12 @@
     },
     "faq": {
       "title": "FAQ",
-      "body": "If sides are reversed, enable camera flipping. If sound is delayed, adjust the audio offset."
+      "paymentsQuestion": "Does the game contain microtransactions?",
+      "paymentsAnswer": "No. Hand Sabers has no microtransactions or subscriptions.",
+      "vrQuestion": "Do I need a VR headset?",
+      "vrAnswer": "No. You only need a supported browser and a camera.",
+      "cameraQuestion": "Is the camera image uploaded?",
+      "cameraAnswer": "With normal tracking, images stay on the device. A phone sends frames only in the explicitly selected “ML on computer” mode."
     }
   },
   "tutorial": {
