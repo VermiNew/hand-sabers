@@ -434,7 +434,7 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Odroczyć zwolnienie adresów `blob:` eksportu mapy, ZIP i biblioteki do następnego zadania event loop, aby kliknięcie pobierania nie ścigało się z `URL.revokeObjectURL()`; rzeczywiste pobrania obu formatów przeszły w Chromium.
 - [x] Zaktualizować istniejący Multer z 2.2.0 do 2.3.0 po wykryciu podatności parsera multipart i sprzątania przerwanych uploadów; `npm audit` zgłasza 0 podatności, bez dodawania nowej zależności.
 - [x] Ustabilizować smoke Playwright aplikacji WebGL na maszynach bez fizycznego GPU: sceny są uruchamiane pojedynczym workerem zamiast przeciążać programowy renderer. Pełny zestaw menu, profilu, osiągnięć i Lyry przechodzi 4/4.
-- [ ] Zakończyć formalny skan bezpieczeństwa aktualnej rewizji i dopisać jego zweryfikowane wyniki; nie oznaczać audytu jako ukończonego bez kompletnego raportu.
+- [x] Zakończyć formalny skan bezpieczeństwa aktualnej rewizji i dopisać jego zweryfikowane wyniki. — standardowy Codex Security scan `38b0363f-be97-462d-92ce-cff0ec241863` objął pełny inwentarz 296/296 plików rewizji `f840aa5`, sześć powierzchni (API/storage, Multiplayer/WebRTC, telefon kamera/audio, DOM/URL, konfiguracja/supply chain i limity zasobów) i zakończył się kompletnym raportem bez potwierdzonych podatności. Pełne `npm audit --json` zgłasza 0 podatności w 235 zależnościach lockfile. Ograniczenie: bieżąca sesja nie udostępniała niezależnego audytora delegowanego ani fizycznych urządzeń, więc testy sprzętowe pozostają jawnie zablokowane w swoich punktach.
 
 ### Świadomie zaakceptowane ryzyka i decyzje wdrożeniowe
 

@@ -38,8 +38,10 @@ and form an explicitly accepted third-party trust boundary.
 
 ## Security Invariants
 
-- Raw camera frames must not be transmitted by remote tracking. Only validated
-  landmark or pose data may leave the phone.
+- In phone-side ML mode, only validated landmark or pose data may leave the
+  phone. In the explicitly selected computer-side ML mode, bounded JPEG camera
+  frames may be relayed only from the authenticated phone to its authenticated,
+  paired host; they must not be persisted, logged or relayed across sessions.
 - Remote-tracking and multiplayer peers must authenticate before relaying
   packets. Sessions must expire or be revocable as documented.
 - Origin checks and IP rate limits must never be described as authorization.
