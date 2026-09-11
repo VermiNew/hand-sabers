@@ -569,3 +569,51 @@ Poniższe zadania pochodzą z pełnego review kodu i skanu bezpieczeństwa. Pozy
 - [x] Zbudować pełny interaktywny tutorial gry: konfiguracja kamery, kalibracja, pozycja dłoni, pierwszy ruch mieczem, prawidłowe cięcie, timing, combo, bomby, held beats, pauza i ukończenie krótkiej kontrolowanej sekwencji z feedbackiem na żywo. — flow łączy realny podgląd kamery, istniejącą kalibrację i tracking z izolowaną mapą treningową oraz sześciopunktowym HUD-em postępu; ukończenie wymaga zaliczenia wszystkich zadań, a przerwanie nie oznacza tutoriala jako ukończonego.
 - [x] Ujednolicić i poprawić styl scrollbarów we wszystkich modalach, z obsługą Firefox/Chromium, klawiatury, wysokiego kontrastu i urządzeń dotykowych. — wspólna warstwa stylu obejmuje przewijane powierzchnie ustawień, pomocy, multiplayera, pickerów map, onboardingu i narratora; dodano fokus klawiatury, większe uchwyty dla urządzeń dotykowych, `overscroll-behavior` oraz fallback `forced-colors`.
 - [x] Poprawić animacje wejścia i wyjścia wszystkich modali: wspólny mechanizm, prawidłowe oczekiwanie przed `hidden`, focus trap/restore, blokowanie interakcji z tłem oraz `prefers-reduced-motion`. — ustawienia, pomoc, wybór map, Multiplayer z pickerem, parowanie telefonu, onboarding profilu i picker koloru korzystają z `createModalTransition`; kontroler zarządza stosem Escape/fokusu, blokuje wskaźnik podczas wyjścia, czeka przed `hidden`, przywraca widoczny element otwierający i respektuje ograniczenie ruchu.
+
+## 38. Backlog produktu — 2026-09-11
+
+Poniższe pozycje są nowymi wymaganiami. Istniejące, podobne funkcje nie oznaczają
+automatycznie ukończenia ich kolejnej iteracji; każda pozycja wymaga osobnej analizy,
+implementacji i weryfikacji. Załączone w rozmowie obrazy pokazują obecny HUD oraz
+inspirację czytelnością HUD-u i głębią otoczenia z gry *Lockdown Protocol*.
+
+1. [ ] Dodać czytelną, kontrolowaną obsługę błędów frontendu i backendu: zachować komunikat techniczny i stack dla diagnostyki, ale pokazywać użytkownikowi zrozumiały opis oraz możliwe rozwiązanie. Obsłużyć między innymi `EADDRINUSE` dla portu `3000` bez surowego zdarzenia `Unhandled 'error' event`.
+2. [ ] Zbudować telemetrię klient–serwer obejmującą stan połączenia, błędy, wydajność i jakość sieci, z jasno określonym zakresem, retencją oraz prywatnością.
+3. [ ] Dodać tryb obserwatora (`spectator`) do Multiplayera.
+4. [ ] Dodać tryb AUTO pozwalający komputerowi samodzielnie rozgrywać mapę.
+5. [ ] Sprawić, aby gracz AUTO wykonywał płynne, wiarygodne i lekko ludzkie ruchy zamiast mechanicznego trafiania.
+6. [ ] Ograniczyć zwykłą konsolę do najważniejszych logów i dodać rozszerzony tryb developerski odblokowywany sekretem skonfigurowanym po stronie serwera oraz zgodną wartością podaną w ustawieniach klienta. Najpierw zaprojektować bezpieczny przepływ, aby sekret nie był osadzony w bundlu ani ujawniany w logach/URL.
+7. [ ] Dodać rejestrację, logowanie, usuwanie konta i odzyskiwanie dostępu za pomocą ośmiocyfrowego PIN-u jako jedynej metody odzyskiwania. Przed implementacją określić model bezpieczeństwa, limity prób i konsekwencje utraty PIN-u.
+8. [ ] Rozpocząć kolejną, opartą na pomiarach optymalizację kostek podczas gry, bez usuwania ich funkcji i wyglądu.
+9. [ ] Przebudować prezentację Lyry, aby wyglądała profesjonalnie i nie zasłaniała ani nie przerywała rozgrywki wypowiedziami.
+10. [ ] Rozbudować osiągnięcia: poprawić wygląd i satysfakcję z odblokowania, dodać więcej celów oraz trudniejsze osiągnięcia.
+11. [ ] Przebalansować punktację tak, aby pojedyncza mapa nie przyznawała milionów punktów i wyniki były łatwiejsze do odczytania oraz porównania.
+12. [ ] Przeprojektować panel wyboru map, nadając mu bardziej charakterystyczny, dopracowany kierunek inspirowany jakością interfejsów gier takich jak *Overwatch*, bez kopiowania ich zasobów ani układu 1:1.
+13. [ ] Dodać diagnostykę sieciową: ping, jitter, minimum, maksimum, średnią oraz pozostałe przydatne statystyki połączenia.
+14. [ ] Zaprojektować od nowa wskaźnik HP i wskaźnik ukończenia mapy, czerpiąc ogólne inspiracje czytelnością HUD-ów *Doom Eternal*, *Overwatch*, *Beat Saber* i *Lockdown Protocol*.
+15. [ ] Ulepszyć UX/UI edytora map, aby praca z nim była przyjemniejsza i mniej przypominała generyczny program narzędziowy.
+16. [ ] Poprawić płynność postrzeganego renderowania kostek; zbadać między innymi głębię sceny, mgłę i inne subtelne sposoby ograniczenia wrażenia skokowego ruchu.
+17. [ ] Ukryć lub przeprojektować widoczny w oddali koniec mapy/sceny, wskazany na załączonym obrazie bieżącej rozgrywki.
+18. [ ] Przeprojektować panel diagnostyki kamery pod kątem czytelności, użyteczności i spójności wizualnej.
+19. [ ] Poprawić obsługę błędów kamery, w szczególności komunikat `Could not start video source`: rozpoznawać zajętą kamerę, jasno wskazywać możliwe przyczyny i umożliwiać ponowienie bez restartowania całej gry.
+20. [ ] Dodać kolejne opcjonalne elementy tła reagujące na muzykę, z kontrolą intensywności i kosztu wydajnościowego.
+21. [ ] Zbadać aktualne techniki budowania atrakcyjnych aren rytmicznych w Three.js oraz możliwości współczesnego stosu renderowania; przygotować rekomendacje dla własnego, oryginalnego kierunku wizualnego gry.
+22. [ ] Przeprojektować wskaźniki VU: zastąpić nieczytelne częściowo wypełnione gradienty segmentami/kwadratami podświetlanymi płynnie i z czytelnym progiem przesteru.
+23. [ ] Dodać poziomy/tryby trudności gry: Newbie, Normal, High i Extreme, z jednoznacznym wpływem na rozgrywkę.
+24. [ ] Poprawić tryb przestrzenny tak, aby pozycje pozostawały naturalne dla zasięgu dłoni i stabilności ML oraz nie generowały kostek trudnych do wykrycia lub trafienia na środku kadru.
+25. [ ] Przenieść No Fail, trening, zasady Normalny/Bez strzałek/Pro/Speed Trials/Przestrzenny oraz wybór ręki z ustawień do konfiguratora przy wyborze mapy; umożliwić zapis maksymalnie czterech własnych presetów.
+26. [ ] Dodać dla koloru profilu dopracowany picker zgodny z pickerem kolorów mieczy.
+27. [ ] Dodać odstęp pod przyciskiem „PRZYWRÓĆ PROGI MODELU”, aby zachować czytelny dystans od sekcji „CENTRUM TELEFONU”.
+28. [ ] Dodać więcej ustawień graficznych po analizie ich realnego wpływu, bez duplikowania istniejących opcji.
+29. [ ] Wykonać wizualny i profilowany przegląd całego projektu pod kątem dalszej optymalizacji oraz spisać konkretne, zmierzone możliwości poprawy.
+30. [ ] Rozbudować voice chat o wskaźnik poziomu mikrofonu, wybór urządzenia wejściowego i test mikrofonu podobny funkcjonalnie do rozwiązań komunikatorów głosowych.
+31. [ ] Poprawić kompozycję mapy/sceny i rozmieszczenie elementów reagujących na muzykę, zachowując czytelność toru gry.
+32. [ ] Przedstawić użytkownikowi dokładną, zrozumiałą informację o tym, jaka telemetria jest zbierana, w jakim celu, dokąd trafia i jak długo jest przechowywana.
+33. [ ] Podnieść ikonę gwiazdki przy „ULUBIONE”, aby była poprawnie wyrównana optycznie względem napisu.
+34. [ ] Uprościć i uczytelnić wybór map oraz dodać funkcję „Rzuć wyzwaniem”, losującą mapę z wybranego zakresu trudności albo ze wszystkich map (`ALL`).
+35. [ ] Dodać dźwięk pisania na czacie oraz dźwięk nowej wiadomości zarówno w lobby, jak i podczas gry, z osobną możliwością wyciszenia.
+36. [ ] Opracować oryginalny kierunek HUD-u inspirowany czytelnością i osadzeniem interfejsu z *Lockdown Protocol*, bez kopiowania chronionych elementów.
+37. [ ] Zmienić stopkę `[dev] * CAMERA RHYTHM` na `[dev] * MADE BY MICHAEL OSLIZLO`; kliknięcie lub świadoma interakcja ma otwierać dopracowany modal autora z odnośnikami do `https://github.com/VermiNew` i `https://verminew.github.io`.
+38. [ ] Dodać plik opisujący zasady współpracy open-source dla przyszłych kontrybutorów.
+39. [ ] Dodać krótkie FAQ, między innymi odpowiedź, że gra nie zawiera mikropłatności ani modelu subskrypcyjnego.
+40. [ ] Przeanalizować ryzyko prawne nazwy „Hand Sabers” i podobieństwa rozgrywki do *Beat Saber* oraz omówić możliwe działania ograniczające ryzyko. Na tym etapie nie wdrażać zmian nazwy ani produktu.
