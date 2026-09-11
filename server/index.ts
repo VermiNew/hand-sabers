@@ -23,12 +23,14 @@ import { registerMapWriteRoutes } from './routes/maps-write.js';
 import { registerRoomRoutes } from './routes/room-routes.js';
 import { registerTrackingSessionRoutes } from './routes/tracking-session-routes.js';
 import { registerAudioBankRoutes } from './routes/audio-bank.js';
+import { registerTelemetryRoutes } from './routes/telemetry-routes.js';
 import { FileMutex, KeyedMutex, RateLimiter } from './utils.js';
 import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
 import { TrackingSessionRegistry } from './realtime/tracking-session-registry.js';
 import { registerRemoteTrackingServer } from './realtime/remote-tracking-socket.js';
 import { PhoneQualityTelemetryStore } from './realtime/phone-quality-telemetry.js';
+import { ProductTelemetryStore } from './telemetry/product-telemetry.js';
 import { createUploadConcurrencyGate } from './upload-concurrency.js';
 import { createOriginPolicy } from './origin-policy.js';
 import { requireFrontendDist } from './static-root.js';
@@ -188,6 +190,7 @@ const mapCatalogLock = new FileMutex();
 const rooms = new RoomRegistry();
 const trackingSessions = new TrackingSessionRegistry();
 const phoneQualityTelemetry = new PhoneQualityTelemetryStore();
+const productTelemetry = new ProductTelemetryStore();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
   limiter.check(ip, key, maxPerMinute);
 
@@ -248,6 +251,12 @@ registerTrackingSessionRoutes({
   app,
   sessions: trackingSessions,
   qualityTelemetry: phoneQualityTelemetry,
+  rateLimit,
+});
+registerTelemetryRoutes({
+  app,
+  store: productTelemetry,
+  parseJson: express.json({ limit: '8kb' }),
   rateLimit,
 });
 
