@@ -327,6 +327,23 @@ export function isRemoteTrackingConnected(): boolean {
   return remoteTrackingConnected;
 }
 
+/** Read the server-side, numeric quality snapshot without exposing session credentials. */
+export async function fetchRemoteTrackingQuality(): Promise<unknown | null> {
+  const session = activeSession;
+  if (!session) return null;
+  const response = await fetch(`/api/tracking-sessions/${encodeURIComponent(session.id)}/quality`, {
+    headers: bearer(session),
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('QUALITY_SNAPSHOT_FAILED');
+  const payload = await response.json().catch(() => null) as unknown;
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('QUALITY_SNAPSHOT_INVALID');
+  }
+  const quality = (payload as Record<string, unknown>)['quality'];
+  return quality && typeof quality === 'object' && !Array.isArray(quality) ? quality : null;
+}
+
 /** Send the validated shared model thresholds to the currently paired phone. */
 export function sendPhoneTrackingOptions(): boolean {
   const socket = activeSession?.socket;
