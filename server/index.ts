@@ -251,20 +251,50 @@ registerTrackingSessionRoutes({
   rateLimit,
 });
 
+app.use('/api', (req, res) => {
+  const requestId = randomUUID();
+  res.status(404).json({
+    error: 'Nie znaleziono wskazanego endpointu API.',
+    code: 'API_NOT_FOUND',
+    requestId,
+    path: req.originalUrl,
+  });
+});
+
 const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
   uploadConcurrency.release(req);
   if (res.headersSent) {
     res.end();
     return;
   }
+  const requestId = randomUUID();
+  const technical = err instanceof Error ? err.stack || err.message : String(err);
+  console.error(`[api:${requestId}] ${req.method} ${req.originalUrl}\n${technical}`);
   if (err?.code === 'LIMIT_FILE_SIZE') {
     const limitMb = Math.round(MAX_IMPORT_BYTES / 1024 / 1024);
-    return res.status(413).json({ error: `Plik jest za duży. Limit: ${limitMb} MB.` });
+    return res.status(413).json({
+      error: `Plik jest za duży. Limit: ${limitMb} MB.`,
+      code: 'FILE_TOO_LARGE',
+      requestId,
+    });
   }
   if (err?.type === 'entity.too.large' || err?.status === 413) {
-    return res.status(413).json({ error: 'Dane żądania są za duże.' });
+    return res.status(413).json({
+      error: 'Dane żądania są za duże.',
+      code: 'PAYLOAD_TOO_LARGE',
+      requestId,
+    });
   }
-  res.status(400).json({ error: err?.message || 'Błędne żądanie.' });
+  const status = Number.isInteger(err?.status) && err.status >= 400 && err.status <= 599
+    ? Number(err.status)
+    : 400;
+  const message = err?.type === 'entity.parse.failed'
+    ? 'Treść żądania nie jest prawidłowym JSON-em.'
+    : status >= 500
+      ? 'Wewnętrzny błąd serwera. Spróbuj ponownie za chwilę.'
+      : err?.message || 'Nie udało się przetworzyć żądania. Sprawdź dane i spróbuj ponownie.';
+  const code = status >= 500 ? 'INTERNAL_SERVER_ERROR' : 'INVALID_REQUEST';
+  res.status(status).json({ error: message, code, requestId });
 };
 app.use(errorHandler);
 
