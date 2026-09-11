@@ -610,7 +610,7 @@ inspirację czytelnością HUD-u i głębią otoczenia z gry *Lockdown Protocol*
 30. [ ] Rozbudować voice chat o wskaźnik poziomu mikrofonu, wybór urządzenia wejściowego i test mikrofonu podobny funkcjonalnie do rozwiązań komunikatorów głosowych.
 31. [ ] Poprawić kompozycję mapy/sceny i rozmieszczenie elementów reagujących na muzykę, zachowując czytelność toru gry.
 32. [ ] Przedstawić użytkownikowi dokładną, zrozumiałą informację o tym, jaka telemetria jest zbierana, w jakim celu, dokąd trafia i jak długo jest przechowywana.
-33. [ ] Podnieść ikonę gwiazdki przy „ULUBIONE”, aby była poprawnie wyrównana optycznie względem napisu.
+33. [x] Podnieść ikonę gwiazdki przy „ULUBIONE”, aby była poprawnie wyrównana optycznie względem napisu. — przesunięcie dotyczy wyłącznie ikony filtra i wynosi 1 px; smoke zmierzył środek ikony 1 px nad środkiem etykiety, a inspekcja wizualna potwierdziła czytelne wyrównanie bez wpływu na pozostałe gwiazdki.
 34. [ ] Uprościć i uczytelnić wybór map oraz dodać funkcję „Rzuć wyzwaniem”, losującą mapę z wybranego zakresu trudności albo ze wszystkich map (`ALL`).
 35. [ ] Dodać dźwięk pisania na czacie oraz dźwięk nowej wiadomości zarówno w lobby, jak i podczas gry, z osobną możliwością wyciszenia.
 36. [ ] Opracować oryginalny kierunek HUD-u inspirowany czytelnością i osadzeniem interfejsu z *Lockdown Protocol*, bez kopiowania chronionych elementów.

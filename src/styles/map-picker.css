@@ -36,7 +36,7 @@
 #mapPickerOverlay .mp-diff-chip:hover{color:var(--text);border-color:rgba(148,163,184,0.3)}
 #mapPickerOverlay .mp-diff-chip.is-active{background:var(--main-soft,rgba(47,124,255,0.22));border-color:var(--main,#2f7cff);color:var(--text)}
 #mapPickerOverlay .mp-favorite-chip{display:inline-flex;align-items:center;gap:4px}
-#mapPickerOverlay .mp-favorite-chip .material-symbols-rounded{font-size:14px;color:#ffc94a}
+#mapPickerOverlay .mp-favorite-chip .material-symbols-rounded{font-size:14px;color:#ffc94a;transform:translateY(-1px)}
 #mapPickerOverlay .mp-sort{padding:6px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(0,0,0,0.3);color:var(--text);font:400 12px JetBrains Mono,monospace;cursor:pointer}
 
 /* Body */
