@@ -37,8 +37,8 @@
     "startError": "STARTUP ERROR",
     "error": "ERROR",
     "loadFailed": "Failed to load model or dependencies.<br>Check your internet connection and refresh the page.",
-    "cameraBusy": "Camera is busy.<br>Close other tabs/apps using the camera and restart.",
-    "cameraPermission": "Check camera permissions and refresh the page."
+    "cameraBusy": "Camera is busy.<br>Close other tabs/apps using the camera, then choose “Retry camera”.",
+    "cameraPermission": "Check camera permissions, then choose “Retry camera”."
   },
   "game": {
     "unknownTrack": "Unknown track",
@@ -877,6 +877,7 @@
     "allReady": "All ready!",
     "allReadyDetail": "Proceeding to calibration…",
     "abort": "ABORT",
+    "retryCamera": "RETRY CAMERA",
     "preparingRound": "Preparing the round…",
     "roundPreparation": "ROUND PREPARATION",
     "roundStagesLabel": "Round preparation stages",

@@ -1267,10 +1267,16 @@
 
       <div class="ov-load-footer" data-i18n="overlay.prepareCamera">Przygotuj kamerę i dobre oświetlenie.</div>
 
-      <button class="ov-load-abort" id="ovAbortBtn" type="button">
-        <span class="material-symbols-rounded">close</span>
-        <span data-i18n="overlay.abort">ANULUJ</span>
-      </button>
+      <div class="ov-load-actions">
+        <button class="ov-load-retry" id="ovRetryCamera" type="button" hidden>
+          <span class="material-symbols-rounded">videocam</span>
+          <span data-i18n="overlay.retryCamera">PONÓW KAMERĘ</span>
+        </button>
+        <button class="ov-load-abort" id="ovAbortBtn" type="button">
+          <span class="material-symbols-rounded">close</span>
+          <span data-i18n="overlay.abort">ANULUJ</span>
+        </button>
+      </div>
     </div>
   </div>
 

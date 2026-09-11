@@ -512,6 +512,9 @@ bindComboNarrator();
 ui.ovBtn?.addEventListener('click',       handleOverlayButton);
 ui.ovBtnMaps?.addEventListener('click',   () => { openMapPicker(ui.ovBtnMaps); });
 ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
+ui.ovRetryCamera?.addEventListener('click', () => {
+  runAsyncTask('camera-retry', retryTrackingStart);
+});
 ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', () => calibrationController.advance()); });
 ui.calibBtnRetry?.addEventListener('click', () => { initAudio(); restartGame(); });
 ui.calibBtnMenu?.addEventListener('click',  returnToMainMenu);
@@ -618,6 +621,37 @@ updateHUD(state);
 
 let trackingStarted = false;
 let trackingStarting = false;
+
+function handleTrackingReady(): void {
+  if (calibrationController.isReady() && settings.savedCalibration) {
+    restoreCalibrationData(settings.savedCalibration);
+    if (multiplayerRoundSession.completePreparation()) return;
+    runAsyncTask('game-start-skip-calib', beginPlaying);
+  } else {
+    calibrationController.start();
+  }
+}
+
+async function initializeTracking(): Promise<void> {
+  if (trackingStarting) return;
+  trackingStarting = true;
+  try {
+    trackingStarted = await initMP(handleTrackingReady);
+  } finally {
+    trackingStarting = false;
+  }
+}
+
+async function retryTrackingStart(): Promise<void> {
+  if (trackingStarting || trackingStarted) return;
+  if (ui.ovRetryCamera) ui.ovRetryCamera.disabled = true;
+  try {
+    await initializeTracking();
+  } finally {
+    if (ui.ovRetryCamera) ui.ovRetryCamera.disabled = false;
+  }
+}
+
 async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
   initAudio();
   applyAudioSettings(settings);
@@ -651,19 +685,7 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
     if (settings.savedCalibration) setSetting('savedCalibration', null);
   }
 
-  if (trackingStarting) return;
-  trackingStarting = true;
-  trackingStarted = await initMP(() => {
-    // After tracking init, if we have saved calibration, restore it and skip calibration steps
-    if (calibrationController.isReady() && settings.savedCalibration) {
-      restoreCalibrationData(settings.savedCalibration);
-      if (multiplayerRoundSession.completePreparation()) return;
-      runAsyncTask('game-start-skip-calib', beginPlaying);
-    } else {
-      calibrationController.start();
-    }
-  });
-  trackingStarting = false;
+  await initializeTracking();
 }
 
 function initMainMenu(): void {

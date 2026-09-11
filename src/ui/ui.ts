@@ -15,6 +15,7 @@ interface UiRefs {
   ovProgress:      HTMLElement | null;
   ovBar:           HTMLElement | null;
   ovProgressPct:   HTMLElement | null;
+  ovRetryCamera:   HTMLButtonElement | null;
   ovRoundPrep:     HTMLElement | null;
   ovRoundMapTitle: HTMLElement | null;
   ovRoundAudioDetail: HTMLElement | null;
@@ -75,6 +76,7 @@ export const ui: UiRefs = {
   ovProgress:      document.getElementById('ovProgress'),
   ovBar:           document.getElementById('ovBar'),
   ovProgressPct:   document.getElementById('ovProgressPct'),
+  ovRetryCamera:   document.getElementById('ovRetryCamera') as HTMLButtonElement | null,
   ovRoundPrep:     document.getElementById('ovRoundPrep'),
   ovRoundMapTitle: document.getElementById('ovRoundMapTitle'),
   ovRoundAudioDetail: document.getElementById('ovRoundAudioDetail'),
@@ -220,6 +222,7 @@ export function showMapTitle(title: string): void {
 
 export function setLoadingProgress(title: string, detail: string, ratio: number | null = null): void {
   if (!ui.ovProgress || !ui.ovBar) return;
+  if (ui.ovRetryCamera) ui.ovRetryCamera.hidden = true;
   if (ui.spinner) ui.spinner.style.display = 'none';
   ui.ovProgress.style.display = 'block';
   ui.ovProgress.classList.toggle('indeterminate', ratio === null);
@@ -329,6 +332,7 @@ export function showCameraError(err: unknown): void {
   else if (isCameraError) hint = t('errors.cameraPermission');
 
   if (ui.spinner) ui.spinner.style.display = 'none';
+  if (ui.ovRetryCamera) ui.ovRetryCamera.hidden = !isCameraError;
   if (ui.ovInstr) ui.ovInstr.textContent = isCameraError ? t('errors.cameraError') : t('errors.startError');
   if (ui.ovLoadDetail) {
     const lines = [message, ...hint.split(/<br\s*\/?>/i)];

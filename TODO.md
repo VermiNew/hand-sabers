@@ -596,7 +596,7 @@ inspirację czytelnością HUD-u i głębią otoczenia z gry *Lockdown Protocol*
 16. [ ] Poprawić płynność postrzeganego renderowania kostek; zbadać między innymi głębię sceny, mgłę i inne subtelne sposoby ograniczenia wrażenia skokowego ruchu.
 17. [ ] Ukryć lub przeprojektować widoczny w oddali koniec mapy/sceny, wskazany na załączonym obrazie bieżącej rozgrywki.
 18. [ ] Przeprojektować panel diagnostyki kamery pod kątem czytelności, użyteczności i spójności wizualnej.
-19. [ ] Poprawić obsługę błędów kamery, w szczególności komunikat `Could not start video source`: rozpoznawać zajętą kamerę, jasno wskazywać możliwe przyczyny i umożliwiać ponowienie bez restartowania całej gry.
+19. [x] Poprawić obsługę błędów kamery, w szczególności komunikat `Could not start video source`: rozpoznawać zajętą kamerę, jasno wskazywać możliwe przyczyny i umożliwiać ponowienie bez restartowania całej gry. — błędy urządzenia/uprawnień pokazują surowy komunikat wraz z polskim rozwiązaniem oraz przycisk „PONÓW KAMERĘ”; retry korzysta z oczyszczonego lifecycle `initMP`, blokuje równoległe próby i znika podczas inicjalizacji. Smoke wymusił `NotReadableError` za pierwszym razem, a druga próba uruchomiła emulowaną kamerę i przeszła do kalibracji bez błędów strony.
 20. [ ] Dodać kolejne opcjonalne elementy tła reagujące na muzykę, z kontrolą intensywności i kosztu wydajnościowego.
 21. [ ] Zbadać aktualne techniki budowania atrakcyjnych aren rytmicznych w Three.js oraz możliwości współczesnego stosu renderowania; przygotować rekomendacje dla własnego, oryginalnego kierunku wizualnego gry.
 22. [ ] Przeprojektować wskaźniki VU: zastąpić nieczytelne częściowo wypełnione gradienty segmentami/kwadratami podświetlanymi płynnie i z czytelnym progiem przesteru.
