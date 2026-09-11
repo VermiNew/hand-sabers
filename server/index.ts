@@ -288,7 +288,32 @@ const rejectUnknownWebSocketUpgrade = (request: IncomingMessage, socket: Duplex)
 };
 server.on('upgrade', rejectUnknownWebSocketUpgrade);
 const PORT = Number(process.env.PORT || 3000);
+if (!Number.isSafeInteger(PORT) || PORT < 1 || PORT > 65_535) {
+  throw new Error(`Nieprawidłowy port serwera: ${String(process.env.PORT)}. Ustaw PORT na liczbę od 1 do 65535.`);
+}
+
+function handleStartupError(error: NodeJS.ErrnoException): void {
+  console.error('\nNie udało się uruchomić serwera Hand Sabers.');
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} jest już używany przez inny proces.`);
+    console.error('Zamknij drugi serwer albo uruchom grę na innym porcie, np. w PowerShell:');
+    console.error('  $env:PORT=3001; npm start');
+  } else if (error.code === 'EACCES') {
+    console.error(`Brak uprawnień do nasłuchiwania na porcie ${PORT}. Wybierz inny port użytkownika.`);
+  } else {
+    console.error(`System odrzucił uruchomienie serwera (${error.code || 'UNKNOWN_ERROR'}).`);
+  }
+  console.error('\nSzczegóły techniczne:');
+  console.error(error.stack || error);
+  limiter.destroy();
+  rooms.destroy();
+  trackingSessions.destroy();
+  process.exitCode = 1;
+}
+
+server.once('error', handleStartupError);
 server.listen(PORT, '0.0.0.0', () => {
+  server.off('error', handleStartupError);
   const protocol = secure ? 'https' : 'http';
   console.log(`Hand Sabers → ${protocol}://localhost:${PORT}`);
   console.log(`W sieci lokalnej → ${protocol}://<twoje-ip-lub-hostname>:${PORT}`);
