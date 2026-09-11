@@ -184,6 +184,7 @@ body.settings-modal-open #camPanel {
 .sp-inline-action:focus-visible {
   background:rgba(54,242,161,0.16); outline:2px solid rgba(54,242,161,0.28); outline-offset:2px;
 }
+.sp-inline-action--model-reset { margin-bottom:16px; }
 
 /* Switch */
 .sp-switch { position:relative; flex-shrink:0; cursor:pointer; }

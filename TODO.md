@@ -604,7 +604,7 @@ inspirację czytelnością HUD-u i głębią otoczenia z gry *Lockdown Protocol*
 24. [ ] Poprawić tryb przestrzenny tak, aby pozycje pozostawały naturalne dla zasięgu dłoni i stabilności ML oraz nie generowały kostek trudnych do wykrycia lub trafienia na środku kadru.
 25. [ ] Przenieść No Fail, trening, zasady Normalny/Bez strzałek/Pro/Speed Trials/Przestrzenny oraz wybór ręki z ustawień do konfiguratora przy wyborze mapy; umożliwić zapis maksymalnie czterech własnych presetów.
 26. [ ] Dodać dla koloru profilu dopracowany picker zgodny z pickerem kolorów mieczy.
-27. [ ] Dodać odstęp pod przyciskiem „PRZYWRÓĆ PROGI MODELU”, aby zachować czytelny dystans od sekcji „CENTRUM TELEFONU”.
+27. [x] Dodać odstęp pod przyciskiem „PRZYWRÓĆ PROGI MODELU”, aby zachować czytelny dystans od sekcji „CENTRUM TELEFONU”. — lokalny modyfikator dodaje 16 px marginesu bez wpływu na pozostałe akcje; smoke i inspekcja wizualna potwierdziły rzeczywisty odstęp 17 px oraz brak kolizji układu.
 28. [ ] Dodać więcej ustawień graficznych po analizie ich realnego wpływu, bez duplikowania istniejących opcji.
 29. [ ] Wykonać wizualny i profilowany przegląd całego projektu pod kątem dalszej optymalizacji oraz spisać konkretne, zmierzone możliwości poprawy.
 30. [ ] Rozbudować voice chat o wskaźnik poziomu mikrofonu, wybór urządzenia wejściowego i test mikrofonu podobny funkcjonalnie do rozwiązań komunikatorów głosowych.
