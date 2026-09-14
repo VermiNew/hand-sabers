@@ -631,6 +631,21 @@
         <!-- TAB: DATA -->
         <div class="sp-tab" data-tab="data">
           <h2 class="sp-tab-title" data-i18n="settings.sections.data">Dane</h2>
+          <div class="sp-group">
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.telemetry.name">Telemetria diagnostyczna</span>
+                <span class="sp-toggle-desc" data-i18n="settings.telemetry.desc">Pomaga wykrywać błędy, spadki wydajności i problemy z połączeniem. Domyślnie wyłączona.</span>
+              </div>
+              <label class="sp-switch"><input id="menuTelemetryEnabled" type="checkbox"><span class="sp-knob"></span></label>
+            </div>
+          </div>
+          <div class="sp-group-title" data-i18n="settings.telemetry.scopeTitle">Co dokładnie jest wysyłane?</div>
+          <div class="sp-group">
+            <p class="sp-hint" data-i18n="settings.telemetry.scope">Stan online, czas odpowiedzi własnego serwera, średnie FPS i czas klatki oraz techniczny typ nieobsłużonego błędu.</p>
+            <p class="sp-hint" data-i18n="settings.telemetry.excluded">Nigdy: obraz kamery, dźwięk, treść czatu, nazwa mapy, adres IP w zapisie ani User-Agent.</p>
+            <p class="sp-hint" data-i18n="settings.telemetry.retention">Dane pozostają wyłącznie w pamięci RAM tego serwera i są automatycznie usuwane po 24 godzinach bez aktywności lub po restarcie serwera.</p>
+          </div>
           <p class="sp-hint settings-transfer-intro" data-i18n="settings.transfer.intro">Eksportuj trwałe ustawienia profilu do wersjonowanego pliku JSON albo bezpiecznie przywróć je na tym urządzeniu.</p>
           <div class="sp-group settings-transfer-actions">
             <div class="sp-toggle-row">

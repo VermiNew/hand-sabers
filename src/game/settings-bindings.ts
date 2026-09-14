@@ -39,6 +39,7 @@ export function initSettingsBindings({
   onCalibrationInvalidated,
 }: SettingsBindingsOptions): SettingsBindingsController {
   const settingsReset = document.getElementById('mainSettingsReset');
+  const telemetryInput = document.getElementById('menuTelemetryEnabled') as HTMLInputElement | null;
   const trackingSettingsController = initTrackingSettings(settings, {
     onSourceChange(changed) {
       if (!changed || !isTrackingStarted()) return;
@@ -56,6 +57,14 @@ export function initSettingsBindings({
   const musicReactiveSettingsController = initMusicReactiveSettings(settings);
   const graphicsSettingsController = initGraphicsSettings(settings);
   const developerSettingsController = initDeveloperSettings(settings);
+
+  if (telemetryInput) {
+    telemetryInput.checked = settings.telemetryEnabled;
+    telemetryInput.addEventListener('change', () => {
+      settings.telemetryEnabled = telemetryInput.checked;
+      setSetting('telemetryEnabled', telemetryInput.checked);
+    });
+  }
 
   const audioKeys = new Set<keyof Settings>([
     'volume',
@@ -109,6 +118,7 @@ export function initSettingsBindings({
     graphicsSettingsController.sync();
     trackingSettingsController.sync();
     developerSettingsController.sync();
+    if (telemetryInput) telemetryInput.checked = settings.telemetryEnabled;
     applyAudioSettings(settings);
   });
 

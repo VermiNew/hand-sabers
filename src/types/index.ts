@@ -104,6 +104,7 @@ export interface Settings {
   milestoneSoundVolume: number;
   noFail: boolean;
   developerMode: boolean;
+  telemetryEnabled: boolean;
   devAccent: string;
   oneHandMode: OneHandMode;
   audioOffsetMs: number;

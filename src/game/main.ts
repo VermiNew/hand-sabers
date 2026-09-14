@@ -17,6 +17,7 @@ import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
+import { initProductTelemetry } from '../core/product-telemetry.ts';
 import { PAUSE_REASONS } from '../core/pause.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
@@ -100,6 +101,7 @@ declare global {
 
 // ── Ustawienia ────────────────────────────────────────────────────────────────
 const settings = loadSettings();
+initProductTelemetry(settings, 'game');
 
 applySaberAppearance(settings);
 window.__trackingSensitivity = settings.sensitivity;

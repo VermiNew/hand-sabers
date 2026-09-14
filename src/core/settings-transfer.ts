@@ -7,7 +7,7 @@ export const MAX_SETTINGS_IMPORT_BYTES = 64 * 1024;
 
 const PRODUCT_ID = 'hand-sabers-settings';
 const BOOLEAN_KEYS = new Set<keyof Settings>([
-  'flipCamera', 'noFail', 'developerMode', 'customAntialias', 'customReflections',
+  'flipCamera', 'noFail', 'developerMode', 'telemetryEnabled', 'customAntialias', 'customReflections',
   'customFloorGlows', 'customDecorativeLights', 'customSaberGlints', 'customSaberTrails', 'customBackgroundShader',
   'customFog', 'customGrid', 'musicReactiveEnabled', 'beatLimitEnabled', 'trainingMode',
   'rememberCalibration', 'profileCompleted', 'phoneAudioOutput',

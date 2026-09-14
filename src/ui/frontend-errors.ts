@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import { reportProductTelemetry } from '../core/product-telemetry.ts';
 
 const MAX_TECHNICAL_DETAILS_LENGTH = 8_000;
 const DUPLICATE_WINDOW_MS = 5_000;
@@ -61,6 +62,10 @@ export function reportUnhandledFrontendError(context: string, value: unknown): v
   lastShownAt = now;
 
   console.error(`[frontend:${context}]`, value);
+  reportProductTelemetry('error', 'frontend.unhandled', {
+    context: context.slice(0, 40),
+    type: value instanceof Error ? value.name.slice(0, 80) : typeof value,
+  });
   const notice = ensureNotice();
   const close = notice.querySelector<HTMLButtonElement>('.frontend-error-close');
   if (close) {

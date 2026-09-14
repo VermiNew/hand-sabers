@@ -395,6 +395,14 @@
         "yellow": "Yellow"
       }
     },
+    "telemetry": {
+      "name": "Diagnostic telemetry",
+      "desc": "Helps identify errors, performance drops and connection problems. Disabled by default.",
+      "scopeTitle": "What exactly is sent?",
+      "scope": "Online state, own-server response time, average FPS and frame time, and the technical type of an unhandled error.",
+      "excluded": "Never: camera images, audio, chat content, map name, stored IP address or User-Agent.",
+      "retention": "Data stays only in this server's memory and is automatically removed after 24 hours without activity or when the server restarts."
+    },
     "transfer": {
       "intro": "Export persistent profile settings to a versioned JSON file or safely restore them on this device.",
       "exportTitle": "Export settings",

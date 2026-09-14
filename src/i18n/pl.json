@@ -395,6 +395,14 @@
         "yellow": "Żółty"
       }
     },
+    "telemetry": {
+      "name": "Telemetria diagnostyczna",
+      "desc": "Pomaga wykrywać błędy, spadki wydajności i problemy z połączeniem. Domyślnie wyłączona.",
+      "scopeTitle": "Co dokładnie jest wysyłane?",
+      "scope": "Stan online, czas odpowiedzi własnego serwera, średnie FPS i czas klatki oraz techniczny typ nieobsłużonego błędu.",
+      "excluded": "Nigdy: obraz kamery, dźwięk, treść czatu, nazwa mapy, adres IP w zapisie ani User-Agent.",
+      "retention": "Dane pozostają wyłącznie w pamięci RAM tego serwera i są automatycznie usuwane po 24 godzinach bez aktywności lub po restarcie serwera."
+    },
     "transfer": {
       "intro": "Eksportuj trwałe ustawienia profilu do wersjonowanego pliku JSON albo bezpiecznie przywróć je na tym urządzeniu.",
       "exportTitle": "Eksport ustawień",
