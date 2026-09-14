@@ -27,6 +27,27 @@ import {
 import { state } from '../core/state.ts';
 
 type RangeBinder = (input: HTMLInputElement | null) => void;
+type MeterRenderer = (normalizedLevel: number) => void;
+
+const AUDIO_METER_SEGMENTS = 24;
+
+function createMeterRenderer(meter: HTMLElement | null): MeterRenderer {
+  const fill = meter?.querySelector<HTMLElement>('.audio-meter-fill');
+  if (!fill) return () => {};
+  const segments = Array.from({ length: AUDIO_METER_SEGMENTS }, (_, index) => {
+    const segment = document.createElement('span');
+    segment.className = 'audio-meter-segment';
+    segment.style.setProperty('--segment-index', String(index));
+    return segment;
+  });
+  fill.replaceChildren(...segments);
+  fill.setAttribute('aria-hidden', 'true');
+
+  return normalizedLevel => {
+    const activeSegments = Math.round(Math.max(0, Math.min(1, normalizedLevel)) * AUDIO_METER_SEGMENTS);
+    segments.forEach((segment, index) => segment.classList.toggle('is-lit', index < activeSegments));
+  };
+}
 
 export interface AudioSettingsController {
   sync(): void;
@@ -48,6 +69,8 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
   const phoneMeter = document.getElementById('menuPhoneAudioMeter');
   const phoneMeterValue = document.getElementById('menuPhoneAudioMeterValue');
   const recipeTestButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-audio-test]')];
+  const renderMasterMeter = createMeterRenderer(masterMeter);
+  const renderPhoneMeter = createMeterRenderer(phoneMeter);
 
   for (const button of recipeTestButtons) {
     button.addEventListener('click', () => {
@@ -72,7 +95,7 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
       if (!isMeterVisible()) return;
       const levels = getMasterMeterLevels();
       const normalized = Math.max(0, Math.min(1, (levels.db + 60) / 60));
-      masterMeter.style.setProperty('--audio-level', String(normalized));
+      renderMasterMeter(normalized);
       masterMeter.classList.toggle('is-clipping', levels.clipping);
       masterMeter.setAttribute('aria-valuenow', levels.db.toFixed(1));
       if (masterMeterValue) masterMeterValue.textContent = `${levels.db.toFixed(1)} dB`;
@@ -103,7 +126,7 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
       const detail = (event as CustomEvent<{ db: number; clipping: boolean }>).detail;
       if (!detail || !Number.isFinite(detail.db)) return;
       const db = Math.max(-60, Math.min(0, detail.db));
-      phoneMeter.style.setProperty('--audio-level', String((db + 60) / 60));
+      renderPhoneMeter((db + 60) / 60);
       phoneMeter.classList.toggle('is-clipping', detail.clipping);
       phoneMeter.classList.add('has-signal');
       phoneMeter.setAttribute('aria-valuenow', db.toFixed(1));

@@ -340,11 +340,17 @@ body.settings-modal-open #camPanel {
 }
 .audio-meter-label,.audio-meter-value { color:rgba(148,163,184,0.62); font:600 9px 'JetBrains Mono',monospace; letter-spacing:.5px; }
 .audio-meter-value { text-align:right; font-variant-numeric:tabular-nums; }
-.audio-meter { --audio-level:0; position:relative; height:9px; overflow:hidden; border-radius:3px; background:repeating-linear-gradient(90deg,#142033 0 7px,transparent 7px 9px); }
-.audio-meter::before { content:""; position:absolute; inset:0; background:linear-gradient(90deg,#35e69a 0 68%,#ffd45c 68% 86%,#ff526d 86%); opacity:.18; }
-.audio-meter-fill { position:absolute; inset:0; transform:scaleX(var(--audio-level)); transform-origin:left; background:linear-gradient(90deg,#35e69a 0 68%,#ffd45c 68% 86%,#ff526d 86%); transition:transform 70ms linear; }
-.audio-meter-clip { position:absolute; top:1px; right:1px; width:5px; height:7px; border-radius:1px; background:#55202a; }
+.audio-meter { position:relative; height:11px; overflow:hidden; border-radius:3px; }
+.audio-meter-fill { position:absolute; inset:0 8px 0 0; display:grid; grid-template-columns:repeat(24,minmax(2px,1fr)); gap:2px; }
+.audio-meter-segment { min-width:0; border-radius:1px; background:#1b3d35; opacity:.34; transition:opacity 65ms linear,background 65ms linear,box-shadow 65ms linear; }
+.audio-meter-segment:nth-child(n+17) { background:#4a421d; }
+.audio-meter-segment:nth-child(n+22) { background:#51212a; }
+.audio-meter-segment.is-lit { background:#35e69a; opacity:1; box-shadow:0 0 5px rgba(53,230,154,.42); }
+.audio-meter-segment:nth-child(n+17).is-lit { background:#ffd45c; box-shadow:0 0 5px rgba(255,212,92,.48); }
+.audio-meter-segment:nth-child(n+22).is-lit { background:#ff526d; box-shadow:0 0 6px rgba(255,82,109,.55); }
+.audio-meter-clip { position:absolute; top:1px; right:1px; width:5px; height:9px; border-radius:1px; background:#55202a; }
 .audio-meter.is-clipping .audio-meter-clip { background:#ff2f50; box-shadow:0 0 8px rgba(255,47,80,.85); }
+.audio-meter.is-clipping .audio-meter-segment:nth-last-child(-n+2) { opacity:1; background:#ff2f50; box-shadow:0 0 8px rgba(255,47,80,.8); }
 .audio-meter.is-remote:not(.has-signal) { filter:saturate(.2); opacity:.55; }
 
 @media (max-width:560px) {
