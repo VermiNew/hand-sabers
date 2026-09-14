@@ -1,6 +1,6 @@
 import { S, state } from '../core/state.ts';
 import { t } from '../i18n/index.ts';
-import { isNarratorVisible, narratorQuick, narratorShow } from './narrator.ts';
+import { isNarratorVisible, narratorGameplay, narratorShow } from './narrator.ts';
 
 const WELCOME_STORAGE_KEY = 'hs_welcome_seen';
 const COMBO_MESSAGES: Record<number, { key: string; mood: 'happy' | 'excited' | 'celebrate' }> = {
@@ -30,6 +30,6 @@ export function bindComboNarrator(): void {
   window.__narratorCombo = (combo: number) => {
     if (isNarratorVisible()) return;
     const message = COMBO_MESSAGES[combo];
-    if (message) narratorQuick(t(message.key), message.mood, 3500);
+    if (message) narratorGameplay(t(message.key), message.mood, 3500);
   };
 }

@@ -967,6 +967,49 @@ body.round-prep-open #camPanel { visibility:hidden; }
   animation:narratorOut 0.32s cubic-bezier(0.4,0,1,1) both;
   pointer-events:none;
 }
+#narratorBox.is-gameplay {
+  top:88px;
+  right:22px;
+  bottom:auto;
+  left:auto;
+  width:min(440px,calc(100vw - 44px));
+  max-width:none;
+  align-items:center;
+  gap:12px;
+  padding:10px 14px 10px 10px;
+  border-color:rgba(54,242,161,.3);
+  background:linear-gradient(110deg,rgba(4,10,20,.94),rgba(5,18,28,.88));
+  box-shadow:0 10px 32px rgba(0,0,0,.42),0 0 24px rgba(54,242,161,.08);
+  pointer-events:none;
+  transform:none;
+}
+#narratorBox.is-gameplay.is-visible {
+  animation:narratorGameplayIn .28s cubic-bezier(.22,1,.36,1) both;
+}
+#narratorBox.is-gameplay.is-hiding {
+  animation:narratorGameplayOut .22s ease-in both;
+}
+#narratorBox.is-gameplay #narratorAvatarCol {
+  align-self:flex-start;
+}
+#narratorBox.is-gameplay #narratorAvatar {
+  width:46px;
+  height:46px;
+}
+#narratorBox.is-gameplay #narratorHint,
+#narratorBox.is-gameplay #narratorButtons {
+  display:none;
+}
+#narratorBox.is-gameplay #narratorBody {
+  gap:0;
+}
+#narratorBox.is-gameplay #narratorSpeech {
+  height:auto;
+  min-height:0;
+  max-height:4.35em;
+  font-size:12px;
+  line-height:1.45;
+}
 
 /* Avatar column */
 #narratorAvatarCol {
@@ -1194,6 +1237,14 @@ body.round-prep-open #camPanel { visibility:hidden; }
   0%,100% { opacity:1; }
   50%     { opacity:0; }
 }
+@keyframes narratorGameplayIn {
+  from { opacity:0; transform:translateX(24px) scale(.97); }
+  to   { opacity:1; transform:translateX(0) scale(1); }
+}
+@keyframes narratorGameplayOut {
+  from { opacity:1; transform:translateX(0) scale(1); }
+  to   { opacity:0; transform:translateX(18px) scale(.98); }
+}
 
 @media (max-width:620px) {
   #narratorBox {
@@ -1202,6 +1253,27 @@ body.round-prep-open #camPanel { visibility:hidden; }
     width:calc(100vw - 24px);
     max-width:none;
     padding:14px;
+  }
+
+  #narratorBox.is-gameplay {
+    top:70px;
+    right:10px;
+    bottom:auto;
+    width:calc(100vw - 20px);
+    padding:8px 10px 8px 8px;
+  }
+
+  #narratorBox.is-gameplay #narratorAvatar {
+    width:40px;
+    height:40px;
+  }
+
+  #narratorBox.is-gameplay #narratorSpeech {
+    height:auto;
+    min-height:0;
+    max-height:4.2em;
+    font-size:11px;
+    line-height:1.4;
   }
 
   #narratorAvatar {

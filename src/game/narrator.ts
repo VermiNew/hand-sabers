@@ -44,6 +44,7 @@ interface NarratorOptions {
   charMs?: number;
   mood?: NarratorMood;
   autoAdvanceMs?: number;
+  presentation?: 'dialog' | 'gameplay';
 }
 
 let activeResolve: ((index: number) => void) | null = null;
@@ -117,7 +118,8 @@ function hideBox(box: HTMLElement): void {
   const token = ++hideToken;
   const finish = () => {
     if (token !== hideToken) return;
-    box.classList.remove('is-visible', 'is-hiding');
+    box.classList.remove('is-visible', 'is-hiding', 'is-gameplay');
+    box.setAttribute('role', 'dialog');
     document.body.classList.remove('narrator-open');
   };
   box.classList.add('is-hiding');
@@ -165,9 +167,12 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
     const viewport = els.viewport;
     const cursor = els.cursor;
     const hint   = els.hint;
+    const gameplayPresentation = opts.presentation === 'gameplay';
     hideToken++;
-    box.classList.remove('is-visible', 'is-hiding');
-    document.body.classList.add('narrator-open');
+    box.classList.remove('is-visible', 'is-hiding', 'is-gameplay');
+    box.classList.toggle('is-gameplay', gameplayPresentation);
+    box.setAttribute('role', gameplayPresentation ? 'status' : 'dialog');
+    document.body.classList.toggle('narrator-open', !gameplayPresentation);
 
     setMood(opts.mood || 'neutral');
 
@@ -253,7 +258,7 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
       span.textContent = ch;
       speech.appendChild(span);
       viewport.scrollTop = viewport.scrollHeight;
-      playTypingTick(ch);
+      if (!gameplayPresentation) playTypingTick(ch);
       i++;
       typingTimer = setTimeout(typeNext, charDelay(ch, text[i], charMs));
     }
@@ -264,4 +269,15 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
 
 export function narratorQuick(text: string, mood: NarratorMood = 'neutral', durationMs = 3000): void {
   void narratorShow({ text, buttons: [], mood, autoAdvanceMs: durationMs });
+}
+
+export function narratorGameplay(text: string, mood: NarratorMood = 'neutral', durationMs = 3000): void {
+  void narratorShow({
+    text,
+    buttons: [],
+    mood,
+    autoAdvanceMs: durationMs,
+    charMs: NARRATOR_SPEEDS.fast!,
+    presentation: 'gameplay',
+  });
 }

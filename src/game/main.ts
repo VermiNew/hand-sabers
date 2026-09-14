@@ -29,7 +29,7 @@ import { registerMlAssetCache } from '../core/ml-cache.ts';
 import { initMultiplayerOverlay } from '../multiplayer/client.ts';
 import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
-import { narratorHide, narratorQuick, narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
+import { narratorGameplay, narratorHide, narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initAchievements, recordGameEnd, recordPhoneConnected } from '../core/achievements.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
@@ -151,7 +151,7 @@ const mapNarratorTimeline = createMapNarratorTimeline({
   hideCue: narratorHide,
   showCue(cue) {
     const mood = cue.mood === 'warning' ? 'serious' : cue.mood ?? 'neutral';
-    narratorQuick(cue.text, mood, cue.durationMs ?? 4000);
+    narratorGameplay(cue.text, mood, cue.durationMs ?? 4000);
   },
 });
 
