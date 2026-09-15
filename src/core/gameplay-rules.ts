@@ -159,5 +159,8 @@ export function classifyHitQuality({
 }
 
 export function scoreForHit(basePoints: number, combo: unknown): number {
-  return Math.max(0, Math.floor(basePoints * Math.max(1, Number(combo) || 0)));
+  // Combo remains rewarding without allowing long maps to grow quadratically.
+  // The first four hits ramp from x1 to x4; every later hit stays at x4.
+  const multiplier = Math.min(4, Math.max(1, Math.floor(Number(combo) || 0)));
+  return Math.max(0, Math.floor(basePoints * multiplier));
 }
