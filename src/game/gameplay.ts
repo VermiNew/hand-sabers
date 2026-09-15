@@ -73,6 +73,15 @@ interface ActiveBlock {
   heldDrainAccum: number;
 }
 
+export interface AutoPlayTarget {
+  side: SaberSide;
+  x: number;
+  y: number;
+  cut: CutDirection;
+  timeToHitSec: number;
+  heldDuration: number;
+}
+
 declare global {
   interface Window {
     __activeBlockCount?: number;
@@ -101,6 +110,7 @@ const MENU_DEMO_HIT_Z     = HIT_Z - 0.15;
 
 let activeSabers: SaberSide | 'both' = 'both';
 let autoPlayEnabled = false;
+const autoPlayTargets: Record<SaberSide, AutoPlayTarget | null> = { left: null, right: null };
 let activeHitProfile: DifficultyHitProfile = getDifficultyHitProfile(null);
 let activeHeldRadius = activeHitProfile.heldRadius;
 
@@ -218,6 +228,10 @@ export function isAutoPlayEnabled(): boolean {
   return autoPlayEnabled;
 }
 
+export function getAutoPlayTarget(side: SaberSide): AutoPlayTarget | null {
+  return autoPlayTargets[side];
+}
+
 export function setGameOverHandler(fn: () => void): void { gameOverHandler = fn; }
 
 function publishGameplayStats() {
@@ -255,6 +269,8 @@ export function startGameplay(sabers: SaberSide | 'both' = 'both') {
   lastBlockMs  = now;
   nextSideLeft = true;
   resetMusicVisualizer();
+  autoPlayTargets.left = null;
+  autoPlayTargets.right = null;
   resetBladeHitboxes();
   publishGameplayStats();
   updateHUD(state);
@@ -717,6 +733,26 @@ function spatialLaneForBeat(beats: Beat[], index: number): SpatialBeatPosition {
   return spatialLayout[index] ?? { x: 0, y: 1.1, grouped: false };
 }
 
+function updateAutoPlayTargets(mapTimeSec: number): void {
+  autoPlayTargets.left = null;
+  autoPlayTargets.right = null;
+  if (!autoPlayEnabled) return;
+  for (const entry of activeBlocks) {
+    if (!entry.alive || !entry.mapBeat || entry.isBomb || entry.hitTimeSec === null) continue;
+    const timeToHitSec = entry.hitTimeSec - mapTimeSec;
+    const current = autoPlayTargets[entry.side];
+    if (current && current.timeToHitSec <= timeToHitSec) continue;
+    autoPlayTargets[entry.side] = {
+      side: entry.side,
+      x: entry.mesh.position.x,
+      y: entry.mesh.position.y,
+      cut: entry.cut,
+      timeToHitSec,
+      heldDuration: entry.heldDuration,
+    };
+  }
+}
+
 export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: number): void {
   if (!beats) return;
   const approachSec = getMapApproachTimeSec(currentTimeSec);
@@ -786,6 +822,7 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
     if (!entry.isHeld) entry.mesh.rotation.y += 0.025 * dtScale;
   }
 
+  updateAutoPlayTargets(mapTimeSec);
   checkHits(deltaSec, mapTimeSec);
   publishGameplayStats();
 }
