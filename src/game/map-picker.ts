@@ -367,8 +367,26 @@ function getFilteredMaps(): MapEntry[] {
   return maps;
 }
 
+function getChallengeMaps(): MapEntry[] {
+  const eligible = allMaps.filter(map => (map.beats?.length ?? 0) > 0);
+  if (activeDiff === 'all') return eligible;
+  return eligible.filter(map => (map.meta?.difficulty ?? '').toLowerCase() === activeDiff);
+}
+
+function updateChallengeButton(): void {
+  const button = element<HTMLButtonElement>('mpChallenge');
+  const scope = element<HTMLElement>('mpChallengeScope');
+  if (!button || !scope) return;
+  const eligibleCount = getChallengeMaps().length;
+  button.disabled = eligibleCount === 0;
+  const scopeLabel = activeDiff === 'all' ? 'ALL' : t(`difficulty.${activeDiff}`).toLocaleUpperCase();
+  scope.textContent = `${scopeLabel} · ${eligibleCount}`;
+  button.title = t('mapPicker.challengeTitle', { scope: scopeLabel, count: eligibleCount });
+}
+
 function renderMapList(list: HTMLElement): void {
   const maps = getFilteredMaps();
+  updateChallengeButton();
   list.replaceChildren();
   if (!maps.length) {
     const empty = document.createElement('p');
@@ -713,6 +731,7 @@ export function initMapPickerOverlay(): void {
   const importButton = element<HTMLButtonElement>('mpImport');
   const importInput = element<HTMLInputElement>('mpImportInput');
   const favoritesButton = element<HTMLButtonElement>('mpFavorites');
+  const challengeButton = element<HTMLButtonElement>('mpChallenge');
   if (!overlay || !closeBtn || !searchInput || !sortSelect) return;
   mapPickerModal = createModalTransition({
     overlay,
@@ -761,6 +780,20 @@ export function initMapPickerOverlay(): void {
     favoritesButton.setAttribute('aria-pressed', String(favoritesOnly));
     const list = element<HTMLElement>('mpMapList');
     if (list) renderMapList(list);
+  });
+  challengeButton?.addEventListener('click', () => {
+    const eligible = getChallengeMaps();
+    const candidates = eligible.length > 1
+      ? eligible.filter(map => map.id !== selectedId)
+      : eligible;
+    if (!candidates.length) return;
+    const selected = candidates[Math.floor(Math.random() * candidates.length)]!;
+    searchQuery = '';
+    searchInput.value = '';
+    favoritesOnly = false;
+    favoritesButton?.classList.remove('is-active');
+    favoritesButton?.setAttribute('aria-pressed', 'false');
+    selectMap(selected.id, { openDetail: true });
   });
 }
 

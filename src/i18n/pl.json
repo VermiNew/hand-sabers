@@ -1143,6 +1143,8 @@
     "bestScore": "Najlepszy wynik",
     "tries": "prób",
     "legacyBadge": "LEGACY",
+    "challenge": "RZUĆ WYZWANIE",
+    "challengeTitle": "Wylosuj mapę: {{scope}} ({{count}} dostępnych)",
     "learningRecommended": "POLECANA",
     "learningTitle": "Następny krok",
     "learningReasonStart": "Dobry punkt startowy dla Twojej ścieżki nauki.",

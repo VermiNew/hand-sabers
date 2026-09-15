@@ -1143,6 +1143,8 @@
     "bestScore": "Best score",
     "tries": "tries",
     "legacyBadge": "LEGACY",
+    "challenge": "SURPRISE ME",
+    "challengeTitle": "Pick a random map: {{scope}} ({{count}} available)",
     "learningRecommended": "RECOMMENDED",
     "learningTitle": "Next step",
     "learningReasonStart": "A good starting point for your learning path.",
