@@ -1014,7 +1014,16 @@
             <span class="mp-label" data-i18n="multiplayer.lobby">LOBBY</span>
             <strong><span data-i18n="multiplayer.room">POKÓJ</span> <span id="multiplayerLobbyCode">—</span></strong>
           </div>
-          <span class="mp-player-count" id="multiplayerPlayerCount">0 / 8</span>
+          <div class="mp-lobby-status">
+            <span class="mp-player-count" id="multiplayerPlayerCount">0 / 8</span>
+            <div class="mp-network-stats" id="multiplayerNetworkStats" data-quality="pending" aria-label="Statystyki sieci" data-i18n-aria-label="multiplayer.networkStats">
+              <span><small>PING</small><strong data-network-value="current">—</strong></span>
+              <span><small>JITTER</small><strong data-network-value="jitter">—</strong></span>
+              <span><small>MIN</small><strong data-network-value="min">—</strong></span>
+              <span><small>AVG</small><strong data-network-value="average">—</strong></span>
+              <span><small>MAX</small><strong data-network-value="max">—</strong></span>
+            </div>
+          </div>
         </header>
         <aside class="mp-waiting-card" id="multiplayerWaiting" aria-live="polite" hidden>
           <div class="mp-waiting-spinner" aria-hidden="true"></div>
@@ -1162,6 +1171,7 @@
     aria-expanded="false" aria-controls="multiplayerGameChatBody">
     <span class="material-symbols-rounded" aria-hidden="true">chat</span>
     <span data-i18n="multiplayer.chatGameplay">CZAT POKOJU</span>
+    <span class="mp-network-compact" id="multiplayerGameplayNetworkStats" data-i18n="multiplayer.networkMeasuringShort">pomiar…</span>
     <span class="mp-game-chat-unread" id="multiplayerGameChatUnread" hidden>0</span>
     <span class="material-symbols-rounded mp-game-chat-chevron" aria-hidden="true">expand_more</span>
   </button>

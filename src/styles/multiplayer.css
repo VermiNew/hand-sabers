@@ -94,6 +94,22 @@
 .mp-lobby-head { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; border-bottom:1px solid rgba(142,200,255,.12); }
 .mp-lobby-head strong { display:block; margin-top:6px; font:800 17px 'Oxanium',sans-serif; letter-spacing:1.5px; }
 .mp-player-count { color:var(--main-light); font:800 12px 'Oxanium',sans-serif; letter-spacing:2px; }
+.mp-lobby-status { display:flex; align-items:flex-end; flex-direction:column; gap:8px; }
+.mp-network-stats {
+  display:grid; grid-template-columns:repeat(5,auto); gap:10px; padding:6px 9px;
+  border:1px solid rgba(142,200,255,.15); border-radius:7px; background:rgba(3,8,18,.58);
+}
+.mp-network-stats > span { display:flex; min-width:42px; flex-direction:column; gap:2px; text-align:right; }
+.mp-network-stats small { color:var(--dim); font:700 7px 'Oxanium',sans-serif; letter-spacing:1px; }
+.mp-network-stats strong { margin:0; color:var(--main-light); font:700 9px 'JetBrains Mono',monospace; letter-spacing:0; }
+.mp-network-stats[data-quality="excellent"] { border-color:rgba(54,242,161,.3); }
+.mp-network-stats[data-quality="excellent"] strong { color:var(--accent); }
+.mp-network-stats[data-quality="weak"] { border-color:rgba(255,180,92,.36); }
+.mp-network-stats[data-quality="weak"] strong { color:#ffbd72; }
+@media (max-width:680px) {
+  .mp-lobby-head { align-items:flex-start; }
+  .mp-network-stats { grid-template-columns:repeat(3,auto); gap:7px; }
+}
 .mp-waiting-card {
   display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:14px;
   margin:14px 0; padding:14px; border:1px solid rgba(47,124,255,.3); border-radius:12px;
@@ -262,7 +278,11 @@ body[data-multiplayer-mode] .mp-game-chat { display:block; }
 }
 .mp-game-chat-toggle:focus-visible { outline:2px solid var(--main-light); outline-offset:-3px; }
 .mp-game-chat-toggle > .material-symbols-rounded:first-child { font-size:18px; }
-.mp-game-chat-chevron { margin-left:auto; transition:transform .18s ease; }
+.mp-network-compact {
+  margin-left:auto; color:var(--main-light); font:700 8px 'JetBrains Mono',monospace;
+  letter-spacing:.4px; white-space:nowrap;
+}
+.mp-game-chat-chevron { transition:transform .18s ease; }
 .mp-game-chat-toggle[aria-expanded="true"] .mp-game-chat-chevron { transform:rotate(180deg); }
 .mp-game-chat-unread {
   min-width:19px; height:19px; display:grid; place-items:center; padding:0 5px;

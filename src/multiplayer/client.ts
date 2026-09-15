@@ -14,7 +14,7 @@ import {
   translateServerError,
   websocketUrl,
 } from './client-utils.ts';
-import { recordClockPong, resetClockSync, serverTimeToPerformance } from './clock-sync.ts';
+import { recordClockPong, resetClockSync, serverTimeToPerformance, type NetworkDiagnostics } from './clock-sync.ts';
 import { createMultiplayerChatView } from './chat-view.ts';
 import { renderMultiplayerScores } from './score-view.ts';
 import { renderRoomPlayerList } from './room-player-list.ts';
@@ -124,6 +124,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const lobby = element<HTMLElement>('multiplayerLobby');
   const lobbyCode = element<HTMLElement>('multiplayerLobbyCode');
   const playerCount = element<HTMLElement>('multiplayerPlayerCount');
+  const networkStats = element<HTMLElement>('multiplayerNetworkStats');
+  const gameplayNetworkStats = element<HTMLElement>('multiplayerGameplayNetworkStats');
   const playerList = element<HTMLElement>('multiplayerPlayers');
   const waitingCard = element<HTMLElement>('multiplayerWaiting');
   const waitingProgress = element<HTMLProgressElement>('multiplayerWaitingProgress');
@@ -184,6 +186,44 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     createButton.disabled = busy;
     joinButton.disabled = busy;
   };
+  const renderNetworkDiagnostics = (diagnostics: NetworkDiagnostics | null) => {
+    const values: Record<string, number | undefined> = {
+      current: diagnostics?.currentMs,
+      jitter: diagnostics?.jitterMs,
+      min: diagnostics?.minMs,
+      max: diagnostics?.maxMs,
+      average: diagnostics?.averageMs,
+    };
+    networkStats?.querySelectorAll<HTMLElement>('[data-network-value]').forEach(value => {
+      const milliseconds = values[value.dataset['networkValue'] ?? ''];
+      value.textContent = milliseconds === undefined ? '—' : `${Math.round(milliseconds)} ms`;
+    });
+    if (networkStats) {
+      networkStats.dataset['quality'] = !diagnostics
+        ? 'pending'
+        : diagnostics.currentMs <= 40 && diagnostics.jitterMs <= 8
+          ? 'excellent'
+          : diagnostics.currentMs <= 100 && diagnostics.jitterMs <= 20
+            ? 'stable'
+            : 'weak';
+      networkStats.title = diagnostics
+        ? t('multiplayer.networkSummary', {
+          ping: Math.round(diagnostics.currentMs),
+          jitter: Math.round(diagnostics.jitterMs),
+          min: Math.round(diagnostics.minMs),
+          max: Math.round(diagnostics.maxMs),
+          average: Math.round(diagnostics.averageMs),
+          samples: diagnostics.samples,
+        })
+        : t('multiplayer.networkMeasuring');
+    }
+    if (gameplayNetworkStats) {
+      gameplayNetworkStats.textContent = diagnostics
+        ? `${Math.round(diagnostics.currentMs)} ms · ±${Math.round(diagnostics.jitterMs)} ms`
+        : t('multiplayer.networkMeasuringShort');
+      gameplayNetworkStats.title = networkStats?.title ?? '';
+    }
+  };
   const open = () => {
     showMessage();
     multiplayerModal?.open({ initialFocus: nameInput, returnFocusTo: openButton });
@@ -214,6 +254,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     roomCode.textContent = '—';
     lobbyCode.textContent = '—';
     playerCount.textContent = '0 / 8';
+    renderNetworkDiagnostics(null);
     playerList.replaceChildren();
     waitingCard.hidden = true;
     waitingProgress.max = 1;
@@ -496,7 +537,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
             void voiceChat?.handleSignal(fromPlayerId, signal);
           }
         } else if (incoming.type === 'pong') {
-          recordClockPong(incoming.sentAt, incoming.serverTime, Date.now());
+          const diagnostics = recordClockPong(incoming.sentAt, incoming.serverTime, Date.now());
+          if (diagnostics) {
+            renderNetworkDiagnostics(diagnostics);
+            window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-network', { detail: diagnostics }));
+          }
         } else if (incoming.type === 'kicked') {
           showMessage(t('multiplayer.kickedFromRoom'));
         } else if (incoming.type === 'error') {
