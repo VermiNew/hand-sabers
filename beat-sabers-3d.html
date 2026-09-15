@@ -1028,6 +1028,20 @@
             </div>
           </div>
         </header>
+        <aside class="mp-spectator-live" id="multiplayerSpectatorLive" aria-live="polite" hidden>
+          <div class="mp-spectator-live-icon" aria-hidden="true">
+            <span class="material-symbols-rounded">visibility</span>
+          </div>
+          <div class="mp-spectator-live-copy">
+            <span class="mp-label" data-i18n="multiplayer.spectatorMode">TRYB OBSERWATORA</span>
+            <strong id="multiplayerSpectatorLiveState">OCZEKIWANIE NA RUNDĘ</strong>
+            <span id="multiplayerSpectatorLiveMap">—</span>
+          </div>
+          <div class="mp-spectator-live-progress">
+            <span id="multiplayerSpectatorLiveProgressValue">0%</span>
+            <progress id="multiplayerSpectatorLiveProgress" max="1" value="0"></progress>
+          </div>
+        </aside>
         <aside class="mp-waiting-card" id="multiplayerWaiting" aria-live="polite" hidden>
           <div class="mp-waiting-spinner" aria-hidden="true"></div>
           <div class="mp-waiting-copy">

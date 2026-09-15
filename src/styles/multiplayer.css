@@ -111,9 +111,30 @@
 .mp-network-stats[data-quality="excellent"] strong { color:var(--accent); }
 .mp-network-stats[data-quality="weak"] { border-color:rgba(255,180,92,.36); }
 .mp-network-stats[data-quality="weak"] strong { color:#ffbd72; }
+.mp-spectator-live {
+  display:grid; grid-template-columns:auto minmax(0,1fr) minmax(130px,.5fr); align-items:center; gap:14px;
+  margin:14px 0 0; padding:14px; overflow:hidden; border:1px solid rgba(178,132,255,.38); border-radius:12px;
+  background:radial-gradient(circle at 0 50%,rgba(178,132,255,.18),transparent 42%),rgba(38,22,66,.18);
+  box-shadow:inset 0 0 28px rgba(178,132,255,.04);
+}
+.mp-spectator-live[hidden] { display:none; }
+.mp-spectator-live-icon {
+  width:38px; height:38px; display:grid; place-items:center; border:1px solid rgba(203,180,247,.3);
+  border-radius:50%; color:#d8c3ff; background:rgba(178,132,255,.1);
+}
+.mp-spectator-live.is-active .mp-spectator-live-icon { animation:mp-spectator-pulse 1.4s ease-in-out infinite alternate; }
+.mp-spectator-live-copy { min-width:0; display:flex; flex-direction:column; gap:3px; }
+.mp-spectator-live-copy strong { color:#fff; font:800 13px 'Oxanium',sans-serif; letter-spacing:1px; }
+.mp-spectator-live-copy > span:last-child { overflow:hidden; color:var(--muted); font:600 9px 'JetBrains Mono',monospace; text-overflow:ellipsis; white-space:nowrap; }
+.mp-spectator-live-progress { display:grid; grid-template-columns:auto 1fr; align-items:center; gap:9px; }
+.mp-spectator-live-progress span { color:#d8c3ff; font:800 12px 'Oxanium',sans-serif; }
+.mp-spectator-live-progress progress { width:100%; height:6px; accent-color:#b284ff; }
+@keyframes mp-spectator-pulse { from { box-shadow:0 0 0 rgba(178,132,255,0); } to { box-shadow:0 0 22px rgba(178,132,255,.42); } }
 @media (max-width:680px) {
   .mp-lobby-head { align-items:flex-start; }
   .mp-network-stats { grid-template-columns:repeat(3,auto); gap:7px; }
+  .mp-spectator-live { grid-template-columns:auto minmax(0,1fr); }
+  .mp-spectator-live-progress { grid-column:1/-1; }
 }
 .mp-waiting-card {
   display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:14px;

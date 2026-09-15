@@ -129,6 +129,11 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const networkStats = element<HTMLElement>('multiplayerNetworkStats');
   const gameplayNetworkStats = element<HTMLElement>('multiplayerGameplayNetworkStats');
   const playerList = element<HTMLElement>('multiplayerPlayers');
+  const spectatorLive = element<HTMLElement>('multiplayerSpectatorLive');
+  const spectatorLiveState = element<HTMLElement>('multiplayerSpectatorLiveState');
+  const spectatorLiveMap = element<HTMLElement>('multiplayerSpectatorLiveMap');
+  const spectatorLiveProgress = element<HTMLProgressElement>('multiplayerSpectatorLiveProgress');
+  const spectatorLiveProgressValue = element<HTMLElement>('multiplayerSpectatorLiveProgressValue');
   const waitingCard = element<HTMLElement>('multiplayerWaiting');
   const waitingProgress = element<HTMLProgressElement>('multiplayerWaitingProgress');
   const waitingCount = element<HTMLElement>('multiplayerWaitingCount');
@@ -154,11 +159,16 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   let voiceState: 'off' | 'starting' | 'on' | 'error' = 'off';
   let voiceErrorVisible = false;
   let preparationTimeout: number | null = null;
+  let spectatorTicker: number | null = null;
   multiplayerModal = createModalTransition({ overlay, panel });
 
   const clearPreparationTimeout = () => {
     if (preparationTimeout !== null) window.clearTimeout(preparationTimeout);
     preparationTimeout = null;
+  };
+  const clearSpectatorTicker = () => {
+    if (spectatorTicker !== null) window.clearInterval(spectatorTicker);
+    spectatorTicker = null;
   };
 
   const secureHostingWarning = document.createElement('aside');
@@ -244,6 +254,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     currentRoom = null;
     pendingPreparationMapId = '';
     clearPreparationTimeout();
+    clearSpectatorTicker();
     announcedRoundId = 0;
     lastFinishedRoundId = 0;
     activeJoinUrl = '';
@@ -263,6 +274,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     waitingProgress.max = 1;
     waitingProgress.value = 0;
     waitingCount.textContent = '0 / 0';
+    spectatorLive.hidden = true;
+    spectatorLive.classList.remove('is-active');
+    spectatorLiveProgress.value = 0;
+    spectatorLiveProgressValue.textContent = '0%';
     mapPicker.setSelected(null);
     mapPicker.setEnabled(false);
     modeSelect.disabled = true;
@@ -358,10 +373,43 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     renderMultiplayerScores([lobbyScores, hudScores], snapshot);
   };
 
+  const renderSpectatorLive = (snapshot: RoomSnapshot) => {
+    clearSpectatorTicker();
+    if (currentRole !== 'spectator' || !snapshot.round) {
+      spectatorLive.hidden = true;
+      return;
+    }
+    const participants = snapshot.players.filter(player => player.role !== 'spectator');
+    const progress = Math.min(1, Math.max(0, ...participants.map(player => player.progress)));
+    const updateState = () => {
+      if (!snapshot.round || snapshot.round.finishedAt !== null) {
+        spectatorLiveState.textContent = t('multiplayer.spectatorRoundFinished');
+        spectatorLive.classList.remove('is-active');
+        return;
+      }
+      const seconds = Math.max(0, Math.ceil((serverTimeToPerformance(snapshot.round.startAt) - performance.now()) / 1000));
+      spectatorLiveState.textContent = seconds > 0
+        ? t('multiplayer.spectatorRoundStartsIn', { seconds })
+        : t('multiplayer.spectatorWatchingState');
+      spectatorLive.classList.toggle('is-active', seconds === 0);
+      if (seconds === 0) clearSpectatorTicker();
+    };
+    spectatorLive.hidden = false;
+    spectatorLiveMap.textContent = snapshot.round.mapId;
+    spectatorLiveProgress.value = progress;
+    spectatorLiveProgressValue.textContent = `${Math.round(progress * 100)}%`;
+    updateState();
+    if (snapshot.round.finishedAt === null && snapshot.round.startAt > Date.now()) {
+      spectatorTicker = window.setInterval(updateState, 250);
+    }
+  };
+
   const renderWaitingState = (snapshot: RoomSnapshot) => {
     const participants = snapshot.players.filter(player => player.role !== 'spectator');
     const readyPlayers = participants.filter(player => player.ready).length;
-    waitingCard.hidden = !pendingPreparationMapId && readyPlayers === 0;
+    const roundActive = Boolean(snapshot.round && snapshot.round.finishedAt === null);
+    waitingCard.hidden = roundActive
+      || (!pendingPreparationMapId && (readyPlayers === 0 || readyPlayers === participants.length));
     waitingProgress.max = Math.max(1, participants.length);
     waitingProgress.value = readyPlayers;
     waitingCount.textContent = `${readyPlayers} / ${participants.length}`;
@@ -445,6 +493,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       || participants.some(player => !player.ready)
       || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     renderScores(snapshot);
+    renderSpectatorLive(snapshot);
     announceRoundFinished(snapshot);
   };
 
@@ -542,6 +591,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
           if (player && currentRoom && playerIndex >= 0) {
             currentRoom.players[playerIndex] = player;
             renderScores(currentRoom);
+            renderSpectatorLive(currentRoom);
             window.dispatchEvent(new CustomEvent('hand-sabers:multiplayer-score', { detail: player }));
           }
         } else if (incoming.type === 'chat') {
