@@ -3,6 +3,7 @@ import { getSettings, setSetting } from '../core/settings.ts';
 import { PROFILE_COLOR_PRESETS, sanitizeProfileColor } from '../core/profile-color.ts';
 import type { Settings } from '../types/index.js';
 import { createModalTransition, type ModalTransitionController } from '../ui/modal-transition.ts';
+import { registerColorPickerTarget } from '../ui/saber-color-picker.ts';
 
 function element<T extends HTMLElement>(id: string): T | null {
   return document.getElementById(id) as T | null;
@@ -171,6 +172,7 @@ export function initProfileSettings(settings: Settings): void {
   const nameError = element<HTMLElement>('menuProfileNameError');
   const colorInput = element<HTMLInputElement>('menuProfileColor');
   const colorPresets = element<HTMLElement>('menuProfileColorPresets');
+  const colorPickerPreview = element<HTMLElement>('menuProfileColorPickerPreview');
 
   let pendingAvatar = settings.avatar ?? 'default';
   let pendingColor = sanitizeProfileColor(settings.playerColor);
@@ -184,6 +186,7 @@ export function initProfileSettings(settings: Settings): void {
       button.setAttribute('aria-pressed', String(selected));
     });
     profilePreview?.style.setProperty('--profile-color', pendingColor);
+    colorPickerPreview?.style.setProperty('--profile-color', pendingColor);
   }
 
   function updatePreview(): void {
@@ -209,6 +212,11 @@ export function initProfileSettings(settings: Settings): void {
   const selectAvatar = initAvatarPicker(avatarGrid, pendingAvatar, avatar => {
     pendingAvatar = avatar;
     updatePreview();
+  });
+  registerColorPickerTarget('profile', {
+    getColor: () => pendingColor,
+    onApply: setPendingColor,
+    getLabel: () => t('profile.colorPickerBadge'),
   });
   colorPresets?.querySelectorAll<HTMLButtonElement>('[data-profile-color]').forEach(button => {
     const color = button.dataset['profileColor'];

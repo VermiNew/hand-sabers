@@ -2,10 +2,26 @@ import { t } from '../i18n/index.ts';
 import { createModalTransition } from './modal-transition.ts';
 
 type SaberSide = 'left' | 'right';
+type ColorPickerTarget = SaberSide | 'profile';
+
+interface ColorPickerTargetBinding {
+  getColor(): string;
+  onApply(hex: string): void;
+  getLabel(): string;
+}
+
+const targetBindings = new Map<ColorPickerTarget, ColorPickerTargetBinding>();
 
 interface SaberColorPickerOptions {
   getColor(side: SaberSide): string;
   onApply(side: SaberSide, hex: string): void;
+}
+
+export function registerColorPickerTarget(
+  target: ColorPickerTarget,
+  binding: ColorPickerTargetBinding,
+): void {
+  targetBindings.set(target, binding);
 }
 
 function hexToHsl(hex: string): [number, number, number] {
@@ -27,7 +43,7 @@ function hexToHsl(hex: string): [number, number, number] {
     else if (max === green) hue = ((blue - red) / delta + 2) / 6;
     else hue = ((red - green) / delta + 4) / 6;
   }
-  return [Math.round(hue * 360), Math.round(saturation * 100), Math.round(lightness * 100)];
+  return [hue * 360, saturation * 100, lightness * 100];
 }
 
 function hslToHex(hue: number, saturation: number, lightness: number): string {
@@ -60,6 +76,16 @@ function hexToRgb(hex: string): [number, number, number] {
 }
 
 export function initSaberColorPicker({ getColor, onApply }: SaberColorPickerOptions): void {
+  registerColorPickerTarget('left', {
+    getColor: () => getColor('left'),
+    onApply: hex => onApply('left', hex),
+    getLabel: () => t('settings.gameplay.leftHand'),
+  });
+  registerColorPickerTarget('right', {
+    getColor: () => getColor('right'),
+    onApply: hex => onApply('right', hex),
+    getLabel: () => t('settings.gameplay.rightHand'),
+  });
   const modal = document.getElementById('cpModal');
   const backdrop = modal?.querySelector<HTMLElement>('.cp-modal-backdrop');
   const sideBadge = document.getElementById('cpModalSideBadge');
@@ -85,7 +111,7 @@ export function initSaberColorPicker({ getColor, onApply }: SaberColorPickerOpti
     visibleClass: 'is-open',
   });
 
-  let side: SaberSide = 'left';
+  let target: ColorPickerTarget = 'left';
   let hue = 0;
   let saturation = 100;
   let lightness = 55;
@@ -94,9 +120,9 @@ export function initSaberColorPicker({ getColor, onApply }: SaberColorPickerOpti
     if (hueInput) hueInput.value = String(hue);
     if (saturationInput) saturationInput.value = String(saturation);
     if (lightnessInput) lightnessInput.value = String(lightness);
-    if (hueValue) hueValue.textContent = String(hue);
-    if (saturationValue) saturationValue.textContent = String(saturation);
-    if (lightnessValue) lightnessValue.textContent = String(lightness);
+    if (hueValue) hueValue.textContent = String(Math.round(hue));
+    if (saturationValue) saturationValue.textContent = String(Math.round(saturation));
+    if (lightnessValue) lightnessValue.textContent = String(Math.round(lightness));
     modal?.style.setProperty('--cp-h', String(hue));
     const hex = hslToHex(hue, saturation, lightness);
     const [red, green, blue] = hexToRgb(hex);
@@ -112,14 +138,12 @@ export function initSaberColorPicker({ getColor, onApply }: SaberColorPickerOpti
     if (hexInput) hexInput.value = hex;
   }
 
-  function open(nextSide: SaberSide, returnFocusTo: HTMLElement): void {
-    side = nextSide;
-    [hue, saturation, lightness] = hexToHsl(getColor(side));
-    if (sideBadge) {
-      sideBadge.textContent = side === 'left'
-        ? t('settings.gameplay.leftHand')
-        : t('settings.gameplay.rightHand');
-    }
+  function open(nextTarget: ColorPickerTarget, returnFocusTo: HTMLElement): void {
+    const binding = targetBindings.get(nextTarget);
+    if (!binding) return;
+    target = nextTarget;
+    [hue, saturation, lightness] = hexToHsl(binding.getColor());
+    if (sideBadge) sideBadge.textContent = binding.getLabel();
     sync();
     modalTransition.open({ initialFocus: hueInput, returnFocusTo });
   }
@@ -138,12 +162,15 @@ export function initSaberColorPicker({ getColor, onApply }: SaberColorPickerOpti
     sync();
   });
   applyButton?.addEventListener('click', () => {
-    onApply(side, hslToHex(hue, saturation, lightness));
+    targetBindings.get(target)?.onApply(hslToHex(hue, saturation, lightness));
     close();
   });
   rejectButton?.addEventListener('click', close);
   backdrop?.addEventListener('pointerdown', close);
   document.querySelectorAll<HTMLButtonElement>('.cp-toggle').forEach(button => {
-    button.addEventListener('click', () => open((button.dataset['side'] ?? 'left') as SaberSide, button));
+    button.addEventListener('click', () => {
+      const nextTarget = (button.dataset['colorTarget'] ?? button.dataset['side'] ?? 'left') as ColorPickerTarget;
+      open(nextTarget, button);
+    });
   });
 }

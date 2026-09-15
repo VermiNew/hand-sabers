@@ -1165,6 +1165,8 @@
     "settingsIntro": "Nazwa, awatar i kolor będą widoczne w grze, rankingach oraz trybie multiplayer.",
     "chooseColor": "Kolor profilu",
     "customColor": "Własny",
+    "fullColorPicker": "Pełny picker",
+    "colorPickerBadge": "Profil",
     "colorPreset": "Kolor profilu: {{color}}",
     "nameRequired": "Wpisz nazwę gracza, aby kontynuować.",
     "avatars": {

@@ -475,6 +475,15 @@ body.settings-modal-open #camPanel {
 .profile-color-preset.is-selected { border-color: #fff; box-shadow: 0 0 0 3px var(--profile-color); }
 .profile-color-custom { display: inline-flex; align-items: center; gap: 8px; color: rgba(148,163,184,0.72); font: 600 10px 'JetBrains Mono', monospace; }
 .profile-color-custom input { width: 32px; height: 28px; padding: 0; border: 0; border-radius: 7px; background: transparent; cursor: pointer; }
+.profile-color-picker-button.cp-toggle {
+  display:inline-flex; width:auto; margin:0; align-items:center; justify-content:center; gap:8px;
+  padding:8px 11px; letter-spacing:1px;
+}
+.profile-color-picker-button .material-symbols-rounded { font-size:17px; }
+.profile-color-picker-preview {
+  width:16px; height:16px; border:1px solid rgba(255,255,255,.58); border-radius:50%;
+  background:var(--profile-color); box-shadow:0 0 10px var(--profile-color);
+}
 
 .profile-settings-actions { display: flex; align-items: center; gap: 14px; }
 .profile-settings-actions .sp-action-btn { flex: 0 0 auto; min-width: 132px; }

@@ -1165,6 +1165,8 @@
     "settingsIntro": "Your name, avatar, and color appear in the game, leaderboards, and multiplayer.",
     "chooseColor": "Profile color",
     "customColor": "Custom",
+    "fullColorPicker": "Full picker",
+    "colorPickerBadge": "Profile",
     "colorPreset": "Profile color: {{color}}",
     "nameRequired": "Enter a player name to continue.",
     "avatars": {
