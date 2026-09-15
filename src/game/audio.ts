@@ -175,6 +175,7 @@ export type InterfaceSoundKind = 'hover' | 'activate' | 'back';
 
 let lastInterfaceSoundAt = -Infinity;
 let lastTypingSoundAt = -Infinity;
+let lastChatMessageSoundAt = -Infinity;
 let interfaceSoundsBound = false;
 const INTERFACE_VOLUME_BOOST = 2;
 
@@ -261,7 +262,7 @@ export function playInterfaceSound(kind: InterfaceSoundKind = 'activate'): void 
 }
 
 export function playTypingTick(character: string): void {
-  if (!ctx || !character.trim()) return;
+  if (!ctx || !character.trim() || !getSettings().chatSoundsEnabled) return;
   const now = performance.now();
   if (now - lastTypingSoundAt < 22) return;
   lastTypingSoundAt = now;
@@ -278,6 +279,21 @@ function playTypingTickLocal(variation: number): void {
     'sine',
     470 + variation * 10,
   );
+}
+
+function playChatMessageLocal(): void {
+  playSoftTone(620, 0.11, 0.05, 'sine', 760);
+  playSoftTone(880, 0.14, 0.038, 'sine', 980, 0.07);
+}
+
+export function playChatMessageSound(): void {
+  if (!getSettings().chatSoundsEnabled) return;
+  initAudio();
+  const now = performance.now();
+  if (now - lastChatMessageSoundAt < 120) return;
+  lastChatMessageSoundAt = now;
+  const playLocal = (): void => playChatMessageLocal();
+  if (!playPhoneSound('chat-message', 0, remoteInterfaceVolume(), 20, playLocal)) playLocal();
 }
 
 export function initInterfaceSounds(root: ParentNode = document): void {
@@ -568,9 +584,13 @@ export function playAudioTestRecipe(recipe: ProceduralAudioRecipe): void {
     if (!playPhoneSound(recipe, variation, remoteInterfaceVolume(), 20, playLocal)) playLocal();
     return;
   }
+  if (recipe === 'chat-message') {
+    playChatMessageSound();
+    return;
+  }
 
   const gameplay: Record<Exclude<ProceduralAudioRecipe,
-    'interface-hover' | 'interface-activate' | 'interface-back' | 'typing-tick'>,
+    'interface-hover' | 'interface-activate' | 'interface-back' | 'typing-tick' | 'chat-message'>,
     { variant: number; volumeKey: SoundVolumeKey; playLocal: () => void }> = {
     beat: { variant: 0, volumeKey: 'beatSoundVolume', playLocal: playBeatLocal },
     hit: { variant: 0, volumeKey: 'hitSoundVolume', playLocal: playHitLocal },

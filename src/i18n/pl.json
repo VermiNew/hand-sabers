@@ -313,6 +313,8 @@
     },
     "audio": {
       "interfaceSounds": "Interface",
+      "chatSounds": "Dźwięki czatu",
+      "chatSoundsDesc": "Pisanie oraz nowe wiadomości w lobby i grze",
       "masterMeter": "Poziom master audio",
       "phoneMeter": "Poziom audio telefonu",
       "individualSounds": "Poszczególne dźwięki",
@@ -326,6 +328,7 @@
       "recipeActivate": "Aktywacja",
       "recipeBack": "Powrót",
       "recipeTyping": "Pisanie",
+      "recipeChatMessage": "Nowa wiadomość",
       "recipeBeat": "Beat",
       "recipeHit": "Trafienie",
       "recipeCombo": "Combo",

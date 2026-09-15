@@ -102,6 +102,7 @@ export interface Settings {
   missSoundVolume: number;
   bombSoundVolume: number;
   milestoneSoundVolume: number;
+  chatSoundsEnabled: boolean;
   noFail: boolean;
   developerMode: boolean;
   telemetryEnabled: boolean;

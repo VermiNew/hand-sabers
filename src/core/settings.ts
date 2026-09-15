@@ -62,6 +62,7 @@ export const DEFAULTS: Settings = {
   missSoundVolume: 0.75,
   bombSoundVolume: 0.8,
   milestoneSoundVolume: 0.7,
+  chatSoundsEnabled: true,
   noFail: false,
   saberColorLeft: '#36f2a1',
   saberColorRight: '#2f7cff',

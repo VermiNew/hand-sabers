@@ -10,7 +10,7 @@ const BOOLEAN_KEYS = new Set<keyof Settings>([
   'flipCamera', 'noFail', 'developerMode', 'telemetryEnabled', 'customAntialias', 'customReflections',
   'customFloorGlows', 'customDecorativeLights', 'customSaberGlints', 'customSaberTrails', 'customBackgroundShader',
   'customFog', 'customGrid', 'musicReactiveEnabled', 'beatLimitEnabled', 'trainingMode',
-  'rememberCalibration', 'profileCompleted', 'phoneAudioOutput',
+  'rememberCalibration', 'profileCompleted', 'phoneAudioOutput', 'chatSoundsEnabled',
 ]);
 const UNIT_NUMBER_KEYS = new Set<keyof Settings>([
   'volume', 'musicVolume', 'sfxVolume', 'beatSoundVolume', 'hitSoundVolume',

@@ -185,7 +185,7 @@ const REQUEST_ID_RE = /^[a-zA-Z0-9_-]{1,48}$/;
 const SHA256_RE = /^[a-f0-9]{64}$/;
 const ERROR_CODE_RE = /^[A-Z0-9_]{1,64}$/;
 const AUDIO_RECIPE_SET = new Set([
-  'interface-hover', 'interface-activate', 'interface-back', 'typing-tick',
+  'interface-hover', 'interface-activate', 'interface-back', 'typing-tick', 'chat-message',
   'beat', 'hit', 'combo', 'miss', 'bomb', 'milestone',
 ]);
 

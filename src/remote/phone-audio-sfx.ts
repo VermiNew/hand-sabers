@@ -85,6 +85,10 @@ export function createPhoneSoundEngine(): {
         tone(audio, start, 520 + variation * 14, 470 + variation * 10, 0.035, 0.012 * volume);
         break;
       }
+      case 'chat-message':
+        tone(audio, start, 620, 760, 0.11, 0.1 * volume);
+        tone(audio, start + 0.07, 880, 980, 0.14, 0.075 * volume);
+        break;
       case 'beat': tone(audio, start, 120, 40, 0.15, 0.05 * volume); break;
       case 'hit': tone(audio, start, 250, 50, 0.15, 0.33 * volume, 'sawtooth'); break;
       case 'combo': tone(audio, start, 400 + Math.min(sound.variant * 20, 800), 400 + Math.min(sound.variant * 20, 800), 0.3, 0.5 * volume); break;

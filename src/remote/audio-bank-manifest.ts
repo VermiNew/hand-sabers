@@ -7,6 +7,7 @@ export type ProceduralAudioRecipe =
   | 'interface-activate'
   | 'interface-back'
   | 'typing-tick'
+  | 'chat-message'
   | 'beat'
   | 'hit'
   | 'combo'
@@ -53,6 +54,7 @@ export const PROCEDURAL_AUDIO_ASSETS: readonly ProceduralAudioAssetDefinition[] 
   { id: 'interface.activate', category: 'interface', recipe: 'interface-activate', recipeVersion: 1, variants: [] },
   { id: 'interface.back', category: 'interface', recipe: 'interface-back', recipeVersion: 1, variants: [] },
   { id: 'interface.typing', category: 'interface', recipe: 'typing-tick', recipeVersion: 1, variants: ['0', '1', '2', '3', '4'] },
+  { id: 'interface.chat-message', category: 'interface', recipe: 'chat-message', recipeVersion: 1, variants: [] },
   { id: 'gameplay.beat', category: 'gameplay', recipe: 'beat', recipeVersion: 1, variants: [] },
   { id: 'gameplay.hit', category: 'gameplay', recipe: 'hit', recipeVersion: 1, variants: [] },
   { id: 'gameplay.combo', category: 'gameplay', recipe: 'combo', recipeVersion: 1, variants: ['1-40'] },

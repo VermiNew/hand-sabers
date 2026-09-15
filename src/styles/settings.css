@@ -333,6 +333,7 @@ body.settings-modal-open #camPanel {
   padding:10px; overflow:visible;
 }
 .audio-test-grid .sp-action-btn { min-width:0; }
+.audio-test-grid .sp-action-btn:last-child:nth-child(odd) { grid-column:1 / -1; }
 
 .audio-meter-row {
   display:grid; grid-template-columns:110px minmax(100px,1fr) 64px; align-items:center; gap:12px;

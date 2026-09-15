@@ -3,6 +3,7 @@ import { createAvatarBadge } from './avatars.ts';
 import { isVoicePlayerSpeaking } from './voice-speaking.ts';
 import { element } from './client-utils.ts';
 import type { ChatMessage } from './protocol.ts';
+import { playChatMessageSound, playTypingTick } from '../game/audio.ts';
 
 interface MultiplayerChatViewOptions {
   canSend(): boolean;
@@ -131,6 +132,10 @@ export function createMultiplayerChatView({
       onSend(text);
       surface.input.value = '';
     });
+    surface.input.addEventListener('input', event => {
+      const inserted = event instanceof InputEvent ? event.data : null;
+      if (inserted) playTypingTick(inserted.at(-1) ?? '');
+    });
     if (surface.gameplay) {
       surface.form.addEventListener('keydown', event => {
         event.stopPropagation();
@@ -151,11 +156,13 @@ export function createMultiplayerChatView({
 
   return {
     append(chatMessage): void {
+      const fromAnotherPlayer = chatMessage.playerId !== getCurrentPlayerId();
       history.push(chatMessage);
       if (history.length > 50) history = history.slice(-50);
       for (const surface of surfaces) renderMessages(surface.messages);
+      if (fromAnotherPlayer) playChatMessageSound();
       if (
-        chatMessage.playerId !== getCurrentPlayerId()
+        fromAnotherPlayer
         && !expanded
         && Boolean(document.body.dataset['multiplayerMode'])
       ) {

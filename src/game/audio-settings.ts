@@ -64,6 +64,7 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
   const phoneLatencyInput = document.getElementById('menuPhoneAudioLatency') as HTMLInputElement | null;
   const phoneLatencyValue = document.getElementById('menuPhoneAudioLatencyValue');
   const interfaceSoundInput = document.getElementById('menuInterfaceSoundVolume') as HTMLInputElement | null;
+  const chatSoundsToggle = document.getElementById('menuChatSoundsEnabled') as HTMLInputElement | null;
   const masterMeter = document.getElementById('menuMasterAudioMeter');
   const masterMeterValue = document.getElementById('menuMasterAudioMeterValue');
   const phoneMeter = document.getElementById('menuPhoneAudioMeter');
@@ -242,6 +243,14 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
     });
   }
 
+  if (chatSoundsToggle) {
+    chatSoundsToggle.checked = settings.chatSoundsEnabled;
+    chatSoundsToggle.addEventListener('change', () => {
+      settings.chatSoundsEnabled = chatSoundsToggle.checked;
+      setSetting('chatSoundsEnabled', chatSoundsToggle.checked);
+    });
+  }
+
   return {
     sync(): void {
       const emit = (element: HTMLElement | null, eventName: 'input' | 'change') => {
@@ -272,6 +281,10 @@ export function initAudioSettings(settings: Settings, bindStyledRange: RangeBind
       if (interfaceSoundInput) {
         interfaceSoundInput.value = String(settings.interfaceSoundVolume);
         emit(interfaceSoundInput, 'input');
+      }
+      if (chatSoundsToggle) {
+        chatSoundsToggle.checked = settings.chatSoundsEnabled;
+        emit(chatSoundsToggle, 'change');
       }
     },
   };
