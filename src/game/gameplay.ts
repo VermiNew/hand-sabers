@@ -5,7 +5,7 @@ import { updateHUD, showComboMilestone } from '../ui/ui.ts';
 import { THEME } from '../core/theme.ts';
 import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.ts';
 import { noteZAtSongTime } from '../core/timing.ts';
-import { classifyHitQuality, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
+import { classifyHitQuality, getCutVector, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
 import { recordBombHit } from '../core/achievements.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import { showHitFeedback } from './hit-feedback.ts';
@@ -100,6 +100,7 @@ const BLOCK_SPEED_PER_MS  = (HIT_Z - SPAWN_Z) / APPROACH_TIME_MS;
 const MENU_DEMO_HIT_Z     = HIT_Z - 0.15;
 
 let activeSabers: SaberSide | 'both' = 'both';
+let autoPlayEnabled = false;
 let activeHitProfile: DifficultyHitProfile = getDifficultyHitProfile(null);
 let activeHeldRadius = activeHitProfile.heldRadius;
 
@@ -206,6 +207,16 @@ function swapRemoveActiveBlock(index: number): ActiveBlock | null {
 }
 
 const bladeHitboxes = { left: createBladeHitbox(), right: createBladeHitbox() };
+const autoBladeHitboxes = { left: createBladeHitbox(), right: createBladeHitbox() };
+
+export function setAutoPlayEnabled(enabled: boolean): void {
+  autoPlayEnabled = enabled;
+  document.body.classList.toggle('auto-play-mode', enabled);
+}
+
+export function isAutoPlayEnabled(): boolean {
+  return autoPlayEnabled;
+}
 
 export function setGameOverHandler(fn: () => void): void { gameOverHandler = fn; }
 
@@ -497,6 +508,53 @@ function bladeInsideHeld(entry: ActiveBlock, cache: BladeHitbox): boolean {
   return false;
 }
 
+function completeHeldBlock(entry: ActiveBlock, index: number): void {
+  const pos = entry.mesh.position.clone();
+  const light = entry.side === 'left' ? lLight : rLight;
+  disposeHeldMesh(entry);
+  releaseBlock(entry.mesh);
+  swapRemoveActiveBlock(index);
+  state.lives = Math.min(state.maxLives, state.lives + 3);
+  state.score += 300;
+  state.hits++;
+  const next = registerComboHit(state);
+  state.combo = next.combo;
+  state.maxCombo = next.maxCombo;
+  hitStreakForRegen++;
+  lastHitMs = performance.now();
+  emitGameplayFeedback({ type: 'held-complete', side: entry.side, combo: state.combo });
+  updateHUD(state);
+  playHit(Math.max(1, state.combo));
+  showHitFeedback(pos, 'HOLD', true, '', 0);
+  light.intensity = 12;
+  if (light.userData.hitTimer) clearTimeout(light.userData.hitTimer);
+  light.userData.hitTimer = setTimeout(() => {
+    light.intensity = 4;
+    light.userData.hitTimer = null;
+  }, 120);
+}
+
+function prepareAutoHitbox(entry: ActiveBlock): BladeHitbox {
+  const cache = autoBladeHitboxes[entry.side];
+  const cut = getCutVector(entry.cut) ?? { x: entry.side === 'left' ? 0.35 : -0.35, y: -0.94 };
+  cache.currentStart.set(entry.mesh.position.x, entry.mesh.position.y - 0.575, entry.mesh.position.z);
+  cache.currentEnd.set(entry.mesh.position.x, entry.mesh.position.y + 0.575, entry.mesh.position.z);
+  cache.previousStart.set(
+    cache.currentStart.x - cut.x * 0.24,
+    cache.currentStart.y - cut.y * 0.24,
+    cache.currentStart.z,
+  );
+  cache.previousEnd.set(
+    cache.currentEnd.x - cut.x * 0.24,
+    cache.currentEnd.y - cut.y * 0.24,
+    cache.currentEnd.z,
+  );
+  cache.hasCurrent = true;
+  cache.hasPrevious = true;
+  cache.radius = BASE_HIT_RADIUS;
+  return cache;
+}
+
 function isPastRemovalPoint(entry: ActiveBlock, mapTimeSec: number): boolean {
   if (!entry.isHeld) return entry.mesh.position.z > 4.5;
   if (entry.mapBeat && Number.isFinite(entry.hitTimeSec) && Number.isFinite(mapTimeSec)) {
@@ -535,6 +593,20 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
       continue;
     }
 
+    if (autoPlayEnabled && entry.mapBeat && !entry.isBomb && entry.hitTimeSec !== null) {
+      const hitDeltaSec = mapTimeSec - entry.hitTimeSec;
+      if (entry.isHeld) {
+        entry.heldProgress = THREE.MathUtils.clamp(hitDeltaSec, 0, entry.heldDuration);
+        if (hitDeltaSec >= entry.heldDuration) completeHeldBlock(entry, i);
+      } else if (hitDeltaSec >= -0.025 && hitDeltaSec <= 0.06) {
+        const cache = prepareAutoHitbox(entry);
+        const light = entry.side === 'left' ? lLight : rLight;
+        hitBlock(entry, getCurrentBlockColor(entry.side), light, cache);
+        swapRemoveActiveBlock(i);
+      }
+      continue;
+    }
+
     const oneHandMode = effectiveOneHandMode();
     const useLeft  = isSaberActive('left') && oneHandMode !== 'right';
     const useRight = isSaberActive('right') && oneHandMode !== 'left';
@@ -555,26 +627,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
         entry.heldProgress += deltaSec;
         entry.heldDrainAccum = 0;
         if (entry.heldProgress >= entry.heldDuration) {
-          const pos = entry.mesh.position.clone();
-          const light = entry.side === 'left' ? lLight : rLight;
-          disposeHeldMesh(entry);
-          releaseBlock(entry.mesh);
-          swapRemoveActiveBlock(i);
-          state.lives = Math.min(state.maxLives, state.lives + 3);
-          state.score += 300;
-          state.hits++;
-          const next = registerComboHit(state);
-          state.combo = next.combo;
-          state.maxCombo = next.maxCombo;
-          hitStreakForRegen++;
-          lastHitMs = performance.now();
-          emitGameplayFeedback({ type: 'held-complete', side: entry.side, combo: state.combo });
-          updateHUD(state);
-          playHit(Math.max(1, state.combo));
-          showHitFeedback(pos, 'HOLD', true, '', 0);
-          light.intensity = 12;
-          if (light.userData.hitTimer) clearTimeout(light.userData.hitTimer);
-          light.userData.hitTimer = setTimeout(() => { light.intensity = 4; light.userData.hitTimer = null; }, 120);
+          completeHeldBlock(entry, i);
           continue;
         }
       } else if (!touching && isSaberActive(entry.side) && entry.mesh.position.z >= HIT_Z) {
