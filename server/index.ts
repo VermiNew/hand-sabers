@@ -24,6 +24,7 @@ import { registerRoomRoutes } from './routes/room-routes.js';
 import { registerTrackingSessionRoutes } from './routes/tracking-session-routes.js';
 import { registerAudioBankRoutes } from './routes/audio-bank.js';
 import { registerTelemetryRoutes } from './routes/telemetry-routes.js';
+import { normalizeDeveloperAccessToken, registerDeveloperAccessRoutes } from './routes/developer-access.js';
 import { FileMutex, KeyedMutex, RateLimiter } from './utils.js';
 import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
@@ -64,6 +65,7 @@ if (
   throw new Error('config.json: pole "mapLibraryQuota" musi zawierać dodatnie limity maxBytes, maxMaps i maxAudioFiles.');
 }
 const securityEnabled = projectConfig.security;
+const developerAccessToken = normalizeDeveloperAccessToken(process.env.HAND_SABERS_DEVELOPER_TOKEN);
 const originPolicy = createOriginPolicy(securityEnabled, (projectConfig.allowedOrigins ?? []) as string[]);
 const STATIC_DIR = requireFrontendDist(PROJECT_ROOT);
 const DEFAULT_MAPS_DIR = path.join(PROJECT_ROOT, 'maps');
@@ -257,6 +259,12 @@ registerTelemetryRoutes({
   app,
   store: productTelemetry,
   parseJson: express.json({ limit: '8kb' }),
+  rateLimit,
+});
+registerDeveloperAccessRoutes({
+  app,
+  token: developerAccessToken,
+  parseJson: express.json({ limit: '1kb' }),
   rateLimit,
 });
 
