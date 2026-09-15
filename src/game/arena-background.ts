@@ -176,6 +176,22 @@ export function createArenaBackground(scene: THREE.Scene, arenaDetail: number): 
         color += mix(uHorizon, uAccent, 0.42) * horizonBloom * detailStep
           * (0.14 + music * 0.05 + flash * 0.10) * (1.0 - pressure * 0.48);
 
+        // Continue the instanced portal tunnel inside this background pass. The
+        // logarithmic spacing compresses toward the vanishing point, so there is
+        // no single final ring that reads as the physical end of the arena.
+        vec2 infinityUv = vec2(p.x * 1.45, (uv.y - 0.43) * 3.0);
+        float infinityDistance = length(infinityUv);
+        float infinityMask = (1.0 - smoothstep(0.06, 0.54, infinityDistance))
+          * smoothstep(0.18, 0.72, detailStep)
+          * (1.0 - pressure * 0.72);
+        float infinityPhase = fract(-log(max(infinityDistance, 0.018)) * 1.55 - uTime * 0.11);
+        float infinityRings = (1.0 - smoothstep(0.035, 0.12, abs(infinityPhase - 0.5)))
+          * smoothstep(0.025, 0.11, infinityDistance);
+        float infinityCore = 1.0 - smoothstep(0.018, 0.16, infinityDistance);
+        color = mix(color, uLane, infinityCore * infinityMask * 0.58);
+        color += mix(uHorizon, uAccent, 0.38) * infinityRings * infinityMask
+          * (0.06 + bass * 0.035 + beat * 0.05);
+
         // ── Layer 5: perspective frames (depth cue outside gameplay lane) ────
         float architecture = smoothstep(0.12, 0.72, detail) * (1.0 - pressure * 0.58);
         float frameFade = smoothstep(0.12, 0.28, uv.y) * smoothstep(1.02, 0.72, uv.y);
