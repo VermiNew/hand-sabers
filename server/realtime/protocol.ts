@@ -14,6 +14,7 @@ export interface ClientMessage {
   avatar?: unknown;
   playerColor?: unknown;
   moderationId?: unknown;
+  role?: unknown;
   ready?: unknown;
   readiness?: unknown;
   mapId?: unknown;

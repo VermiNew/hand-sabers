@@ -5,6 +5,7 @@ const ROOM_CODE_LENGTH = 6;
 const ROOM_TTL_MS = 30 * 60 * 1000;
 const SCORE_ATTACK_MAX_PLAYERS = 8;
 const COOP_PLAYERS = 2;
+const MAX_SPECTATORS = 16;
 const AVATAR_IDS = ['default', 'cat', 'rocket', 'star', 'music', 'bolt', 'diamond', 'forest'];
 const DEFAULT_AVATAR = 'default';
 const DEFAULT_PLAYER_COLOR = '#2f7cff';
@@ -36,7 +37,8 @@ export type RoomErrorCode =
   | 'INVALID_MODE'
   | 'INVALID_RULES'
   | 'INVALID_READINESS'
-  | 'INVALID_SCORE';
+  | 'INVALID_SCORE'
+  | 'SPECTATOR_READ_ONLY';
 
 export class RoomError extends Error {
   readonly code: RoomErrorCode;
@@ -54,8 +56,8 @@ export interface RoomPlayer {
   name: string;
   avatar: string;
   color: string;
-  role: 'host' | 'guest';
-  saber: 'left' | 'right' | 'both';
+  role: 'host' | 'guest' | 'spectator';
+  saber: 'left' | 'right' | 'both' | 'none';
   ready: boolean;
   readiness: RoomPlayerReadiness;
   score: number;
@@ -115,6 +117,7 @@ function maxPlayersForMode(mode: RoomMode): number {
 }
 
 function saberForPlayer(mode: RoomMode, role: RoomPlayer['role']): RoomPlayer['saber'] {
+  if (role === 'spectator') return 'none';
   if (mode !== 'coop') return 'both';
   return role === 'host' ? 'left' : 'right';
 }
@@ -262,24 +265,35 @@ export class RoomRegistry {
     requestedAvatar: unknown,
     requestedColor: unknown,
     requestedModerationId?: unknown,
+    requestedRole?: unknown,
   ): { player: RoomPlayer; snapshot: RoomSnapshot } {
     this.deleteExpired();
     const room = this.rooms.get(normalizeRoomCode(code));
     if (!room) throw new RoomError('ROOM_NOT_FOUND');
-    const role = tokensMatch(token, room.hostToken)
+    const tokenRole = tokensMatch(token, room.hostToken)
       ? 'host'
       : tokensMatch(token, room.joinToken) ? 'guest' : null;
-    if (!role) throw new RoomError('INVALID_ROOM_TOKEN');
+    if (!tokenRole) throw new RoomError('INVALID_ROOM_TOKEN');
+    const role: RoomPlayer['role'] = tokenRole === 'host'
+      ? 'host'
+      : requestedRole === 'spectator' ? 'spectator' : 'guest';
     const moderationId = sanitizeModerationId(requestedModerationId);
-    if (role === 'guest' && moderationId && room.bannedModerationIds.has(moderationId)) {
+    if (role !== 'host' && moderationId && room.bannedModerationIds.has(moderationId)) {
       throw new RoomError('PLAYER_BANNED');
     }
-    if (room.players.length >= room.maxPlayers) throw new RoomError('ROOM_FULL');
+    const participantCount = room.players.filter(player => player.role !== 'spectator').length;
+    const spectatorCount = room.players.length - participantCount;
+    if ((role === 'spectator' && spectatorCount >= MAX_SPECTATORS)
+      || (role !== 'spectator' && participantCount >= room.maxPlayers)) {
+      throw new RoomError('ROOM_FULL');
+    }
     if (role === 'host' && room.players.some(player => player.role === 'host')) {
       throw new RoomError('HOST_ALREADY_CONNECTED');
     }
 
-    const defaultName = role === 'host' ? 'Host' : `Gracz ${room.players.length + 1}`;
+    const defaultName = role === 'host'
+      ? 'Host'
+      : role === 'spectator' ? `Obserwator ${spectatorCount + 1}` : `Gracz ${participantCount + 1}`;
     const name = sanitizePlayerName(requestedName) || defaultName;
     let streamId = randomInt(1, 0x1_0000_0000);
     while (room.players.some(player => player.streamId === streamId)) {
@@ -340,7 +354,7 @@ export class RoomRegistry {
     const host = room.players.find(player => player.id === hostPlayerId);
     if (!host || host.role !== 'host') throw new RoomError('HOST_ONLY');
     const target = room.players.find(player => player.id === targetPlayerId);
-    if (!target || target.role !== 'guest' || target.id === hostPlayerId) {
+    if (!target || target.role === 'host' || target.id === hostPlayerId) {
       throw new RoomError('INVALID_MODERATION_TARGET');
     }
     const moderationId = room.playerModerationIds.get(target.id);
@@ -352,6 +366,7 @@ export class RoomRegistry {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player) throw new RoomError('PLAYER_NOT_FOUND');
+    if (player.role === 'spectator') throw new RoomError('SPECTATOR_READ_ONLY');
     if (ready && !room.mapId) throw new RoomError('MAP_REQUIRED');
     player.readiness = ready ? parseReadiness(readinessValue, true) : emptyReadiness();
     player.ready = ready
@@ -366,6 +381,7 @@ export class RoomRegistry {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player) throw new RoomError('PLAYER_NOT_FOUND');
+    if (player.role === 'spectator') throw new RoomError('SPECTATOR_READ_ONLY');
     if (!room.mapId) throw new RoomError('MAP_REQUIRED');
     if (room.round?.finishedAt === null) throw new RoomError('ROUND_ALREADY_STARTED');
     player.readiness = validateReadiness(readinessValue);
@@ -408,6 +424,9 @@ export class RoomRegistry {
     if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
     if (mode !== 'coop' && mode !== 'score-attack') throw new RoomError('INVALID_MODE');
     const maxPlayers = maxPlayersForMode(mode);
+    if (room.players.filter(candidate => candidate.role !== 'spectator').length > maxPlayers) {
+      throw new RoomError('INVALID_MODE');
+    }
     room.mode = mode;
     room.maxPlayers = maxPlayers;
     room.round = null;
@@ -462,15 +481,21 @@ export class RoomRegistry {
     return room?.players.find(player => player.id === playerId)?.streamId ?? null;
   }
 
+  getPlayerRole(code: string, playerId: string): RoomPlayer['role'] | null {
+    const room = this.rooms.get(normalizeRoomCode(code));
+    return room?.players.find(player => player.id === playerId)?.role ?? null;
+  }
+
   startRound(code: string, playerId: string, now = Date.now()): RoomSnapshot {
     const room = this.requireRoom(code);
     const player = room.players.find(candidate => candidate.id === playerId);
     if (!player || player.role !== 'host') throw new RoomError('HOST_ONLY');
     if (!room.mapId) throw new RoomError('MAP_REQUIRED');
+    const participants = room.players.filter(candidate => candidate.role !== 'spectator');
     if (
-      !room.players.length
-      || (room.mode === 'coop' && room.players.length !== COOP_PLAYERS)
-      || room.players.some(candidate => !candidate.ready)
+      !participants.length
+      || (room.mode === 'coop' && participants.length !== COOP_PLAYERS)
+      || participants.some(candidate => !candidate.ready)
     ) {
       throw new RoomError('PLAYERS_NOT_READY');
     }
@@ -489,7 +514,7 @@ export class RoomRegistry {
       roomPlayer.lives = 10;
       roomPlayer.progress = 0;
       roomPlayer.finished = false;
-      roomPlayer.playing = true;
+      roomPlayer.playing = roomPlayer.role !== 'spectator';
     }
     room.revision++;
     return this.snapshot(room);

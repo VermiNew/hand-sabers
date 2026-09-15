@@ -142,6 +142,9 @@ export function registerRealtimeServer(
     client.realtimeViolations = Math.max(0, client.realtimeViolations - 1);
     const streamId = rooms.getPlayerStreamId(client.roomCode, client.playerId);
     if (streamId === null) throw new RoomError('PLAYER_NOT_FOUND');
+    if (rooms.getPlayerRole(client.roomCode, client.playerId) === 'spectator') {
+      throw new RoomError('SPECTATOR_READ_ONLY');
+    }
 
     const outgoing = Buffer.allocUnsafe(4 + packet.length);
     outgoing.writeUInt32LE(streamId, 0);
@@ -205,6 +208,7 @@ export function registerRealtimeServer(
             message.avatar,
             message.playerColor,
             message.moderationId,
+            message.role,
           );
           client.roomCode = joined.snapshot.code;
           client.playerId = joined.player.id;

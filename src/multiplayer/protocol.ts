@@ -49,8 +49,8 @@ export interface RoomPlayer {
   name: string;
   avatar: string;
   color: string;
-  role: 'host' | 'guest';
-  saber: 'left' | 'right' | 'both';
+  role: 'host' | 'guest' | 'spectator';
+  saber: 'left' | 'right' | 'both' | 'none';
   ready: boolean;
   readiness: {
     map: boolean;
@@ -94,8 +94,8 @@ export function parseRoomPlayer(value: unknown): RoomPlayer | null {
     || typeof player['name'] !== 'string'
     || player['name'].length > 32
     || (player['color'] !== undefined && !isProfileColor(player['color']))
-    || (player['role'] !== 'host' && player['role'] !== 'guest')
-    || (player['saber'] !== 'left' && player['saber'] !== 'right' && player['saber'] !== 'both')
+    || (player['role'] !== 'host' && player['role'] !== 'guest' && player['role'] !== 'spectator')
+    || (player['saber'] !== 'left' && player['saber'] !== 'right' && player['saber'] !== 'both' && player['saber'] !== 'none')
     || typeof player['ready'] !== 'boolean'
     || !Number.isSafeInteger(player['score'])
     || Number(player['score']) < 0
@@ -209,7 +209,12 @@ export function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     || !Number.isSafeInteger(candidate['maxPlayers'])
     || (candidate['mode'] === 'coop' && candidate['maxPlayers'] !== 2)
     || (candidate['mode'] === 'score-attack' && candidate['maxPlayers'] !== 8)
-    || candidate['players'].length > Number(candidate['maxPlayers'])
+    || candidate['players'].filter(player => (
+      player && typeof player === 'object' && !Array.isArray(player)
+        ? (player as Record<string, unknown>)['role'] !== 'spectator'
+        : true
+    )).length > Number(candidate['maxPlayers'])
+    || candidate['players'].length > Number(candidate['maxPlayers']) + 16
     || (candidate['mapId'] !== null && typeof candidate['mapId'] !== 'string')
     || (typeof candidate['mapId'] === 'string' && !/^[a-z0-9][a-z0-9_-]{0,119}$/i.test(candidate['mapId']))
     || !rulesValue
@@ -256,8 +261,9 @@ export function parseRoomSnapshot(value: unknown): RoomSnapshot | null {
     const player = parseRoomPlayer(valuePlayer);
     if (!player) return null;
     if (
-      (candidate['mode'] === 'score-attack' && player.saber !== 'both')
-      || (candidate['mode'] === 'coop' && player.saber !== (player.role === 'host' ? 'left' : 'right'))
+      (player.role === 'spectator' && player.saber !== 'none')
+      || (player.role !== 'spectator' && candidate['mode'] === 'score-attack' && player.saber !== 'both')
+      || (player.role !== 'spectator' && candidate['mode'] === 'coop' && player.saber !== (player.role === 'host' ? 'left' : 'right'))
     ) return null;
     players.push(player);
   }
