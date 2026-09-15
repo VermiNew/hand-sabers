@@ -47,6 +47,11 @@ export function registerScoreRoutes({ app, maps, storage, parseJson, rateLimit }
         const mapId = String(req.query['map']);
         scores = scores.filter(s => s.mapId === mapId);
       }
+      if (req.query['scoring'] === 'current') {
+        scores = scores.filter(score => score.scoringVersion === CURRENT_SCORING_VERSION);
+      } else if (req.query['scoring'] === 'legacy') {
+        scores = scores.filter(score => score.scoringVersion !== CURRENT_SCORING_VERSION);
+      }
       const requestedLimit = parseInt(String(req.query['limit'] ?? '20'), 10);
       const limit = Math.max(1, Math.min(100, Number.isFinite(requestedLimit) ? requestedLimit : 20));
       scores.sort(compareScores);

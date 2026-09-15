@@ -1,4 +1,5 @@
 import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores } from '../core/localstore.ts';
+import { compareScores, CURRENT_SCORING_VERSION, getScoringVersion } from '../core/score-version.ts';
 import { showConfirm, showToast } from '../creator/dialogs.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initRemoteTrackingHost } from '../remote/host-session.ts';
@@ -73,7 +74,7 @@ let allScores: ScoreEntry[] = readLocalScores({ limit: 1000 }) as ScoreEntry[];
 function getMapScoreData(mapId: string): MapScoreData {
   const scores = allScores.filter(s => s.mapId === mapId);
   if (!scores.length) return { tries: 0, best: null, progress: null };
-  const best        = scores.reduce((a, b) => (b.score > a.score ? b : a), scores[0]!);
+  const best        = [...scores].sort(compareScores)[0]!;
   const maxProgress = scores.reduce((a, b) => Math.max(a, b.progress ?? 0), 0);
   return { tries: scores.length, best, progress: maxProgress };
 }
@@ -330,15 +331,22 @@ async function loadScores(): Promise<void> {
   const scoreList = document.getElementById('scoreList')!;
   scoreList.innerHTML = renderLibrarySkeleton();
 
-  const localScores = readLocalScores({ limit: 30 }) as ScoreEntry[];
+  const localScores = readLocalScores({ limit: 1000 }) as ScoreEntry[];
   let scores: ScoreEntry[] = [];
   let serverError: Error | null = null;
-  try { scores = await fetchJson<ScoreEntry[]>('/api/scores?limit=30'); }
-  catch (e) { serverError = e instanceof Error ? e : new Error(String(e)); void serverError; }
+  const serverResults = await Promise.allSettled([
+    fetchJson<ScoreEntry[]>('/api/scores?limit=30&scoring=current'),
+    fetchJson<ScoreEntry[]>('/api/scores?limit=30&scoring=legacy'),
+  ]);
+  scores = serverResults.flatMap(result => result.status === 'fulfilled' ? result.value : []);
+  const failedResult = serverResults.find(result => result.status === 'rejected');
+  if (failedResult?.status === 'rejected') {
+    serverError = failedResult.reason instanceof Error ? failedResult.reason : new Error(String(failedResult.reason));
+    void serverError;
+  }
 
   scores = [...scores, ...localScores]
-    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-    .slice(0, 30);
+    .sort(compareScores);
 
   if (!scores.length) {
     scoreList.innerHTML = `
@@ -350,17 +358,31 @@ async function loadScores(): Promise<void> {
     return;
   }
 
-  const medals = ['gold', 'silver', 'bronze'];
-  scoreList.innerHTML = scores.map((s, i) => `
+  const renderScoreGroup = (group: ScoreEntry[], legacy: boolean): string => {
+    if (!group.length) return '';
+    const medals = legacy ? [] : ['gold', 'silver', 'bronze'];
+    return `
+      <div class="score-section-label${legacy ? ' is-legacy' : ''}">
+        ${t(legacy ? 'maps.legacyScores' : 'maps.currentScores')}
+      </div>
+      ${group.map((s, i) => `
     <div class="score-row">
       <div class="score-rank ${medals[i] ?? ''}">${i + 1}</div>
       <div class="score-info">
-        <div class="score-player">${escHtml(s.player)}${s.localOnly ? ' · LOCAL' : ''}</div>
+        <div class="score-player">${escHtml(s.player)}${s.localOnly ? ` · ${t('maps.localSuffix')}` : ''}${legacy ? ` <span class="score-version-badge">${t('maps.legacyBadge')}</span>` : ''}</div>
         <div class="score-map">${escHtml(s.mapId)}</div>
       </div>
       <div class="score-combo">×${s.combo}</div>
       <div class="score-val">${String(s.score).padStart(6, '0')}</div>
-    </div>`).join('');
+    </div>`).join('')}`;
+  };
+  const currentScores = scores
+    .filter(score => getScoringVersion(score) === CURRENT_SCORING_VERSION)
+    .slice(0, 30);
+  const legacyScores = scores
+    .filter(score => getScoringVersion(score) !== CURRENT_SCORING_VERSION)
+    .slice(0, 30);
+  scoreList.innerHTML = renderScoreGroup(currentScores, false) + renderScoreGroup(legacyScores, true);
 }
 
 // ── Tab switching ─────────────────────────────────────────────────────────────

@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import { CURRENT_SCORING_VERSION, getScoringVersion } from '../core/score-version.ts';
 import type { MapEntry, ScoreEntry } from './library-api.ts';
 import { escapeAttribute as attr, escapeHtml as escHtml, formatMapTime as formatTime, withDevQuery } from './library-format.ts';
 
@@ -30,9 +31,12 @@ export function renderLibraryDetail(
   const bpm = map.meta?.bpm ? `${map.meta.bpm} BPM` : '—';
   const isLocal = map.source === 'local' || map.source === 'autosave';
   const canDeleteServer = map.source === 'server' || map.source === 'server+local';
+  const bestIsLegacy = scoreData.best
+    ? getScoringVersion(scoreData.best) !== CURRENT_SCORING_VERSION
+    : false;
   const scoreSection = scoreData.best ? `
     <div class="detail-score-section">
-      <div class="detail-score-label">${t('maps.bestScore')}</div>
+      <div class="detail-score-label">${t('maps.bestScore')}${bestIsLegacy ? ` <span class="score-version-badge">${t('maps.legacyBadge')}</span>` : ''}</div>
       <div class="detail-best-score">${String(scoreData.best.score).padStart(6, '0')}</div>
       <div class="detail-score-meta">
         <span><span class="material-symbols-rounded">cycle</span>${t('maps.triesCount', { count: scoreData.tries })}</span>

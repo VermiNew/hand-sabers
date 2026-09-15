@@ -1,5 +1,6 @@
 import { t, translateDom } from '../i18n/index.ts';
 import { loadLocalMapAudio, readLocalMaps, readLocalScores } from '../core/localstore.ts';
+import { compareScores, CURRENT_SCORING_VERSION, getScoringVersion } from '../core/score-version.ts';
 import { getCanonicalMapAudioUrl, normalizeMap } from '../core/map-format.ts';
 import { importMapLocally, importMapToServer } from '../core/map-import.ts';
 import { getSettings, setSetting } from '../core/settings.ts';
@@ -70,7 +71,7 @@ function getMapScoreData(mapId: string): { tries: number; best: ScoreEntry | nul
   const scores = readLocalScores({ limit: 1000 }) as ScoreEntry[];
   const mapScores = scores.filter(s => s.mapId === mapId);
   if (!mapScores.length) return { tries: 0, best: null, progress: null };
-  const best = mapScores.reduce((a, b) => (b.score > a.score ? b : a), mapScores[0]!);
+  const best = [...mapScores].sort(compareScores)[0]!;
   const maxProgress = mapScores.reduce((a, b) => Math.max(a, b.progress ?? 0), 0);
   return { tries: mapScores.length, best, progress: maxProgress };
 }
@@ -515,6 +516,12 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
     const scoreLabel = document.createElement('div');
     scoreLabel.className = 'mp-detail-score-label';
     scoreLabel.textContent = `${t('mapPicker.bestScore')} \u00b7 ${scoreData.tries} ${t('mapPicker.tries')}`;
+    if (getScoringVersion(scoreData.best) !== CURRENT_SCORING_VERSION) {
+      const legacyBadge = document.createElement('span');
+      legacyBadge.className = 'mp-score-version-badge';
+      legacyBadge.textContent = t('mapPicker.legacyBadge');
+      scoreLabel.append(' ', legacyBadge);
+    }
     const scoreValue = document.createElement('div');
     scoreValue.className = 'mp-detail-score-value';
     scoreValue.textContent = formatNumber(scoreData.best.score);

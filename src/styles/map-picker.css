@@ -92,6 +92,7 @@
 #mapPickerOverlay .mp-detail-stat-value{font:700 16px JetBrains Mono,monospace;color:var(--text);margin-top:2px}
 #mapPickerOverlay .mp-detail-score{padding:12px 16px;border:1px solid var(--border);border-radius:8px;background:var(--main-soft,rgba(47,124,255,0.08));margin-bottom:20px}
 #mapPickerOverlay .mp-detail-score-label{font:600 9px Oxanium,sans-serif;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+#mapPickerOverlay .mp-score-version-badge{display:inline-flex;align-items:center;padding:2px 6px;border:1px solid rgba(216,163,93,.38);border-radius:999px;background:rgba(216,163,93,.11);color:#e6b878;font:700 8px Oxanium,sans-serif;letter-spacing:.8px;vertical-align:middle}
 #mapPickerOverlay .mp-detail-score-value{font:800 24px Oxanium,sans-serif;color:var(--accent,#36f2a1)}
 #mapPickerOverlay .mp-detail-preview{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:9px;margin-bottom:16px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:rgba(0,0,0,.18)}
 #mapPickerOverlay .mp-detail-preview-toggle{display:inline-flex;align-items:center;gap:5px;min-height:32px;padding:0 10px;border:1px solid rgba(47,124,255,.5);border-radius:7px;background:rgba(47,124,255,.12);color:var(--main-light,#8fc7ff);font:700 9px Oxanium,sans-serif;letter-spacing:.8px;cursor:pointer}
