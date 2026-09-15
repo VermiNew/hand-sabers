@@ -1,4 +1,6 @@
 import { S, state } from '../core/state.ts';
+import { getCutVector } from '../core/gameplay-rules.ts';
+import type { SaberSide } from '../types/index.js';
 import {
   THREE,
   cam3d,
@@ -9,10 +11,11 @@ import {
   rTarget,
   rVel,
 } from './scene.ts';
-import { updateMenuDemo } from './gameplay.ts';
+import { getAutoPlayTarget, updateMenuDemo, type AutoPlayTarget } from './gameplay.ts';
 
 const SABER_INTERVAL_MS = 1000 / 240;
 const SABER_SPEED = 3.2;
+const AUTO_SABER_SPEED = 5.4;
 
 let lastSaberMs = 0;
 const tmpSaberUp = new THREE.Vector3();
@@ -22,6 +25,25 @@ const tmpSaberMatrix = new THREE.Matrix4();
 const tmpSaberQuat = new THREE.Quaternion();
 const lSmoothed = new THREE.Vector3(-0.72, 1.08, 1.55);
 const rSmoothed = new THREE.Vector3(0.72, 1.08, 1.55);
+const autoDesired = { left: new THREE.Vector3(), right: new THREE.Vector3() };
+const autoSmoothed = { left: new THREE.Vector3(), right: new THREE.Vector3() };
+let autoMotionStarted = false;
+
+interface AutoPlayMotionDiagnostics {
+  left: { x: number; y: number; z: number; distance: number; target: boolean };
+  right: { x: number; y: number; z: number; distance: number; target: boolean };
+}
+
+declare global {
+  interface Window {
+    __autoPlayMotion?: AutoPlayMotionDiagnostics;
+  }
+}
+
+const autoMotionDiagnostics: AutoPlayMotionDiagnostics = {
+  left: { x: 0, y: 0, z: 0, distance: 0, target: false },
+  right: { x: 0, y: 0, z: 0, distance: 0, target: false },
+};
 
 function frameScaledLerp(baseAmount: number, deltaScale: number): number {
   return 1 - Math.pow(1 - baseAmount, Math.max(0, deltaScale));
@@ -63,6 +85,104 @@ export function updateSabers(now: number): void {
 
   applyTrackedSaberQuaternion(lSaber, state.saberQuatL, quatLerp);
   applyTrackedSaberQuaternion(rSaber, state.saberQuatR, quatLerp);
+}
+
+function smootherStep(value: number): number {
+  const t = THREE.MathUtils.clamp(value, 0, 1);
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+function lerpAngle(current: number, target: number, amount: number): number {
+  const delta = Math.atan2(Math.sin(target - current), Math.cos(target - current));
+  return current + delta * amount;
+}
+
+function resolveAutoSaberPose(
+  side: SaberSide,
+  target: AutoPlayTarget | null,
+  mapTimeSec: number,
+  desired: THREE.Vector3,
+): number {
+  const sideSign = side === 'left' ? -1 : 1;
+  const idleX = sideSign * 0.64 + Math.sin(mapTimeSec * 0.72 + sideSign) * 0.055;
+  const idleY = 0.82 + Math.sin(mapTimeSec * 0.53 + sideSign * 0.7) * 0.045;
+  desired.set(idleX, idleY, 1.54);
+  if (!target) return sideSign * 0.18;
+
+  const cut = getCutVector(target.cut) ?? { x: -sideSign * 0.28, y: -0.96 };
+  const heldActive = target.heldDuration > 0 && target.timeToHitSec <= 0;
+  if (heldActive) {
+    const holdPhase = Math.max(0, -target.timeToHitSec);
+    desired.set(
+      target.x + cut.x * 0.36 + Math.sin(holdPhase * 4.1 + sideSign) * 0.018,
+      target.y + cut.y * 0.36 + Math.sin(holdPhase * 3.3) * 0.014,
+      1.5 + Math.sin(holdPhase * 2.7 + sideSign) * 0.018,
+    );
+  } else {
+    const swingPhase = smootherStep((0.55 - target.timeToHitSec) / 0.72);
+    const travel = THREE.MathUtils.lerp(-0.55, 0.32, swingPhase);
+    const accuracy = 1 - Math.abs(swingPhase - 0.78) * 0.8;
+    const humanX = Math.sin(mapTimeSec * 5.3 + sideSign * 1.7) * 0.018 * accuracy;
+    const humanY = Math.sin(mapTimeSec * 4.1 + sideSign * 0.9) * 0.014 * accuracy;
+    desired.set(
+      target.x + cut.x * (travel + 0.36) + humanX,
+      target.y + cut.y * (travel + 0.36) + humanY,
+      1.5 + Math.sin(swingPhase * Math.PI) * 0.11 + sideSign * 0.012,
+    );
+  }
+
+  return Math.atan2(cut.x, -cut.y);
+}
+
+function updateAutoSaberSide(side: SaberSide, mapTimeSec: number, deltaSec: number): number {
+  const targetPosition = side === 'left' ? lTarget : rTarget;
+  const smoothed = autoSmoothed[side];
+  const desired = autoDesired[side];
+  const target = getAutoPlayTarget(side);
+  const desiredRotationZ = resolveAutoSaberPose(side, target, mapTimeSec, desired);
+  const beforeX = smoothed.x;
+  const beforeY = smoothed.y;
+  const beforeZ = smoothed.z;
+  const response = 1 - Math.exp(-deltaSec * (target ? 11 : 4.5));
+  const maxStep = (target ? AUTO_SABER_SPEED : SABER_SPEED * 0.55) * deltaSec;
+  tmpSaberForward.subVectors(desired, smoothed).multiplyScalar(response);
+  if (tmpSaberForward.lengthSq() > maxStep * maxStep) tmpSaberForward.setLength(maxStep);
+  smoothed.add(tmpSaberForward);
+  targetPosition.copy(smoothed);
+
+  const diagnostics = autoMotionDiagnostics[side];
+  diagnostics.distance += Math.hypot(smoothed.x - beforeX, smoothed.y - beforeY, smoothed.z - beforeZ);
+  diagnostics.x = smoothed.x;
+  diagnostics.y = smoothed.y;
+  diagnostics.z = smoothed.z;
+  diagnostics.target = Boolean(target);
+  return desiredRotationZ;
+}
+
+export function updateAutoPlaySabers(now: number, mapTimeSec: number): void {
+  if (!autoMotionStarted) {
+    autoSmoothed.left.copy(lSaber.position);
+    autoSmoothed.right.copy(rSaber.position);
+    autoMotionDiagnostics.left.distance = 0;
+    autoMotionDiagnostics.right.distance = 0;
+    window.__autoPlayMotion = autoMotionDiagnostics;
+    autoMotionStarted = true;
+  }
+  const deltaSec = THREE.MathUtils.clamp(state.deltaSec ?? 0.016, 0.001, 0.05);
+  const leftRotationZ = updateAutoSaberSide('left', mapTimeSec, deltaSec);
+  const rightRotationZ = updateAutoSaberSide('right', mapTimeSec, deltaSec);
+  updateSabers(now);
+  const rotationLerp = 1 - Math.exp(-deltaSec * 13);
+  lSaber.rotation.z = lerpAngle(lSaber.rotation.z, leftRotationZ, rotationLerp);
+  rSaber.rotation.z = lerpAngle(rSaber.rotation.z, rightRotationZ, rotationLerp);
+  lSaber.rotation.x = THREE.MathUtils.lerp(lSaber.rotation.x, -0.08 + Math.sin(mapTimeSec * 3.2) * 0.045, rotationLerp);
+  rSaber.rotation.x = THREE.MathUtils.lerp(rSaber.rotation.x, -0.08 + Math.sin(mapTimeSec * 3.2 + 1.2) * 0.045, rotationLerp);
+}
+
+export function resetAutoPlayMotion(): void {
+  if (!autoMotionStarted) return;
+  autoMotionStarted = false;
+  delete window.__autoPlayMotion;
 }
 
 export function isMainMenuOpen(): boolean {

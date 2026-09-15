@@ -8,7 +8,7 @@ import type { GamePauseController } from './game-pause-controller.ts';
 import { isAutoPlayEnabled, updateBlocks } from './gameplay.ts';
 import type { MapTimeline } from './map-timeline.ts';
 import type { MultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
-import { isMainMenuOpen, updateMenuAutoplay, updateSabers } from './saber-motion.ts';
+import { isMainMenuOpen, resetAutoPlayMotion, updateAutoPlaySabers, updateMenuAutoplay, updateSabers } from './saber-motion.ts';
 import {
   animateIdleSabers,
   lSaber,
@@ -45,7 +45,11 @@ export function updateFrameGamePhase({
   scorePublisher,
   onMapComplete,
 }: FrameGamePhaseOptions): void {
-  if (!isAutoPlayEnabled()) pauseController.updateHands(now);
+  const autoPlay = isAutoPlayEnabled();
+  if (!autoPlay) {
+    resetAutoPlayMotion();
+    pauseController.updateHands(now);
+  }
 
   if (isMainMenuOpen()) {
     if (performanceProfile.menuDemo) updateMenuAutoplay(now, timeSec);
@@ -55,11 +59,12 @@ export function updateFrameGamePhase({
   }
 
   if (state.appState === S.PLAYING) {
-    updateSabers(now);
     mapTimeline.updateAudioSchedule(now);
 
     const mapBeats = state.map?.beats ?? null;
     const mapTimeSec = state.map ? mapTimeline.getTime(now) : 0;
+    if (autoPlay) updateAutoPlaySabers(now, mapTimeSec);
+    else updateSabers(now);
     window.__songTimeSec = mapTimeSec;
     updateBlocks(now, mapBeats, mapTimeSec);
 
