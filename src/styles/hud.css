@@ -21,6 +21,14 @@
   text-shadow:0 0 12px rgba(255,190,72,0.45);
 }
 body.training-mode #trainingBadge { display:block; }
+#autoPlayBadge {
+  display:none; width:max-content; margin:0 auto 8px; padding:5px 10px;
+  border:1px solid rgba(178,132,255,.48); border-radius:999px;
+  background:rgba(35,20,62,.78); color:#d8c3ff;
+  font:800 10px 'Oxanium',sans-serif; letter-spacing:1.8px;
+  text-shadow:0 0 12px rgba(178,132,255,.48);
+}
+body.auto-play-mode #autoPlayBadge { display:block; }
 #hudBottom {
   position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
   display:flex; flex-direction:column; align-items:center; gap:10px;

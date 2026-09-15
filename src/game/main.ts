@@ -12,7 +12,7 @@ import {
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, stopMapAudio, clearMapAudio, applyAudioSettings } from './audio.ts';
 import { initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, restoreCalibrationData } from '../tracking/tracking.ts';
-import { setGameOverHandler, startGameplay, clearGameplayEntities, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources } from './gameplay.ts';
+import { setGameOverHandler, startGameplay, clearGameplayEntities, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, isAutoPlayEnabled, setAutoPlayEnabled } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, initCameraPanelToggle } from '../ui/devpanel.ts';
 import type { FrameProfile } from '../ui/devpanel.ts';
@@ -275,16 +275,17 @@ async function beginPlaying(): Promise<void> {
 
   setRoundPreparationStage('scene', 'done');
   setRoundPreparationProgress(1);
-  beginScoreSubmissionSession(state.map?.id, settings.trainingMode, Boolean(state.map?.localOnly));
+  beginScoreSubmissionSession(state.map?.id, settings.trainingMode || isAutoPlayEnabled(), Boolean(state.map?.localOnly));
   state.appState = S.PLAYING;
   startGameplay();
   hideOverlay();
-  if (ui.dStatus) ui.dStatus.textContent = 'PLAYING';
+  if (ui.dStatus) ui.dStatus.textContent = isAutoPlayEnabled() ? 'AUTO' : 'PLAYING';
 }
 
 function endGame(victory = false): void {
   const playTimeMs = state.map && mapTimeline ? mapTimeline.getTime() * 1000 : 0;
-  recordGameEnd(state, victory, playTimeMs);
+  const autoPlay = isAutoPlayEnabled();
+  if (!autoPlay) recordGameEnd(state, victory, playTimeMs);
   mapNarratorTimeline.reset();
   gamePauseController.reset();
   clearDangerPulse();
@@ -300,7 +301,7 @@ function endGame(victory = false): void {
   runAsyncTask('score-submit', () => submitScore({
     playerName: settings.playerName,
     progress,
-    trainingMode,
+    trainingMode: trainingMode || autoPlay,
   }));
   fadeTransition(() => { showGameOver(state, victory); });
 }
@@ -545,6 +546,7 @@ function returnToMainMenu(): void {
     stopMapAudio();
     mapTimeline.reset();
     clearGameplayEntities();
+    setAutoPlayEnabled(false);
     hidePauseMenu();
     hideHandsPaused();
     if (ui.hud) ui.hud.style.display = 'none';
@@ -657,8 +659,9 @@ async function retryTrackingStart(): Promise<void> {
   }
 }
 
-async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
+async function startFromMainMenu({ calibrate = false, autoPlay = false } = {}): Promise<void> {
   initAudio();
+  setAutoPlayEnabled(autoPlay);
   applyAudioSettings(settings);
   setScenePerformanceProfile(settings);
   prewarmGameplayResources();
@@ -674,6 +677,11 @@ async function startFromMainMenu({ calibrate = false } = {}): Promise<void> {
   clearGameplayEntities();
   showOverlay();
   state.appState = S.LOADING;
+
+  if (autoPlay) {
+    await beginPlaying();
+    return;
+  }
 
   if (trackingStarted) {
     if (calibrate || !calibrationController.isReady()) restartGame();
@@ -840,7 +848,14 @@ showFirstRunWelcome();
 showProfileOnboardingIfNeeded();
 
 initPhoneAudioEvents(settings);
-initMapSelectionEvents();
+initMapSelectionEvents({
+  onAutoPlay() {
+    runAsyncTask('auto-play-start', () => startFromMainMenu({ autoPlay: true }));
+  },
+  onManualPlay() {
+    setAutoPlayEnabled(false);
+  },
+});
 
 initStartupGuidance();
 

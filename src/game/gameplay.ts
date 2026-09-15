@@ -598,7 +598,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
       if (entry.isHeld) {
         entry.heldProgress = THREE.MathUtils.clamp(hitDeltaSec, 0, entry.heldDuration);
         if (hitDeltaSec >= entry.heldDuration) completeHeldBlock(entry, i);
-      } else if (hitDeltaSec >= -0.025 && hitDeltaSec <= 0.06) {
+      } else if (hitDeltaSec >= -0.025) {
         const cache = prepareAutoHitbox(entry);
         const light = entry.side === 'left' ? lLight : rLight;
         hitBlock(entry, getCurrentBlockColor(entry.side), light, cache);

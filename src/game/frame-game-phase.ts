@@ -5,7 +5,7 @@ import { isDeveloperPanelEnabled } from '../ui/devpanel.ts';
 import { updateMapProgress } from '../ui/ui.ts';
 import { hasMapAudio } from './audio.ts';
 import type { GamePauseController } from './game-pause-controller.ts';
-import { updateBlocks } from './gameplay.ts';
+import { isAutoPlayEnabled, updateBlocks } from './gameplay.ts';
 import type { MapTimeline } from './map-timeline.ts';
 import type { MultiplayerScorePublisher } from './multiplayer-score-publisher.ts';
 import { isMainMenuOpen, updateMenuAutoplay, updateSabers } from './saber-motion.ts';
@@ -45,7 +45,7 @@ export function updateFrameGamePhase({
   scorePublisher,
   onMapComplete,
 }: FrameGamePhaseOptions): void {
-  pauseController.updateHands(now);
+  if (!isAutoPlayEnabled()) pauseController.updateHands(now);
 
   if (isMainMenuOpen()) {
     if (performanceProfile.menuDemo) updateMenuAutoplay(now, timeSec);

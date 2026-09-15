@@ -892,7 +892,8 @@
   },
   "hud": {
     "progress": "POSTĘP",
-    "training": "TRENING · WYNIK NIEZAPISYWANY"
+    "training": "TRENING · WYNIK NIEZAPISYWANY",
+    "autoPlay": "AUTO · KOMPUTER GRA"
   },
   "overlay": {
     "handTrackingSystem": "SYSTEM ŚLEDZENIA RĄK — MEDIAPIPE",
@@ -1141,6 +1142,8 @@
     "noMaps": "Brak map",
     "beats": "beatów",
     "play": "GRAJ",
+    "autoPlay": "AUTO",
+    "autoPlayHint": "Komputer rozegra mapę bez kamery i bez zapisywania wyniku",
     "backToList": "WRÓĆ DO MAP",
     "duration": "Czas",
     "beatsCount": "Beaty",

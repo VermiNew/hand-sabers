@@ -575,10 +575,22 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
   playBtn.type = 'button';
   playBtn.textContent = t('mapPicker.play');
   playBtn.addEventListener('click', () => {
-    window.dispatchEvent(new CustomEvent('hand-sabers:map-selected', { detail: { mapId: map.id } }));
+    window.dispatchEvent(new CustomEvent('hand-sabers:map-selected', { detail: { mapId: map.id, autoPlay: false } }));
     closeOverlay();
   });
-  actions.append(favoriteBtn, playBtn);
+  const autoPlayBtn = document.createElement('button');
+  autoPlayBtn.className = 'mp-detail-auto';
+  autoPlayBtn.type = 'button';
+  autoPlayBtn.title = t('mapPicker.autoPlayHint');
+  autoPlayBtn.innerHTML = '<span class="material-symbols-rounded" aria-hidden="true">smart_toy</span>';
+  const autoPlayLabel = document.createElement('span');
+  autoPlayLabel.textContent = t('mapPicker.autoPlay');
+  autoPlayBtn.append(autoPlayLabel);
+  autoPlayBtn.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('hand-sabers:map-selected', { detail: { mapId: map.id, autoPlay: true } }));
+    closeOverlay();
+  });
+  actions.append(favoriteBtn, autoPlayBtn, playBtn);
   detailPane.append(actions);
 }
 

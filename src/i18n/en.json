@@ -892,7 +892,8 @@
   },
   "hud": {
     "progress": "PROGRESS",
-    "training": "TRAINING · SCORE NOT SAVED"
+    "training": "TRAINING · SCORE NOT SAVED",
+    "autoPlay": "AUTO · COMPUTER PLAYING"
   },
   "overlay": {
     "handTrackingSystem": "HAND TRACKING SYSTEM — MEDIAPIPE",
@@ -1141,6 +1142,8 @@
     "noMaps": "No maps found",
     "beats": "beats",
     "play": "PLAY",
+    "autoPlay": "AUTO",
+    "autoPlayHint": "Let the computer play without a camera or saving the score",
     "backToList": "BACK TO MAPS",
     "duration": "Duration",
     "beatsCount": "Beats",

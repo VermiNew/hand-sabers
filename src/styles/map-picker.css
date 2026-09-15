@@ -115,6 +115,10 @@
 #mapPickerOverlay .mp-detail-play:hover{box-shadow:0 0 20px rgba(47,124,255,0.4)}
 #mapPickerOverlay .mp-detail-play:active{transform:scale(0.97)}
 #mapPickerOverlay .mp-detail-play:disabled{opacity:0.4;cursor:not-allowed}
+#mapPickerOverlay .mp-detail-auto{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 14px;border:1px solid rgba(178,132,255,.58);border-radius:10px;background:rgba(120,72,205,.14);color:#d8c3ff;font:800 11px Oxanium,sans-serif;letter-spacing:1.2px;cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .1s ease}
+#mapPickerOverlay .mp-detail-auto:hover{border-color:#b284ff;background:rgba(120,72,205,.24)}
+#mapPickerOverlay .mp-detail-auto:active{transform:scale(.97)}
+#mapPickerOverlay .mp-detail-auto .material-symbols-rounded{font-size:18px}
 
 @media(max-width:700px){
   #mapPickerOverlay .mp-detail-back{display:inline-flex;align-items:center;gap:6px;margin:0 0 14px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:rgba(255,255,255,.04);color:var(--text);font:700 10px Oxanium,sans-serif;letter-spacing:.8px;cursor:pointer}
