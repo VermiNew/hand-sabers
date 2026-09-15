@@ -29,7 +29,7 @@ let socket: WebSocket | null = null;
 let activeJoinUrl = '';
 let activeRoomCode = '';
 let currentPlayerId = '';
-let currentRole: 'host' | 'guest' | null = null;
+let currentRole: 'host' | 'guest' | 'spectator' | null = null;
 let currentRoom: RoomSnapshot | null = null;
 let pendingPreparationMapId = '';
 let announcedRoundId = 0;
@@ -63,7 +63,7 @@ function trySocketSend(target: WebSocket | null, payload: string | ArrayBuffer, 
 }
 
 export function canSendRealtime(): boolean {
-  return Boolean(currentPlayerId) && socket?.readyState === WebSocket.OPEN;
+  return Boolean(currentPlayerId) && currentRole !== 'spectator' && socket?.readyState === WebSocket.OPEN;
 }
 
 export function getCurrentPlayerId(): string {
@@ -74,6 +74,7 @@ export function sendRealtimePacket(packet: ArrayBuffer): boolean {
   const activeSocket = socket;
   if (
     !currentPlayerId
+    || currentRole === 'spectator'
     || activeSocket?.readyState !== WebSocket.OPEN
     || (packet.byteLength !== 96 && packet.byteLength !== 528)
   ) return false;
@@ -88,7 +89,7 @@ export function sendMultiplayerScore(payload: {
   finished?: boolean;
 }): boolean {
   const activeSocket = socket;
-  if (!currentPlayerId || activeSocket?.readyState !== WebSocket.OPEN) return false;
+  if (!currentPlayerId || currentRole === 'spectator' || activeSocket?.readyState !== WebSocket.OPEN) return false;
   return trySocketSend(
     activeSocket,
     JSON.stringify({ v: PROTOCOL_VERSION, type: 'score', ...payload }),
@@ -119,6 +120,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const codeInput = element<HTMLInputElement>('multiplayerCode');
   const createButton = element<HTMLButtonElement>('multiplayerCreate');
   const joinButton = element<HTMLButtonElement>('multiplayerJoin');
+  const spectateButton = element<HTMLButtonElement>('multiplayerSpectate');
   const copyButton = element<HTMLButtonElement>('multiplayerCopy');
   const copyCodeButton = element<HTMLButtonElement>('multiplayerCopyCode');
   const lobby = element<HTMLElement>('multiplayerLobby');
@@ -185,6 +187,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const setBusy = (busy: boolean) => {
     createButton.disabled = busy;
     joinButton.disabled = busy;
+    spectateButton.disabled = busy;
   };
   const renderNetworkDiagnostics = (diagnostics: NetworkDiagnostics | null) => {
     const values: Record<string, number | undefined> = {
@@ -356,11 +359,12 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   };
 
   const renderWaitingState = (snapshot: RoomSnapshot) => {
-    const readyPlayers = snapshot.players.filter(player => player.ready).length;
+    const participants = snapshot.players.filter(player => player.role !== 'spectator');
+    const readyPlayers = participants.filter(player => player.ready).length;
     waitingCard.hidden = !pendingPreparationMapId && readyPlayers === 0;
-    waitingProgress.max = Math.max(1, snapshot.players.length);
+    waitingProgress.max = Math.max(1, participants.length);
     waitingProgress.value = readyPlayers;
-    waitingCount.textContent = `${readyPlayers} / ${snapshot.players.length}`;
+    waitingCount.textContent = `${readyPlayers} / ${participants.length}`;
   };
 
   const announceRoundStarted = (snapshot: RoomSnapshot) => {
@@ -381,6 +385,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   };
 
   const announceRoundFinished = (snapshot: RoomSnapshot) => {
+    if (currentRole === 'spectator') return;
     if (!snapshot.round || snapshot.round.finishedAt === null) return;
     if (snapshot.round.id <= lastFinishedRoundId) return;
     lastFinishedRoundId = snapshot.round.id;
@@ -392,11 +397,19 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   const renderRoom = (snapshot: RoomSnapshot) => {
     if (currentRoom && snapshot.revision < currentRoom.revision) return;
     currentRoom = snapshot;
-    remoteTracking.retainStreams(new Set(snapshot.players.map(player => player.streamId)));
+    const participants = snapshot.players.filter(player => player.role !== 'spectator');
+    const spectatorCount = snapshot.players.length - participants.length;
+    remoteTracking.retainStreams(new Set(participants.map(player => player.streamId)));
     window.dispatchEvent(new CustomEvent('hand-sabers:room-state', { detail: snapshot }));
     lobby.hidden = false;
     lobbyCode.textContent = snapshot.code;
-    playerCount.textContent = `${snapshot.players.length} / ${snapshot.maxPlayers}`;
+    playerCount.textContent = spectatorCount > 0
+      ? t('multiplayer.playerCountWithSpectators', {
+        count: participants.length,
+        max: snapshot.maxPlayers,
+        spectators: spectatorCount,
+      })
+      : `${participants.length} / ${snapshot.maxPlayers}`;
     renderRoomPlayerList(
       playerList,
       snapshot,
@@ -418,17 +431,18 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     rulesPanel.disabled = currentRole !== 'host' || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     const self = snapshot.players.find(player => player.id === currentPlayerId);
     renderWaitingState(snapshot);
-    readyButton.disabled = !snapshot.mapId || !self || Boolean(pendingPreparationMapId);
+    readyButton.hidden = currentRole === 'spectator';
+    readyButton.disabled = currentRole === 'spectator' || !snapshot.mapId || !self || Boolean(pendingPreparationMapId);
     readyButton.classList.toggle('is-ready', Boolean(self?.ready));
     readyButton.textContent = pendingPreparationMapId
       ? t('multiplayer.preparing')
       : self?.ready ? t('multiplayer.notReady') : t('multiplayer.ready');
     startButton.hidden = currentRole !== 'host';
-    coopHint.hidden = currentRole !== 'host' || snapshot.mode !== 'coop' || snapshot.players.length <= snapshot.maxPlayers;
+    coopHint.hidden = currentRole !== 'host' || snapshot.mode !== 'coop' || participants.length <= snapshot.maxPlayers;
     startButton.disabled = !snapshot.mapId
-      || snapshot.players.length === 0
-      || (snapshot.mode === 'coop' && snapshot.players.length !== snapshot.maxPlayers)
-      || snapshot.players.some(player => !player.ready)
+      || participants.length === 0
+      || (snapshot.mode === 'coop' && participants.length !== snapshot.maxPlayers)
+      || participants.some(player => !player.ready)
       || Boolean(snapshot.round && snapshot.round.finishedAt === null);
     renderScores(snapshot);
     announceRoundFinished(snapshot);
@@ -442,7 +456,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     }
   }
 
-  function connect(code: string, token: string, name: string): void {
+  function connect(code: string, token: string, name: string, requestedRole: 'guest' | 'spectator' = 'guest'): void {
     socket?.close(1000, 'Replaced');
     resetClockSync();
     currentPlayerId = '';
@@ -478,6 +492,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         avatar: settings.avatar,
         playerColor: settings.playerColor,
         moderationId: getModerationId(),
+        role: requestedRole,
       }), 'join');
       if (!joined) {
         showMessage(t('multiplayer.connectionError'));
@@ -502,7 +517,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
         if (incoming.v !== PROTOCOL_VERSION) return;
         if (incoming.type === 'joined') {
           currentPlayerId = String(incoming.playerId || '');
-          currentRole = incoming.role === 'host' ? 'host' : 'guest';
+          currentRole = incoming.role === 'host'
+            ? 'host'
+            : incoming.role === 'spectator' ? 'spectator' : 'guest';
           chatView.setConnected(true);
           status.textContent = t('multiplayer.connected');
           setBusy(false);
@@ -592,7 +609,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     }
   });
 
-  joinButton.addEventListener('click', async () => {
+  const joinRoom = async (requestedRole: 'guest' | 'spectator') => {
     const code = codeInput.value.trim().toUpperCase();
     if (!/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/.test(code)) {
       showMessage(t('multiplayer.invalidCode'));
@@ -604,12 +621,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       const response = await fetch(`/api/rooms/${encodeURIComponent(code)}/join`, { method: 'POST' });
       const credential = await responseJson<JoinCodeResponse>(response);
       share.hidden = true;
-      connect(credential.code, credential.joinToken, getPlayerName());
+      connect(credential.code, credential.joinToken, getPlayerName(), requestedRole);
     } catch (error) {
       setBusy(false);
       showMessage(requestErrorMessage(error));
     }
-  });
+  };
+  joinButton.addEventListener('click', () => void joinRoom('guest'));
+  spectateButton.addEventListener('click', () => void joinRoom('spectator'));
 
   codeInput.addEventListener('input', () => {
     codeInput.value = codeInput.value.toUpperCase().replace(/[^23456789ABCDEFGHJKLMNPQRSTUVWXYZ]/g, '').slice(0, 6);

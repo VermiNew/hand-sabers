@@ -14,6 +14,7 @@ export function renderRoomPlayerList(
   for (const player of snapshot.players) {
     const row = document.createElement('div');
     row.className = `mp-player-row${player.ready ? ' is-ready' : ''}`;
+    row.classList.toggle('is-spectator', player.role === 'spectator');
     row.dataset['voicePlayerId'] = player.id;
     row.classList.toggle('is-voice-speaking', isVoicePlayerSpeaking(player.id));
     const identity = document.createElement('span');
@@ -28,8 +29,13 @@ export function renderRoomPlayerList(
       role.className = 'mp-player-role';
       role.textContent = 'HOST';
       identity.append(role);
+    } else if (player.role === 'spectator') {
+      const role = document.createElement('span');
+      role.className = 'mp-player-role';
+      role.textContent = t('multiplayer.spectatorState');
+      identity.append(role);
     }
-    if (snapshot.mode === 'coop') {
+    if (snapshot.mode === 'coop' && player.role !== 'spectator') {
       const saber = document.createElement('span');
       saber.className = 'mp-player-role';
       saber.textContent = t(`multiplayer.${player.saber}Saber`);
@@ -37,8 +43,10 @@ export function renderRoomPlayerList(
     }
     const state = document.createElement('span');
     state.className = 'mp-player-state';
-    if (snapshot.round && !player.playing) {
-      state.textContent = t('multiplayer.spectatorState');
+    if (player.role === 'spectator') {
+      state.textContent = t(snapshot.round && snapshot.round.finishedAt === null
+        ? 'multiplayer.spectatorWatchingState'
+        : 'multiplayer.spectatorWaitingState');
     } else if (player.ready) {
       state.textContent = t('multiplayer.calibratedState');
     } else if (player.id === currentPlayerId && pendingPreparationMapId) {
@@ -48,7 +56,7 @@ export function renderRoomPlayerList(
     }
     const resources = document.createElement('span');
     resources.className = 'mp-player-resources';
-    for (const resource of ['map', 'audio', 'tracking'] as const) {
+    for (const resource of player.role === 'spectator' ? [] : ['map', 'audio', 'tracking'] as const) {
       const ready = player.readiness[resource];
       const badge = document.createElement('span');
       badge.className = `mp-resource-badge${ready ? ' is-ready' : ''}`;
@@ -58,7 +66,7 @@ export function renderRoomPlayerList(
       resources.append(badge);
     }
     row.append(identity, resources, state);
-    if (onKickPlayer && player.role === 'guest' && player.id !== currentPlayerId) {
+    if (onKickPlayer && player.role !== 'host' && player.id !== currentPlayerId) {
       const kickButton = document.createElement('button');
       kickButton.type = 'button';
       kickButton.className = 'mp-player-kick';
