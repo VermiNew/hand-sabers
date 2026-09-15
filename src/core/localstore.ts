@@ -1,4 +1,5 @@
 import { t } from '../i18n/index.ts';
+import { compareScores } from './score-version.ts';
 
 const LOCAL_MAPS_KEY = 'hs_local_maps';
 const LOCAL_SCORES_KEY = 'hs_local_scores';
@@ -34,6 +35,7 @@ interface LocalScoreInput {
   player?: string;
   score?: number;
   combo?: number;
+  scoringVersion?: number;
   date?: string;
   progress?: number;
 }
@@ -43,6 +45,7 @@ export interface LocalScore {
   player: string;
   score: number;
   combo: number;
+  scoringVersion?: number;
   date: string;
   localOnly: true;
   progress?: number;
@@ -108,7 +111,7 @@ export function readLocalScores({ mapId = null, limit = 100 }: ReadScoresOptions
   if (!Array.isArray(scores)) scores = [];
   let localScores = scores as LocalScore[];
   if (mapId) localScores = localScores.filter(s => s.mapId === mapId);
-  localScores.sort((a, b) => (b.score || 0) - (a.score || 0));
+  localScores.sort(compareScores);
   return localScores.slice(0, limit);
 }
 
@@ -120,11 +123,12 @@ export function appendLocalScore(score: LocalScoreInput | null | undefined): voi
     player: score.player || t('player.defaultName'),
     score: Math.max(0, Math.floor(score.score || 0)),
     combo: Math.max(0, Math.floor(score.combo || 0)),
+    ...(score.scoringVersion !== undefined ? { scoringVersion: score.scoringVersion } : {}),
     date: score.date || new Date().toISOString(),
     localOnly: true,
     ...(score.progress !== undefined ? { progress: Math.max(0, Math.min(1, score.progress)) } : {}),
   });
-  scores.sort((a, b) => (b.score || 0) - (a.score || 0));
+  scores.sort(compareScores);
   localStorage.setItem(LOCAL_SCORES_KEY, JSON.stringify(scores.slice(0, 500)));
 }
 

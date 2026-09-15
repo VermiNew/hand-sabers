@@ -25,6 +25,7 @@ export interface ScoreEntry {
   player: string;
   score: number;
   combo: number;
+  scoringVersion?: number;
   date?: string;
   progress?: number;
   localOnly?: boolean;

@@ -1,11 +1,13 @@
 import { readFile, rename, writeFile } from 'fs/promises';
 import { FileMutex } from '../utils.js';
+import { compareScores } from '../../src/core/score-version.js';
 
 export interface ScoreEntry {
   mapId: string;
   player: string;
   score: number;
   combo: number;
+  scoringVersion?: number;
   date: string;
   progress?: number;
 }
@@ -35,7 +37,7 @@ export function createScoreStorage(filePath: string): ScoreStorage {
       try {
         const scores = await readRaw();
         scores.push(entry);
-        scores.sort((a, b) => b.score - a.score);
+        scores.sort(compareScores);
         const tmpPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
         await writeFile(tmpPath, JSON.stringify(scores.slice(0, 1000), null, 2));
         await rename(tmpPath, filePath);
