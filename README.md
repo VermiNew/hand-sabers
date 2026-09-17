@@ -142,6 +142,10 @@ The server writes files to the `maps/` directory:
 - `maps/beatdata/<id>.json` — map data
 - `maps/audio/<id>.<ext>` — map audio
 - `maps/_scores.json` — leaderboard
+- `maps/_accounts.json` — accounts (salted password/PIN hashes only)
+
+See [`docs/account-security.md`](docs/account-security.md) for the account model,
+attempt limits, and consequences of losing the sole recovery PIN.
 
 `config.json` → `mapLibraryQuota` controls the shared persistent-library limit (`maxBytes`, `maxMaps`, `maxAudioFiles`). The default 8 GiB and 2000 maps/audio files leaves ample room for local development. A save or import that would exceed a limit returns HTTP 507 and is rolled back completely; existing files are never removed automatically, and manual map deletion remains available while over quota.
 
@@ -189,6 +193,12 @@ Allowed values:
 | `/api/maps/:id` | DELETE | Delete a map |
 | `/api/scores` | GET / POST | Leaderboard |
 | `/api/developer/access` | GET / POST | Developer-token configuration status / verification |
+| `/api/auth/session` | GET | Current account-session status |
+| `/api/auth/register` | POST | Register an account and start a session |
+| `/api/auth/login` | POST | Sign in |
+| `/api/auth/logout` | POST | End the current session |
+| `/api/auth/recover` | POST | Set a new password with the 8-digit recovery PIN |
+| `/api/auth/account` | DELETE | Permanently delete the signed-in account after password confirmation |
 
 ## Camera tips
 

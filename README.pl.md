@@ -142,6 +142,10 @@ Serwer zapisuje pliki w katalogu `maps/`:
 - `maps/beatdata/<id>.json` — dane mapy
 - `maps/audio/<id>.<ext>` — audio mapy
 - `maps/_scores.json` — leaderboard
+- `maps/_accounts.json` — konta (wyłącznie sole i skróty haseł/PIN-ów)
+
+Model kont, limity prób i konsekwencje utraty jedynego PIN-u odzyskiwania opisuje
+[`docs/account-security.md`](docs/account-security.md).
 
 `config.json` → `mapLibraryQuota` ustawia wspólny limit trwałej biblioteki (`maxBytes`, `maxMaps`, `maxAudioFiles`). Domyślne 8 GiB oraz po 2000 map i plików audio zostawia duży zapas dla pracy lokalnej. Zapis lub import przekraczający limit zwraca HTTP 507 i jest w całości cofany; istniejące pliki nie są automatycznie usuwane, a ręczne usuwanie map pozostaje dostępne także po przekroczeniu limitu.
 
@@ -189,6 +193,12 @@ Dozwolone wartości:
 | `/api/maps/:id` | DELETE | Usuń mapę |
 | `/api/scores` | GET / POST | Leaderboard |
 | `/api/developer/access` | GET / POST | Stan konfiguracji / weryfikacja tokenu developera |
+| `/api/auth/session` | GET | Stan bieżącej sesji konta |
+| `/api/auth/register` | POST | Rejestracja konta i rozpoczęcie sesji |
+| `/api/auth/login` | POST | Logowanie |
+| `/api/auth/logout` | POST | Wylogowanie bieżącej sesji |
+| `/api/auth/recover` | POST | Ustawienie nowego hasła za pomocą 8-cyfrowego PIN-u |
+| `/api/auth/account` | DELETE | Trwałe usunięcie zalogowanego konta po potwierdzeniu hasłem |
 
 ## Wskazówki do kamery
 
