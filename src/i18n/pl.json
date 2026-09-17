@@ -1161,6 +1161,8 @@
     "all": "Wszystkie"
   },
   "mapPicker": {
+    "libraryEyebrow": "BIBLIOTEKA AREN",
+    "arenaTrack": "ŚCIEŻKA ARENY",
     "searchPlaceholder": "Szukaj map...",
     "import": "IMPORTUJ",
     "importing": "IMPORTUJĘ…",

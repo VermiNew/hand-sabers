@@ -1161,6 +1161,8 @@
     "all": "All"
   },
   "mapPicker": {
+    "libraryEyebrow": "ARENA LIBRARY",
+    "arenaTrack": "ARENA TRACK",
     "searchPlaceholder": "Search maps...",
     "import": "IMPORT",
     "importing": "IMPORTING…",

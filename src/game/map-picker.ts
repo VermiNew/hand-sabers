@@ -67,6 +67,28 @@ function formatNumber(value: number): string {
   return value.toLocaleString('en-US');
 }
 
+const DIFFICULTY_ACCENTS: Record<string, string> = {
+  easy: '#36f2a1',
+  medium: '#ffc94a',
+  hard: '#ff7a52',
+  expert: '#ff4f72',
+};
+
+function getMapHue(mapId: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < mapId.length; index++) {
+    hash ^= mapId.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return Math.abs(hash) % 360;
+}
+
+function applyMapVisualIdentity(element: HTMLElement, map: MapEntry): void {
+  const difficulty = cleanText(map.meta?.difficulty).toLowerCase();
+  element.style.setProperty('--mp-map-accent', DIFFICULTY_ACCENTS[difficulty] ?? '#65d9ff');
+  element.style.setProperty('--mp-map-hue', String(getMapHue(map.id)));
+}
+
 function getMapScoreData(mapId: string): { tries: number; best: ScoreEntry | null; progress: number | null } {
   const scores = readLocalScores({ limit: 1000 }) as ScoreEntry[];
   const mapScores = scores.filter(s => s.mapId === mapId);
@@ -386,6 +408,8 @@ function updateChallengeButton(): void {
 
 function renderMapList(list: HTMLElement): void {
   const maps = getFilteredMaps();
+  const mapCount = element<HTMLElement>('mpMapCount');
+  if (mapCount) mapCount.textContent = `${maps.length} / ${allMaps.length}`;
   updateChallengeButton();
   list.replaceChildren();
   if (!maps.length) {
@@ -395,7 +419,7 @@ function renderMapList(list: HTMLElement): void {
     list.append(empty);
     return;
   }
-  for (const map of maps) {
+  for (const [index, map] of maps.entries()) {
     const isRecommended = learningRecommendation?.mapId === map.id;
     const isFavorite = getSettings().favoriteMapIds.includes(map.id);
     const card = document.createElement('button');
@@ -404,9 +428,17 @@ function renderMapList(list: HTMLElement): void {
     card.dataset['mapId'] = map.id;
     card.setAttribute('role', 'option');
     card.setAttribute('aria-selected', String(map.id === selectedId));
-    const icon = document.createElement('span');
-    icon.className = 'material-symbols-rounded mp-map-card-icon';
-    icon.textContent = 'music_note';
+    applyMapVisualIdentity(card, map);
+    const cover = document.createElement('span');
+    cover.className = 'mp-map-card-cover';
+    cover.setAttribute('aria-hidden', 'true');
+    const coverIndex = document.createElement('span');
+    coverIndex.className = 'mp-map-card-index';
+    coverIndex.textContent = String(index + 1).padStart(2, '0');
+    const coverIcon = document.createElement('span');
+    coverIcon.className = 'material-symbols-rounded';
+    coverIcon.textContent = 'graphic_eq';
+    cover.append(coverIndex, coverIcon);
     const content = document.createElement('span');
     content.className = 'mp-map-card-content';
     const title = document.createElement('strong');
@@ -427,7 +459,7 @@ function renderMapList(list: HTMLElement): void {
     const check = document.createElement('span');
     check.className = 'material-symbols-rounded mp-map-card-check';
     check.textContent = map.id === selectedId ? 'check_circle' : 'chevron_right';
-    card.append(icon, content);
+    card.append(cover, content);
     if (isFavorite) {
       const favorite = document.createElement('span');
       favorite.className = 'material-symbols-rounded mp-map-card-favorite';
@@ -486,9 +518,16 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
     selectedCard?.focus({ preventScroll: true });
   });
   detailPane.append(backButton);
+  const hero = document.createElement('section');
+  hero.className = 'mp-detail-hero';
+  applyMapVisualIdentity(hero, map);
+  const heroKicker = document.createElement('span');
+  heroKicker.className = 'mp-detail-kicker';
+  heroKicker.textContent = t('mapPicker.arenaTrack');
   const title = document.createElement('div');
   title.className = 'mp-detail-title';
   title.textContent = cleanText(map.meta?.title, map.id);
+  title.title = title.textContent;
   const subtitle = document.createElement('div');
   subtitle.className = 'mp-detail-subtitle';
   subtitle.textContent = [cleanText(map.meta?.artist), cleanText(map.meta?.mapper)].filter(Boolean).join(' \u00b7 ');
@@ -496,6 +535,16 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
   const diff = cleanText(map.meta?.difficulty).toLowerCase();
   diffBadge.className = `mp-detail-diff-badge ${diff || ''}`;
   diffBadge.textContent = diff || t('mapPicker.unknown');
+  const rhythm = document.createElement('span');
+  rhythm.className = 'mp-detail-rhythm';
+  rhythm.setAttribute('aria-hidden', 'true');
+  const hueSeed = getMapHue(map.id);
+  for (let index = 0; index < 11; index++) {
+    const bar = document.createElement('i');
+    const height = 28 + ((hueSeed + index * 37) % 66);
+    bar.style.setProperty('--mp-bar-height', `${height}%`);
+    rhythm.append(bar);
+  }
   const recommendation = learningRecommendation?.mapId === map.id
     ? learningRecommendation
     : null;
@@ -523,7 +572,8 @@ function renderDetail(detailPane: HTMLElement, map: MapEntry | undefined): void 
     stat.append(label, value);
     stats.append(stat);
   }
-  detailPane.append(title, subtitle, diffBadge);
+  hero.append(heroKicker, title, subtitle, diffBadge, rhythm);
+  detailPane.append(hero);
   if (learningHint) detailPane.append(learningHint);
   detailPane.append(stats);
   // Score section

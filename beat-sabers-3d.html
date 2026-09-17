@@ -1670,7 +1670,13 @@
 <div id="mapPickerOverlay" class="mp-overlay" hidden>
   <div class="mp-overlay-panel">
     <header class="mp-overlay-header">
-      <h2 data-i18n="menu.maps">Mapy</h2>
+      <div class="mp-header-title">
+        <span data-i18n="mapPicker.libraryEyebrow">BIBLIOTEKA AREN</span>
+        <div>
+          <h2 data-i18n="menu.maps">Mapy</h2>
+          <small id="mpMapCount">0 / 0</small>
+        </div>
+      </div>
       <div class="mp-overlay-tools">
         <input type="search" id="mpSearch" class="mp-search" data-i18n-placeholder="mapPicker.searchPlaceholder" placeholder="Szukaj map..." autocomplete="off">
         <button class="mp-import" id="mpImport" type="button">
