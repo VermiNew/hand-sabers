@@ -66,6 +66,8 @@ interface BlockVisualBatch {
   outlineLeft: THREE.InstancedMesh;
   outlineRight: THREE.InstancedMesh;
   arrows: THREE.InstancedMesh;
+  bombBodies: THREE.InstancedMesh;
+  bombSpikes: THREE.InstancedMesh;
   capacity: number;
 }
 
@@ -88,6 +90,8 @@ function createVisualBatch(capacity: number): BlockVisualBatch {
     outlineLeft: createVisualInstances(BLOCK_OUTLINE_GEO, materials.outlineL, capacity),
     outlineRight: createVisualInstances(BLOCK_OUTLINE_GEO, materials.outlineR, capacity),
     arrows: createVisualInstances(BLOCK_ARROW_GEO, materials.arrow, capacity),
+    bombBodies: createVisualInstances(BOMB_GEO, materials.bomb, capacity),
+    bombSpikes: createVisualInstances(BOMB_SPIKES_GEO, materials.bombSpike, capacity),
     capacity,
   };
 }
@@ -126,18 +130,19 @@ function createNewBlock(): PoolMesh {
   mesh.frustumCulled = true;
   mesh.__poolKind = 'block';
   mesh.__inFreeList = false;
-  scene.add(mesh);
   blockPool.push(mesh);
   return mesh;
 }
 
 function createNewBomb(): PoolMesh {
   const mesh = new THREE.Mesh(BOMB_GEO, materials.bomb) as unknown as PoolMesh;
-  mesh.add(new THREE.Mesh(BOMB_SPIKES_GEO, materials.bombSpike));
+  const spikes = new THREE.Mesh(BOMB_SPIKES_GEO, materials.bombSpike);
+  spikes.layers.set(1);
+  mesh.add(spikes);
+  mesh.layers.set(1);
   mesh.frustumCulled = true;
   mesh.__poolKind = 'bomb';
   mesh.__inFreeList = false;
-  scene.add(mesh);
   bombPool.push(mesh);
   return mesh;
 }
@@ -184,6 +189,7 @@ export function syncBlockVisualInstances(): void {
   let leftCount = 0;
   let rightCount = 0;
   let arrowCount = 0;
+  let bombCount = 0;
   for (const mesh of blockPool) {
     if (mesh.visible && !mesh.__inFreeList) {
       if (mesh.userData.side === 'right') rightCount++;
@@ -191,10 +197,14 @@ export function syncBlockVisualInstances(): void {
       if (mesh.children[1]?.visible) arrowCount++;
     }
   }
-  ensureVisualBatchCapacity(Math.max(leftCount, rightCount, arrowCount));
+  for (const mesh of bombPool) {
+    if (mesh.visible && !mesh.__inFreeList) bombCount++;
+  }
+  ensureVisualBatchCapacity(Math.max(leftCount, rightCount, arrowCount, bombCount));
   leftCount = 0;
   rightCount = 0;
   arrowCount = 0;
+  bombCount = 0;
   for (const mesh of blockPool) {
     if (!mesh.visible || mesh.__inFreeList) continue;
     mesh.updateMatrix();
@@ -212,11 +222,19 @@ export function syncBlockVisualInstances(): void {
       visualBatch.arrows.setMatrixAt(arrowCount++, blockArrowMatrix);
     }
   }
+  for (const mesh of bombPool) {
+    if (!mesh.visible || mesh.__inFreeList) continue;
+    mesh.updateMatrix();
+    visualBatch.bombBodies.setMatrixAt(bombCount, mesh.matrix);
+    visualBatch.bombSpikes.setMatrixAt(bombCount++, mesh.matrix);
+  }
   setInstanceCount(visualBatch.bodyLeft, leftCount);
   setInstanceCount(visualBatch.bodyRight, rightCount);
   setInstanceCount(visualBatch.outlineLeft, leftCount);
   setInstanceCount(visualBatch.outlineRight, rightCount);
   setInstanceCount(visualBatch.arrows, arrowCount);
+  setInstanceCount(visualBatch.bombBodies, bombCount);
+  setInstanceCount(visualBatch.bombSpikes, bombCount);
 }
 
 export function prewarmBlockPool(blocks: number, bombs: number): void {

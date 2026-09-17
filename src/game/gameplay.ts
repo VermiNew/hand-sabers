@@ -587,7 +587,10 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
   const minimumSwingSpeed = MIN_SWING_SPEED * activeHitProfile.minimumSwingMultiplier;
 
   for (let i = activeBlocks.length - 1; i >= 0; i--) {
-    const entry = activeBlocks[i]!;
+    // A game-over callback clears the whole collection synchronously. Stop the
+    // in-progress reverse walk instead of reading an index from the old length.
+    const entry = activeBlocks[i];
+    if (!entry) break;
     if (!entry.alive) { swapRemoveActiveBlock(i); continue; }
 
     if (isPastRemovalPoint(entry, mapTimeSec)) {
