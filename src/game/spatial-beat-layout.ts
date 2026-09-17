@@ -18,6 +18,8 @@ const GROUP_WINDOW_SEC = 0.5;
 const GROUP_MIN_BLOCKS = 4;
 const COLLISION_WINDOW_SEC = 0.16;
 const MIN_SPATIAL_DISTANCE = 0.48;
+const SIDE_INNER_X = 0.32;
+const SIDE_OUTER_X = 1.34;
 const Y_MIN = 0.62;
 const Y_MAX = 1.88;
 const FORMATION = [
@@ -62,8 +64,8 @@ function desiredPosition(entry: LayoutEntry, groupOrder: number): { x: number; y
     const formationIndex = (groupOrder + entry.groupIndex * 2) % FORMATION.length;
     return FORMATION[formationIndex]!;
   }
-  const xMin = entry.side === 'left' ? -1.38 : -0.18;
-  const xMax = entry.side === 'left' ? 0.18 : 1.38;
+  const xMin = entry.side === 'left' ? -SIDE_OUTER_X : SIDE_INNER_X;
+  const xMax = entry.side === 'left' ? -SIDE_INNER_X : SIDE_OUTER_X;
   return {
     x: xMin + random01(entry.index * 17 + 11) * (xMax - xMin),
     y: Y_MIN + random01(entry.index * 29 + 23) * (Y_MAX - Y_MIN),
@@ -103,16 +105,21 @@ function separatePosition(
   previous: { x: number; y: number; time: number } | undefined,
   placed: Array<{ x: number; y: number; time: number }>,
 ): { x: number; y: number } {
+  const xMin = entry.side === 'left' ? -SIDE_OUTER_X : SIDE_INNER_X;
+  const xMax = entry.side === 'left' ? -SIDE_INNER_X : SIDE_OUTER_X;
   for (let attempt = 0; attempt < 10; attempt++) {
     const angle = random01(entry.index * 101 + attempt * 43 + 7) * Math.PI * 2;
     const radius = attempt === 0 ? 0 : 0.18 + Math.floor((attempt + 1) / 2) * 0.13;
     const candidate = clampReachable({
-      x: Math.max(-1.4, Math.min(1.4, desired.x + Math.cos(angle) * radius)),
+      x: Math.max(xMin, Math.min(xMax, desired.x + Math.cos(angle) * radius)),
       y: Math.max(Y_MIN, Math.min(Y_MAX, desired.y + Math.sin(angle) * radius)),
     }, previous, entry.time);
     if (!overlapsRecent(candidate, entry.time, placed)) return candidate;
   }
-  return clampReachable(desired, previous, entry.time);
+  return clampReachable({
+    x: Math.max(xMin, Math.min(xMax, desired.x)),
+    y: Math.max(Y_MIN, Math.min(Y_MAX, desired.y)),
+  }, previous, entry.time);
 }
 
 export function createSpatialBeatLayout(beats: readonly Beat[]): SpatialBeatPosition[] {
