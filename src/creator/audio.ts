@@ -1,4 +1,5 @@
 import { MAP_ID, state } from './state.ts';
+import { developerWarn } from '../core/client-log.ts';
 import { validateAudioFile, validateDecodedAudio } from '../core/audio-validation.ts';
 import { saveLocalMapAudio, loadLocalMapAudio } from '../core/localstore.ts';
 import { getCanonicalMapAudioUrl } from '../core/map-format.ts';
@@ -129,7 +130,7 @@ export async function decodeAndAttachAudio(
   try {
     await saveLocalMapAudio(state.map.id, state.audioArrayBuffer!.slice(0) as ArrayBuffer, { fileName, mimeType });
   } catch (error) {
-    console.warn('Local audio save failed:', error);
+    developerWarn('Local audio save failed:', error);
     const autosaveLabel = document.getElementById('autosaveLabel');
     if (autosaveLabel) autosaveLabel.textContent = t('creator.autosaveAudioFailed');
   }
@@ -162,7 +163,7 @@ export async function restoreAudioForCurrentMap(callbacks: { onDecoded: () => vo
       return true;
     }
   } catch (e) {
-    console.warn('Local audio restore failed:', e);
+    developerWarn('Local audio restore failed:', e);
   }
 
   try {
@@ -179,7 +180,7 @@ export async function restoreAudioForCurrentMap(callbacks: { onDecoded: () => vo
     if (autosaveLbl) autosaveLbl.textContent = `${t('creator.autosaveAudioServer')}: ${new Date().toLocaleTimeString()}`;
     return true;
   } catch (e) {
-    console.warn('Server audio restore failed:', e);
+    developerWarn('Server audio restore failed:', e);
     return false;
   }
 }

@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { developerWarn } from '../core/client-log.ts';
 import { assertFileSize, normalizeMap, validateZipEntryNames, findPreferredAudioEntry } from '../core/map-format.ts';
 import {
   assertZipDeclaredLimits,
@@ -31,7 +32,7 @@ export function saveCreatorMapLocally(mapToSave: CreatorMap = state.map): boolea
     saveLocalMap(mapToSave as unknown as Parameters<typeof saveLocalMap>[0]);
     return true;
   } catch (error) {
-    console.warn('Local map save failed:', error);
+    developerWarn('Local map save failed:', error);
     const autosaveLabel = document.getElementById('autosaveLabel');
     if (autosaveLabel) autosaveLabel.textContent = t('creator.autosaveFailed');
     return false;
@@ -56,7 +57,7 @@ export function autoSaveToLocalStorage(onAutosaved?: () => void): void {
         fileName: state.audioFileName,
         mimeType: state.audioMimeType,
       }).catch(error => {
-        console.warn('Autosave audio failed:', error);
+        developerWarn('Autosave audio failed:', error);
         const autosaveLabel = document.getElementById('autosaveLabel');
         if (autosaveLabel) autosaveLabel.textContent = t('creator.autosaveAudioFailed');
       });
@@ -116,7 +117,7 @@ export async function saveMap(): Promise<void> {
         mimeType: state.audioMimeType,
       });
     } catch (err) {
-      console.warn('Local audio save failed:', err);
+      developerWarn('Local audio save failed:', err);
     }
   }
   const autosaveLbl = document.getElementById('autosaveLabel');
@@ -311,6 +312,6 @@ export async function loadInitialMap(callbacks: {
       }
     }
   } catch (e) {
-    console.warn('Initial map load failed:', e);
+    developerWarn('Initial map load failed:', e);
   }
 }

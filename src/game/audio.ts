@@ -1,4 +1,5 @@
 import { getSettings } from '../core/settings.ts';
+import { developerWarn } from '../core/client-log.ts';
 import type { Settings } from '../types/index.js';
 import { playPhoneSound } from '../remote/host-audio.ts';
 import type { ProceduralAudioRecipe } from '../remote/audio-bank-manifest.ts';
@@ -34,7 +35,7 @@ export async function resumeAudioContext(): Promise<boolean> {
     try {
       await ctx.resume();
     } catch (error) {
-      console.warn('Audio context resume failed:', error);
+      developerWarn('Audio context resume failed:', error);
       return false;
     }
   }

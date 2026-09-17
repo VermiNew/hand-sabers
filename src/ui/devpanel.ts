@@ -1,5 +1,6 @@
 import { state } from '../core/state.ts';
 import { isDeveloperAccessGranted } from '../core/developer-access.ts';
+import { developerWarn } from '../core/client-log.ts';
 import {
   SETTINGS_CHANGED_EVENT,
   setSetting,
@@ -406,7 +407,7 @@ function notifyTrackingSettings(patch: Record<string, unknown>): void {
   try {
     applyTrackingSettings(patch);
   } catch (e) {
-    console.warn('Tracking settings update failed:', e);
+    developerWarn('Tracking settings update failed:', e);
   }
 }
 
@@ -525,7 +526,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
       statsJS!.showPanel(next);
       statsJS!.dom.dataset['panel'] = String(next);
     });
-  }).catch(error => console.warn('Stats.js initialization failed:', error));
+  }).catch(error => developerWarn('Stats.js initialization failed:', error));
 
   void loadTweakpane().then(Pane => {
     if (!Pane || !isDev || generation !== initGeneration) return;
@@ -732,7 +733,7 @@ export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { 
     panelInteractionController = new AbortController();
     makeDraggable(panelEl, panelInteractionController.signal);
     attachMarqueeScroll(panelEl);
-  }).catch(error => console.warn('Tweakpane initialization failed:', error));
+  }).catch(error => developerWarn('Tweakpane initialization failed:', error));
 }
 
 let lastPaneRefreshMs = 0;
@@ -892,7 +893,7 @@ async function loadTweakpane(): Promise<(new (opts: { title: string; expanded: b
     const s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/tweakpane@3.1.10/dist/tweakpane.min.js';
     s.onload  = () => resolve(window.Tweakpane?.Pane ?? null);
-    s.onerror = (e) => { console.warn('Tweakpane load failed:', e); resolve(null); };
+    s.onerror = (e) => { developerWarn('Tweakpane load failed:', e); resolve(null); };
     document.head.appendChild(s);
   });
 }

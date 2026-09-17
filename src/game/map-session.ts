@@ -1,4 +1,5 @@
 import { state } from '../core/state.ts';
+import { developerWarn } from '../core/client-log.ts';
 import { getLocalMapById, loadLocalMapAudio } from '../core/localstore.ts';
 import { getCanonicalMapAudioUrl } from '../core/map-format.ts';
 import type { Settings } from '../types/index.js';
@@ -54,7 +55,7 @@ export async function ensureCurrentMapAudio(settings: Pick<Settings, 'phoneAudio
         return;
       }
     } catch (error) {
-      console.warn('Server map audio restore failed:', error);
+      developerWarn('Server map audio restore failed:', error);
     }
   }
 
@@ -69,6 +70,6 @@ export async function ensureCurrentMapAudio(settings: Pick<Settings, 'phoneAudio
     const duration = getMapDuration();
     if (duration && !state.map.meta?.duration) state.map.meta = { ...(state.map.meta ?? {}), duration };
   } catch (error) {
-    console.warn('Local map audio restore failed:', error);
+    developerWarn('Local map audio restore failed:', error);
   }
 }
