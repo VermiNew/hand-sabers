@@ -21,6 +21,27 @@ obciążają zwykłej rozgrywki.
    wyłączone odbicia, glinty i dekoracje kończą aktualizację przed kosztownymi
    operacjami.
 
+## Przebieg instancingu kostek — 2026-09-17
+
+Pomiar struktury renderera wskazał dwa koszty, które rosły wraz z liczbą
+aktywnych obiektów, choć nie zmieniały obrazu:
+
+1. Każda bomba miała osobny mesh korpusu i kolców. Obie warstwy korzystają teraz
+   z dwóch współdzielonych `InstancedMesh`, dlatego sześć równoczesnych bomb
+   wymaga 2 draw calli zamiast 12. Geometrie i materiały pozostały bez zmian.
+2. Proxy używane przez kolizje i pooling nadal należały do sceny mimo
+   renderowania właściwych kostek przez instancing. Przy prewarmie profilu
+   Maximum było to do 24 proxy kostek po 3 węzły oraz 6 proxy bomb po 2 węzły,
+   czyli 84 niewidoczne węzły odwiedzane przez aktualizację sceny. Proxy są teraz
+   przechowywane wyłącznie w pulach i nadal zachowują pozycję, obrót oraz stan
+   potrzebny mechanice.
+
+Smoke mapy z 15 bombami przeszedł przez sekwencję z maksymalnie 13 aktywnymi
+obiektami bez błędów strony. Inspekcja pełnego kadru potwierdziła niezmieniony
+wygląd kostek i mieczy. Wynik jest pomiarem kosztu strukturalnego oraz kontrolą
+regresji, nie obietnicą konkretnego FPS: końcowy wzrost zależy od GPU, DPR,
+profilu jakości i kosztu śledzenia dłoni.
+
 ## Interpretacja profilera
 
 - `ML detect` — detekcja dłoni na głównym wątku; obniżyć profil lub użyć telefonu.
