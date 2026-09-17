@@ -46,6 +46,14 @@ Najwygodniej uruchomić backend i Vite razem:
 npm run dev
 ```
 
+Rozszerzone narzędzia diagnostyczne wymagają tokenu ustawionego wyłącznie po stronie serwera (12–256 znaków). Przykład dla PowerShell:
+
+```powershell
+$env:HAND_SABERS_DEVELOPER_TOKEN='własny-długi-token'; npm run dev
+```
+
+Po uruchomieniu otwórz zakładkę **Ustawienia → Developer** i wpisz tę samą wartość. Token jest wysyłany tylko w body żądania do własnego serwera, nie trafia do bundla, URL, `localStorage`, `sessionStorage` ani eksportu ustawień. Dostęp obowiązuje wyłącznie w pamięci bieżącej karty i po odświeżeniu wymaga ponownego odblokowania. Parametry `?dev` i `?testing` mogą poprosić o automatyczne włączenie panelu po poprawnej autoryzacji, lecz same nie omijają blokady. Bez zmiennej środowiskowej zwykła gra działa normalnie, a narzędzia pozostają niedostępne.
+
 `npm run dev:vite` pozostaje równoważnym aliasem legacy.
 
 Adresy:
@@ -69,7 +77,7 @@ npm run dev:client   # uruchamia tylko Vite; proxy API/WebSocket oczekuje backen
 | URL | Opis |
 | --- | --- |
 | `http://localhost:3000` | Gra |
-| `http://localhost:3000?dev` | Gra z panelem diagnostycznym |
+| `http://localhost:3000?dev` | Gra z żądaniem panelu diagnostycznego (wymaga tokenu w ustawieniach) |
 | `http://localhost:3000/maps.html` | Biblioteka map i leaderboard |
 | `http://localhost:3000/map-creator.html` | Kreator map (edytor w stylu DAW) |
 
@@ -180,6 +188,7 @@ Dozwolone wartości:
 | `/api/maps/import` | POST | Import `.json` albo `.zip` |
 | `/api/maps/:id` | DELETE | Usuń mapę |
 | `/api/scores` | GET / POST | Leaderboard |
+| `/api/developer/access` | GET / POST | Stan konfiguracji / weryfikacja tokenu developera |
 
 ## Wskazówki do kamery
 

@@ -46,6 +46,14 @@ The easiest way to run both the backend and Vite together:
 npm run dev
 ```
 
+Extended diagnostic tools require a server-only token between 12 and 256 characters. For Bash:
+
+```bash
+HAND_SABERS_DEVELOPER_TOKEN='your-own-long-token' npm run dev
+```
+
+Then open **Settings → Developer** and enter the same value. The token is sent only in a request body to your own server; it is never included in the bundle, URL, `localStorage`, `sessionStorage`, or settings export. Access lives only in the current tab's memory and must be unlocked again after a refresh. The `?dev` and `?testing` parameters may request automatic panel activation after successful authorization, but cannot bypass the gate. Without the environment variable the game works normally and extended tools remain unavailable.
+
 `npm run dev:vite` is an equivalent legacy alias.
 
 URLs:
@@ -69,7 +77,7 @@ npm run dev:client   # start Vite only; its API/WebSocket proxy expects the back
 | URL | Description |
 | --- | --- |
 | `http://localhost:3000` | Game |
-| `http://localhost:3000?dev` | Game with diagnostics panel |
+| `http://localhost:3000?dev` | Game requesting the diagnostics panel (settings token required) |
 | `http://localhost:3000/maps.html` | Map library and leaderboard |
 | `http://localhost:3000/map-creator.html` | Map creator (DAW-style editor) |
 
@@ -180,6 +188,7 @@ Allowed values:
 | `/api/maps/import` | POST | Import `.json` or `.zip` |
 | `/api/maps/:id` | DELETE | Delete a map |
 | `/api/scores` | GET / POST | Leaderboard |
+| `/api/developer/access` | GET / POST | Developer-token configuration status / verification |
 
 ## Camera tips
 
