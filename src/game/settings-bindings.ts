@@ -18,6 +18,7 @@ import { initMusicReactiveSettings } from './music-reactive-settings.ts';
 import { initProfileSettings } from './profile.ts';
 import { initSaberSettings } from './saber-settings.ts';
 import { initTrackingSettings } from './tracking-settings.ts';
+import { initAccountSettings } from './account-settings.ts';
 
 interface SettingsBindingsOptions {
   settings: Settings;
@@ -51,6 +52,7 @@ export function initSettingsBindings({
   initLanguageSettings(applyTranslations);
   const audioSettingsController = initAudioSettings(settings, bindStyledRange);
   initProfileSettings(settings);
+  initAccountSettings();
   const gameplaySettingsController = initGameplaySettings(settings);
   const saberSettingsController = initSaberSettings(settings);
   const arenaSettingsController = initArenaSettings(settings);

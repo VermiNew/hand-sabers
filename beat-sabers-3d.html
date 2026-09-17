@@ -642,6 +642,64 @@
             <button class="sp-action-btn" id="menuProfileSave" type="button" data-i18n="profile.save">Zapisz</button>
             <span id="menuProfileSaved" class="profile-saved-status" role="status" data-i18n="profile.saved">Zapisano!</span>
           </div>
+
+          <section class="account-settings" aria-labelledby="accountSettingsTitle">
+            <div class="account-settings-heading">
+              <span class="account-settings-icon material-symbols-rounded" aria-hidden="true">shield_person</span>
+              <div>
+                <h3 id="accountSettingsTitle" data-i18n="account.title">Konto na tym serwerze</h3>
+                <p data-i18n="account.intro">Konto pozwala bezpiecznie wrócić do swojej tożsamości. Lokalny profil gry pozostaje bez zmian.</p>
+              </div>
+              <span id="accountStatusBadge" class="account-status-badge" data-i18n="account.checking">Sprawdzam…</span>
+            </div>
+
+            <div id="accountGuestPanel" hidden>
+              <div class="account-mode-tabs" role="tablist" data-i18n-aria-label="account.actionsLabel">
+                <button type="button" class="account-mode-tab is-active" data-account-mode="login" data-i18n="account.login">Zaloguj</button>
+                <button type="button" class="account-mode-tab" data-account-mode="register" data-i18n="account.register">Załóż konto</button>
+                <button type="button" class="account-mode-tab" data-account-mode="recover" data-i18n="account.recover">Odzyskaj</button>
+              </div>
+
+              <form id="accountLoginForm" class="account-form">
+                <label><span data-i18n="account.username">Nazwa użytkownika</span><input name="username" autocomplete="username" maxlength="24" required></label>
+                <label><span data-i18n="account.password">Hasło</span><input name="password" type="password" autocomplete="current-password" minlength="10" maxlength="128" required></label>
+                <button class="sp-action-btn" type="submit" data-i18n="account.loginAction">ZALOGUJ SIĘ</button>
+              </form>
+
+              <form id="accountRegisterForm" class="account-form" hidden>
+                <label><span data-i18n="account.username">Nazwa użytkownika</span><input name="username" autocomplete="username" minlength="3" maxlength="24" required></label>
+                <label><span data-i18n="account.password">Hasło</span><input name="password" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+                <label><span data-i18n="account.recoveryPin">8-cyfrowy PIN odzyskiwania</span><input name="recoveryPin" type="password" inputmode="numeric" autocomplete="off" pattern="[0-9]{8}" minlength="8" maxlength="8" required></label>
+                <p class="account-warning" data-i18n="account.pinWarning">Zapisz PIN poza grą. To jedyna metoda odzyskania dostępu; utraconego PIN-u nie da się zresetować.</p>
+                <button class="sp-action-btn" type="submit" data-i18n="account.registerAction">UTWÓRZ KONTO</button>
+              </form>
+
+              <form id="accountRecoverForm" class="account-form" hidden>
+                <label><span data-i18n="account.username">Nazwa użytkownika</span><input name="username" autocomplete="username" maxlength="24" required></label>
+                <label><span data-i18n="account.recoveryPin">8-cyfrowy PIN odzyskiwania</span><input name="recoveryPin" type="password" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{8}" minlength="8" maxlength="8" required></label>
+                <label><span data-i18n="account.newPassword">Nowe hasło</span><input name="newPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" required></label>
+                <p class="account-warning" data-i18n="account.recoveryEffect">Udane odzyskanie wyloguje wszystkie pozostałe sesje konta.</p>
+                <button class="sp-action-btn" type="submit" data-i18n="account.recoverAction">USTAW NOWE HASŁO</button>
+              </form>
+            </div>
+
+            <div id="accountMemberPanel" class="account-member-panel" hidden>
+              <div class="account-member-summary">
+                <span class="material-symbols-rounded" aria-hidden="true">verified_user</span>
+                <div><span data-i18n="account.signedInAs">Zalogowano jako</span><strong id="accountUsername"></strong></div>
+                <button id="accountLogout" class="sp-inline-action" type="button" data-i18n="account.logout">WYLOGUJ</button>
+              </div>
+              <details class="account-delete-details">
+                <summary data-i18n="account.deleteTitle">Usuń konto</summary>
+                <p data-i18n="account.deleteWarning">Usunięcie jest nieodwracalne. Potwierdź je aktualnym hasłem.</p>
+                <form id="accountDeleteForm" class="account-delete-form">
+                  <label><span data-i18n="account.password">Hasło</span><input name="password" type="password" autocomplete="current-password" maxlength="128" required></label>
+                  <button type="submit" data-i18n="account.deleteAction">USUŃ KONTO</button>
+                </form>
+              </details>
+            </div>
+            <p id="accountMessage" class="account-message" role="status" aria-live="polite"></p>
+          </section>
         </div>
 
         <!-- TAB: DATA -->
