@@ -57,7 +57,8 @@ export function registerDeveloperAccessRoutes({
     const candidateDigest = digest(candidate.slice(0, MAX_TOKEN_LENGTH + 1));
     const valid = candidate.length <= MAX_TOKEN_LENGTH && timingSafeEqual(candidateDigest, expectedDigest);
     if (!valid) {
-      return res.status(401).json({
+      return res.json({
+        ok: false,
         error: 'Token developera jest nieprawidłowy.',
         code: 'DEVELOPER_ACCESS_DENIED',
       });

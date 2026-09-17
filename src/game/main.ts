@@ -18,6 +18,7 @@ import { initDevPanel, isDeveloperPanelEnabled, initCameraPanelToggle } from '..
 import type { FrameProfile } from '../ui/devpanel.ts';
 import { loadSettings, setSetting } from '../core/settings.ts';
 import { initProductTelemetry } from '../core/product-telemetry.ts';
+import { isDeveloperAccessGranted } from '../core/developer-access.ts';
 import { PAUSE_REASONS } from '../core/pause.ts';
 import { t, translateDom } from '../i18n/index.ts';
 import { initKeyboardNav } from '../ui/keyboard-nav.ts';
@@ -115,7 +116,7 @@ document.body.dataset['gameMode'] = settings.gameMode || 'normal';
 applyAudioSettings(settings);
 applyArenaTheme(settings.arenaTheme || 'cosmic');
 setScenePerformanceProfile(settings);
-setHitPlaneVisible(Boolean(settings.developerMode) || isDeveloperPanelEnabled());
+setHitPlaneVisible(isDeveloperAccessGranted() && (Boolean(settings.developerMode) || isDeveloperPanelEnabled()));
 prewarmGameplayResources();
 initAchievements();
 initAchievementUI();

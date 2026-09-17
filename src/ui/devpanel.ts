@@ -1,4 +1,5 @@
 import { state } from '../core/state.ts';
+import { isDeveloperAccessGranted } from '../core/developer-access.ts';
 import {
   SETTINGS_CHANGED_EVENT,
   setSetting,
@@ -361,6 +362,7 @@ export function applyDevAccent(name: string): void {
 }
 
 function isDevModeRequested(): boolean {
+  if (!isDeveloperAccessGranted()) return false;
   const params = new URLSearchParams(location.search);
   return params.has('dev') || params.has('testing') || Boolean(getSettings().developerMode);
 }
@@ -375,10 +377,11 @@ export function isDeveloperPanelEnabled(): boolean {
 }
 
 export function setDeveloperPanelEnabled(renderer: WebGLRenderer | null = lastRenderer, enabled = true): void {
-  setSetting('developerMode', Boolean(enabled));
-  devData.developerMode = Boolean(enabled);
+  const allowed = Boolean(enabled) && isDeveloperAccessGranted();
+  setSetting('developerMode', allowed);
+  devData.developerMode = allowed;
 
-  if (enabled) {
+  if (allowed) {
     if (renderer) initDevPanel(renderer, null, { force: true });
     return;
   }
@@ -492,7 +495,8 @@ function updateRenderingDiagnostics(renderer: WebGLRenderer): void {
 
 export function initDevPanel(renderer: WebGLRenderer, _unused: null, options: { force?: boolean } = {}): void {
   lastRenderer = renderer ?? lastRenderer;
-  isDev = options.force ? Boolean(getSettings().developerMode) || isDevModeRequested() : isDevModeRequested();
+  isDev = isDeveloperAccessGranted()
+    && (options.force ? Boolean(getSettings().developerMode) || isDevModeRequested() : isDevModeRequested());
   document.body.classList.toggle('dev-tools', isDev);
   setCameraPanelInlineVisibility(isDev);
   if (!isDev) return;

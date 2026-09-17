@@ -328,6 +328,19 @@ body.settings-modal-open #camPanel {
 }
 .sp-action-btn:disabled:hover { background: rgba(148,163,184,0.05); border-color: rgba(148,163,184,0.1); }
 
+.developer-access-card { padding:14px 16px; }
+.developer-access-label { display:block; margin-bottom:8px; color:rgba(226,232,240,.72); font:700 10px 'Oxanium',sans-serif; letter-spacing:1px; text-transform:uppercase; }
+.developer-access-controls { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+.developer-access-input { min-width:0; padding:9px 11px; border:1px solid var(--border,rgba(148,163,184,.14)); border-radius:8px; outline:none; background:rgba(0,0,0,.26); color:var(--text,#e2e8f0); font:500 12px 'JetBrains Mono',monospace; }
+.developer-access-input:focus { border-color:var(--main,#2f7cff); box-shadow:0 0 0 3px rgba(47,124,255,.14); }
+.developer-access-input:disabled { opacity:.45; cursor:not-allowed; }
+.developer-access-status { min-height:18px; margin:9px 0 0; color:var(--muted,rgba(226,232,240,.62)); font:600 10px 'JetBrains Mono',monospace; }
+.developer-access-card[data-state="granted"] .developer-access-status { color:var(--accent,#36f2a1); }
+.developer-access-card[data-state="error"] .developer-access-status { color:#ff8d9a; }
+.developer-access-card .sp-hint { margin:7px 0 0; }
+
+@media(max-width:520px){.developer-access-controls{grid-template-columns:1fr}.developer-access-controls .sp-action-btn{width:100%}}
+
 .audio-test-grid {
   display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px;
   padding:10px; overflow:visible;

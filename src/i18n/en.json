@@ -399,6 +399,16 @@
     "developer": {
       "name": "Developer mode",
       "desc": "Shows diagnostic panel, rendering metrics, VRAM, tracking and camera preview",
+      "accessTitle": "Access",
+      "tokenLabel": "Server token",
+      "tokenPlaceholder": "Enter the developer token",
+      "unlock": "UNLOCK",
+      "checking": "Checking the server configuration…",
+      "notConfigured": "The server has no HAND_SABERS_DEVELOPER_TOKEN configured.",
+      "locked": "Enter the server token to unlock tools in this tab.",
+      "granted": "Access granted. Developer tools remain available until the page is refreshed.",
+      "tokenRequired": "Enter the developer token.",
+      "accessHint": "The token is sent only to this server and is not saved in the browser or settings.",
       "accentColor": "Panel accent color",
       "color": "Color",
       "accent": {

@@ -707,6 +707,16 @@
         <!-- TAB: DEVELOPER -->
         <div class="sp-tab" data-tab="developer">
           <h2 class="sp-tab-title" data-i18n="settings.sections.developer">Developer</h2>
+          <div class="sp-group-title" data-i18n="settings.developer.accessTitle">Dostęp</div>
+          <div class="sp-group developer-access-card" id="developerAccessCard" data-state="checking">
+            <label class="developer-access-label" for="menuDeveloperToken" data-i18n="settings.developer.tokenLabel">Token serwera</label>
+            <div class="developer-access-controls">
+              <input class="developer-access-input" id="menuDeveloperToken" type="password" maxlength="256" autocomplete="off" spellcheck="false" data-i18n-placeholder="settings.developer.tokenPlaceholder" placeholder="Wpisz token developera">
+              <button class="sp-action-btn" id="menuDeveloperUnlock" type="button" data-i18n="settings.developer.unlock">ODBLOKUJ</button>
+            </div>
+            <p class="developer-access-status" id="menuDeveloperAccessStatus" role="status" aria-live="polite" data-i18n="settings.developer.checking">Sprawdzanie konfiguracji serwera…</p>
+            <p class="sp-hint" data-i18n="settings.developer.accessHint">Token jest wysyłany wyłącznie do tego serwera i nie jest zapisywany w przeglądarce ani ustawieniach.</p>
+          </div>
           <div class="sp-group">
             <div class="sp-toggle-row">
               <div class="sp-toggle-info">

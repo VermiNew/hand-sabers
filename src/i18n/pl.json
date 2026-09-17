@@ -399,6 +399,16 @@
     "developer": {
       "name": "Tryb developera",
       "desc": "Pokazuje panel diagnostyczny, metryki renderowania, VRAM, tracking i podgląd kamery",
+      "accessTitle": "Dostęp",
+      "tokenLabel": "Token serwera",
+      "tokenPlaceholder": "Wpisz token developera",
+      "unlock": "ODBLOKUJ",
+      "checking": "Sprawdzanie konfiguracji serwera…",
+      "notConfigured": "Serwer nie ma ustawionego HAND_SABERS_DEVELOPER_TOKEN.",
+      "locked": "Podaj token serwera, aby odblokować narzędzia w tej karcie.",
+      "granted": "Dostęp przyznany. Narzędzia developerskie są dostępne do odświeżenia strony.",
+      "tokenRequired": "Wpisz token developera.",
+      "accessHint": "Token jest wysyłany wyłącznie do tego serwera i nie jest zapisywany w przeglądarce ani ustawieniach.",
       "accentColor": "Kolor akcentu panelu",
       "color": "Kolor",
       "accent": {
