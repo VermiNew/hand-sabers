@@ -16,6 +16,7 @@ import {
 import { createMapStorage } from './storage/maps.js';
 import { createScoreStorage } from './storage/scores.js';
 import { createAudioStorage } from './storage/audio.js';
+import { createAccountStorage } from './storage/accounts.js';
 import { createMapLibraryQuota, type MapLibraryQuotaLimits } from './storage/library-quota.js';
 import { registerScoreRoutes } from './routes/scores.js';
 import { registerMapReadRoutes } from './routes/maps-read.js';
@@ -25,6 +26,8 @@ import { registerTrackingSessionRoutes } from './routes/tracking-session-routes.
 import { registerAudioBankRoutes } from './routes/audio-bank.js';
 import { registerTelemetryRoutes } from './routes/telemetry-routes.js';
 import { normalizeDeveloperAccessToken, registerDeveloperAccessRoutes } from './routes/developer-access.js';
+import { registerAccountRoutes } from './routes/accounts.js';
+import { AccountSessionRegistry } from './auth/session-registry.js';
 import { FileMutex, KeyedMutex, RateLimiter } from './utils.js';
 import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
@@ -193,6 +196,7 @@ const rooms = new RoomRegistry();
 const trackingSessions = new TrackingSessionRegistry();
 const phoneQualityTelemetry = new PhoneQualityTelemetryStore();
 const productTelemetry = new ProductTelemetryStore();
+const accountSessions = new AccountSessionRegistry();
 const rateLimit = (ip: string, key: string, maxPerMinute: number): boolean =>
   limiter.check(ip, key, maxPerMinute);
 
@@ -265,6 +269,14 @@ registerDeveloperAccessRoutes({
   app,
   token: developerAccessToken,
   parseJson: express.json({ limit: '1kb' }),
+  rateLimit,
+});
+const accountStorage = createAccountStorage(path.join(MAPS_DIR, '_accounts.json'));
+const destroyAccountRoutes = registerAccountRoutes({
+  app,
+  storage: accountStorage,
+  sessions: accountSessions,
+  parseJson: express.json({ limit: '4kb' }),
   rateLimit,
 });
 
@@ -353,6 +365,8 @@ function handleStartupError(error: NodeJS.ErrnoException): void {
   console.error('\nSzczegóły techniczne:');
   console.error(error.stack || error);
   limiter.destroy();
+  destroyAccountRoutes();
+  accountSessions.destroy();
   rooms.destroy();
   trackingSessions.destroy();
   process.exitCode = 1;
@@ -379,6 +393,8 @@ function shutdown(signal: NodeJS.Signals): void {
   remoteTrackingServer.close();
   server.off('upgrade', rejectUnknownWebSocketUpgrade);
   limiter.destroy();
+  destroyAccountRoutes();
+  accountSessions.destroy();
   rooms.destroy();
   trackingSessions.destroy();
   server.close(err => {
