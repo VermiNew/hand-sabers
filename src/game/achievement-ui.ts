@@ -48,7 +48,8 @@ function showNextAchievementToast(): void {
   const toast = document.getElementById('achievementToast') as AchievementToastElement | null;
   const icon = document.getElementById('achToastIcon');
   const title = document.getElementById('achToastTitle');
-  if (!toast || !icon || !title) {
+  const description = document.getElementById('achToastDescription');
+  if (!toast || !icon || !title || !description) {
     achievementToastQueue.length = 0;
     return;
   }
@@ -57,6 +58,8 @@ function showNextAchievementToast(): void {
   icon.textContent = definition.icon;
   icon.className = `material-symbols-rounded ach-toast-icon ach-tier-${definition.tier}`;
   title.textContent = t(`achievements.names.${id}`);
+  description.textContent = t(`achievements.descriptions.${id}`);
+  toast.dataset.tier = definition.tier;
 
   let tier = document.getElementById('achToastTier');
   if (!tier) {
@@ -153,6 +156,7 @@ export function renderAchievementCompactGrid(): void {
       const progressPercent = achievement.target > 0 ? Math.round((progress / achievement.target) * 100) : 0;
       const card = document.createElement('div');
       card.className = `ach-compact-card ach-card-tier-${achievement.tier}${isUnlocked ? ' is-unlocked' : ' is-locked'}`;
+      card.dataset.tier = achievement.tier;
       const icon = document.createElement('span');
       icon.className = `material-symbols-rounded ach-tier-${achievement.tier}`;
       icon.setAttribute('aria-hidden', 'true');
@@ -195,8 +199,25 @@ export function renderAchievementCompactGrid(): void {
 
   const progressText = document.getElementById('achProgressText');
   const progressFill = document.getElementById('achProgressFill');
+  const progressTrack = document.getElementById('achProgressTrack');
+  const overviewRing = document.getElementById('achOverviewRing');
+  const tierSummary = document.getElementById('achTierSummary');
   const unlockedCount = getUnlockedCount();
   const total = getTotalAchievements();
+  const completionPercent = total > 0 ? Math.round((unlockedCount / total) * 100) : 0;
   if (progressText) progressText.textContent = `${unlockedCount} / ${total}`;
-  if (progressFill) progressFill.style.width = `${total > 0 ? (unlockedCount / total) * 100 : 0}%`;
+  if (progressFill) progressFill.style.width = `${completionPercent}%`;
+  if (progressTrack) progressTrack.setAttribute('aria-valuenow', String(completionPercent));
+  if (overviewRing) overviewRing.style.setProperty('--ach-progress', `${completionPercent * 3.6}deg`);
+  if (tierSummary) {
+    tierSummary.replaceChildren();
+    for (const tierName of ['bronze', 'silver', 'gold', 'diamond'] as const) {
+      const tierAchievements = achievements.filter(achievement => achievement.tier === tierName);
+      const tierUnlocked = tierAchievements.filter(achievement => unlocked.has(achievement.id)).length;
+      const chip = document.createElement('span');
+      chip.className = `ach-tier-chip ach-tier-${tierName}`;
+      chip.textContent = `${t(`achievements.tiers.${tierName}`)} ${tierUnlocked}/${tierAchievements.length}`;
+      tierSummary.append(chip);
+    }
+  }
 }

@@ -753,6 +753,19 @@
           <div class="ach-settings-body" id="achSettingsBody">
             <p class="sp-hint" data-i18n="achievements.settingsHint">Osiągnięcia odblokowują się automatycznie podczas gry.</p>
 
+            <section class="ach-overview" aria-labelledby="achOverviewTitle">
+              <div class="ach-overview-ring" id="achOverviewRing" aria-hidden="true">
+                <strong id="achProgressText">0 / 0</strong>
+              </div>
+              <div class="ach-overview-copy">
+                <h3 id="achOverviewTitle" data-i18n="achievements.collectionProgress">Postęp kolekcji</h3>
+                <div class="ach-overview-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="achProgressTrack">
+                  <span id="achProgressFill"></span>
+                </div>
+                <div class="ach-tier-summary" id="achTierSummary"></div>
+              </div>
+            </section>
+
             <div class="sp-group-title" data-i18n="stats.title">Statystyki gracza</div>
             <div class="stats-grid" id="statsGrid"></div>
 
@@ -1644,11 +1657,12 @@
 <div id="screenFade"></div>
 
 <!-- ACHIEVEMENT TOAST -->
-<div id="achievementToast" class="ach-toast" hidden>
+<div id="achievementToast" class="ach-toast" role="status" aria-live="polite" hidden>
   <span class="material-symbols-rounded ach-toast-icon" id="achToastIcon" aria-hidden="true">emoji_events</span>
   <div class="ach-toast-body">
     <span class="ach-toast-eyebrow" data-i18n="achievements.unlocked">OSIĄGNIĘCIE ODBLOKOWANE</span>
     <span class="ach-toast-title" id="achToastTitle">—</span>
+    <span class="ach-toast-description" id="achToastDescription"></span>
   </div>
 </div>
 

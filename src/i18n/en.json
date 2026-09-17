@@ -1029,6 +1029,7 @@
     "resetConfirm": "Reset all achievements and related player statistics?",
     "settingsHint": "Achievements unlock automatically during gameplay.",
     "allAchievements": "All Achievements",
+    "collectionProgress": "Collection progress",
     "names": {
       "first_game": "First Steps",
       "ten_games": "Getting Started",
