@@ -28,9 +28,9 @@ test('achievement settings show categories, tiers and accessible progress on des
   await expect(grid).toBeVisible();
   await expect(page.locator('#camPanel')).toBeHidden();
   await expect(grid.locator('.ach-category-header')).toHaveCount(4);
-  await expect(grid.locator('.ach-compact-card')).toHaveCount(33);
-  await expect(grid.locator('.ach-compact-description')).toHaveCount(33);
-  await expect(grid.locator('[role="progressbar"]')).toHaveCount(33);
+  await expect(grid.locator('.ach-compact-card')).toHaveCount(46);
+  await expect(grid.locator('.ach-compact-description')).toHaveCount(46);
+  await expect(grid.locator('[role="progressbar"]')).toHaveCount(46);
   await expect(grid.locator('.ach-compact-card').first()).toHaveClass(/is-unlocked/);
   await expect(grid.locator('[role="progressbar"]').first()).toHaveAttribute('aria-valuenow', '100');
   await expect(grid.locator('[role="progressbar"]').nth(1)).toHaveAttribute('aria-valuenow', '50');
