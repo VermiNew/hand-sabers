@@ -902,6 +902,7 @@
   },
   "hud": {
     "progress": "PROGRESS",
+    "integrity": "INTEGRITY",
     "training": "TRAINING · SCORE NOT SAVED",
     "autoPlay": "AUTO · COMPUTER PLAYING"
   },

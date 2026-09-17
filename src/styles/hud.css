@@ -352,6 +352,158 @@ body.auto-play-mode #autoPlayBadge { display:block; }
   .map-prog-shell { height:10px; }
 }
 
+/* Combat-readable vitals: compact hierarchy, segmented HP and explicit map %. */
+#hudBottom {
+  width:min(500px,92vw);
+  gap:12px;
+  padding:16px 24px 17px;
+  border-color:rgba(104,190,255,.34);
+  clip-path:polygon(6% 0,94% 0,100% 25%,97% 100%,3% 100%,0 25%);
+  background:
+    linear-gradient(90deg,rgba(var(--left-rgb),.045),transparent 34%,transparent 66%,rgba(var(--right-rgb),.045)),
+    linear-gradient(180deg,rgba(5,13,29,.52),rgba(2,6,16,.84));
+}
+
+#hpHud,
+#mapProgress {
+  position:relative;
+  filter:none;
+}
+
+#hpHud::before,
+#mapProgress::before {
+  content:'';
+  position:absolute;
+  left:-9px;
+  top:3px;
+  bottom:2px;
+  width:2px;
+  background:var(--left);
+  box-shadow:0 0 10px rgba(var(--left-rgb),.7);
+  opacity:.7;
+}
+
+#mapProgress::before {
+  background:var(--right);
+  box-shadow:0 0 10px rgba(var(--right-rgb),.7);
+}
+
+.hp-meta,
+.map-time-row {
+  min-height:28px;
+  margin:0 0 7px;
+}
+
+.hp-label {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  color:rgba(226,232,240,.66)!important;
+  font-size:10px;
+  letter-spacing:2.2px;
+  text-shadow:none!important;
+}
+
+.hp-icon {
+  display:grid;
+  width:25px;
+  height:25px;
+  place-items:center;
+  border:1px solid rgba(var(--left-rgb),.42);
+  border-radius:7px;
+  background:rgba(var(--left-rgb),.08);
+  font-size:15px;
+}
+
+#lives {
+  padding:2px 7px;
+  border:1px solid rgba(var(--left-rgb),.2);
+  border-radius:6px;
+  background:rgba(3,8,18,.56);
+  font-size:18px;
+  line-height:1;
+}
+
+.hp-shell {
+  height:18px;
+  border-radius:4px;
+  border-color:rgba(154,211,255,.34);
+  background:linear-gradient(180deg,rgba(255,255,255,.08),transparent),rgba(2,7,16,.9);
+  box-shadow:inset 0 0 14px rgba(0,0,0,.9),0 0 16px rgba(var(--left-rgb),.12);
+}
+
+.hp-fill {
+  border-radius:2px;
+  background:linear-gradient(90deg,#31e7b3 0%,#61f6cf 48%,#74d7ff 100%);
+  box-shadow:inset 0 1px rgba(255,255,255,.42),0 0 18px rgba(54,242,161,.5);
+}
+
+.hp-ticks {
+  inset:2px;
+  background:repeating-linear-gradient(90deg,transparent 0,transparent calc(100%/var(--hp-max) - 3px),rgba(2,7,16,.88) calc(100%/var(--hp-max) - 3px),rgba(2,7,16,.88) calc(100%/var(--hp-max)));
+}
+
+.map-progress-copy {
+  display:flex;
+  align-items:baseline;
+  gap:9px;
+  color:rgba(226,232,240,.58);
+  font-size:9px;
+  letter-spacing:2.2px;
+}
+
+#mapProgressPercent {
+  color:#f4fbff;
+  font-size:15px;
+  letter-spacing:1px;
+  text-shadow:0 0 12px rgba(var(--right-rgb),.52);
+}
+
+.map-time-left {
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+}
+
+.map-time-left .material-symbols-rounded {
+  color:rgba(var(--right-rgb),.7);
+  font-size:15px;
+}
+
+#mapTimeLeft {
+  font-size:18px;
+  line-height:1;
+}
+
+.map-prog-shell {
+  height:9px;
+  border-radius:3px;
+  border-color:rgba(154,211,255,.26);
+  background:repeating-linear-gradient(90deg,rgba(148,163,184,.08) 0,rgba(148,163,184,.08) calc(10% - 2px),rgba(2,7,16,.72) calc(10% - 2px),rgba(2,7,16,.72) 10%);
+}
+
+#mapProgressFill {
+  border-radius:2px;
+  background:linear-gradient(90deg,#477dff,#41cfff 58%,#6fffe2);
+  box-shadow:0 0 16px rgba(65,207,255,.48);
+}
+
+.map-prog-dot {
+  right:-4px;
+  width:9px;
+  height:9px;
+  border-radius:2px;
+  transform:translateY(-50%) rotate(45deg);
+  box-shadow:0 0 8px 2px rgba(var(--right-rgb),.78),0 0 16px 4px rgba(var(--right-rgb),.32);
+}
+
+@media (max-width:760px) {
+  #hudBottom { padding:13px 18px 14px; }
+  .hp-meta,.map-time-row { min-height:24px; }
+  .hp-label { font-size:9px; }
+  #lives,#mapTimeLeft { font-size:16px; }
+}
+
 .tutorial-gameplay-hud {
   position:fixed;
   top:50%;

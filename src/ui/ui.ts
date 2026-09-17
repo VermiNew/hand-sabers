@@ -44,6 +44,7 @@ interface UiRefs {
   hpHud:           HTMLElement | null;
   hpFill:          HTMLElement | null;
   hpTicks:         HTMLElement | null;
+  hpMeter:         HTMLElement | null;
   calibPanel:          HTMLElement | null;
   calibStepsTrack:     HTMLElement | null;
   calibStepBadge:      HTMLElement | null;
@@ -64,6 +65,8 @@ interface UiRefs {
   mapTitle:            HTMLElement | null;
   mapProgress:         HTMLElement | null;
   mapProgressFill: HTMLElement | null;
+  mapProgressMeter: HTMLElement | null;
+  mapProgressPercent: HTMLElement | null;
 }
 
 export const ui: UiRefs = {
@@ -105,6 +108,7 @@ export const ui: UiRefs = {
   hpHud:           document.getElementById('hpHud'),
   hpFill:          document.getElementById('hpFill'),
   hpTicks:         document.getElementById('hpTicks'),
+  hpMeter:         document.getElementById('hpMeter'),
   calibPanel:          document.getElementById('calibPanel'),
   calibStepsTrack:     document.getElementById('calibStepsTrack'),
   calibStepBadge:      document.getElementById('calibStepBadge'),
@@ -125,6 +129,8 @@ export const ui: UiRefs = {
   mapTitle:            document.getElementById('mapTitle'),
   mapProgress:         document.getElementById('mapProgress'),
   mapProgressFill: document.getElementById('mapProgressFill'),
+  mapProgressMeter: document.getElementById('mapProgressMeter'),
+  mapProgressPercent: document.getElementById('mapProgressPercent'),
 };
 
 function showModalElement(el: HTMLElement | null): void {
@@ -182,6 +188,10 @@ export function updateHUD(state: GameState): void {
   }
   if (ui.lives)  ui.lives.textContent  = `${hp} / ${maxHp}`;
   if (ui.hpFill) ui.hpFill.style.transform = `scaleX(${hpRatio})`;
+  if (ui.hpMeter) {
+    ui.hpMeter.setAttribute('aria-valuemax', String(maxHp));
+    ui.hpMeter.setAttribute('aria-valuenow', String(hp));
+  }
 
   const hpClass = 'hp-fill' + (hpRatio <= 0.25 ? ' low' : hpRatio <= 0.5 ? ' mid' : '');
 
@@ -205,7 +215,10 @@ export function updateHUD(state: GameState): void {
 export function updateMapProgress(currentSec: number, totalSec: number): void {
   if (!ui.mapProgress || !ui.mapProgressFill) return;
   const ratio = totalSec > 0 ? Math.min(1, currentSec / totalSec) : 0;
+  const percent = Math.round(ratio * 100);
   ui.mapProgressFill.style.width = `${(ratio * 100).toFixed(1)}%`;
+  if (ui.mapProgressMeter) ui.mapProgressMeter.setAttribute('aria-valuenow', String(percent));
+  if (ui.mapProgressPercent) ui.mapProgressPercent.textContent = `${percent}%`;
   const rem = Math.max(0, totalSec - currentSec);
   const mm  = Math.floor(rem / 60);
   const ss  = Math.floor(rem % 60);

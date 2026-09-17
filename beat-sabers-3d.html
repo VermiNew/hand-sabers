@@ -1302,10 +1302,10 @@
   <div id="hudBottom">
     <div id="hpHud">
       <div class="hp-meta">
-        <span class="hp-icon material-symbols-rounded" aria-hidden="true">favorite</span>
+        <span class="hp-label"><span class="hp-icon material-symbols-rounded" aria-hidden="true">shield_with_heart</span><span data-i18n="hud.integrity">INTEGRALNOŚĆ</span></span>
         <span id="lives">10 / 10</span>
       </div>
-      <div class="hp-shell">
+      <div class="hp-shell" id="hpMeter" role="progressbar" aria-label="Integralność" data-i18n-aria-label="hud.integrity" aria-valuemin="0" aria-valuemax="10" aria-valuenow="10">
         <div class="hp-fill" id="hpFill"></div>
         <div class="hp-ticks" id="hpTicks"></div>
       </div>
@@ -1313,10 +1313,10 @@
 
     <div id="mapProgress">
       <div class="map-time-row">
-        <span data-i18n="hud.progress">POSTĘP</span>
-        <span id="mapTimeLeft">0:00</span>
+        <span class="map-progress-copy"><span data-i18n="hud.progress">POSTĘP</span><strong id="mapProgressPercent">0%</strong></span>
+        <span class="map-time-left"><span class="material-symbols-rounded" aria-hidden="true">timer</span><span id="mapTimeLeft">0:00</span></span>
       </div>
-      <div class="map-prog-shell">
+      <div class="map-prog-shell" id="mapProgressMeter" role="progressbar" aria-label="Postęp" data-i18n-aria-label="hud.progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
         <div id="mapProgressFill">
           <span class="map-prog-dot"></span>
         </div>

@@ -902,6 +902,7 @@
   },
   "hud": {
     "progress": "POSTĘP",
+    "integrity": "INTEGRALNOŚĆ",
     "training": "TRENING · WYNIK NIEZAPISYWANY",
     "autoPlay": "AUTO · KOMPUTER GRA"
   },
