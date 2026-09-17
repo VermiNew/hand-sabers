@@ -192,6 +192,7 @@ function publishPoolStats(): void {
 const activeBlocks: ActiveBlock[] = [];
 let nextBeatMs      = 0;
 let lastBlockMs     = 0;
+let lastBlockVisualMs = 0;
 let nextSideLeft    = true;
 let nextDemoBeatMs   = 0;
 let lastMenuDemoUpdateMs = 0;
@@ -267,6 +268,7 @@ export function startGameplay(sabers: SaberSide | 'both' = 'both') {
   const now = performance.now();
   nextBeatMs   = now + BEAT_MS / getTrainingRate();
   lastBlockMs  = now;
+  lastBlockVisualMs = now;
   nextSideLeft = true;
   resetMusicVisualizer();
   autoPlayTargets.left = null;
@@ -785,27 +787,30 @@ export function resetMapSpawn() {
 
 // ── Update loop ───────────────────────────────────────────────────────────────
 export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTimeSec = 0): void {
-  const elapsed = now - lastBlockMs;
-  if (elapsed < BLOCK_CAP_MS) return;
-  const dtScale = Math.min(elapsed / BLOCK_CAP_MS, 3.0);
-  lastBlockMs = now;
+  const visualElapsed = Math.min(Math.max(0, now - lastBlockVisualMs), 50);
+  const dtScale = visualElapsed / BLOCK_CAP_MS;
+  lastBlockVisualMs = now;
+  const logicElapsed = now - lastBlockMs;
+  const runLogicStep = logicElapsed >= BLOCK_CAP_MS;
 
-  if (mapBeats) {
-    spawnMapBeats(mapBeats, mapTimeSec);
-  } else {
-    // Tryb losowy
-    if (now >= nextBeatMs) {
-      nextBeatMs = now + BEAT_MS / getTrainingRate();
-      playBeat();
-      triggerMusicVisualizerBeat();
-      const bombChance = 0.12;
-      if (Math.random() < bombChance) spawnBlock(null, true);
-      else spawnBlock();
+  if (runLogicStep) {
+    lastBlockMs = now;
+    if (mapBeats) {
+      spawnMapBeats(mapBeats, mapTimeSec);
+    } else {
+      // Tryb losowy
+      if (now >= nextBeatMs) {
+        nextBeatMs = now + BEAT_MS / getTrainingRate();
+        playBeat();
+        triggerMusicVisualizerBeat();
+        const bombChance = 0.12;
+        if (Math.random() < bombChance) spawnBlock(null, true);
+        else spawnBlock();
+      }
     }
   }
 
-  const spd = BLOCK_SPEED_PER_MS * getEffectiveSpeed(mapTimeSec) * getTrainingRate() * elapsed;
-  const deltaSec = elapsed / 1000;
+  const spd = BLOCK_SPEED_PER_MS * getEffectiveSpeed(mapTimeSec) * getTrainingRate() * visualElapsed;
   for (const entry of activeBlocks) {
     if (!entry.alive) continue;
     if (entry.mapBeat && Number.isFinite(entry.hitTimeSec)) {
@@ -826,8 +831,15 @@ export function updateBlocks(now: number, mapBeats: Beat[] | null = null, mapTim
   }
 
   updateAutoPlayTargets(mapTimeSec);
-  checkHits(deltaSec, mapTimeSec);
-  publishGameplayStats();
+  if (runLogicStep) {
+    checkHits(logicElapsed / 1000, mapTimeSec);
+    publishGameplayStats();
+  } else {
+    // Instanced matrices must follow the display refresh rate even though
+    // collision and spawn work stays capped at 60 Hz.
+    syncBlockVisualInstances();
+    syncHeldVisualInstances();
+  }
 }
 
 
