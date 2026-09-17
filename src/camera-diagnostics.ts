@@ -41,6 +41,10 @@ const lightMetric = document.getElementById('lightMetric') as HTMLElement;
 const lightHint = document.getElementById('lightHint') as HTMLElement;
 const permissionMetric = document.getElementById('permissionMetric') as HTMLElement;
 const diagnosticMessage = document.getElementById('diagnosticMessage') as HTMLElement;
+const readinessCard = document.getElementById('readinessCard') as HTMLElement;
+const readinessIcon = document.getElementById('readinessIcon') as HTMLElement;
+const readinessTitle = document.getElementById('readinessTitle') as HTMLElement;
+const readinessDetail = document.getElementById('readinessDetail') as HTMLElement;
 const settings = loadSettings();
 
 let stream: MediaStream | null = null;
@@ -64,11 +68,62 @@ const HAND_CONNECTIONS = [
 function setStatus(state: 'idle' | 'loading' | 'ready' | 'error', key: string): void {
   cameraStatus.dataset['state'] = state;
   cameraStatusText.textContent = t(key);
+  updateReadiness();
 }
 
 function setMetricState(element: HTMLElement, state: 'good' | 'warn' | 'bad' | null): void {
   delete element.dataset['state'];
+  const metric = element.closest<HTMLElement>('.metric');
+  if (metric) delete metric.dataset['state'];
   if (state) element.dataset['state'] = state;
+  if (state && metric) metric.dataset['state'] = state;
+  updateReadiness();
+}
+
+function updateReadiness(): void {
+  const status = cameraStatus.dataset['state'];
+  let state: 'idle' | 'loading' | 'good' | 'warn' | 'bad' = 'idle';
+  let titleKey = 'cameraDiagnostics.readinessIdleTitle';
+  let detailKey = 'cameraDiagnostics.readinessIdleDetail';
+  let icon = 'fact_check';
+
+  if (status === 'error') {
+    state = 'bad';
+    titleKey = 'cameraDiagnostics.readinessBadTitle';
+    detailKey = 'cameraDiagnostics.readinessBadDetail';
+    icon = 'error';
+  } else if (testRequested) {
+    const checkedMetrics = activeSource === 'phone'
+      ? [resolutionMetric, fpsMetric, permissionMetric]
+      : [resolutionMetric, fpsMetric, lightMetric, permissionMetric];
+    const metricStates = checkedMetrics.map(metric => metric.dataset['state']);
+    if (status === 'loading' || metricStates.some(metricState => !metricState)) {
+      state = 'loading';
+      titleKey = 'cameraDiagnostics.readinessMeasuringTitle';
+      detailKey = 'cameraDiagnostics.readinessMeasuringDetail';
+      icon = 'progress_activity';
+    } else if (metricStates.some(metricState => metricState === 'bad')) {
+      state = 'bad';
+      titleKey = 'cameraDiagnostics.readinessBadTitle';
+      detailKey = 'cameraDiagnostics.readinessBadDetail';
+      icon = 'error';
+    } else if (metricStates.some(metricState => metricState === 'warn')) {
+      state = 'warn';
+      titleKey = 'cameraDiagnostics.readinessWarnTitle';
+      detailKey = 'cameraDiagnostics.readinessWarnDetail';
+      icon = 'warning';
+    } else {
+      state = 'good';
+      titleKey = 'cameraDiagnostics.readinessGoodTitle';
+      detailKey = 'cameraDiagnostics.readinessGoodDetail';
+      icon = 'check_circle';
+    }
+  }
+
+  readinessCard.dataset['state'] = state;
+  readinessIcon.textContent = icon;
+  readinessTitle.textContent = t(titleKey);
+  readinessDetail.textContent = t(detailKey);
 }
 
 function describeCameraError(error: unknown): string {
@@ -83,6 +138,7 @@ function describeCameraError(error: unknown): string {
 async function updatePermission(): Promise<void> {
   if (!navigator.permissions?.query) {
     permissionMetric.textContent = t('cameraDiagnostics.unsupportedPermission');
+    setMetricState(permissionMetric, 'warn');
     return;
   }
   try {
@@ -100,6 +156,7 @@ async function updatePermission(): Promise<void> {
     status.addEventListener('change', render);
   } catch {
     permissionMetric.textContent = t('cameraDiagnostics.unsupportedPermission');
+    setMetricState(permissionMetric, 'warn');
   }
 }
 
@@ -249,6 +306,7 @@ function drawRemoteHands(packet: ArrayBuffer): void {
   const handCount = result.landmarks?.length ?? 0;
   previewResolution.textContent = t('cameraDiagnostics.phoneHands', { count: handCount });
   resolutionMetric.textContent = t('cameraDiagnostics.phonePoints', { count: handCount * 21 });
+  setMetricState(resolutionMetric, handCount > 0 ? 'good' : 'warn');
   remoteFrameCount++;
   const now = performance.now();
   if (now - remoteFrameCountAt >= 1000) {

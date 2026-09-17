@@ -47,6 +47,18 @@
       </div>
 
       <aside class="control-card">
+        <section class="readiness-card" id="readinessCard" data-state="idle" aria-live="polite">
+          <span class="readiness-icon material-symbols-rounded" id="readinessIcon" aria-hidden="true">fact_check</span>
+          <div class="readiness-copy">
+            <span data-i18n="cameraDiagnostics.readinessLabel">GOTOWOŚĆ DO GRY</span>
+            <strong id="readinessTitle" data-i18n="cameraDiagnostics.readinessIdleTitle">Uruchom test</strong>
+            <small id="readinessDetail" data-i18n="cameraDiagnostics.readinessIdleDetail">Sprawdzimy cztery warunki potrzebne do stabilnego śledzenia.</small>
+          </div>
+          <div class="readiness-meter" aria-hidden="true">
+            <i></i><i></i><i></i><i></i>
+          </div>
+        </section>
+
         <div class="control-section">
           <label for="trackingSource" data-i18n="cameraDiagnostics.source">ŹRÓDŁO ŚLEDZENIA</label>
           <select id="trackingSource">
@@ -66,22 +78,22 @@
 
         <div class="metric-grid">
           <div class="metric">
-            <span class="metric-label" data-i18n="cameraDiagnostics.resolution">ROZDZIELCZOŚĆ</span>
+            <span class="metric-label"><span class="material-symbols-rounded" aria-hidden="true">aspect_ratio</span><span data-i18n="cameraDiagnostics.resolution">ROZDZIELCZOŚĆ</span></span>
             <strong id="resolutionMetric">—</strong>
             <small id="resolutionHint" data-i18n="cameraDiagnostics.resolutionMin">Zalecane minimum: 640 × 360</small>
           </div>
           <div class="metric">
-            <span class="metric-label" data-i18n="cameraDiagnostics.frameRate">KLATKI NA SEKUNDĘ</span>
+            <span class="metric-label"><span class="material-symbols-rounded" aria-hidden="true">speed</span><span data-i18n="cameraDiagnostics.frameRate">KLATKI NA SEKUNDĘ</span></span>
             <strong id="fpsMetric">—</strong>
             <small id="fpsHint" data-i18n="cameraDiagnostics.fpsMin">Zalecane minimum: 24 FPS</small>
           </div>
           <div class="metric">
-            <span class="metric-label" data-i18n="cameraDiagnostics.brightness">JASNOŚĆ</span>
+            <span class="metric-label"><span class="material-symbols-rounded" aria-hidden="true">light_mode</span><span data-i18n="cameraDiagnostics.brightness">JASNOŚĆ</span></span>
             <strong id="lightMetric">—</strong>
             <small id="lightHint" data-i18n="cameraDiagnostics.lightFacing">Stań przodem do głównego źródła światła</small>
           </div>
           <div class="metric">
-            <span class="metric-label" data-i18n="cameraDiagnostics.permission">UPRAWNIENIE</span>
+            <span class="metric-label"><span class="material-symbols-rounded" aria-hidden="true">shield_lock</span><span data-i18n="cameraDiagnostics.permission">UPRAWNIENIE</span></span>
             <strong id="permissionMetric" data-i18n="cameraDiagnostics.permissionUnknown">NIE SPRAWDZONO</strong>
             <small data-i18n="cameraDiagnostics.permissionHint">Przeglądarka zapyta po uruchomieniu testu</small>
           </div>
