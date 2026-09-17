@@ -259,17 +259,17 @@
         <div class="sp-tab" data-tab="gameplay">
           <h2 class="sp-tab-title" data-i18n="settings.sections.gameplay">Rozgrywka</h2>
 
-          <div class="sp-group-title" id="noteSpeedTitle" data-i18n="settings.gameplay.noteSpeed">Prędkość nut</div>
+          <div class="sp-group-title" id="noteSpeedTitle" data-i18n="settings.gameplay.noteSpeed">Poziom rozgrywki</div>
           <div class="sp-group">
             <div class="sp-toggle-row sp-choice-row">
               <div class="sp-toggle-info">
-                <span class="sp-toggle-desc" data-i18n="settings.gameplay.noteSpeedDesc">Zmienia czas dolotu bez przesuwania beatów</span>
+                <span class="sp-toggle-desc" id="noteSpeedDescription" data-i18n="settings.gameplay.noteSpeedDesc">Poziom zmienia prędkość dolotu kostek. Układ i czas muzyki pozostają bez zmian.</span>
               </div>
-              <div class="sp-segmented sp-note-speed" role="group" aria-labelledby="noteSpeedTitle">
-                <button type="button" class="sp-seg" data-note-speed="0.75" data-i18n="settings.gameplay.speedRelaxed">Spokojny</button>
-                <button type="button" class="sp-seg" data-note-speed="1" data-i18n="settings.gameplay.speedNormal">Standard</button>
-                <button type="button" class="sp-seg" data-note-speed="1.35" data-i18n="settings.gameplay.speedFast">Szybki</button>
-                <button type="button" class="sp-seg" data-note-speed="1.75" data-i18n="settings.gameplay.speedExpert">Expert</button>
+              <div class="sp-segmented sp-note-speed" role="group" aria-labelledby="noteSpeedTitle" aria-describedby="noteSpeedDescription">
+                <button type="button" class="sp-seg" data-note-speed="0.75"><span data-i18n="settings.gameplay.speedRelaxed">Newbie</span><small data-i18n="settings.gameplay.speedRelaxedImpact">0,75× · 2,40 s</small></button>
+                <button type="button" class="sp-seg" data-note-speed="1"><span data-i18n="settings.gameplay.speedNormal">Normal</span><small data-i18n="settings.gameplay.speedNormalImpact">1,00× · 1,80 s</small></button>
+                <button type="button" class="sp-seg" data-note-speed="1.35"><span data-i18n="settings.gameplay.speedFast">High</span><small data-i18n="settings.gameplay.speedFastImpact">1,35× · 1,33 s</small></button>
+                <button type="button" class="sp-seg" data-note-speed="1.75"><span data-i18n="settings.gameplay.speedExpert">Extreme</span><small data-i18n="settings.gameplay.speedExpertImpact">1,75× · 1,03 s</small></button>
               </div>
             </div>
           </div>
