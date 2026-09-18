@@ -11,6 +11,7 @@ const SERVER_ENTRY = path.join(TEMP_ROOT, 'dist-server', 'server.js');
 const MEDIAPIPE_BUNDLE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js';
 const MEDIAPIPE_WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
 const MEDIAPIPE_MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
+const SOURCE_CONFIG = JSON.parse(await readFile(path.join(PROJECT_ROOT, 'config.json'), 'utf8'));
 
 async function getFreePort() {
   return await new Promise((resolve, reject) => {
@@ -39,6 +40,7 @@ async function startServer(security) {
   const port = await getFreePort();
   await writeFile(path.join(TEMP_ROOT, 'config.json'), `${JSON.stringify({
     security,
+    mapLibraryQuota: SOURCE_CONFIG.mapLibraryQuota,
     allowedOrigins: [`http://127.0.0.1:${port}`],
   }, null, 2)}\n`);
   const output = [];
@@ -95,8 +97,7 @@ async function removeTemporaryProject() {
 let activeServer = null;
 let browser = null;
 try {
-  const sourceConfig = JSON.parse(await readFile(path.join(PROJECT_ROOT, 'config.json'), 'utf8'));
-  if (sourceConfig.security !== false) {
+  if (SOURCE_CONFIG.security !== false) {
     throw new Error('Checked-in config.json must keep security=false for local development.');
   }
   await prepareTemporaryProject();
