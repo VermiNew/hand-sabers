@@ -789,7 +789,9 @@ export function tickDevPanel(
   devData.pooledBombs  = window.__prewarmedBombPool  ?? 0;
   devData.pooledShards = window.__prewarmedShardPool ?? 0;
   devData.songTime     = +(window.__songTimeSec ?? 0).toFixed(3);
-  devData.audioOffsetMs       = window.__audioOffsetMs ?? devData.audioOffsetMs;
+  // Keep the editable value sourced from settings. The effective runtime offset
+  // may also include a map-specific correction and must not overwrite this input.
+  devData.audioOffsetMs       = getSettings().audioOffsetMs;
   devData.nearestBeatDeltaMs  = window.__nearestBeatDeltaMs ?? 0;
   const nb = window.__nearestBeats ?? [];
   devData.nearestBeat1 = nb[0] ? `${nb[0].deltaMs}ms | ${nb[0].side} | ${nb[0].cut}` : '—';
