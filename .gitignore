@@ -10,6 +10,7 @@ dist-server/
 config.local.json
 
 # Local map/audio data
+maps/_accounts.json
 maps/_scores.json
 maps/audio/*
 !maps/audio/.gitkeep
