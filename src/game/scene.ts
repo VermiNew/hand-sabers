@@ -61,7 +61,7 @@ scene.background = new THREE.Color(THEME.dark);
 const sceneFog = new THREE.FogExp2(THEME.dark, 0.028);
 scene.fog = sceneFog;
 
-export const cam3d = new THREE.PerspectiveCamera(68, window.innerWidth / window.innerHeight, 0.1, 100);
+export const cam3d = new THREE.PerspectiveCamera(initialPerfProfile.fieldOfView, window.innerWidth / window.innerHeight, 0.1, 100);
 cam3d.position.set(0, 1.55, 3.2);
 cam3d.lookAt(0, 1.1, -5);
 
@@ -602,6 +602,10 @@ function applyDecorVisibility(): void {
 function applyActiveProfileDpr(targetDpr: number | null = null): void {
   applyDecorVisibility();
   renderer.toneMappingExposure = ['lowest', 'very-low', 'low'].includes(perfProfile.qualityMode) ? 1.0 : 1.2;
+  if (Math.abs(cam3d.fov - perfProfile.fieldOfView) > 0.01) {
+    cam3d.fov = perfProfile.fieldOfView;
+    cam3d.updateProjectionMatrix();
+  }
   const deviceDpr = window.devicePixelRatio || 1;
   const nextDpr   = clampDpr(Number.isFinite(targetDpr ?? NaN) ? targetDpr! : Math.min(deviceDpr, perfProfile.maxDpr), perfProfile);
   if (Math.abs(nextDpr - currentDpr) > 0.01) {

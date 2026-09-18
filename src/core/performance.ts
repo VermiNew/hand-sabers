@@ -23,6 +23,7 @@ interface PerformanceSettingsLike {
   customGrid?: boolean;
   customHitShards?: number;
   customRenderScale?: number;
+  customFieldOfView?: number;
 }
 
 interface PerformanceModeOption {
@@ -73,6 +74,7 @@ const PROFILES = {
     musicReactive: false,
     menuDemo: false,
     hitShards: 0,
+    fieldOfView: 68,
     camera: { width: 320, height: 180, frameRate: 20 },
     detectFps: 8,
     devRefreshMs: 1200,
@@ -100,6 +102,7 @@ const PROFILES = {
     musicReactive: false,
     menuDemo: false,
     hitShards: 1,
+    fieldOfView: 68,
     camera: { width: 424, height: 240, frameRate: 24 },
     detectFps: 10,
     devRefreshMs: 1100,
@@ -127,6 +130,7 @@ const PROFILES = {
     musicReactive: false,
     menuDemo: false,
     hitShards: 1,
+    fieldOfView: 68,
     camera: { width: 424, height: 240, frameRate: 30 },
     detectFps: 18,
     devRefreshMs: 1000,
@@ -154,6 +158,7 @@ const PROFILES = {
     musicReactive: true,
     menuDemo: true,
     hitShards: 2,
+    fieldOfView: 68,
     camera: { width: 640, height: 360, frameRate: 30 },
     detectFps: 24,
     devRefreshMs: 750,
@@ -181,6 +186,7 @@ const PROFILES = {
     musicReactive: true,
     menuDemo: true,
     hitShards: 3,
+    fieldOfView: 68,
     camera: { width: 640, height: 480, frameRate: 30 },
     detectFps: 28,
     devRefreshMs: 650,
@@ -208,6 +214,7 @@ const PROFILES = {
     musicReactive: true,
     menuDemo: true,
     hitShards: 5,
+    fieldOfView: 68,
     camera: { width: 960, height: 540, frameRate: 30 },
     detectFps: 30,
     devRefreshMs: 500,
@@ -235,6 +242,7 @@ const PROFILES = {
     musicReactive: true,
     menuDemo: true,
     hitShards: 7,
+    fieldOfView: 68,
     camera: { width: 1280, height: 720, frameRate: 30 },
     detectFps: 30,
     devRefreshMs: 400,
@@ -341,6 +349,7 @@ export function getPerformanceProfile(settings: PerformanceSettingsLike = {}): P
       musicReactive: true,
       menuDemo: true,
       hitShards: Math.max(0, Math.min(7, Math.round(settings.customHitShards ?? 2))),
+      fieldOfView: Math.max(55, Math.min(85, settings.customFieldOfView ?? 68)),
       camera: PROFILES.medium.camera,
       detectFps: PROFILES.medium.detectFps,
       devRefreshMs: PROFILES.medium.devRefreshMs,

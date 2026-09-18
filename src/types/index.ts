@@ -124,6 +124,7 @@ export interface Settings {
   customGrid: boolean;
   customHitShards: number;
   customRenderScale: number;
+  customFieldOfView: number;
   musicReactiveEnabled: boolean;
   musicReactiveIntensityMode: 'auto' | 'manual';
   musicReactiveIntensity: number;
@@ -194,6 +195,7 @@ export interface PerformanceProfile {
   musicReactive: boolean;
   menuDemo: boolean;
   hitShards: number;
+  fieldOfView: number;
   camera: CameraProfile;
   detectFps: number;
   devRefreshMs: number;

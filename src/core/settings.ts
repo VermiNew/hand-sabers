@@ -91,6 +91,7 @@ export const DEFAULTS: Settings = {
   customGrid: true,
   customHitShards: 2,
   customRenderScale: 1,
+  customFieldOfView: 68,
   musicReactiveEnabled: true,
   musicReactiveIntensityMode: 'auto',
   musicReactiveIntensity: 1,
@@ -199,6 +200,7 @@ function normalizeSettings(value: Partial<Settings>): Settings {
   normalized.customSaberTrailIntensity = clampNumber(normalized.customSaberTrailIntensity, 0, 1.25, DEFAULTS.customSaberTrailIntensity);
   normalized.customArenaDetail = clampNumber(normalized.customArenaDetail, 0, 1.25, DEFAULTS.customArenaDetail);
   normalized.customRenderScale = clampNumber(normalized.customRenderScale, 0.5, 1.5, DEFAULTS.customRenderScale);
+  normalized.customFieldOfView = clampNumber(normalized.customFieldOfView, 55, 85, DEFAULTS.customFieldOfView);
   normalized.musicReactiveIntensityMode = normalizeMusicReactiveIntensityMode(normalized.musicReactiveIntensityMode);
   normalized.musicReactiveIntensity = clampNumber(normalized.musicReactiveIntensity, 0, 1.5, DEFAULTS.musicReactiveIntensity);
   normalized.trackingSource = normalizeTrackingSource(normalized.trackingSource);

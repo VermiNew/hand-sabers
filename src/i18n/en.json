@@ -384,7 +384,8 @@
       "arenaTheme": "Arena theme",
       "arenaThemeLabel": "Arena appearance",
       "hitShards": "Hit shard count",
-      "renderScale": "Render scale"
+      "renderScale": "Render scale",
+      "fieldOfView": "Field of view"
     },
     "musicEffects": {
       "title": "Music effects",

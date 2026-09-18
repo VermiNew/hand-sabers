@@ -94,6 +94,7 @@ function validateSetting(key: keyof Settings, value: unknown): boolean {
     case 'customArenaDetail': return isFiniteNumber(value, 0, 1.25);
     case 'customHitShards': return Number.isInteger(value) && isFiniteNumber(value, 0, 7);
     case 'customRenderScale': return isFiniteNumber(value, 0.5, 1.5);
+    case 'customFieldOfView': return isFiniteNumber(value, 55, 85);
     case 'musicReactiveIntensity': return isFiniteNumber(value, 0, 1.5);
     case 'maxBeats': return Number.isInteger(value) && isFiniteNumber(value, 1, 100_000);
     case 'phoneAudioLatencyMs': return isFiniteNumber(value, 0, 500);

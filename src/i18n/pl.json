@@ -384,7 +384,8 @@
       "arenaTheme": "Motyw areny",
       "arenaThemeLabel": "Wygląd areny",
       "hitShards": "Liczba odłamków",
-      "renderScale": "Skala renderu"
+      "renderScale": "Skala renderu",
+      "fieldOfView": "Pole widzenia"
     },
     "musicEffects": {
       "title": "Efekty muzyczne",

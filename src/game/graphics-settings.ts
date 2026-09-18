@@ -54,6 +54,8 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
   const arenaDetailValue = document.getElementById('menuCustomArenaDetailValue');
   const renderScaleInput = document.getElementById('menuCustomRenderScale') as HTMLInputElement | null;
   const renderScaleValue = document.getElementById('menuCustomRenderScaleValue');
+  const fieldOfViewInput = document.getElementById('menuCustomFieldOfView') as HTMLInputElement | null;
+  const fieldOfViewValue = document.getElementById('menuCustomFieldOfViewValue');
 
   function getModeSummary(): string {
     const selected = getPerformanceMode(settings);
@@ -133,6 +135,12 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
     }
     if (renderScaleValue) renderScaleValue.textContent = `${Math.round(settings.customRenderScale * 100)}%`;
 
+    if (fieldOfViewInput) {
+      fieldOfViewInput.value = String(settings.customFieldOfView);
+      updateRangeProgress(fieldOfViewInput);
+    }
+    if (fieldOfViewValue) fieldOfViewValue.textContent = `${Math.round(settings.customFieldOfView)}°`;
+
     updateCustomVisibility();
     updatePerformanceHint();
   }
@@ -199,6 +207,15 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
     setSetting('customRenderScale', value);
     updateRangeProgress(renderScaleInput);
     if (renderScaleValue) renderScaleValue.textContent = `${Math.round(value * 100)}%`;
+    if (performanceInput?.value === 'custom') applyLiveSettings();
+  });
+
+  fieldOfViewInput?.addEventListener('input', () => {
+    const value = Math.max(55, Math.min(85, Math.round(Number(fieldOfViewInput.value))));
+    settings.customFieldOfView = value;
+    setSetting('customFieldOfView', value);
+    updateRangeProgress(fieldOfViewInput);
+    if (fieldOfViewValue) fieldOfViewValue.textContent = `${value}°`;
     if (performanceInput?.value === 'custom') applyLiveSettings();
   });
 
