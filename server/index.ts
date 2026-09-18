@@ -46,10 +46,20 @@ const PROJECT_ROOT_CANDIDATES = [SOURCE_PROJECT_ROOT, COMPILED_PROJECT_ROOT];
 const PROJECT_ROOT = PROJECT_ROOT_CANDIDATES.find(candidate => existsSync(path.join(candidate, 'package.json')))
   || SOURCE_PROJECT_ROOT;
 const CONFIG_PATH = path.join(PROJECT_ROOT, 'config.json');
-const projectConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as {
+const LOCAL_CONFIG_PATH = path.join(PROJECT_ROOT, 'config.local.json');
+interface ProjectConfig {
   security?: unknown;
   allowedOrigins?: unknown;
   mapLibraryQuota?: unknown;
+  developerToken?: unknown;
+}
+const sharedProjectConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as ProjectConfig;
+const localProjectConfig = existsSync(LOCAL_CONFIG_PATH)
+  ? JSON.parse(readFileSync(LOCAL_CONFIG_PATH, 'utf8')) as ProjectConfig
+  : {};
+const projectConfig: ProjectConfig = {
+  ...sharedProjectConfig,
+  developerToken: localProjectConfig.developerToken ?? sharedProjectConfig.developerToken,
 };
 if (typeof projectConfig.security !== 'boolean') {
   throw new Error('config.json: pole "security" musi mieć wartość true albo false.');
@@ -57,6 +67,9 @@ if (typeof projectConfig.security !== 'boolean') {
 if (projectConfig.allowedOrigins !== undefined
   && (!Array.isArray(projectConfig.allowedOrigins) || projectConfig.allowedOrigins.some(value => typeof value !== 'string'))) {
   throw new Error('config.json: pole "allowedOrigins" musi być tablicą adresów URL.');
+}
+if (projectConfig.developerToken !== undefined && typeof projectConfig.developerToken !== 'string') {
+  throw new Error('config.local.json: pole "developerToken" musi być tekstem.');
 }
 const quotaConfig = projectConfig.mapLibraryQuota as Partial<MapLibraryQuotaLimits> | null;
 if (
@@ -68,7 +81,10 @@ if (
   throw new Error('config.json: pole "mapLibraryQuota" musi zawierać dodatnie limity maxBytes, maxMaps i maxAudioFiles.');
 }
 const securityEnabled = projectConfig.security;
-const developerAccessToken = normalizeDeveloperAccessToken(process.env.HAND_SABERS_DEVELOPER_TOKEN);
+const configuredDeveloperToken = process.env.HAND_SABERS_DEVELOPER_TOKEN !== undefined
+  ? process.env.HAND_SABERS_DEVELOPER_TOKEN
+  : projectConfig.developerToken as string | undefined;
+const developerAccessToken = normalizeDeveloperAccessToken(configuredDeveloperToken);
 const originPolicy = createOriginPolicy(securityEnabled, (projectConfig.allowedOrigins ?? []) as string[]);
 const STATIC_DIR = requireFrontendDist(PROJECT_ROOT);
 const DEFAULT_MAPS_DIR = path.join(PROJECT_ROOT, 'maps');

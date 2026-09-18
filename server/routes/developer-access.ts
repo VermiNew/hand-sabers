@@ -21,7 +21,7 @@ function digest(value: string): Buffer {
 export function normalizeDeveloperAccessToken(value: string | undefined): string | null {
   if (value === undefined || value === '') return null;
   if (value.length < MIN_TOKEN_LENGTH || value.length > MAX_TOKEN_LENGTH) {
-    throw new Error(`HAND_SABERS_DEVELOPER_TOKEN musi mieć od ${MIN_TOKEN_LENGTH} do ${MAX_TOKEN_LENGTH} znaków.`);
+    throw new Error(`Token developera musi mieć od ${MIN_TOKEN_LENGTH} do ${MAX_TOKEN_LENGTH} znaków.`);
   }
   return value;
 }

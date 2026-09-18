@@ -405,7 +405,7 @@
       "tokenPlaceholder": "Wpisz token developera",
       "unlock": "ODBLOKUJ",
       "checking": "Sprawdzanie konfiguracji serwera…",
-      "notConfigured": "Serwer nie ma ustawionego HAND_SABERS_DEVELOPER_TOKEN.",
+      "notConfigured": "Serwer nie ma ustawionego tokenu w config.local.json ani HAND_SABERS_DEVELOPER_TOKEN.",
       "locked": "Podaj token serwera, aby odblokować narzędzia w tej karcie.",
       "granted": "Dostęp przyznany. Narzędzia developerskie są dostępne do odświeżenia strony.",
       "tokenRequired": "Wpisz token developera.",

@@ -405,7 +405,7 @@
       "tokenPlaceholder": "Enter the developer token",
       "unlock": "UNLOCK",
       "checking": "Checking the server configuration…",
-      "notConfigured": "The server has no HAND_SABERS_DEVELOPER_TOKEN configured.",
+      "notConfigured": "The server has no token configured in config.local.json or HAND_SABERS_DEVELOPER_TOKEN.",
       "locked": "Enter the server token to unlock tools in this tab.",
       "granted": "Access granted. Developer tools remain available until the page is refreshed.",
       "tokenRequired": "Enter the developer token.",

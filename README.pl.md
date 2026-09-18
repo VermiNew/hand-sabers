@@ -46,13 +46,21 @@ Najwygodniej uruchomić backend i Vite razem:
 npm run dev
 ```
 
-Rozszerzone narzędzia diagnostyczne wymagają tokenu ustawionego wyłącznie po stronie serwera (12–256 znaków). Przykład dla PowerShell:
+Rozszerzone narzędzia diagnostyczne wymagają tokenu ustawionego wyłącznie po stronie serwera (12–256 znaków). Najprościej skopiować `config.local.example.json` jako `config.local.json` i wpisać własną wartość:
+
+```json
+{
+  "developerToken": "własny-długi-token"
+}
+```
+
+`config.local.json` jest ignorowany przez Git. Alternatywnie token można podać dla pojedynczego procesu w PowerShell; zmienna środowiskowa ma pierwszeństwo przed plikiem:
 
 ```powershell
 $env:HAND_SABERS_DEVELOPER_TOKEN='własny-długi-token'; npm run dev
 ```
 
-Po uruchomieniu otwórz zakładkę **Ustawienia → Developer** i wpisz tę samą wartość. Token jest wysyłany tylko w body żądania do własnego serwera, nie trafia do bundla, URL, `localStorage`, `sessionStorage` ani eksportu ustawień. Dostęp obowiązuje wyłącznie w pamięci bieżącej karty i po odświeżeniu wymaga ponownego odblokowania. Parametry `?dev` i `?testing` mogą poprosić o automatyczne włączenie panelu po poprawnej autoryzacji, lecz same nie omijają blokady. Bez zmiennej środowiskowej zwykła gra działa normalnie, a narzędzia pozostają niedostępne.
+Po uruchomieniu otwórz zakładkę **Ustawienia → Developer** i wpisz tę samą wartość. Token jest wysyłany tylko w body żądania do własnego serwera, nie trafia do bundla, URL, `localStorage`, `sessionStorage` ani eksportu ustawień. Dostęp obowiązuje wyłącznie w pamięci bieżącej karty i po odświeżeniu wymaga ponownego odblokowania. Parametry `?dev` i `?testing` mogą poprosić o automatyczne włączenie panelu po poprawnej autoryzacji, lecz same nie omijają blokady. Bez tokenu zwykła gra działa normalnie, a narzędzia pozostają niedostępne.
 
 `npm run dev:vite` pozostaje równoważnym aliasem legacy.
 

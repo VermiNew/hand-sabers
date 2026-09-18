@@ -6,6 +6,9 @@ dist/
 dist-server/
 .tmp/
 
+# Local configuration and secrets
+config.local.json
+
 # Local map/audio data
 maps/_scores.json
 maps/audio/*

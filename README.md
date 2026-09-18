@@ -46,13 +46,21 @@ The easiest way to run both the backend and Vite together:
 npm run dev
 ```
 
-Extended diagnostic tools require a server-only token between 12 and 256 characters. For Bash:
+Extended diagnostic tools require a server-only token between 12 and 256 characters. The simplest option is to copy `config.local.example.json` to `config.local.json` and enter your own value:
+
+```json
+{
+  "developerToken": "your-own-long-token"
+}
+```
+
+`config.local.json` is ignored by Git. Alternatively, set the token for one process in Bash; the environment variable takes precedence over the file:
 
 ```bash
 HAND_SABERS_DEVELOPER_TOKEN='your-own-long-token' npm run dev
 ```
 
-Then open **Settings → Developer** and enter the same value. The token is sent only in a request body to your own server; it is never included in the bundle, URL, `localStorage`, `sessionStorage`, or settings export. Access lives only in the current tab's memory and must be unlocked again after a refresh. The `?dev` and `?testing` parameters may request automatic panel activation after successful authorization, but cannot bypass the gate. Without the environment variable the game works normally and extended tools remain unavailable.
+Then open **Settings → Developer** and enter the same value. The token is sent only in a request body to your own server; it is never included in the bundle, URL, `localStorage`, `sessionStorage`, or settings export. Access lives only in the current tab's memory and must be unlocked again after a refresh. The `?dev` and `?testing` parameters may request automatic panel activation after successful authorization, but cannot bypass the gate. Without a configured token the game works normally and extended tools remain unavailable.
 
 `npm run dev:vite` is an equivalent legacy alias.
 
