@@ -1,6 +1,7 @@
 import { state, S } from '../core/state.ts';
 import { ui, setLoadingProgress, showCameraError, setCalibFeedback } from '../ui/ui.ts';
 import { getSettings } from '../core/settings.ts';
+import { developerWarn } from '../core/client-log.ts';
 import { getDetectIntervalMs, getPerformanceProfile } from '../core/performance.ts';
 import { t } from '../i18n/index.ts';
 import { isRemoteTrackingConnected } from '../remote/host-pairing.ts';
@@ -574,11 +575,11 @@ export async function initMP(onReady: () => void): Promise<boolean> {
         if (ui.dCam) ui.dCam.textContent = 'PHONE ML';
       }
     } else {
-      setLoadingProgress(t('overlay.loadingModel'), t('overlay.loadingRuntimeDetail'), null);
-      handLandmarker = await loadHandLandmarker((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
       setLoadingProgress(t('overlay.startingCamera'), t('overlay.startingCameraDetail'), null);
       await startCamera();
       setLoadingProgress(t('overlay.cameraReady'), t('overlay.cameraReadyDetail'), null);
+      setLoadingProgress(t('overlay.loadingModel'), t('overlay.loadingRuntimeDetail'), null);
+      handLandmarker = await loadHandLandmarker((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
       setupCalibFeed();
     }
     setLoadingProgress(t('overlay.initializingWorker'), t('overlay.initializingWorkerDetail'), null);
@@ -596,7 +597,7 @@ export async function initMP(onReady: () => void): Promise<boolean> {
     onReady();
     return true;
   } catch (err) {
-    console.error('initMP error:', err);
+    developerWarn('Tracking initialization failed:', err);
     stopTracking();
     showCameraError(err);
     return false;
