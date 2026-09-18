@@ -391,6 +391,7 @@ try {
     player: 'Tester',
     score: 150,
     combo: 1,
+    scoringVersion: scoreSession.scoringVersion,
   };
   await postJson('/api/scores', scorePayload);
   await postJson('/api/scores', scorePayload, 401);
