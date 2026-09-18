@@ -170,7 +170,6 @@ export function initProfileSettings(settings: Settings): void {
   const namePreview = element<HTMLElement>('menuProfileNamePreview');
   const nameCount = element<HTMLElement>('menuProfileNameCount');
   const nameError = element<HTMLElement>('menuProfileNameError');
-  const colorInput = element<HTMLInputElement>('menuProfileColor');
   const colorPresets = element<HTMLElement>('menuProfileColorPresets');
   const colorPickerPreview = element<HTMLElement>('menuProfileColorPickerPreview');
 
@@ -179,7 +178,6 @@ export function initProfileSettings(settings: Settings): void {
 
   function setPendingColor(color: string): void {
     pendingColor = sanitizeProfileColor(color);
-    if (colorInput) colorInput.value = pendingColor;
     colorPresets?.querySelectorAll<HTMLButtonElement>('[data-profile-color]').forEach(button => {
       const selected = button.dataset['profileColor'] === pendingColor;
       button.classList.toggle('is-selected', selected);
@@ -224,7 +222,6 @@ export function initProfileSettings(settings: Settings): void {
     button.setAttribute('aria-label', t('profile.colorPreset', { color }));
     button.addEventListener('click', () => setPendingColor(color));
   });
-  colorInput?.addEventListener('input', () => setPendingColor(colorInput.value));
   updatePreview();
 
   window.addEventListener('hand-sabers:profile-updated', event => {
