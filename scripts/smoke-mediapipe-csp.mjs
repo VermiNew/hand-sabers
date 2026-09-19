@@ -161,7 +161,7 @@ try {
     if (!modelResponse.ok) throw new Error(`Model download failed: ${modelResponse.status}`);
     const modelAssetBuffer = new Uint8Array(await modelResponse.arrayBuffer());
     const landmarker = await visionModule.HandLandmarker.createFromOptions(vision, {
-      baseOptions: { modelAssetBuffer, delegate: 'GPU' },
+      baseOptions: { modelAssetBuffer, delegate: 'CPU' },
       runningMode: 'VIDEO',
       numHands: 2,
     });
