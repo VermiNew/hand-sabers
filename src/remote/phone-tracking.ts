@@ -4,7 +4,7 @@ import type { PhoneTrackingMetricsEvent } from './tracking-metrics.ts';
 import { encodePhoneCameraFrame } from './camera-frame-protocol.ts';
 import type { PhoneCameraProcessing } from '../types/index.js';
 
-const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
+const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const HAND_CONNECTIONS: readonly [number, number][] = [
   [0, 1], [1, 2], [2, 3], [3, 4],
@@ -281,7 +281,7 @@ export function initPhoneTracking(
         return;
       }
       const visionModule = await import(
-        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js' as string
+        'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs' as string
       );
       const vision = await visionModule.FilesetResolver.forVisionTasks(MEDIAPIPE_CDN);
       const landmarker = await visionModule.HandLandmarker.createFromOptions(vision, {

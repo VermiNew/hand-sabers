@@ -8,8 +8,8 @@ import { chromium } from 'playwright';
 const PROJECT_ROOT = process.cwd();
 const TEMP_ROOT = await mkdtemp(path.join(tmpdir(), 'hand-sabers-csp-'));
 const SERVER_ENTRY = path.join(TEMP_ROOT, 'dist-server', 'server.js');
-const MEDIAPIPE_BUNDLE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js';
-const MEDIAPIPE_WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
+const MEDIAPIPE_BUNDLE = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs';
+const MEDIAPIPE_WASM = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
 const MEDIAPIPE_MODEL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 const SOURCE_CONFIG = JSON.parse(await readFile(path.join(PROJECT_ROOT, 'config.json'), 'utf8'));
 

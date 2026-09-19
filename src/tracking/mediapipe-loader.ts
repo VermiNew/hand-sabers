@@ -1,7 +1,7 @@
 import { getSettings } from '../core/settings.ts';
 import { t } from '../i18n/index.ts';
 
-const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
+const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm';
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
 
 export type ModelLoadProgress = (message: string, detail: string, ratio: number | null) => void;
@@ -60,7 +60,7 @@ export async function loadHandLandmarker(
 ): Promise<any> {
   onProgress(t('overlay.loadingRuntime'), t('overlay.loadingRuntimeDetail'), 0.1);
   const { HandLandmarker, FilesetResolver } = await import(
-    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js' as string
+    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs' as string
   );
   signal?.throwIfAborted();
   onProgress(t('overlay.initializingResolver'), t('overlay.initializingResolverDetail'), 0.35);
@@ -70,7 +70,9 @@ export async function loadHandLandmarker(
   const settings = getSettings();
   onProgress(t('overlay.loadingLandmarker'), t('overlay.initializingLandmarkerDetail'), 1);
   const handLandmarker = await HandLandmarker.createFromOptions(vision, {
-    baseOptions: { modelAssetBuffer, delegate: 'GPU' },
+    // Three.js already owns the page's primary WebGL context. CPU inference
+    // avoids a second high-load GPU context that can crash the whole tab.
+    baseOptions: { modelAssetBuffer, delegate: 'CPU' },
     runningMode: 'VIDEO',
     numHands: 2,
     minHandDetectionConfidence: settings.handDetectionConfidence,
