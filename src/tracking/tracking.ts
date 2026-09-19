@@ -48,6 +48,7 @@ let worker:         Worker | null = null;
 let lastDetectMs    = 0;
 let autoAdvance:    () => void = () => {};
 let onAutoFlipSuggestion: (info: { flipCamera: boolean; confidence: number }) => void = () => {};
+let onTrackingRuntimeError: (error: unknown) => void = () => {};
 let saberTargetSetter: ((side: 'left' | 'right', pos: { x: number; y: number; z: number }) => void) | null = null;
 
 const DEFAULT_CALIB: CalibData = { minX: 0.1, maxX: 0.9, minY: 0.1, maxY: 0.9, rangeX: 3.2, rangeY: 3.0 };
@@ -90,6 +91,9 @@ function updateCalibrationSourceIndicator(remoteConnected = isRemoteTrackingConn
 export function setCalibAutoAdvanceHandler(fn: () => void): void { autoAdvance = fn; }
 export function setAutoFlipSuggestionHandler(fn: ((info: { flipCamera: boolean; confidence: number }) => void) | null): void {
   onAutoFlipSuggestion = typeof fn === 'function' ? fn : () => {};
+}
+export function setTrackingRuntimeErrorHandler(fn: ((error: unknown) => void) | null): void {
+  onTrackingRuntimeError = typeof fn === 'function' ? fn : () => {};
 }
 export function setSaberTargetSetter(fn: (side: 'left' | 'right', pos: { x: number; y: number; z: number }) => void): void {
   saberTargetSetter = typeof fn === 'function' ? fn : null;
@@ -370,6 +374,14 @@ function processDetectionResult(
   if (ui.dLat) ui.dLat.textContent = `${detectMs.toFixed(1)}ms`;
 }
 
+function handleTrackingRuntimeError(error: unknown): void {
+  if (!trackingActive) return;
+  developerWarn('Hand tracking runtime failed:', error);
+  stopTracking();
+  showCameraError(error);
+  onTrackingRuntimeError(error);
+}
+
 async function processRemoteCameraFrame(packet: ArrayBuffer): Promise<void> {
   if (
     remoteFrameProcessing
@@ -388,7 +400,13 @@ async function processRemoteCameraFrame(packet: ArrayBuffer): Promise<void> {
     try {
       if (!trackingActive || trackingSource !== 'remote' || generation !== trackingGeneration) return;
       const startedAt = performance.now();
-      const result = handLandmarker.detectForVideo(bitmap, startedAt) as DetectResult;
+      let result: DetectResult;
+      try {
+        result = handLandmarker.detectForVideo(bitmap, startedAt) as DetectResult;
+      } catch (error) {
+        handleTrackingRuntimeError(error);
+        return;
+      }
       const detectMs = performance.now() - startedAt;
       window.__lastDetectMs = detectMs;
       if (ui.dDetect) ui.dDetect.textContent = `${detectMs.toFixed(1)}ms`;
@@ -451,8 +469,14 @@ function runDetect(): void {
   }
   lastDetectMs = now;
 
-  const t0       = performance.now();
-  const result: DetectResult = handLandmarker.detectForVideo(videoEl, now);
+  const t0 = performance.now();
+  let result: DetectResult;
+  try {
+    result = handLandmarker.detectForVideo(videoEl, now);
+  } catch (error) {
+    handleTrackingRuntimeError(error);
+    return;
+  }
   const detectMs = performance.now() - t0;
   window.__lastDetectMs = detectMs;
 

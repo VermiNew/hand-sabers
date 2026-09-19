@@ -340,13 +340,27 @@ export function showCameraError(err: unknown): void {
   const cameraErrors = new Set(['NotAllowedError', 'NotFoundError', 'NotReadableError', 'OverconstrainedError', 'SecurityError']);
   const isCameraError = cameraErrors.has(name);
   const isBusyCamera  = name === 'NotReadableError' || /allocate videosource|start video source|camera is already in use/i.test(message);
+  const isTrackingRuntimeError = name === 'RuntimeError' && /abort|wasm|webassembly|memory access/i.test(message);
   let hint = t('errors.loadFailed');
   if (isBusyCamera)       hint = t('errors.cameraBusy');
   else if (isCameraError) hint = t('errors.cameraPermission');
+  else if (isTrackingRuntimeError) hint = t('errors.trackingRuntime');
 
   if (ui.spinner) ui.spinner.style.display = 'none';
-  if (ui.ovRetryCamera) ui.ovRetryCamera.hidden = !isCameraError;
-  if (ui.ovInstr) ui.ovInstr.textContent = isCameraError ? t('errors.cameraError') : t('errors.startError');
+  if (ui.ovRetryCamera) {
+    ui.ovRetryCamera.hidden = !isCameraError && !isTrackingRuntimeError;
+    const label = ui.ovRetryCamera.querySelector<HTMLElement>('[data-i18n]');
+    if (label) {
+      const key = isTrackingRuntimeError ? 'overlay.retryTracking' : 'overlay.retryCamera';
+      label.dataset['i18n'] = key;
+      label.textContent = t(key);
+    }
+  }
+  if (ui.ovInstr) {
+    ui.ovInstr.textContent = isCameraError
+      ? t('errors.cameraError')
+      : isTrackingRuntimeError ? t('errors.trackingError') : t('errors.startError');
+  }
   if (ui.ovLoadDetail) {
     const lines = [message, ...hint.split(/<br\s*\/?>/i)];
     const content: Array<Text | HTMLBRElement> = [];

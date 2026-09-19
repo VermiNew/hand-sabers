@@ -11,7 +11,10 @@ import {
   setScenePerformanceProfile, getScenePerformanceProfile, setHitPlaneVisible, setOneHandModeVisuals,
 } from './scene.ts';
 import { initAudio, initInterfaceSounds, stopMapAudio, clearMapAudio, applyAudioSettings } from './audio.ts';
-import { initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, stopTracking, restoreCalibrationData } from '../tracking/tracking.ts';
+import {
+  initMP, setCalibAutoAdvanceHandler, setSaberTargetSetter, setTrackingRuntimeErrorHandler,
+  stopTracking, restoreCalibrationData,
+} from '../tracking/tracking.ts';
 import { setGameOverHandler, startGameplay, clearGameplayEntities, resetMapSpawn, resetMenuDemo, prewarmGameplayResources, disposeGameplayResources, isAutoPlayEnabled, setAutoPlayEnabled } from './gameplay.ts';
 import { updateFpsCounter } from '../ui/fps.ts';
 import { initDevPanel, isDeveloperPanelEnabled, initCameraPanelToggle } from '../ui/devpanel.ts';
@@ -628,6 +631,12 @@ updateHUD(state);
 
 let trackingStarted = false;
 let trackingStarting = false;
+
+setTrackingRuntimeErrorHandler(() => {
+  trackingStarted = false;
+  calibrationController.setReady(false);
+  showOverlay();
+});
 
 function handleTrackingReady(): void {
   if (calibrationController.isReady() && settings.savedCalibration) {
