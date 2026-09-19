@@ -593,7 +593,6 @@ function abortLoading(): void {
   if (trackingStarting || (trackingStarted && state.appState === S.LOADING)) {
     stopTracking();
     trackingStarted = false;
-    trackingStarting = false;
   }
   calibrationController.setReady(false);
   returnToMainMenu();

@@ -10,8 +10,8 @@ function formatMegabytes(bytes: number): string {
   return (Math.max(0, bytes) / (1024 * 1024)).toFixed(1);
 }
 
-async function downloadModel(onProgress: ModelLoadProgress): Promise<Uint8Array> {
-  const response = await fetch(MODEL_URL);
+async function downloadModel(onProgress: ModelLoadProgress, signal?: AbortSignal): Promise<Uint8Array> {
+  const response = await fetch(MODEL_URL, signal ? { signal } : undefined);
   if (!response.ok) throw new Error(`Model download failed: ${response.status}`);
 
   const totalBytes = Number(response.headers.get('content-length')) || 0;
@@ -54,14 +54,19 @@ async function downloadModel(onProgress: ModelLoadProgress): Promise<Uint8Array>
 
 // MediaPipe's CDN module does not expose local TypeScript declarations.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function loadHandLandmarker(onProgress: ModelLoadProgress): Promise<any> {
+export async function loadHandLandmarker(
+  onProgress: ModelLoadProgress,
+  signal?: AbortSignal,
+): Promise<any> {
   onProgress(t('overlay.loadingRuntime'), t('overlay.loadingRuntimeDetail'), 0.1);
   const { HandLandmarker, FilesetResolver } = await import(
     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js' as string
   );
+  signal?.throwIfAborted();
   onProgress(t('overlay.initializingResolver'), t('overlay.initializingResolverDetail'), 0.35);
   const vision = await FilesetResolver.forVisionTasks(MEDIAPIPE_CDN);
-  const modelAssetBuffer = await downloadModel(onProgress);
+  signal?.throwIfAborted();
+  const modelAssetBuffer = await downloadModel(onProgress, signal);
   const settings = getSettings();
   onProgress(t('overlay.loadingLandmarker'), t('overlay.initializingLandmarkerDetail'), 1);
   const handLandmarker = await HandLandmarker.createFromOptions(vision, {
@@ -72,6 +77,10 @@ export async function loadHandLandmarker(onProgress: ModelLoadProgress): Promise
     minHandPresenceConfidence: settings.handPresenceConfidence,
     minTrackingConfidence: settings.handTrackingConfidence,
   });
+  if (signal?.aborted) {
+    handLandmarker.close();
+    signal.throwIfAborted();
+  }
   onProgress(t('overlay.modelReady'), t('overlay.modelReadyDetail'), 1);
   return handLandmarker;
 }

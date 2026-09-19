@@ -65,6 +65,23 @@ let dynamicDetectIntervalMs  = getDetectIntervalMs(trackingProfile);
 let trackingSource: 'camera' | 'remote' | null = null;
 let remoteFrameProcessing = false;
 let trackingGeneration = 0;
+let trackingInitController: AbortController | null = null;
+
+function closeHandLandmarker(): void {
+  const current = handLandmarker;
+  handLandmarker = null;
+  if (!current) return;
+  try {
+    current.close();
+  } catch (error) {
+    developerWarn('Could not close HandLandmarker cleanly:', error);
+  }
+}
+
+function throwIfTrackingInitCancelled(generation: number, signal: AbortSignal): void {
+  if (generation !== trackingGeneration) throw new DOMException('Tracking initialization superseded', 'AbortError');
+  signal.throwIfAborted();
+}
 
 function updateCalibrationSourceIndicator(remoteConnected = isRemoteTrackingConnected()): void {
   updateCalibrationSourceUI(trackingSource, remoteConnected);
@@ -217,7 +234,7 @@ function setupCalibFeed(): void {
   drawCalibFeed();
 }
 
-async function startCamera(): Promise<void> {
+async function startCamera(generation: number, signal: AbortSignal): Promise<void> {
   videoEl = document.getElementById('rawVideo') as HTMLVideoElement;
   const profile = getPerformanceProfile(getSettings());
   trackingProfile         = profile;
@@ -231,10 +248,32 @@ async function startCamera(): Promise<void> {
       facingMode: 'user',
     },
   });
+  try {
+    throwIfTrackingInitCancelled(generation, signal);
+  } catch (error) {
+    for (const track of stream.getTracks()) track.stop();
+    throw error;
+  }
   cameraStream     = stream;
   videoEl.srcObject = stream;
-  await new Promise<void>(res => { videoEl!.onloadedmetadata = () => res(); });
+  if (videoEl.readyState < HTMLMediaElement.HAVE_METADATA) {
+    await new Promise<void>((resolve, reject) => {
+      const cleanup = (): void => {
+        videoEl?.removeEventListener('loadedmetadata', handleLoaded);
+        videoEl?.removeEventListener('error', handleError);
+        signal.removeEventListener('abort', handleAbort);
+      };
+      const handleLoaded = (): void => { cleanup(); resolve(); };
+      const handleError = (): void => { cleanup(); reject(videoEl?.error ?? new Error('Video metadata unavailable')); };
+      const handleAbort = (): void => { cleanup(); reject(signal.reason); };
+      videoEl?.addEventListener('loadedmetadata', handleLoaded, { once: true });
+      videoEl?.addEventListener('error', handleError, { once: true });
+      signal.addEventListener('abort', handleAbort, { once: true });
+    });
+  }
+  throwIfTrackingInitCancelled(generation, signal);
   await videoEl.play();
+  throwIfTrackingInitCancelled(generation, signal);
 
   const track    = stream.getVideoTracks()[0]!;
   const settings = track.getSettings();
@@ -515,8 +554,11 @@ function scheduleCalibAuto(): void {
 
 export function stopTracking(): void {
   trackingGeneration++;
+  trackingInitController?.abort();
+  trackingInitController = null;
   trackingActive     = false;
   trackingSource     = null;
+  remoteFrameProcessing = false;
   remoteWorkerSentAtQueue.length = 0;
   delete window.__remoteTrackingApplyMs;
   latestWorkerResult = null;
@@ -527,6 +569,7 @@ export function stopTracking(): void {
   if (calibAutoTimer){ clearTimeout(calibAutoTimer); calibAutoTimer = null; }
 
   if (worker) { worker.terminate(); worker = null; }
+  closeHandLandmarker();
   if (cameraStream) {
     for (const track of cameraStream.getTracks()) track.stop();
     cameraStream = null;
@@ -543,6 +586,10 @@ function updateCalibFeedback(ok: boolean, hint: string): void {
 }
 
 export async function initMP(onReady: () => void): Promise<boolean> {
+  trackingInitController?.abort();
+  const initController = new AbortController();
+  trackingInitController = initController;
+  const generation = ++trackingGeneration;
   trackCanvas = document.getElementById('trackCanvas') as HTMLCanvasElement | null;
   if (trackCanvas) {
     trackCanvas.width  = 240;
@@ -568,7 +615,12 @@ export async function initMP(onReady: () => void): Promise<boolean> {
     if (useRemoteTracking) {
       if (processPhoneCameraOnComputer) {
         setLoadingProgress(t('overlay.loadingModel'), t('remoteTracking.preparingComputerModelDetail'), null);
-        handLandmarker = await loadHandLandmarker((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
+        const loadedLandmarker = await loadHandLandmarker(
+          (msg, detail, ratio) => setLoadingProgress(msg, detail, ratio),
+          initController.signal,
+        );
+        throwIfTrackingInitCancelled(generation, initController.signal);
+        handLandmarker = loadedLandmarker;
         if (ui.dCam) ui.dCam.textContent = 'PHONE → PC ML';
       } else {
         setLoadingProgress(t('remoteTracking.preparingPhoneData'), t('remoteTracking.preparingPhoneDataDetail'), null);
@@ -576,12 +628,18 @@ export async function initMP(onReady: () => void): Promise<boolean> {
       }
     } else {
       setLoadingProgress(t('overlay.startingCamera'), t('overlay.startingCameraDetail'), null);
-      await startCamera();
+      await startCamera(generation, initController.signal);
       setLoadingProgress(t('overlay.cameraReady'), t('overlay.cameraReadyDetail'), null);
       setLoadingProgress(t('overlay.loadingModel'), t('overlay.loadingRuntimeDetail'), null);
-      handLandmarker = await loadHandLandmarker((msg, detail, ratio) => setLoadingProgress(msg, detail, ratio));
+      const loadedLandmarker = await loadHandLandmarker(
+        (msg, detail, ratio) => setLoadingProgress(msg, detail, ratio),
+        initController.signal,
+      );
+      throwIfTrackingInitCancelled(generation, initController.signal);
+      handLandmarker = loadedLandmarker;
       setupCalibFeed();
     }
+    throwIfTrackingInitCancelled(generation, initController.signal);
     setLoadingProgress(t('overlay.initializingWorker'), t('overlay.initializingWorkerDetail'), null);
     initWorker();
     trackingActive = true;
@@ -594,9 +652,11 @@ export async function initMP(onReady: () => void): Promise<boolean> {
         : useRemoteTracking ? 'PHONE TRACKING' : 'TRACKING OK';
     }
     scheduleCalibAuto();
+    if (trackingInitController === initController) trackingInitController = null;
     onReady();
     return true;
   } catch (err) {
+    if (initController.signal.aborted || generation !== trackingGeneration) return false;
     developerWarn('Tracking initialization failed:', err);
     stopTracking();
     showCameraError(err);
