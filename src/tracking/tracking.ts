@@ -377,6 +377,9 @@ function processDetectionResult(
 function handleTrackingRuntimeError(error: unknown): void {
   if (!trackingActive) return;
   developerWarn('Hand tracking runtime failed:', error);
+  // An Emscripten runtime that called abort() is no longer safe to close or
+  // instantiate again in this document. Drop the reference and reload on retry.
+  handLandmarker = null;
   stopTracking();
   showCameraError(error);
   onTrackingRuntimeError(error);

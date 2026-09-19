@@ -523,6 +523,10 @@ ui.ovBtn?.addEventListener('click',       handleOverlayButton);
 ui.ovBtnMaps?.addEventListener('click',   () => { openMapPicker(ui.ovBtnMaps); });
 ui.ovBtnCalib?.addEventListener('click',  handleCalibButton);
 ui.ovRetryCamera?.addEventListener('click', () => {
+  if (trackingRequiresReload) {
+    location.reload();
+    return;
+  }
   runAsyncTask('camera-retry', retryTrackingStart);
 });
 ui.calibBtnNext?.addEventListener('click',  () => { initAudio(); runAsyncTask('calibration-advance', () => calibrationController.advance()); });
@@ -631,9 +635,11 @@ updateHUD(state);
 
 let trackingStarted = false;
 let trackingStarting = false;
+let trackingRequiresReload = false;
 
 setTrackingRuntimeErrorHandler(() => {
   trackingStarted = false;
+  trackingRequiresReload = true;
   calibrationController.setReady(false);
   showOverlay();
 });

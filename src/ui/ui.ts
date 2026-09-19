@@ -351,7 +351,7 @@ export function showCameraError(err: unknown): void {
     ui.ovRetryCamera.hidden = !isCameraError && !isTrackingRuntimeError;
     const label = ui.ovRetryCamera.querySelector<HTMLElement>('[data-i18n]');
     if (label) {
-      const key = isTrackingRuntimeError ? 'overlay.retryTracking' : 'overlay.retryCamera';
+      const key = isTrackingRuntimeError ? 'overlay.reloadPage' : 'overlay.retryCamera';
       label.dataset['i18n'] = key;
       label.textContent = t(key);
     }
