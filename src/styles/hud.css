@@ -424,23 +424,161 @@ body.auto-play-mode #autoPlayBadge { display:block; }
   line-height:1;
 }
 
+/* Integrity rail: two saber-colored banks drain symmetrically from the centre. */
 .hp-shell {
-  height:18px;
-  border-radius:4px;
-  border-color:rgba(154,211,255,.34);
-  background:linear-gradient(180deg,rgba(255,255,255,.08),transparent),rgba(2,7,16,.9);
-  box-shadow:inset 0 0 14px rgba(0,0,0,.9),0 0 16px rgba(var(--left-rgb),.12);
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 10px minmax(0,1fr);
+  gap:3px;
+  height:20px;
+  padding:2px;
+  overflow:hidden;
+  border:1px solid rgba(154,211,255,.3);
+  border-radius:5px;
+  background:linear-gradient(180deg,rgba(255,255,255,.07),transparent 45%),rgba(2,7,16,.92);
+  box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 16px rgba(72,158,255,.08);
+  transition:border-color .2s ease,box-shadow .2s ease;
 }
 
-.hp-fill {
-  border-radius:2px;
-  background:linear-gradient(90deg,#31e7b3 0%,#61f6cf 48%,#74d7ff 100%);
-  box-shadow:inset 0 1px rgba(255,255,255,.42),0 0 18px rgba(54,242,161,.5);
+.hp-shell::after { display:none; }
+
+.hp-half {
+  position:relative;
+  min-width:0;
+  height:100%;
+  overflow:hidden;
+  background:rgba(148,163,184,.055);
 }
 
-.hp-ticks {
-  inset:2px;
-  background:repeating-linear-gradient(90deg,transparent 0,transparent calc(100%/var(--hp-max) - 3px),rgba(2,7,16,.88) calc(100%/var(--hp-max) - 3px),rgba(2,7,16,.88) calc(100%/var(--hp-max)));
+.hp-half-left { border-radius:2px 0 0 2px; }
+.hp-half-right { border-radius:0 2px 2px 0; }
+
+.hp-charge {
+  position:absolute;
+  inset:0;
+  will-change:transform;
+  transition:transform .22s cubic-bezier(.22,.8,.32,1),filter .18s ease,opacity .18s ease;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.5),rgba(255,255,255,.08) 38%,rgba(0,0,0,.18));
+}
+
+.hp-charge-left {
+  transform-origin:right center;
+  background-color:var(--left);
+  box-shadow:inset 0 1px rgba(255,255,255,.45),0 0 14px rgba(var(--left-rgb),.62);
+}
+
+.hp-charge-right {
+  transform-origin:left center;
+  background-color:var(--right);
+  box-shadow:inset 0 1px rgba(255,255,255,.45),0 0 14px rgba(var(--right-rgb),.62);
+}
+
+/* Five cuts per bank = ten readable integrity steps without turning the rail into blocks. */
+.hp-half::after {
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:repeating-linear-gradient(90deg,transparent 0,transparent calc(20% - 2px),rgba(2,7,16,.78) calc(20% - 2px),rgba(2,7,16,.78) 20%);
+}
+
+.hp-core {
+  position:relative;
+  height:100%;
+  background:linear-gradient(180deg,rgba(226,232,240,.16),rgba(8,18,34,.78));
+  border-left:1px solid rgba(var(--left-rgb),.28);
+  border-right:1px solid rgba(var(--right-rgb),.28);
+}
+
+.hp-core::after {
+  content:'';
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:5px;
+  height:5px;
+  transform:translate(-50%,-50%) rotate(45deg);
+  background:#eaf5ff;
+  box-shadow:0 0 8px rgba(210,238,255,.55);
+  transition:background .18s ease,box-shadow .18s ease;
+}
+
+#hpHud.hp-warning .hp-shell {
+  border-color:rgba(255,196,92,.4);
+  box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 14px rgba(255,184,72,.12);
+}
+
+#hpHud.hp-danger .hp-shell {
+  border-color:rgba(255,91,105,.5);
+  animation:hpRailBreath 1.15s ease-in-out infinite;
+}
+
+#hpHud.hp-critical .hp-shell {
+  border-color:rgba(255,74,92,.72);
+  animation:hpRailCritical .62s ease-in-out infinite;
+}
+
+#hpHud.hp-critical .hp-core::after {
+  background:#ff4a5c;
+  box-shadow:0 0 9px rgba(255,74,92,.95),0 0 18px rgba(255,74,92,.42);
+  animation:hpCoreBeat .62s ease-in-out infinite;
+}
+
+#hpHud.hp-empty .hp-shell {
+  border-color:rgba(148,163,184,.18);
+  box-shadow:inset 0 0 14px rgba(0,0,0,.92);
+}
+
+#hpHud.hp-empty .hp-core::after {
+  background:rgba(148,163,184,.28);
+  box-shadow:none;
+}
+
+#hpHud.hp-hit .hp-shell { animation:hpRailHit .34s ease-out; }
+#hpHud.hp-hit .hp-charge { animation:hpChargeHit .34s ease-out; }
+#hpHud.hp-recover .hp-charge { animation:hpChargeRecover .36s ease-out; }
+
+@keyframes hpRailBreath {
+  0%,100% { box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 10px rgba(255,74,92,.08); }
+  50% { box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 18px rgba(255,74,92,.24); }
+}
+
+@keyframes hpRailCritical {
+  0%,100% { box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 13px rgba(255,74,92,.18); }
+  50% { box-shadow:inset 0 0 16px rgba(255,74,92,.08),0 0 25px rgba(255,74,92,.38); }
+}
+
+@keyframes hpCoreBeat {
+  0%,100% { transform:translate(-50%,-50%) rotate(45deg) scale(1); }
+  18% { transform:translate(-50%,-50%) rotate(45deg) scale(1.45); }
+  36% { transform:translate(-50%,-50%) rotate(45deg) scale(1); }
+}
+
+@keyframes hpRailHit {
+  0% { border-color:rgba(255,255,255,.72); }
+  24% { box-shadow:inset 0 0 18px rgba(255,255,255,.12),0 0 24px rgba(255,74,92,.32); }
+  100% { }
+}
+
+@keyframes hpChargeHit {
+  0% { filter:brightness(1); }
+  20% { filter:brightness(1.75) saturate(.72); }
+  100% { filter:brightness(1); }
+}
+
+@keyframes hpChargeRecover {
+  0% { filter:brightness(1); }
+  32% { filter:brightness(1.7) saturate(1.25); }
+  100% { filter:brightness(1); }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .hp-charge { transition:none; }
+  #hpHud.hp-danger .hp-shell,
+  #hpHud.hp-critical .hp-shell,
+  #hpHud.hp-critical .hp-core::after,
+  #hpHud.hp-hit .hp-shell,
+  #hpHud.hp-hit .hp-charge,
+  #hpHud.hp-recover .hp-charge { animation:none; }
 }
 
 .map-progress-copy {

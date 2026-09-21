@@ -1307,8 +1307,13 @@
         <span id="lives">10 / 10</span>
       </div>
       <div class="hp-shell" id="hpMeter" role="progressbar" aria-label="Integralność" data-i18n-aria-label="hud.integrity" aria-valuemin="0" aria-valuemax="10" aria-valuenow="10">
-        <div class="hp-fill" id="hpFill"></div>
-        <div class="hp-ticks" id="hpTicks"></div>
+        <div class="hp-half hp-half-left" aria-hidden="true">
+          <div class="hp-charge hp-charge-left" id="hpLeftFill"></div>
+        </div>
+        <div class="hp-core" aria-hidden="true"></div>
+        <div class="hp-half hp-half-right" aria-hidden="true">
+          <div class="hp-charge hp-charge-right" id="hpRightFill"></div>
+        </div>
       </div>
     </div>
 

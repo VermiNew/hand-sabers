@@ -42,8 +42,8 @@ interface UiRefs {
   combo:           HTMLElement | null;
   lives:           HTMLElement | null;
   hpHud:           HTMLElement | null;
-  hpFill:          HTMLElement | null;
-  hpTicks:         HTMLElement | null;
+  hpLeftFill:      HTMLElement | null;
+  hpRightFill:     HTMLElement | null;
   hpMeter:         HTMLElement | null;
   calibPanel:          HTMLElement | null;
   calibStepsTrack:     HTMLElement | null;
@@ -106,8 +106,8 @@ export const ui: UiRefs = {
   combo:           document.getElementById('combo'),
   lives:           document.getElementById('lives'),
   hpHud:           document.getElementById('hpHud'),
-  hpFill:          document.getElementById('hpFill'),
-  hpTicks:         document.getElementById('hpTicks'),
+  hpLeftFill:      document.getElementById('hpLeftFill'),
+  hpRightFill:     document.getElementById('hpRightFill'),
   hpMeter:         document.getElementById('hpMeter'),
   calibPanel:          document.getElementById('calibPanel'),
   calibStepsTrack:     document.getElementById('calibStepsTrack'),
@@ -170,6 +170,7 @@ export function updateHandsResumeProgress(progress: number): void {
 }
 
 let lastHp: number | null = null;
+let hpFxTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function updateHUD(state: GameState): void {
   if (ui.score) ui.score.textContent = String(state.score).padStart(6, '0');
@@ -182,34 +183,41 @@ export function updateHUD(state: GameState): void {
   const maxHp   = Math.max(1, state.maxLives);
   const hp      = Math.max(0, Math.min(maxHp, state.lives));
   const hpRatio = hp / maxHp;
+
   clearDangerPulse();
-  if (hpRatio <= 0.3 && state.appState === 'playing') {
+  if (hpRatio <= 0.2 && hp > 0 && state.appState === 'playing') {
     document.body.classList.add('danger-pulse', hpRatio <= 0.15 ? 'danger-crit' : 'danger-low');
   }
-  if (ui.lives)  ui.lives.textContent  = `${hp} / ${maxHp}`;
-  if (ui.hpFill) ui.hpFill.style.transform = `scaleX(${hpRatio})`;
+
+  if (ui.lives) ui.lives.textContent = `${hp} / ${maxHp}`;
+  if (ui.hpLeftFill) ui.hpLeftFill.style.transform = `scaleX(${hpRatio})`;
+  if (ui.hpRightFill) ui.hpRightFill.style.transform = `scaleX(${hpRatio})`;
   if (ui.hpMeter) {
     ui.hpMeter.setAttribute('aria-valuemax', String(maxHp));
     ui.hpMeter.setAttribute('aria-valuenow', String(hp));
   }
 
-  const hpClass = 'hp-fill' + (hpRatio <= 0.25 ? ' low' : hpRatio <= 0.5 ? ' mid' : '');
+  let hpStateClass = 'hp-stable';
+  if (hp <= 0) hpStateClass = 'hp-empty';
+  else if (hpRatio <= 0.15) hpStateClass = 'hp-critical';
+  else if (hpRatio <= 0.3) hpStateClass = 'hp-danger';
+  else if (hpRatio <= 0.5) hpStateClass = 'hp-warning';
 
-  if (lastHp !== null && hp !== lastHp && ui.hpFill) {
-    const animClass = hp > lastHp ? 'anim-gain' : 'anim-loss';
-    ui.hpFill.className = `${hpClass} ${animClass}`;
-    setTimeout(() => { if (ui.hpFill) ui.hpFill.className = hpClass; }, 500);
-  } else if (ui.hpFill) {
-    ui.hpFill.className = hpClass;
+  if (ui.hpHud) {
+    const changed = lastHp !== null && hp !== lastHp;
+    ui.hpHud.className = hpStateClass;
+    if (changed) {
+      const effect = hp > lastHp! ? 'hp-recover' : 'hp-hit';
+      ui.hpHud.classList.add(effect);
+      if (hpFxTimer) clearTimeout(hpFxTimer);
+      hpFxTimer = setTimeout(() => {
+        ui.hpHud?.classList.remove('hp-hit', 'hp-recover');
+        hpFxTimer = null;
+      }, 360);
+    }
   }
 
   lastHp = hp;
-  let hpHudClass = '';
-  if      (hp <= 0)           hpHudClass = 'hp-empty';
-  else if (hpRatio <= 0.25)   hpHudClass = 'hp-low';
-  else if (hpRatio <= 0.5)    hpHudClass = 'hp-mid';
-  if (ui.hpHud)   ui.hpHud.className = hpHudClass;
-  if (ui.hpTicks) ui.hpTicks.style.setProperty('--hp-max', String(maxHp));
 }
 
 export function updateMapProgress(currentSec: number, totalSec: number): void {
