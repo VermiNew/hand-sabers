@@ -507,21 +507,46 @@ body.auto-play-mode #autoPlayBadge { display:block; }
   box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 14px rgba(255,184,72,.12);
 }
 
-#hpHud.hp-danger .hp-shell {
+#hpHud.hp-three .hp-shell {
+  border-color:rgba(255,196,92,.56);
+  animation:hpRailWarning 1.8s ease-in-out infinite;
+}
+
+#hpHud.hp-three #lives {
+  color:#ffc45c;
+  animation:hpCountWarning 1.8s ease-in-out infinite;
+}
+
+#hpHud.hp-two .hp-shell {
   border-color:rgba(255,91,105,.5);
   animation:hpRailBreath 1.15s ease-in-out infinite;
 }
 
-#hpHud.hp-critical .hp-shell {
+#hpHud.hp-two .hp-core::after {
+  background:#ff6675;
+  box-shadow:0 0 8px rgba(255,91,105,.78),0 0 15px rgba(255,91,105,.3);
+  animation:hpCoreBeat 1.15s ease-in-out infinite;
+}
+
+#hpHud.hp-two #lives,
+#hpHud.hp-one #lives {
+  color:#ff5b69;
+  text-shadow:0 0 14px rgba(255,74,92,.82);
+}
+
+#hpHud.hp-one .hp-shell {
   border-color:rgba(255,74,92,.72);
   animation:hpRailCritical .62s ease-in-out infinite;
 }
 
-#hpHud.hp-critical .hp-core::after {
+#hpHud.hp-one .hp-core::after {
   background:#ff4a5c;
   box-shadow:0 0 9px rgba(255,74,92,.95),0 0 18px rgba(255,74,92,.42);
   animation:hpCoreBeat .62s ease-in-out infinite;
 }
+
+#hpHud.hp-one .hp-charge { animation:hpLastCharge .9s steps(2,end) infinite; }
+#hpHud.hp-one #lives { animation:hpCountCritical .62s ease-in-out infinite; }
 
 #hpHud.hp-empty .hp-shell {
   border-color:rgba(148,163,184,.18);
@@ -542,6 +567,16 @@ body.auto-play-mode #autoPlayBadge { display:block; }
   50% { box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 18px rgba(255,74,92,.24); }
 }
 
+@keyframes hpRailWarning {
+  0%,100% { box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 9px rgba(255,184,72,.08); }
+  50% { box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 18px rgba(255,184,72,.25); }
+}
+
+@keyframes hpCountWarning {
+  0%,100% { filter:brightness(1); }
+  50% { filter:brightness(1.3); }
+}
+
 @keyframes hpRailCritical {
   0%,100% { box-shadow:inset 0 0 14px rgba(0,0,0,.92),0 0 13px rgba(255,74,92,.18); }
   50% { box-shadow:inset 0 0 16px rgba(255,74,92,.08),0 0 25px rgba(255,74,92,.38); }
@@ -551,6 +586,17 @@ body.auto-play-mode #autoPlayBadge { display:block; }
   0%,100% { transform:translate(-50%,-50%) rotate(45deg) scale(1); }
   18% { transform:translate(-50%,-50%) rotate(45deg) scale(1.45); }
   36% { transform:translate(-50%,-50%) rotate(45deg) scale(1); }
+}
+
+@keyframes hpLastCharge {
+  0%,100% { opacity:1; filter:brightness(1); }
+  50% { opacity:.68; filter:brightness(1.45) saturate(.72); }
+}
+
+@keyframes hpCountCritical {
+  0%,100% { transform:scale(1); }
+  18% { transform:scale(1.13); }
+  36% { transform:scale(1); }
 }
 
 @keyframes hpRailHit {
@@ -573,9 +619,14 @@ body.auto-play-mode #autoPlayBadge { display:block; }
 
 @media (prefers-reduced-motion:reduce) {
   .hp-charge { transition:none; }
-  #hpHud.hp-danger .hp-shell,
-  #hpHud.hp-critical .hp-shell,
-  #hpHud.hp-critical .hp-core::after,
+  #hpHud.hp-three .hp-shell,
+  #hpHud.hp-three #lives,
+  #hpHud.hp-two .hp-shell,
+  #hpHud.hp-two .hp-core::after,
+  #hpHud.hp-one .hp-shell,
+  #hpHud.hp-one .hp-core::after,
+  #hpHud.hp-one .hp-charge,
+  #hpHud.hp-one #lives,
   #hpHud.hp-hit .hp-shell,
   #hpHud.hp-hit .hp-charge,
   #hpHud.hp-recover .hp-charge { animation:none; }

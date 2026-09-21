@@ -469,6 +469,7 @@ function renderFrame(timestamp: number): void {
     musicEnergy,
     beatPulse,
     visualPressure,
+    damageGlitchEnabled: settings.damageGlitchEnabled && perfProfile.damageGlitch,
     profiling,
   });
   if (profiling) {

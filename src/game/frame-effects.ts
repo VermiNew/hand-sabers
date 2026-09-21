@@ -8,17 +8,20 @@ import {
   lSaber,
   rLight,
   rSaber,
+  scene,
   updateArenaPulse,
   updateLightReflections,
   updateReflection,
 } from './scene.ts';
 import { updateSaberTrails } from './saber-trails.ts';
+import { updateDamageGlitch } from './damage-glitch.ts';
 
 interface FrameEffectsOptions {
   timeSec: number;
   musicEnergy: number;
   beatPulse: number;
   visualPressure: number;
+  damageGlitchEnabled: boolean;
   profiling: boolean;
 }
 
@@ -32,6 +35,7 @@ export function updateFrameEffects({
   musicEnergy,
   beatPulse,
   visualPressure,
+  damageGlitchEnabled,
   profiling,
 }: FrameEffectsOptions): FrameEffectsProfile {
   const effectsPhaseStart = profiling ? performance.now() : 0;
@@ -41,6 +45,15 @@ export function updateFrameEffects({
   updateLightReflections(timeSec, musicEnergy, beatPulse, visualPressure);
   updateSaberTrails(state.appState === S.PLAYING || isMainMenuOpen(), state.deltaSec);
   updateSparks(state.deltaScale);
+  updateDamageGlitch({
+    scene,
+    camera: cam3d,
+    timeSec,
+    deltaSec: state.deltaSec,
+    hp: state.lives,
+    active: state.appState === S.PLAYING,
+    enabled: damageGlitchEnabled,
+  });
 
   if (state.appState === S.PLAYING) {
     cam3d.position.x = Math.sin(timeSec * 0.15) * 0.04;

@@ -185,8 +185,8 @@ export function updateHUD(state: GameState): void {
   const hpRatio = hp / maxHp;
 
   clearDangerPulse();
-  if (hpRatio <= 0.2 && hp > 0 && state.appState === 'playing') {
-    document.body.classList.add('danger-pulse', hpRatio <= 0.15 ? 'danger-crit' : 'danger-low');
+  if (state.appState === 'playing' && (hp === 1 || hp === 2)) {
+    document.body.classList.add('danger-pulse', hp === 1 ? 'danger-crit' : 'danger-low');
   }
 
   if (ui.lives) ui.lives.textContent = `${hp} / ${maxHp}`;
@@ -199,8 +199,9 @@ export function updateHUD(state: GameState): void {
 
   let hpStateClass = 'hp-stable';
   if (hp <= 0) hpStateClass = 'hp-empty';
-  else if (hpRatio <= 0.15) hpStateClass = 'hp-critical';
-  else if (hpRatio <= 0.3) hpStateClass = 'hp-danger';
+  else if (hp === 1) hpStateClass = 'hp-one';
+  else if (hp === 2) hpStateClass = 'hp-two';
+  else if (hp === 3) hpStateClass = 'hp-three';
   else if (hpRatio <= 0.5) hpStateClass = 'hp-warning';
 
   if (ui.hpHud) {
