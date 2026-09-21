@@ -441,28 +441,29 @@ export function hidePauseMenu(): void {
   hideModalElement(document.getElementById('pauseMenu'));
 }
 
+let comboMilestoneTimer: ReturnType<typeof setTimeout> | null = null;
+
 export function showComboMilestone(combo: number): void {
-  let el = document.getElementById('comboFlash') as (HTMLElement & { _timer?: ReturnType<typeof setTimeout> }) | null;
-  if (!el) {
-    el = document.createElement('div') as HTMLElement & { _timer?: ReturnType<typeof setTimeout> };
-    el.id = 'comboFlash';
-    el.style.cssText = `
-      position:fixed; top:112px; right:32px; transform:translateY(-8px);
-      z-index:600; pointer-events:none;
-      font-family:'Oxanium',sans-serif; font-weight:900;
-      font-size:clamp(30px,4vw,58px); letter-spacing:6px;
-      color:#36f2a1; text-shadow:0 0 40px #36f2a1, 0 0 80px rgba(54,242,161,0.4);
-      opacity:0; transition:opacity 0.1s;
-    `;
-    document.body.appendChild(el);
-  }
-  el.textContent = `×${combo}`;
-  el.style.opacity = '1';
-  el.style.transform = 'translateY(0)';
-  clearTimeout(el._timer);
-  el._timer = setTimeout(() => {
-    if (el) { el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; }
-  }, 900);
+  // Milestones belong to the existing combo readout. A second, detached ×100/×200
+  // in the corner made the player's eyes leave the note highway and competed
+  // with Lyra's gameplay status. Keep one visual source of truth instead.
+  document.getElementById('comboFlash')?.remove();
+
+  const el = ui.combo;
+  if (!el) return;
+
+  el.dataset.milestone = String(combo);
+  el.classList.remove('combo-milestone');
+  // Restart the short pulse even when milestones arrive close together.
+  void el.offsetWidth;
+  el.classList.add('combo-milestone');
+
+  if (comboMilestoneTimer) clearTimeout(comboMilestoneTimer);
+  comboMilestoneTimer = setTimeout(() => {
+    el.classList.remove('combo-milestone');
+    delete el.dataset.milestone;
+    comboMilestoneTimer = null;
+  }, 720);
 }
 
 const _screenFade = document.getElementById('screenFade');
