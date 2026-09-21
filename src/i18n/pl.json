@@ -360,6 +360,8 @@
       "title": "Wydajność",
       "graphicsSettings": "Ustawienia graficzne",
       "autoHint": "Auto sprawdza sprzęt i reguluje jakość w trakcie gry.",
+      "damageGlitch": "Zakłócenia przy krytycznym HP",
+      "damageGlitchDesc": "Efekt uszkodzonego wizjera, aktywny od profilu High.",
       "currentMode": "Obecny tryb: —",
       "currentModeAuto": "Obecny tryb: Auto → {{active}} ({{details}})",
       "currentModeActive": "Obecny tryb: {{active}} ({{details}})"

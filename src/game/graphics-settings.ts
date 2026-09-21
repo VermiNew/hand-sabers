@@ -32,6 +32,7 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
   const performanceInput = document.getElementById('menuPerformanceMode') as HTMLSelectElement | null;
   const performanceHint = document.getElementById('menuPerformanceHint');
   const graphicsModeInfo = document.getElementById('menuGraphicsModeInfo');
+  const damageGlitchInput = document.getElementById('menuDamageGlitch') as HTMLInputElement | null;
   const customSection = document.getElementById('menuCustomGraphicsSection');
   const customToggles: Array<[HTMLInputElement | null, CustomBooleanSetting]> = [
     [document.getElementById('menuCustomAntialias') as HTMLInputElement | null, 'customAntialias'],
@@ -103,6 +104,7 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
 
   function syncControls(): void {
     if (performanceInput) performanceInput.value = getPerformanceMode(settings);
+    if (damageGlitchInput) damageGlitchInput.checked = settings.damageGlitchEnabled;
     for (const [input, key] of customToggles) if (input) input.checked = settings[key];
 
     if (hitShardsInput) {
@@ -156,6 +158,11 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
       applyPerformanceMode();
     });
   }
+
+  damageGlitchInput?.addEventListener('change', () => {
+    settings.damageGlitchEnabled = damageGlitchInput.checked;
+    setSetting('damageGlitchEnabled', damageGlitchInput.checked);
+  });
 
   for (const [input, key] of customToggles) {
     input?.addEventListener('change', () => {

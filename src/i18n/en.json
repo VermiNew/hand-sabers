@@ -360,6 +360,8 @@
       "title": "Performance",
       "graphicsSettings": "Graphics settings",
       "autoHint": "Automatically checks hardware and adjusts quality during gameplay.",
+      "damageGlitch": "Critical HP interference",
+      "damageGlitchDesc": "Damaged visor effect, available from the High profile.",
       "currentMode": "Current mode: —",
       "currentModeAuto": "Current mode: Auto → {{active}} ({{details}})",
       "currentModeActive": "Current mode: {{active}} ({{details}})"

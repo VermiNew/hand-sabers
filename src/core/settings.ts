@@ -77,6 +77,7 @@ export const DEFAULTS: Settings = {
   oneHandMode: null,
   audioOffsetMs: 0,
   performanceMode: DEFAULT_PERFORMANCE_MODE,
+  damageGlitchEnabled: true,
   customAntialias: false,
   customReflections: true,
   customFloorGlows: true,

@@ -110,6 +110,7 @@ export interface Settings {
   oneHandMode: OneHandMode;
   audioOffsetMs: number;
   performanceMode: PerformanceMode;
+  damageGlitchEnabled: boolean;
   customAntialias: boolean;
   customReflections: boolean;
   customFloorGlows: boolean;
@@ -190,6 +191,7 @@ export interface PerformanceProfile {
   saberTrailIntensity: number;
   arenaDetail: number;
   backgroundShader: boolean;
+  damageGlitch: boolean;
   fog: boolean;
   grid: boolean;
   musicReactive: boolean;
