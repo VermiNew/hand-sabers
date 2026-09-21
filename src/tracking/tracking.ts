@@ -10,7 +10,7 @@ import { decodeRemoteLandmarks, sendRealtimeLandmarks, sendRealtimePose } from '
 import type { DetectResult, Landmark, WorkerResult } from './realtime.ts';
 import { drawHandLandmarks, HAND_CONNECTIONS } from './landmark-canvas.ts';
 import { updateCalibrationSourceUI } from './calibration-source-ui.ts';
-import { loadHandLandmarker } from './mediapipe-loader.ts';
+import { loadHandLandmarker, markHandLandmarkerRuntimeFailure } from './mediapipe-loader.ts';
 import { createAutoFlipDetector } from './auto-flip.ts';
 import { CALIB_STEPS, renderCalibrationStep } from './calibration-step-ui.ts';
 import { decodePhoneCameraFrame, PHONE_CAMERA_FRAME_KIND } from '../remote/camera-frame-protocol.ts';
@@ -376,6 +376,7 @@ function processDetectionResult(
 
 function handleTrackingRuntimeError(error: unknown): void {
   if (!trackingActive) return;
+  markHandLandmarkerRuntimeFailure();
   developerWarn('Hand tracking runtime failed:', error);
   // An Emscripten runtime that called abort() is no longer safe to close or
   // instantiate again in this document. Drop the reference and reload on retry.
