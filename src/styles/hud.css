@@ -708,3 +708,241 @@ body.auto-play-mode #autoPlayBadge { display:block; }
   .tutorial-gameplay-hud ul { gap:6px; margin-top:10px; }
   .tutorial-gameplay-hud li { font-size:10px; }
 }
+
+/* ── HUD v2: central information hierarchy ────────────────────────────────
+   Score/combo is the anchor. Short Lyra gameplay lines live directly below
+   it instead of pulling the player's eyes into the top-right corner. */
+
+#combo.combo-milestone {
+  position:relative;
+  animation:comboMilestonePulse .72s cubic-bezier(.2,.82,.24,1);
+  isolation:isolate;
+}
+
+#combo.combo-milestone::before,
+#combo.combo-milestone::after {
+  content:'';
+  position:absolute;
+  top:50%;
+  width:clamp(34px,4.2vw,64px);
+  height:1px;
+  opacity:0;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent,var(--accent));
+  box-shadow:0 0 9px rgba(54,242,161,.46);
+  animation:comboMilestoneWing .62s ease-out;
+}
+
+#combo.combo-milestone::before {
+  right:calc(100% + 12px);
+}
+
+#combo.combo-milestone::after {
+  left:calc(100% + 12px);
+  transform:scaleX(-1);
+}
+
+@keyframes comboMilestonePulse {
+  0%   { transform:translateY(-1px) scale(1.03); filter:brightness(1); }
+  20%  { transform:translateY(-2px) scale(1.13); filter:brightness(1.32); }
+  42%  { transform:translateY(-1px) scale(1.06); filter:brightness(1.08); }
+  100% { transform:translateY(-1px) scale(1.03); filter:brightness(1); }
+}
+
+@keyframes comboMilestoneWing {
+  0%   { opacity:0; width:14px; }
+  24%  { opacity:.8; }
+  100% { opacity:0; width:clamp(34px,4.2vw,64px); }
+}
+
+/* Gameplay lines use a peripheral radio callout. Dialog narration keeps the
+   larger presentation defined in menus.css. */
+#narratorBox.is-gameplay {
+  --lyra-signal-rgb:74,174,255;
+  position:fixed;
+  top:clamp(154px,23vh,230px);
+  left:clamp(12px,2.2vw,32px);
+  right:auto;
+  bottom:auto;
+  z-index:245;
+  width:min(360px,calc(100vw - 32px));
+  min-width:0;
+  min-height:72px;
+  max-width:none;
+  max-height:none;
+  box-sizing:border-box;
+  align-items:center;
+  gap:12px;
+  overflow:hidden;
+  padding:10px 14px 12px 10px;
+  border:1px solid rgba(var(--lyra-signal-rgb),.28);
+  border-left:3px solid rgba(var(--lyra-signal-rgb),.82);
+  border-radius:4px 11px 11px 4px;
+  background:
+    linear-gradient(105deg,rgba(var(--lyra-signal-rgb),.12),transparent 38%),
+    linear-gradient(135deg,rgba(4,12,25,.94),rgba(3,8,18,.84));
+  box-shadow:
+    0 14px 34px rgba(0,0,0,.4),
+    0 0 22px rgba(var(--lyra-signal-rgb),.1),
+    inset 0 1px rgba(255,255,255,.035);
+  backdrop-filter:blur(10px) saturate(1.08);
+  pointer-events:none;
+}
+
+#narratorBox.is-gameplay[data-mood='happy'],
+#narratorBox.is-gameplay[data-mood='encourage'],
+#narratorBox.is-gameplay[data-mood='celebrate'] { --lyra-signal-rgb:54,242,161; }
+#narratorBox.is-gameplay[data-mood='excited'],
+#narratorBox.is-gameplay[data-mood='surprised'] { --lyra-signal-rgb:255,116,164; }
+#narratorBox.is-gameplay[data-mood='serious'] { --lyra-signal-rgb:255,184,72; }
+#narratorBox.is-gameplay[data-mood='sad'] { --lyra-signal-rgb:126,139,205; }
+
+#narratorBox.is-gameplay::before {
+  content:'';
+  position:absolute;
+  top:0;
+  right:0;
+  width:44%;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(var(--lyra-signal-rgb),.62));
+}
+
+#narratorBox.is-gameplay::after {
+  content:'';
+  position:absolute;
+  right:0;
+  bottom:0;
+  left:0;
+  height:2px;
+  transform-origin:left center;
+  background:linear-gradient(90deg,rgba(var(--lyra-signal-rgb),.9),rgba(var(--lyra-signal-rgb),.18));
+  box-shadow:0 0 10px rgba(var(--lyra-signal-rgb),.45);
+  animation:lyraTransmissionDrain var(--narrator-duration,3000ms) linear forwards;
+}
+
+#narratorBox.is-gameplay #narratorAvatarCol {
+  display:grid;
+  width:46px;
+  min-width:46px;
+  place-items:center;
+  align-self:center;
+  margin:0;
+  padding:0;
+}
+
+#narratorBox.is-gameplay #narratorAvatar {
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px;
+  margin:0;
+  border-color:rgba(var(--lyra-signal-rgb),.42);
+  border-radius:8px;
+  box-shadow:0 0 16px rgba(var(--lyra-signal-rgb),.18);
+}
+
+#narratorBox.is-gameplay #narratorHint,
+#narratorBox.is-gameplay #narratorButtons,
+#narratorBox.is-gameplay #narratorCursor {
+  display:none;
+}
+
+#narratorBox.is-gameplay #narratorBody {
+  display:flex;
+  justify-content:center;
+  gap:4px;
+  min-width:0;
+  margin:0;
+  padding:0;
+}
+
+#narratorBox.is-gameplay #narratorBody::before {
+  content:'LYRA // ŁĄCZNOŚĆ';
+  color:rgba(var(--lyra-signal-rgb),.82);
+  font:800 9px/1 'Oxanium',sans-serif;
+  letter-spacing:1.7px;
+  text-shadow:0 0 9px rgba(var(--lyra-signal-rgb),.25);
+}
+
+#narratorBox.is-gameplay #narratorSpeech {
+  height:auto;
+  min-width:0;
+  min-height:0;
+  max-height:2.7em;
+  margin:0;
+  padding:0;
+  overflow:hidden;
+  color:rgba(239,247,252,.92);
+  font:600 12px/1.35 'Oxanium',sans-serif;
+  letter-spacing:.1px;
+  text-align:left;
+  text-shadow:none;
+}
+
+#narratorBox.is-gameplay #narratorText {
+  display:block;
+  overflow:hidden;
+}
+
+@keyframes lyraTransmissionDrain {
+  from { transform:scaleX(1); opacity:.9; }
+  to { transform:scaleX(0); opacity:.32; }
+}
+
+/* Tracking preview remains useful, but should read as secondary instrumentation. */
+#camPanel {
+  transition:opacity .18s ease,filter .18s ease,transform .18s ease!important;
+}
+
+#camPanel:not(:hover):not(:focus-within) {
+  opacity:.84;
+  filter:saturate(.88) brightness(.94);
+}
+
+#camPanel:hover,
+#camPanel:focus-within {
+  opacity:1;
+  filter:none;
+}
+
+@media (max-width:760px) {
+  #narratorBox.is-gameplay {
+    top:104px;
+    left:10px;
+    width:min(340px,calc(100vw - 20px));
+    min-height:64px;
+    gap:9px;
+    padding:8px 11px 10px 8px;
+  }
+  #narratorBox.is-gameplay #narratorAvatarCol,
+  #narratorBox.is-gameplay #narratorAvatar {
+    width:38px;
+    min-width:38px;
+    height:38px;
+    min-height:38px;
+  }
+  #narratorBox.is-gameplay #narratorBody {
+    gap:3px;
+  }
+  #narratorBox.is-gameplay #narratorSpeech {
+    font-size:11px;
+  }
+}
+
+@media (max-height:820px) and (min-width:761px) {
+  #narratorBox.is-gameplay {
+    top:116px;
+    width:min(340px,42vw);
+    min-height:64px;
+    padding:8px 12px 10px 8px;
+  }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  #combo.combo-milestone,
+  #combo.combo-milestone::before,
+  #combo.combo-milestone::after {
+    animation:none!important;
+  }
+  #narratorBox.is-gameplay::after { animation:none; }
+}

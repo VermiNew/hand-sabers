@@ -77,9 +77,10 @@ const MOOD_IMAGES: Record<NarratorMood, string> = {
 };
 
 function setMood(mood: NarratorMood): void {
-  const { avatar } = getEls();
+  const { avatar, box } = getEls();
   if (!avatar) return;
   avatar.dataset['mood'] = mood;
+  if (box) box.dataset['mood'] = mood;
   const img = MOOD_IMAGES[mood] || MOOD_IMAGES.neutral;
   avatar.innerHTML = `<img class="narrator-avatar-img" src="${img}" alt="Lyra" />`;
 }
@@ -172,6 +173,11 @@ export function narratorShow(opts: NarratorOptions): Promise<number> {
     box.classList.remove('is-visible', 'is-hiding', 'is-gameplay');
     box.classList.toggle('is-gameplay', gameplayPresentation);
     box.setAttribute('role', gameplayPresentation ? 'status' : 'dialog');
+    if (gameplayPresentation) {
+      box.style.setProperty('--narrator-duration', `${opts.autoAdvanceMs ?? 3000}ms`);
+    } else {
+      box.style.removeProperty('--narrator-duration');
+    }
     document.body.classList.toggle('narrator-open', !gameplayPresentation);
 
     setMood(opts.mood || 'neutral');
