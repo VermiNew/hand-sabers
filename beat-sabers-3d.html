@@ -1220,6 +1220,12 @@
               </span>
             </div>
           </header>
+          <label class="mp-microphone-device" id="multiplayerMicrophoneDeviceField" hidden>
+            <span data-i18n="multiplayer.voiceInputDevice">MIKROFON</span>
+            <select id="multiplayerMicrophoneDevice" disabled>
+              <option value="" data-i18n="multiplayer.voiceDefaultDevice">DOMYŚLNE URZĄDZENIE</option>
+            </select>
+          </label>
           <div class="mp-chat-messages" id="multiplayerChatMessages" role="log" aria-live="polite" tabindex="0" aria-label="Wiadomości czatu pokoju"></div>
           <form class="mp-chat-form" id="multiplayerChatForm">
             <input id="multiplayerChatInput" type="text" maxlength="240" autocomplete="off"
@@ -1298,6 +1304,12 @@
       aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
       <span class="mp-microphone-level-fill" aria-hidden="true"></span>
     </span>
+    <label class="mp-microphone-device mp-microphone-device--game" id="multiplayerGameMicrophoneDeviceField" hidden>
+      <span data-i18n="multiplayer.voiceInputDevice">MIKROFON</span>
+      <select id="multiplayerGameMicrophoneDevice" disabled>
+        <option value="" data-i18n="multiplayer.voiceDefaultDevice">DOMYŚLNE URZĄDZENIE</option>
+      </select>
+    </label>
     <div class="mp-chat-messages" id="multiplayerGameChatMessages" role="log" aria-live="polite"
       tabindex="0" aria-label="Wiadomości czatu podczas gry"></div>
     <form class="mp-chat-form" id="multiplayerGameChatForm">

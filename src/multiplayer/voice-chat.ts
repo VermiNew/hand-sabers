@@ -27,6 +27,7 @@ export interface VoiceChatController {
   disable(): void;
   handleSignal(fromPlayerId: string, signal: VoiceSignal): Promise<void>;
   setRoom(snapshot: RoomSnapshot | null): void;
+  setInputDevice(deviceId: string): Promise<void>;
   isEnabled(): boolean;
 }
 
@@ -46,7 +47,16 @@ export function createVoiceChat({
   let enabled = false;
   let starting = false;
   let enableGeneration = 0;
+  let inputSwitchGeneration = 0;
+  let selectedInputDeviceId = '';
   let audioContext: AudioContext | null = null;
+
+  const inputConstraints = (): MediaTrackConstraints => ({
+    echoCancellation: true,
+    noiseSuppression: true,
+    autoGainControl: true,
+    ...(selectedInputDeviceId ? { deviceId: { exact: selectedInputDeviceId } } : {}),
+  });
 
   const stopSpeakingMonitor = (playerId: string) => {
     const monitor = speakingMonitors.get(playerId);
@@ -245,11 +255,7 @@ export function createVoiceChat({
       onStateChange('starting');
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
-          },
+          audio: inputConstraints(),
           video: false,
         });
         if (generation !== enableGeneration) {
@@ -308,6 +314,50 @@ export function createVoiceChat({
           if (playerId !== selfId) ensurePeer(playerId);
         }
       }
+    },
+
+    async setInputDevice(deviceId: string): Promise<void> {
+      const previousInputDeviceId = selectedInputDeviceId;
+      selectedInputDeviceId = deviceId;
+      if (!enabled || !localStream) return;
+      const generation = ++inputSwitchGeneration;
+      let replacementStream: MediaStream;
+      try {
+        replacementStream = await navigator.mediaDevices.getUserMedia({
+          audio: inputConstraints(),
+          video: false,
+        });
+      } catch (error) {
+        if (generation === inputSwitchGeneration) selectedInputDeviceId = previousInputDeviceId;
+        throw error;
+      }
+      if (generation !== inputSwitchGeneration || !enabled) {
+        for (const track of replacementStream.getTracks()) track.stop();
+        return;
+      }
+      const replacementTrack = replacementStream.getAudioTracks()[0];
+      if (!replacementTrack) {
+        for (const track of replacementStream.getTracks()) track.stop();
+        selectedInputDeviceId = previousInputDeviceId;
+        throw new Error('Selected microphone did not provide an audio track');
+      }
+      const previousStream = localStream;
+      const previousTrack = previousStream.getAudioTracks()[0] ?? null;
+      const audioSenders = [...peers.values()]
+        .map(peer => peer.connection.getSenders().find(candidate => candidate.track?.kind === 'audio'))
+        .filter((sender): sender is RTCRtpSender => Boolean(sender));
+      try {
+        await Promise.all(audioSenders.map(sender => sender.replaceTrack(replacementTrack)));
+      } catch (error) {
+        await Promise.allSettled(audioSenders.map(sender => sender.replaceTrack(previousTrack)));
+        for (const track of replacementStream.getTracks()) track.stop();
+        if (generation === inputSwitchGeneration) selectedInputDeviceId = previousInputDeviceId;
+        throw error;
+      }
+      localStream = replacementStream;
+      const selfId = getCurrentPlayerId();
+      if (selfId) monitorSpeaking(selfId, replacementStream);
+      for (const track of previousStream.getTracks()) track.stop();
     },
 
     isEnabled(): boolean {

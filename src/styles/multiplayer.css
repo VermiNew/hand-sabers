@@ -297,6 +297,17 @@
 }
 .mp-microphone-level--game { display:block; width:calc(100% - 18px); margin:6px 9px 2px; }
 .mp-microphone-level[hidden] { display:none; }
+.mp-microphone-device {
+  display:grid; grid-template-columns:auto minmax(160px,280px); align-items:center; justify-content:end; gap:9px;
+  padding:7px 12px; border-bottom:1px solid rgba(142,200,255,.08); color:var(--dim);
+  font:800 8px 'Oxanium',sans-serif; letter-spacing:1px;
+}
+.mp-microphone-device select {
+  min-width:0; height:29px; padding:0 28px 0 9px; border:1px solid rgba(142,200,255,.2); border-radius:6px;
+  background:#07101c; color:var(--text); font:700 9px 'JetBrains Mono',monospace;
+}
+.mp-microphone-device--game { grid-template-columns:auto minmax(0,1fr); margin-top:5px; padding:6px 9px; }
+.mp-microphone-device[hidden] { display:none; }
 .mp-chat-messages { height:132px; overflow:auto; padding:7px 12px; }
 .mp-chat-empty { padding:42px 0; color:var(--dim); font-size:9px; text-align:center; }
 .mp-chat-message { display:grid; grid-template-columns:auto 1fr auto; gap:8px; padding:6px 0; font-size:10px; line-height:1.45; }

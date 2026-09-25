@@ -158,11 +158,21 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     element<HTMLElement>('multiplayerMicrophoneLevel'),
     element<HTMLElement>('multiplayerGameMicrophoneLevel'),
   ];
+  const microphoneDeviceFields = [
+    element<HTMLElement>('multiplayerMicrophoneDeviceField'),
+    element<HTMLElement>('multiplayerGameMicrophoneDeviceField'),
+  ];
+  const microphoneDeviceSelects = [
+    element<HTMLSelectElement>('multiplayerMicrophoneDevice'),
+    element<HTMLSelectElement>('multiplayerGameMicrophoneDevice'),
+  ];
   const copyFeedbackTimers = new Map<HTMLButtonElement, number>();
   let voiceChat: VoiceChatController | null = null;
   let voiceState: 'off' | 'starting' | 'on' | 'error' = 'off';
   let microphoneLevelPercent = 0;
   let voiceErrorVisible = false;
+  let selectedMicrophoneDeviceId = '';
+  let switchingMicrophone = false;
   let preparationTimeout: number | null = null;
   let spectatorTicker: number | null = null;
   multiplayerModal = createModalTransition({ overlay, panel });
@@ -345,6 +355,8 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       meter.hidden = state !== 'on';
       meter.dataset['active'] = String(state === 'on');
     }
+    for (const field of microphoneDeviceFields) field.hidden = state !== 'on';
+    for (const select of microphoneDeviceSelects) select.disabled = state !== 'on' || switchingMicrophone;
     if (state === 'error') {
       showMessage(t('multiplayer.voicePermissionError'));
       voiceErrorVisible = true;
@@ -372,6 +384,61 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       }
     },
   });
+  const refreshMicrophoneDevices = async (): Promise<void> => {
+    const devices = (await navigator.mediaDevices.enumerateDevices())
+      .filter(device => device.kind === 'audioinput');
+    const selectedDeviceAvailable = !selectedMicrophoneDeviceId
+      || devices.some(device => device.deviceId === selectedMicrophoneDeviceId);
+    if (!selectedDeviceAvailable) {
+      selectedMicrophoneDeviceId = '';
+      try {
+        await voiceChat?.setInputDevice('');
+      } catch (error) {
+        console.error('[multiplayer:voice-device-fallback]', error);
+        showMessage(t('multiplayer.voiceDeviceError'));
+      }
+    }
+    for (const select of microphoneDeviceSelects) {
+      const previousValue = selectedMicrophoneDeviceId;
+      select.replaceChildren();
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.textContent = t('multiplayer.voiceDefaultDevice');
+      select.append(defaultOption);
+      devices.forEach((device, index) => {
+        const option = document.createElement('option');
+        option.value = device.deviceId;
+        option.textContent = device.label || t('multiplayer.voiceDeviceNumber', { number: index + 1 });
+        select.append(option);
+      });
+      select.value = [...select.options].some(option => option.value === previousValue) ? previousValue : '';
+    }
+  };
+  const chooseMicrophoneDevice = async (deviceId: string): Promise<void> => {
+    if (switchingMicrophone || deviceId === selectedMicrophoneDeviceId) return;
+    const previousDeviceId = selectedMicrophoneDeviceId;
+    selectedMicrophoneDeviceId = deviceId;
+    switchingMicrophone = true;
+    for (const select of microphoneDeviceSelects) {
+      select.value = deviceId;
+      select.disabled = true;
+    }
+    try {
+      await voiceChat?.setInputDevice(deviceId);
+    } catch (error) {
+      console.error('[multiplayer:voice-device]', error);
+      selectedMicrophoneDeviceId = previousDeviceId;
+      for (const select of microphoneDeviceSelects) select.value = previousDeviceId;
+      showMessage(t('multiplayer.voiceDeviceError'));
+    } finally {
+      switchingMicrophone = false;
+      renderVoiceControls(voiceState);
+    }
+  };
+  for (const select of microphoneDeviceSelects) {
+    select.addEventListener('change', () => void chooseMicrophoneDevice(select.value));
+  }
+  navigator.mediaDevices.addEventListener('devicechange', () => void refreshMicrophoneDevices());
   const chatView = createMultiplayerChatView({
     canSend: () => Boolean(currentPlayerId),
     getCurrentPlayerId: () => currentPlayerId,
@@ -755,7 +822,9 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   for (const button of voiceButtons) {
     button.addEventListener('click', () => {
       if (voiceChat?.isEnabled()) voiceChat.disable();
-      else void voiceChat?.enable().catch(() => undefined);
+      else void voiceChat?.enable()
+        .then(refreshMicrophoneDevices)
+        .catch(() => undefined);
     });
   }
   modeSelect.addEventListener('change', () => {
