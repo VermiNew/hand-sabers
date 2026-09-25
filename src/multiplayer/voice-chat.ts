@@ -28,6 +28,7 @@ export interface VoiceChatController {
   handleSignal(fromPlayerId: string, signal: VoiceSignal): Promise<void>;
   setRoom(snapshot: RoomSnapshot | null): void;
   setInputDevice(deviceId: string): Promise<void>;
+  testMicrophone(durationMs?: number): Promise<void>;
   isEnabled(): boolean;
 }
 
@@ -50,6 +51,10 @@ export function createVoiceChat({
   let inputSwitchGeneration = 0;
   let selectedInputDeviceId = '';
   let audioContext: AudioContext | null = null;
+  let microphoneTestGeneration = 0;
+  let microphoneTestRecorder: MediaRecorder | null = null;
+  let microphoneTestTrack: MediaStreamTrack | null = null;
+  let microphoneTestSource: AudioBufferSourceNode | null = null;
 
   const inputConstraints = (): MediaTrackConstraints => ({
     echoCancellation: true,
@@ -194,6 +199,15 @@ export function createVoiceChat({
 
   const disable = (): void => {
     enableGeneration++;
+    microphoneTestGeneration++;
+    if (microphoneTestRecorder?.state !== 'inactive') microphoneTestRecorder?.stop();
+    microphoneTestRecorder = null;
+    microphoneTestTrack?.stop();
+    microphoneTestTrack = null;
+    if (microphoneTestSource) {
+      try { microphoneTestSource.stop(); } catch { /* Source already stopped. */ }
+    }
+    microphoneTestSource = null;
     starting = false;
     enabled = false;
     for (const playerId of [...peers.keys()]) closePeer(playerId);
@@ -358,6 +372,90 @@ export function createVoiceChat({
       const selfId = getCurrentPlayerId();
       if (selfId) monitorSpeaking(selfId, replacementStream);
       for (const track of previousStream.getTracks()) track.stop();
+    },
+
+    async testMicrophone(durationMs = 2_000): Promise<void> {
+      const sourceTrack = localStream?.getAudioTracks()[0];
+      if (!enabled || !sourceTrack || !audioContext) throw new Error('Voice chat is not active');
+      if (microphoneTestRecorder || microphoneTestSource) return;
+      if (typeof MediaRecorder === 'undefined') throw new Error('Microphone recording is not supported');
+      const generation = ++microphoneTestGeneration;
+      const testTrack = sourceTrack.clone();
+      const testStream = new MediaStream([testTrack]);
+      const preferredMimeType = [
+        'audio/webm;codecs=opus',
+        'audio/webm',
+        'audio/mp4',
+      ].find(type => MediaRecorder.isTypeSupported(type));
+      const recorder = preferredMimeType
+        ? new MediaRecorder(testStream, { mimeType: preferredMimeType })
+        : new MediaRecorder(testStream);
+      microphoneTestRecorder = recorder;
+      microphoneTestTrack = testTrack;
+      const chunks: BlobPart[] = [];
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        const timer = window.setTimeout(() => {
+          if (recorder.state !== 'inactive') recorder.stop();
+        }, Math.max(500, Math.min(5_000, durationMs)));
+        const cleanupRecording = () => {
+          window.clearTimeout(timer);
+          testTrack.stop();
+          if (microphoneTestRecorder === recorder) microphoneTestRecorder = null;
+          if (microphoneTestTrack === testTrack) microphoneTestTrack = null;
+        };
+        recorder.ondataavailable = event => {
+          if (event.data.size > 0) chunks.push(event.data);
+        };
+        recorder.onerror = event => {
+          cleanupRecording();
+          reject(event.error);
+        };
+        recorder.onstop = () => {
+          cleanupRecording();
+          if (generation !== microphoneTestGeneration || !enabled) {
+            reject(new DOMException('Microphone test was cancelled', 'AbortError'));
+            return;
+          }
+          if (!chunks.length) {
+            reject(new Error('Microphone test did not capture audio'));
+            return;
+          }
+          const recordedType = recorder.mimeType || preferredMimeType;
+          resolve(recordedType ? new Blob(chunks, { type: recordedType }) : new Blob(chunks));
+        };
+        try {
+          recorder.start();
+        } catch (error) {
+          cleanupRecording();
+          reject(error);
+        }
+      });
+      const buffer = await audioContext.decodeAudioData(await blob.arrayBuffer());
+      if (generation !== microphoneTestGeneration || !enabled) {
+        throw new DOMException('Microphone test was cancelled', 'AbortError');
+      }
+      await new Promise<void>((resolve, reject) => {
+        if (!audioContext) {
+          reject(new Error('Audio context is unavailable'));
+          return;
+        }
+        const playback = audioContext.createBufferSource();
+        playback.buffer = buffer;
+        playback.connect(audioContext.destination);
+        microphoneTestSource = playback;
+        playback.onended = () => {
+          if (microphoneTestSource === playback) microphoneTestSource = null;
+          playback.disconnect();
+          resolve();
+        };
+        try {
+          playback.start();
+        } catch (error) {
+          microphoneTestSource = null;
+          playback.disconnect();
+          reject(error);
+        }
+      });
     },
 
     isEnabled(): boolean {

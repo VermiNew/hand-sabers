@@ -308,6 +308,15 @@
 }
 .mp-microphone-device--game { grid-template-columns:auto minmax(0,1fr); margin-top:5px; padding:6px 9px; }
 .mp-microphone-device[hidden] { display:none; }
+.mp-microphone-test {
+  min-height:29px; display:flex; align-items:center; justify-content:center; gap:6px; margin:7px 12px 0 auto; padding:0 10px;
+  border:1px solid rgba(142,200,255,.24); border-radius:6px; background:rgba(47,124,255,.07);
+  color:var(--main-light); font:800 8px 'Oxanium',sans-serif; letter-spacing:1px; cursor:pointer;
+}
+.mp-microphone-test .material-symbols-rounded { font-size:14px; }
+.mp-microphone-test:disabled { opacity:.56; cursor:wait; }
+.mp-microphone-test--game { width:calc(100% - 18px); margin:6px 9px 0; }
+.mp-microphone-test[hidden] { display:none; }
 .mp-chat-messages { height:132px; overflow:auto; padding:7px 12px; }
 .mp-chat-empty { padding:42px 0; color:var(--dim); font-size:9px; text-align:center; }
 .mp-chat-message { display:grid; grid-template-columns:auto 1fr auto; gap:8px; padding:6px 0; font-size:10px; line-height:1.45; }

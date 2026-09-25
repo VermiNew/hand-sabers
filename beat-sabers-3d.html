@@ -1226,6 +1226,10 @@
               <option value="" data-i18n="multiplayer.voiceDefaultDevice">DOMYŚLNE URZĄDZENIE</option>
             </select>
           </label>
+          <button class="mp-microphone-test" id="multiplayerMicrophoneTest" type="button" hidden disabled>
+            <span class="material-symbols-rounded" aria-hidden="true">graphic_eq</span>
+            <span data-i18n="multiplayer.voiceTest">TEST MIKROFONU</span>
+          </button>
           <div class="mp-chat-messages" id="multiplayerChatMessages" role="log" aria-live="polite" tabindex="0" aria-label="Wiadomości czatu pokoju"></div>
           <form class="mp-chat-form" id="multiplayerChatForm">
             <input id="multiplayerChatInput" type="text" maxlength="240" autocomplete="off"
@@ -1310,6 +1314,10 @@
         <option value="" data-i18n="multiplayer.voiceDefaultDevice">DOMYŚLNE URZĄDZENIE</option>
       </select>
     </label>
+    <button class="mp-microphone-test mp-microphone-test--game" id="multiplayerGameMicrophoneTest" type="button" hidden disabled>
+      <span class="material-symbols-rounded" aria-hidden="true">graphic_eq</span>
+      <span data-i18n="multiplayer.voiceTest">TEST MIKROFONU</span>
+    </button>
     <div class="mp-chat-messages" id="multiplayerGameChatMessages" role="log" aria-live="polite"
       tabindex="0" aria-label="Wiadomości czatu podczas gry"></div>
     <form class="mp-chat-form" id="multiplayerGameChatForm">

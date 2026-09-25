@@ -166,6 +166,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     element<HTMLSelectElement>('multiplayerMicrophoneDevice'),
     element<HTMLSelectElement>('multiplayerGameMicrophoneDevice'),
   ];
+  const microphoneTestButtons = [
+    element<HTMLButtonElement>('multiplayerMicrophoneTest'),
+    element<HTMLButtonElement>('multiplayerGameMicrophoneTest'),
+  ];
   const copyFeedbackTimers = new Map<HTMLButtonElement, number>();
   let voiceChat: VoiceChatController | null = null;
   let voiceState: 'off' | 'starting' | 'on' | 'error' = 'off';
@@ -173,6 +177,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   let voiceErrorVisible = false;
   let selectedMicrophoneDeviceId = '';
   let switchingMicrophone = false;
+  let microphoneTestRunning = false;
   let preparationTimeout: number | null = null;
   let spectatorTicker: number | null = null;
   multiplayerModal = createModalTransition({ overlay, panel });
@@ -357,6 +362,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     }
     for (const field of microphoneDeviceFields) field.hidden = state !== 'on';
     for (const select of microphoneDeviceSelects) select.disabled = state !== 'on' || switchingMicrophone;
+    for (const button of microphoneTestButtons) {
+      button.hidden = state !== 'on';
+      button.disabled = state !== 'on' || microphoneTestRunning;
+      const label = button.querySelector<HTMLElement>('[data-i18n]');
+      if (label) label.textContent = t(microphoneTestRunning
+        ? 'multiplayer.voiceTestRunning'
+        : 'multiplayer.voiceTest');
+    }
     if (state === 'error') {
       showMessage(t('multiplayer.voicePermissionError'));
       voiceErrorVisible = true;
@@ -437,6 +450,24 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
   };
   for (const select of microphoneDeviceSelects) {
     select.addEventListener('change', () => void chooseMicrophoneDevice(select.value));
+  }
+  for (const button of microphoneTestButtons) {
+    button.addEventListener('click', async () => {
+      if (microphoneTestRunning || voiceState !== 'on') return;
+      microphoneTestRunning = true;
+      renderVoiceControls(voiceState);
+      try {
+        await voiceChat?.testMicrophone();
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('[multiplayer:voice-test]', error);
+          showMessage(t('multiplayer.voiceTestError'));
+        }
+      } finally {
+        microphoneTestRunning = false;
+        renderVoiceControls(voiceState);
+      }
+    });
   }
   navigator.mediaDevices.addEventListener('devicechange', () => void refreshMicrophoneDevices());
   const chatView = createMultiplayerChatView({
