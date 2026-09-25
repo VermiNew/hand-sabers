@@ -126,6 +126,7 @@
     "voiceStarting": "STARTING…",
     "voiceRetry": "TRY AGAIN",
     "voicePermissionError": "The microphone could not be started. Check your browser permissions.",
+    "microphoneLevel": "Microphone level",
     "chatGameplay": "ROOM CHAT",
     "networkStats": "Network statistics",
     "networkMeasuring": "Measuring connection quality…",

@@ -154,9 +154,14 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     element<HTMLButtonElement>('multiplayerVoiceToggle'),
     element<HTMLButtonElement>('multiplayerGameVoiceToggle'),
   ];
+  const microphoneMeters = [
+    element<HTMLElement>('multiplayerMicrophoneLevel'),
+    element<HTMLElement>('multiplayerGameMicrophoneLevel'),
+  ];
   const copyFeedbackTimers = new Map<HTMLButtonElement, number>();
   let voiceChat: VoiceChatController | null = null;
   let voiceState: 'off' | 'starting' | 'on' | 'error' = 'off';
+  let microphoneLevelPercent = 0;
   let voiceErrorVisible = false;
   let preparationTimeout: number | null = null;
   let spectatorTicker: number | null = null;
@@ -336,6 +341,10 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
       if (icon) icon.textContent = state === 'on' ? 'mic' : state === 'starting' ? 'hourglass_top' : 'mic_off';
       if (label) label.textContent = t(labelKey);
     }
+    for (const meter of microphoneMeters) {
+      meter.hidden = state !== 'on';
+      meter.dataset['active'] = String(state === 'on');
+    }
     if (state === 'error') {
       showMessage(t('multiplayer.voicePermissionError'));
       voiceErrorVisible = true;
@@ -353,6 +362,15 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     ),
     onStateChange: renderVoiceControls,
     onSpeakingChange: setVoicePlayerSpeaking,
+    onLocalLevelChange: level => {
+      const percent = Math.round(level * 100);
+      if (percent === microphoneLevelPercent) return;
+      microphoneLevelPercent = percent;
+      for (const meter of microphoneMeters) {
+        meter.style.setProperty('--microphone-level', `${percent}%`);
+        meter.setAttribute('aria-valuenow', String(percent));
+      }
+    },
   });
   const chatView = createMultiplayerChatView({
     canSend: () => Boolean(currentPlayerId),

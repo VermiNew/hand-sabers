@@ -5,6 +5,7 @@ interface VoiceChatOptions {
   sendSignal(targetPlayerId: string, signal: VoiceSignal): boolean;
   onStateChange(state: 'off' | 'starting' | 'on' | 'error'): void;
   onSpeakingChange(playerId: string, speaking: boolean): void;
+  onLocalLevelChange(level: number): void;
 }
 
 interface PeerState {
@@ -34,6 +35,7 @@ export function createVoiceChat({
   sendSignal,
   onStateChange,
   onSpeakingChange,
+  onLocalLevelChange,
 }: VoiceChatOptions): VoiceChatController {
   const peers = new Map<string, PeerState>();
   const remoteAudio = new Map<string, HTMLAudioElement>();
@@ -75,12 +77,16 @@ export function createVoiceChat({
         const centered = (level - 128) / 128;
         energy += centered * centered;
       }
+      const rms = Math.sqrt(energy / levels.length);
       const now = performance.now();
-      if (Math.sqrt(energy / levels.length) >= 0.025) lastActiveAt = now;
+      if (rms >= 0.025) lastActiveAt = now;
       const speaking = now - lastActiveAt < 180;
       if (speaking !== monitor.speaking) {
         monitor.speaking = speaking;
         onSpeakingChange(playerId, speaking);
+      }
+      if (playerId === getCurrentPlayerId()) {
+        onLocalLevelChange(Math.min(1, Math.max(0, (rms - 0.012) / 0.14)));
       }
       monitor.animationFrame = requestAnimationFrame(sample);
     };
@@ -187,6 +193,7 @@ export function createVoiceChat({
     if (audioContext) void audioContext.close().catch(() => undefined);
     audioContext = null;
     pendingSignals.clear();
+    onLocalLevelChange(0);
     onStateChange('off');
   };
 
@@ -273,6 +280,7 @@ export function createVoiceChat({
         audioContext = null;
         starting = false;
         enabled = false;
+        onLocalLevelChange(0);
         onStateChange('error');
         throw error;
       }

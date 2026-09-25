@@ -284,6 +284,19 @@
 .mp-voice-toggle[data-state="error"] { border-color:rgba(255,91,115,.48); color:#ff9aaa; }
 .mp-voice-toggle:disabled { opacity:.45; cursor:not-allowed; }
 .mp-voice-toggle--game { width:calc(100% - 18px); margin:9px 9px 0; }
+.mp-microphone-level {
+  --microphone-level:0%;
+  position:relative; width:58px; height:7px; overflow:hidden; flex:0 0 auto;
+  border:1px solid rgba(142,200,255,.22); border-radius:999px; background:rgba(142,200,255,.08);
+}
+.mp-microphone-level-fill {
+  position:absolute; inset:0 auto 0 0; width:var(--microphone-level); border-radius:inherit;
+  background:linear-gradient(90deg,var(--accent) 0 72%,#ffd56a 84%,#ff5b73 100%);
+  box-shadow:0 0 8px color-mix(in srgb,var(--accent) 58%,transparent);
+  transition:width 70ms linear;
+}
+.mp-microphone-level--game { display:block; width:calc(100% - 18px); margin:6px 9px 2px; }
+.mp-microphone-level[hidden] { display:none; }
 .mp-chat-messages { height:132px; overflow:auto; padding:7px 12px; }
 .mp-chat-empty { padding:42px 0; color:var(--dim); font-size:9px; text-align:center; }
 .mp-chat-message { display:grid; grid-template-columns:auto 1fr auto; gap:8px; padding:6px 0; font-size:10px; line-height:1.45; }

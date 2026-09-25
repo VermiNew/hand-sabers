@@ -614,6 +614,9 @@ inspirację czytelnością HUD-u i głębią otoczenia z gry *Lockdown Protocol*
 28. [ ] Dodać więcej ustawień graficznych po analizie ich realnego wpływu, bez duplikowania istniejących opcji.
 29. [ ] Wykonać wizualny i profilowany przegląd całego projektu pod kątem dalszej optymalizacji oraz spisać konkretne, zmierzone możliwości poprawy.
 30. [ ] Rozbudować voice chat o wskaźnik poziomu mikrofonu, wybór urządzenia wejściowego i test mikrofonu podobny funkcjonalnie do rozwiązań komunikatorów głosowych.
+   - [x] Dodać dostępny wskaźnik poziomu lokalnego mikrofonu w lobby i zwijanym panelu podczas gry, wykorzystując istniejący analizator Web Audio bez tworzenia drugiego strumienia.
+   - [ ] Dodać wybór urządzenia wejściowego.
+   - [ ] Dodać lokalny test mikrofonu.
 31. [ ] Poprawić kompozycję mapy/sceny i rozmieszczenie elementów reagujących na muzykę, zachowując czytelność toru gry.
 32. [x] Przedstawić użytkownikowi dokładną, zrozumiałą informację o tym, jaka telemetria jest zbierana, w jakim celu, dokąd trafia i jak długo jest przechowywana. — zakładka „Dane” ma domyślnie wyłączoną zgodę oraz jawny wykaz przesyłanych metryk, wykluczonych treści, celu, miejsca przechowywania i retencji; niezależny endpoint `/api/telemetry/policy` udostępnia ten sam kontrakt klientom.
 33. [x] Podnieść ikonę gwiazdki przy „ULUBIONE”, aby była poprawnie wyrównana optycznie względem napisu. — przesunięcie dotyczy wyłącznie ikony filtra i wynosi 1 px; smoke zmierzył środek ikony 1 px nad środkiem etykiety, a inspekcja wizualna potwierdziła czytelne wyrównanie bez wpływu na pozostałe gwiazdki.

@@ -1213,6 +1213,11 @@
                 <span class="material-symbols-rounded" aria-hidden="true">mic_off</span>
                 <span data-i18n="multiplayer.voiceEnable">WŁĄCZ GŁOS</span>
               </button>
+              <span class="mp-microphone-level" id="multiplayerMicrophoneLevel" role="meter"
+                aria-label="Poziom mikrofonu" data-i18n-aria-label="multiplayer.microphoneLevel"
+                aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+                <span class="mp-microphone-level-fill" aria-hidden="true"></span>
+              </span>
             </div>
           </header>
           <div class="mp-chat-messages" id="multiplayerChatMessages" role="log" aria-live="polite" tabindex="0" aria-label="Wiadomości czatu pokoju"></div>
@@ -1288,6 +1293,11 @@
       <span class="material-symbols-rounded" aria-hidden="true">mic_off</span>
       <span data-i18n="multiplayer.voiceEnable">WŁĄCZ GŁOS</span>
     </button>
+    <span class="mp-microphone-level mp-microphone-level--game" id="multiplayerGameMicrophoneLevel" role="meter"
+      aria-label="Poziom mikrofonu" data-i18n-aria-label="multiplayer.microphoneLevel"
+      aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+      <span class="mp-microphone-level-fill" aria-hidden="true"></span>
+    </span>
     <div class="mp-chat-messages" id="multiplayerGameChatMessages" role="log" aria-live="polite"
       tabindex="0" aria-label="Wiadomości czatu podczas gry"></div>
     <form class="mp-chat-form" id="multiplayerGameChatForm">

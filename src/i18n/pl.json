@@ -126,6 +126,7 @@
     "voiceStarting": "URUCHAMIANIE…",
     "voiceRetry": "SPRÓBUJ PONOWNIE",
     "voicePermissionError": "Nie udało się uruchomić mikrofonu. Sprawdź uprawnienia przeglądarki.",
+    "microphoneLevel": "Poziom mikrofonu",
     "chatGameplay": "CZAT POKOJU",
     "networkStats": "Statystyki sieci",
     "networkMeasuring": "Pomiar jakości połączenia…",
