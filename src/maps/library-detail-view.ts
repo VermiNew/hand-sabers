@@ -68,7 +68,7 @@ export function renderLibraryDetail(
             <span>${t('maps.preview')}</span>
           </button>
           </div>
-          <div class="preview-progress" aria-label="Postęp preview">
+          <div class="preview-progress" aria-label="${t('a11y.previewProgress')}">
             <div class="preview-progress-track"><div id="previewProgressFill" class="preview-progress-fill"></div></div>
             <div class="preview-progress-meta"><span>${t('maps.previewDuration')}</span><span id="previewProgressTime">30s</span></div>
           </div>

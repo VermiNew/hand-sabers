@@ -16,9 +16,9 @@
 <canvas id="gameCanvas"></canvas>
 
 <!-- MAIN MENU -->
-<div id="mainMenu" class="main-menu-screen" aria-label="Menu główne">
+<div id="mainMenu" class="main-menu-screen" aria-label="Menu główne" data-i18n-aria-label="a11y.mainMenu">
   <div class="main-menu-vignette"></div>
-  <aside class="main-menu-panel" aria-label="Nawigacja menu głównego">
+  <aside class="main-menu-panel" aria-label="Nawigacja menu głównego" data-i18n-aria-label="a11y.mainMenuNav">
     <div class="main-brand">
       <div class="main-brand-mark" aria-hidden="true">HS</div>
       <div>
@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <nav class="main-nav" aria-label="Tryby gry">
+    <nav class="main-nav" aria-label="Tryby gry" data-i18n-aria-label="a11y.gameModes">
       <button class="main-nav-item is-selected" id="mainStart" data-menu-action="singleplayer" type="button" style="--i:0">
         <span class="main-nav-label" data-i18n="menu.singleplayer">Singleplayer</span>
       </button>
@@ -65,7 +65,7 @@
     <section class="main-settings-card" id="mainSettingsPanel" role="dialog" aria-modal="true" aria-labelledby="mainSettingsTitle">
 
       <!-- Sidebar nawigacja -->
-      <nav class="sp-nav" aria-label="Kategorie ustawień">
+      <nav class="sp-nav" aria-label="Kategorie ustawień" data-i18n-aria-label="a11y.settingsCategories">
         <div class="sp-nav-title" data-i18n="settings.title">Ustawienia</div>
         <button class="sp-nav-item is-active" data-tab="audio" type="button">
           <span class="material-symbols-rounded">volume_up</span>
@@ -107,13 +107,13 @@
           <span class="material-symbols-rounded" aria-hidden="true">restart_alt</span>
           <span data-i18n="settings.reset">Przywróć domyślne</span>
         </button>
-        <button class="settings-close-btn sp-close" id="mainSettingsClose" type="button" aria-label="Zamknij ustawienia">
+        <button class="settings-close-btn sp-close" id="mainSettingsClose" type="button" aria-label="Zamknij ustawienia" data-i18n-aria-label="a11y.closeSettings">
           <span class="material-symbols-rounded">close</span>
         </button>
       </nav>
 
       <!-- Zawartość zakładek -->
-      <div class="sp-body" tabindex="0" aria-label="Zawartość ustawień">
+      <div class="sp-body" tabindex="0" aria-label="Zawartość ustawień" data-i18n-aria-label="a11y.settingsContent">
 
         <!-- TAB: AUDIO -->
         <div class="sp-tab is-active" data-tab="audio">
@@ -129,7 +129,7 @@
             </div>
             <div class="audio-meter-row">
               <span class="audio-meter-label" data-i18n="settings.audio.masterMeter">Poziom master</span>
-              <div class="audio-meter" id="menuMasterAudioMeter" role="meter" aria-label="Poziom master audio" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="-60">
+              <div class="audio-meter" id="menuMasterAudioMeter" role="meter" aria-label="Poziom master audio" data-i18n-aria-label="a11y.masterAudioLevel" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="-60">
                 <span class="audio-meter-fill"></span>
                 <span class="audio-meter-clip" aria-hidden="true"></span>
               </div>
@@ -241,7 +241,7 @@
             </div>
             <div class="audio-meter-row">
               <span class="audio-meter-label" data-i18n="settings.audio.phoneMeter">Poziom telefonu</span>
-              <div class="audio-meter is-remote" id="menuPhoneAudioMeter" role="meter" aria-label="Poziom audio telefonu" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="-60">
+              <div class="audio-meter is-remote" id="menuPhoneAudioMeter" role="meter" aria-label="Poziom audio telefonu" data-i18n-aria-label="a11y.phoneAudioLevel" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="-60">
                 <span class="audio-meter-fill"></span>
                 <span class="audio-meter-clip" aria-hidden="true"></span>
               </div>
@@ -365,7 +365,7 @@
           <div class="sp-group sp-colors-group">
             <div class="sp-color-side">
               <div class="sp-color-label" data-i18n="settings.gameplay.leftHand">Lewa ręka</div>
-              <div class="saber-color-grid" id="saberColorGridLeft" role="radiogroup" aria-label="Kolor lewego miecza"></div>
+              <div class="saber-color-grid" id="saberColorGridLeft" role="radiogroup" aria-label="Kolor lewego miecza" data-i18n-aria-label="a11y.leftSaberColor"></div>
               <div class="sp-color-preview">
                 <div class="saber-color-preview-bar" id="saberColorPreviewLeft"></div>
                 <span id="saberColorNameLeft"></span>
@@ -374,7 +374,7 @@
             </div>
             <div class="sp-color-side">
               <div class="sp-color-label" data-i18n="settings.gameplay.rightHand">Prawa ręka</div>
-              <div class="saber-color-grid" id="saberColorGridRight" role="radiogroup" aria-label="Kolor prawego miecza"></div>
+              <div class="saber-color-grid" id="saberColorGridRight" role="radiogroup" aria-label="Kolor prawego miecza" data-i18n-aria-label="a11y.rightSaberColor"></div>
               <div class="sp-color-preview">
                 <div class="saber-color-preview-bar" id="saberColorPreviewRight"></div>
                 <span id="saberColorNameRight"></span>
@@ -390,7 +390,7 @@
           <div class="sp-group">
             <div class="sp-select-row">
               <span class="sp-label" data-i18n="settings.performance.graphicsSettings">Ustawienia graficzne</span>
-              <select id="menuPerformanceMode" class="sp-select" aria-label="Profil wydajności"></select>
+              <select id="menuPerformanceMode" class="sp-select" aria-label="Profil wydajności" data-i18n-aria-label="a11y.performanceProfile"></select>
             </div>
             <p class="sp-hint" id="menuPerformanceHint" data-i18n="settings.performance.autoHint">Auto sprawdza sprzęt i reguluje jakość w trakcie gry.</p>
             <p class="sp-hint sp-hint-mode" id="menuGraphicsModeInfo" data-i18n="settings.performance.currentMode">Obecny tryb: —</p>
@@ -500,7 +500,7 @@
                 <span class="sp-toggle-name" data-i18n="settings.musicEffects.intensityMode">Intensywność</span>
                 <span class="sp-toggle-desc" data-i18n="settings.musicEffects.intensityModeDesc">Auto dobiera siłę efektów do utworu i wydajności PC.</span>
               </div>
-              <div class="sp-segmented" role="group" aria-label="Intensywność efektów muzycznych">
+              <div class="sp-segmented" role="group" aria-label="Intensywność efektów muzycznych" data-i18n-aria-label="a11y.musicEffectsIntensity">
                 <button type="button" class="sp-seg" id="btnMusicIntensityAuto" data-i18n="settings.musicEffects.auto">AUTO</button>
                 <button type="button" class="sp-seg" id="btnMusicIntensityManual" data-i18n="settings.musicEffects.manual">RĘCZNIE</button>
               </div>
@@ -521,7 +521,7 @@
               <div class="sp-toggle-info">
                 <span class="sp-toggle-name" data-i18n="settings.labels.selectLanguage">Wybierz język</span>
               </div>
-              <div class="sp-segmented" role="group" aria-label="Język">
+              <div class="sp-segmented" role="group" aria-label="Język" data-i18n-aria-label="a11y.language">
                 <button type="button" class="sp-seg sp-seg-lang" id="btnLangPl">PL</button>
                 <button type="button" class="sp-seg sp-seg-lang" id="btnLangEn">EN</button>
               </div>
@@ -535,7 +535,7 @@
           <div class="sp-group">
             <div class="sp-select-row">
               <span class="sp-label" data-i18n="remoteTracking.sourceLabel">Źródło śledzenia</span>
-              <select id="menuTrackingSource" class="sp-select" aria-label="Źródło śledzenia">
+              <select id="menuTrackingSource" class="sp-select" aria-label="Źródło śledzenia" data-i18n-aria-label="a11y.trackingSource">
                 <option value="auto" data-i18n="remoteTracking.sourceAuto">Automatycznie</option>
                 <option value="camera" data-i18n="remoteTracking.sourceCamera">Kamera PC</option>
                 <option value="phone" data-i18n="remoteTracking.sourcePhone">Telefon</option>
@@ -836,7 +836,7 @@
         <h2 id="remoteTrackingTitle" data-i18n="remoteTracking.hostTitle">TELEFON JAKO KAMERA</h2>
         <p data-i18n="remoteTracking.hostIntro">Utwórz krótką sesję i zeskanuj QR telefonem.</p>
       </div>
-      <button class="rt-close" id="remoteTrackingClose" type="button" aria-label="Zamknij">
+      <button class="rt-close" id="remoteTrackingClose" type="button" aria-label="Zamknij" data-i18n-aria-label="a11y.close">
         <span class="material-symbols-rounded" aria-hidden="true">close</span>
       </button>
     </header>
@@ -881,7 +881,7 @@
             <strong data-i18n="remoteTracking.audioPreparation">PRZYGOTOWANIE AUDIO</strong>
             <span id="remoteAudioProgressText"></span>
           </div>
-          <progress id="remoteAudioProgressBar" max="1" value="0" aria-label="Postęp przygotowania audio"></progress>
+          <progress id="remoteAudioProgressBar" max="1" value="0" aria-label="Postęp przygotowania audio" data-i18n-aria-label="a11y.audioPrepProgress"></progress>
         </div>
       </div>
       <button class="rt-primary" id="remoteTrackingCreate" type="button" data-i18n="remoteTracking.createSession">UTWÓRZ SESJĘ</button>
@@ -1051,7 +1051,7 @@
         <h2 id="multiplayerTitle" data-i18n="multiplayer.title">MULTIPLAYER</h2>
         <p data-i18n="multiplayer.subtitle">Utwórz prywatny pokój albo dołącz kodem.</p>
       </div>
-      <button class="mp-close" id="multiplayerClose" type="button" aria-label="Zamknij">
+      <button class="mp-close" id="multiplayerClose" type="button" aria-label="Zamknij" data-i18n-aria-label="a11y.close">
         <span class="material-symbols-rounded" aria-hidden="true">close</span>
       </button>
     </header>
@@ -1230,10 +1230,10 @@
             <span class="material-symbols-rounded" aria-hidden="true">graphic_eq</span>
             <span data-i18n="multiplayer.voiceTest">TEST MIKROFONU</span>
           </button>
-          <div class="mp-chat-messages" id="multiplayerChatMessages" role="log" aria-live="polite" tabindex="0" aria-label="Wiadomości czatu pokoju"></div>
+          <div class="mp-chat-messages" id="multiplayerChatMessages" role="log" aria-live="polite" tabindex="0" aria-label="Wiadomości czatu pokoju" data-i18n-aria-label="a11y.roomChatMessages"></div>
           <form class="mp-chat-form" id="multiplayerChatForm">
             <input id="multiplayerChatInput" type="text" maxlength="240" autocomplete="off"
-              placeholder="Napisz wiadomość…" aria-label="Wiadomość na czacie" disabled>
+              placeholder="Napisz wiadomość…" data-i18n-placeholder="a11y.chatPlaceholder" aria-label="Wiadomość na czacie" data-i18n-aria-label="a11y.chatMessage" disabled>
             <button id="multiplayerChatSend" type="submit" disabled data-i18n="multiplayer.chatSend">WYŚLIJ</button>
           </form>
         </section>
@@ -1252,15 +1252,15 @@
         <span class="mp-label" data-i18n="multiplayer.mapLibrary">BIBLIOTEKA MAP</span>
         <h2 id="multiplayerMapPickerTitle" data-i18n="multiplayer.chooseMap">WYBIERZ MAPĘ DLA POKOJU</h2>
       </div>
-      <button class="mp-close" id="multiplayerMapPickerClose" type="button" aria-label="Zamknij">
+      <button class="mp-close" id="multiplayerMapPickerClose" type="button" aria-label="Zamknij" data-i18n-aria-label="a11y.close">
         <span class="material-symbols-rounded" aria-hidden="true">close</span>
       </button>
     </header>
     <label class="mp-map-search">
       <span class="material-symbols-rounded" aria-hidden="true">search</span>
-      <input id="multiplayerMapSearch" type="search" autocomplete="off" placeholder="Szukaj map…">
+      <input id="multiplayerMapSearch" type="search" autocomplete="off" placeholder="Szukaj map…" data-i18n-placeholder="a11y.mapSearchPlaceholder">
     </label>
-    <div class="mp-map-list" id="multiplayerMapList" tabindex="0" aria-label="Lista map pokoju"></div>
+    <div class="mp-map-list" id="multiplayerMapList" tabindex="0" aria-label="Lista map pokoju" data-i18n-aria-label="a11y.roomMapList"></div>
   </section>
 </div>
 
@@ -1269,7 +1269,7 @@
   <div class="cam-panel-head">
     <span class="cam-panel-status" aria-hidden="true"></span>
     <span class="cam-panel-title" data-i18n="camera.previewTitle">PODGLĄD TRACKINGU</span>
-    <button type="button" class="cam-panel-toggle" aria-expanded="true" aria-label="Minimalizuj podgląd" title="Minimalizuj / rozwiń">
+    <button type="button" class="cam-panel-toggle" aria-expanded="true" aria-label="Minimalizuj podgląd" data-i18n-aria-label="a11y.minimizePreview" title="Minimalizuj / rozwiń">
       <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4 L6 8 L10 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
   </div>
@@ -1289,7 +1289,7 @@
 <div id="multiplayerCameras" hidden></div>
 
 <!-- MULTIPLAYER — collapsible room chat during gameplay -->
-<aside class="mp-game-chat" id="multiplayerGameChat" aria-label="Czat pokoju">
+<aside class="mp-game-chat" id="multiplayerGameChat" aria-label="Czat pokoju" data-i18n-aria-label="a11y.roomChat">
   <button class="mp-game-chat-toggle" id="multiplayerGameChatToggle" type="button"
     aria-expanded="false" aria-controls="multiplayerGameChatBody">
     <span class="material-symbols-rounded" aria-hidden="true">chat</span>
@@ -1319,10 +1319,10 @@
       <span data-i18n="multiplayer.voiceTest">TEST MIKROFONU</span>
     </button>
     <div class="mp-chat-messages" id="multiplayerGameChatMessages" role="log" aria-live="polite"
-      tabindex="0" aria-label="Wiadomości czatu podczas gry"></div>
+      tabindex="0" aria-label="Wiadomości czatu podczas gry" data-i18n-aria-label="a11y.inGameChatMessages"></div>
     <form class="mp-chat-form" id="multiplayerGameChatForm">
       <input id="multiplayerGameChatInput" type="text" maxlength="240" autocomplete="off"
-        placeholder="Napisz wiadomość…" aria-label="Wiadomość na czacie podczas gry" disabled>
+        placeholder="Napisz wiadomość…" data-i18n-placeholder="a11y.chatPlaceholder" aria-label="Wiadomość na czacie podczas gry" data-i18n-aria-label="a11y.inGameChatMessage" disabled>
       <button id="multiplayerGameChatSend" type="submit" disabled data-i18n="multiplayer.chatSend">WYŚLIJ</button>
     </form>
   </div>
@@ -1665,12 +1665,12 @@
     </header>
     <div class="smp-body">
       <aside class="smp-controls">
-        <div class="smp-side-switch" role="group" aria-label="Wybór ręki">
+        <div class="smp-side-switch" role="group" aria-label="Wybór ręki" data-i18n-aria-label="a11y.handSelect">
           <button type="button" data-saber-side="left" class="is-active" aria-pressed="true" data-i18n="settings.gameplay.leftHand">Lewa ręka</button>
           <button type="button" data-saber-side="right" aria-pressed="false" data-i18n="settings.gameplay.rightHand">Prawa ręka</button>
         </div>
         <p class="smp-description" data-i18n="settings.gameplay.saberPickerDesc">Każda dłoń może używać innej sylwetki. Wybór zobaczysz od razu w podglądzie.</p>
-        <div class="smp-model-grid" role="group" aria-label="Modele mieczy">
+        <div class="smp-model-grid" role="group" aria-label="Modele mieczy" data-i18n-aria-label="a11y.saberModels">
           <button type="button" data-picker-saber-model="classic"><span data-i18n="settings.gameplay.modelClassic">Klasyczny</span><small>01</small></button>
           <button type="button" data-picker-saber-model="wide"><span data-i18n="settings.gameplay.modelWide">Szeroki</span><small>02</small></button>
           <button type="button" data-picker-saber-model="thin"><span data-i18n="settings.gameplay.modelThin">Cienki</span><small>03</small></button>
@@ -1728,7 +1728,7 @@
           <span class="material-symbols-rounded" aria-hidden="true">upload_file</span>
           <span id="mpImportLabel" data-i18n="mapPicker.import">IMPORTUJ</span>
         </button>
-        <button class="mp-overlay-close" id="mpClose" type="button" aria-label="Zamknij">
+        <button class="mp-overlay-close" id="mpClose" type="button" aria-label="Zamknij" data-i18n-aria-label="a11y.close">
           <span class="material-symbols-rounded" aria-hidden="true">close</span>
         </button>
       </div>
@@ -1759,8 +1759,8 @@
     </div>
     <div class="mp-import-status" id="mpImportStatus" role="status" hidden></div>
     <div class="mp-overlay-body">
-      <div class="mp-map-list" id="mpMapList" role="listbox" tabindex="0" aria-label="Lista map"></div>
-      <div class="mp-detail-pane" id="mpDetailPane" tabindex="0" aria-label="Szczegóły mapy">
+      <div class="mp-map-list" id="mpMapList" role="listbox" tabindex="0" aria-label="Lista map" data-i18n-aria-label="a11y.mapList"></div>
+      <div class="mp-detail-pane" id="mpDetailPane" tabindex="0" aria-label="Szczegóły mapy" data-i18n-aria-label="a11y.mapDetails">
         <div class="mp-detail-empty" data-i18n="mapPicker.selectMap">Wybierz mapę z listy</div>
       </div>
     </div>
@@ -1779,7 +1779,7 @@
     </div>
     <div class="profile-onboarding-field">
       <label for="profileNameInput" data-i18n="profile.playerName">Nazwa gracza</label>
-      <input type="text" id="profileNameInput" maxlength="32" autocomplete="nickname" placeholder="Gracz" aria-describedby="profileNameError">
+      <input type="text" id="profileNameInput" maxlength="32" autocomplete="nickname" placeholder="Gracz" data-i18n-placeholder="player.defaultName" aria-describedby="profileNameError">
       <p class="profile-name-error" id="profileNameError" role="alert" hidden></p>
     </div>
     <div class="profile-onboarding-field">

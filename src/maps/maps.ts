@@ -139,7 +139,7 @@ function renderMapList(maps: MapEntry[]): void {
   const activeIndex = Math.max(0, maps.findIndex(m => m.id === selectedId));
 
   container.innerHTML = `
-    <div class="map-picker-stage" aria-label="Wybór map 2.5D">
+    <div class="map-picker-stage" aria-label="${t('a11y.mapCarousel')}">
       ${maps.map((map, index) => renderMapCard(map, index, activeIndex, {
         favorite: isFavoriteMap(map.id),
         score: getMapScoreData(map.id).best?.score ?? 0,

@@ -1,6 +1,7 @@
 import { state } from '../core/state.ts';
 import { isDeveloperAccessGranted } from '../core/developer-access.ts';
 import { developerWarn } from '../core/client-log.ts';
+import { t } from '../i18n/index.ts';
 import {
   SETTINGS_CHANGED_EVENT,
   setSetting,
@@ -193,7 +194,7 @@ export function initCameraPanelToggle(): void {
   const minimized = loadCamPanelMinimized();
   camPanel.classList.toggle('minimized', minimized);
   toggleBtn.setAttribute('aria-expanded', minimized ? 'false' : 'true');
-  toggleBtn.setAttribute('aria-label', minimized ? 'Rozwiń podgląd' : 'Minimalizuj podgląd');
+  toggleBtn.setAttribute('aria-label', t(minimized ? 'a11y.expandPreview' : 'a11y.minimizePreview'));
   toggleBtn.setAttribute('title', minimized ? 'Rozwiń' : 'Minimalizuj');
 
   toggleBtn.addEventListener('click', (ev) => {
@@ -202,7 +203,7 @@ export function initCameraPanelToggle(): void {
     const next = !camPanel.classList.contains('minimized');
     camPanel.classList.toggle('minimized', next);
     toggleBtn.setAttribute('aria-expanded', next ? 'false' : 'true');
-    toggleBtn.setAttribute('aria-label', next ? 'Rozwiń podgląd' : 'Minimalizuj podgląd');
+    toggleBtn.setAttribute('aria-label', t(next ? 'a11y.expandPreview' : 'a11y.minimizePreview'));
     toggleBtn.setAttribute('title', next ? 'Rozwiń' : 'Minimalizuj');
     saveCamPanelMinimized(next);
   });
