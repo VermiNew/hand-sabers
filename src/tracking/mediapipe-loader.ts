@@ -1,5 +1,6 @@
 import { getSettings } from '../core/settings.ts';
 import { t } from '../i18n/index.ts';
+import type { DetectResult } from './realtime.ts';
 
 const MEDIAPIPE_CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm';
 const MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task';
@@ -73,10 +74,16 @@ async function downloadModel(onProgress: ModelLoadProgress, signal?: AbortSignal
 
 // MediaPipe's CDN module does not expose local TypeScript declarations.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+/** Minimal surface of the CDN-loaded MediaPipe HandLandmarker used by the app. */
+export interface HandLandmarkerHandle {
+  detectForVideo(image: CanvasImageSource, timestampMs: number): DetectResult;
+  close(): void;
+}
+
 export async function loadHandLandmarker(
   onProgress: ModelLoadProgress,
   signal?: AbortSignal,
-): Promise<any> {
+): Promise<HandLandmarkerHandle> {
   onProgress(t('overlay.loadingRuntime'), t('overlay.loadingRuntimeDetail'), 0.1);
   const { HandLandmarker, FilesetResolver } = await import(
     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/vision_bundle.js' as string
@@ -91,7 +98,7 @@ export async function loadHandLandmarker(
 
   const preferredDelegate = requestedTrackingDelegate();
   const delegates: TrackingDelegate[] = preferredDelegate === 'GPU' ? ['GPU', 'CPU'] : ['CPU'];
-  let handLandmarker: any = null;
+  let handLandmarker: HandLandmarkerHandle | null = null;
   let lastError: unknown = null;
 
   for (const delegate of delegates) {

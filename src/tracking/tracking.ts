@@ -10,7 +10,7 @@ import { decodeRemoteLandmarks, sendRealtimeLandmarks, sendRealtimePose } from '
 import type { DetectResult, Landmark, WorkerResult } from './realtime.ts';
 import { drawHandLandmarks, HAND_CONNECTIONS } from './landmark-canvas.ts';
 import { updateCalibrationSourceUI } from './calibration-source-ui.ts';
-import { loadHandLandmarker, markHandLandmarkerRuntimeFailure } from './mediapipe-loader.ts';
+import { loadHandLandmarker, markHandLandmarkerRuntimeFailure, type HandLandmarkerHandle } from './mediapipe-loader.ts';
 import { createAutoFlipDetector } from './auto-flip.ts';
 import { CALIB_STEPS, renderCalibrationStep } from './calibration-step-ui.ts';
 import { decodePhoneCameraFrame, PHONE_CAMERA_FRAME_KIND } from '../remote/camera-frame-protocol.ts';
@@ -38,7 +38,7 @@ export interface CalibData {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let handLandmarker: any = null;
+let handLandmarker: HandLandmarkerHandle | null = null;
 let videoEl:        HTMLVideoElement | null = null;
 let trackCanvas:    HTMLCanvasElement | null = null;
 let trackCtx:       CanvasRenderingContext2D | null = null;

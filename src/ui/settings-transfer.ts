@@ -1,4 +1,5 @@
 import { replaceSettings } from '../core/settings.ts';
+import { developerWarn } from '../core/client-log.ts';
 import {
   MAX_SETTINGS_IMPORT_BYTES,
   createSettingsExport,
@@ -116,8 +117,9 @@ export function initSettingsTransfer(settings: Settings): void {
       setLang(pendingImport.settings.language);
       try { sessionStorage.setItem('hs_settings_imported', '1'); } catch {}
       location.reload();
-    } catch {
-      try { replaceSettings(previous); } catch {}
+    } catch (error) {
+      developerWarn('Settings import failed; rolling back:', error);
+      try { replaceSettings(previous); } catch (rollbackError) { developerWarn('Settings rollback failed:', rollbackError); }
       setStatus(t('settings.transfer.saveFailed'), true);
     }
   });
