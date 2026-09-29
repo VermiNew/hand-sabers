@@ -28,6 +28,7 @@ import { registerTelemetryRoutes } from './routes/telemetry-routes.js';
 import { normalizeDeveloperAccessToken, registerDeveloperAccessRoutes } from './routes/developer-access.js';
 import { registerAccountRoutes } from './routes/accounts.js';
 import { AccountSessionRegistry } from './auth/session-registry.js';
+import { createAdminGuard, normalizeAdminToken, registerAdminRoutes } from './auth/admin-guard.js';
 import { FileMutex, KeyedMutex, RateLimiter } from './utils.js';
 import { RoomRegistry } from './realtime/room-registry.js';
 import { registerRealtimeServer } from './realtime/socket.js';
@@ -52,6 +53,7 @@ interface ProjectConfig {
   allowedOrigins?: unknown;
   mapLibraryQuota?: unknown;
   developerToken?: unknown;
+  adminToken?: unknown;
 }
 const sharedProjectConfig = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')) as ProjectConfig;
 const localProjectConfig = existsSync(LOCAL_CONFIG_PATH)
@@ -60,6 +62,7 @@ const localProjectConfig = existsSync(LOCAL_CONFIG_PATH)
 const projectConfig: ProjectConfig = {
   ...sharedProjectConfig,
   developerToken: localProjectConfig.developerToken ?? sharedProjectConfig.developerToken,
+  adminToken: localProjectConfig.adminToken ?? sharedProjectConfig.adminToken,
 };
 if (typeof projectConfig.security !== 'boolean') {
   throw new Error('config.json: pole "security" musi mieć wartość true albo false.');
@@ -70,6 +73,9 @@ if (projectConfig.allowedOrigins !== undefined
 }
 if (projectConfig.developerToken !== undefined && typeof projectConfig.developerToken !== 'string') {
   throw new Error('config.local.json: pole "developerToken" musi być tekstem.');
+}
+if (projectConfig.adminToken !== undefined && typeof projectConfig.adminToken !== 'string') {
+  throw new Error('config.local.json: pole "adminToken" musi być tekstem.');
 }
 const quotaConfig = projectConfig.mapLibraryQuota as Partial<MapLibraryQuotaLimits> | null;
 if (
@@ -84,6 +90,10 @@ const securityEnabled = projectConfig.security;
 const configuredDeveloperToken = process.env.HAND_SABERS_DEVELOPER_TOKEN !== undefined
   ? process.env.HAND_SABERS_DEVELOPER_TOKEN
   : projectConfig.developerToken as string | undefined;
+const configuredAdminToken = process.env.HAND_SABERS_ADMIN_TOKEN !== undefined
+  ? process.env.HAND_SABERS_ADMIN_TOKEN
+  : projectConfig.adminToken as string | undefined;
+const adminAccessToken = normalizeAdminToken(configuredAdminToken);
 const developerAccessToken = normalizeDeveloperAccessToken(configuredDeveloperToken);
 const originPolicy = createOriginPolicy(securityEnabled, (projectConfig.allowedOrigins ?? []) as string[]);
 const STATIC_DIR = requireFrontendDist(PROJECT_ROOT);
@@ -240,6 +250,8 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true, name: 'hand-sabers', time: new Date().toISOString(), maxImportBytes: MAX_IMPORT_BYTES });
 });
 
+const adminGuard = createAdminGuard(adminAccessToken, rateLimit);
+registerAdminRoutes(app, adminGuard);
 registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetLocks, mapCatalogLock });
 registerAudioBankRoutes({ app, mapStorage, audioStorage, mapAssetLocks });
 
@@ -253,6 +265,7 @@ registerMapWriteRoutes({
   uploadAudio: upload.single('audio'),
   uploadFile: upload.single('file'),
   uploadConcurrency: uploadConcurrency.middleware,
+  requireAdmin: adminGuard.require,
   releaseUploadConcurrency: uploadConcurrency.release,
   parseJson: express.json({ limit: MAX_MAP_JSON_BYTES }),
   rateLimit,
@@ -397,6 +410,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`Hand Sabers → ${protocol}://localhost:${PORT}`);
   console.log(`W sieci lokalnej → ${protocol}://<twoje-ip-lub-hostname>:${PORT}`);
   console.log(`Zabezpieczenia wdrożeniowe: ${securityEnabled ? 'włączone' : 'wyłączone'} (config.json → security).`);
+  if (!adminGuard.enabled) console.log('Uwaga: zapis i usuwanie map nie wymagają tokenu (ustaw HAND_SABERS_ADMIN_TOKEN lub adminToken w config.local.json, jeśli serwer jest dostępny dla innych).');
   if (!secure) console.log('Kamera telefonu poza localhost wymaga HTTPS (HAND_SABERS_TLS_CERT + HAND_SABERS_TLS_KEY).');
   void mapLibraryQuota.usage().then(usage => {
     const usedMiB = (usage.bytes / 1024 ** 2).toFixed(1);

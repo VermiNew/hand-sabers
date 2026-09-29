@@ -31,6 +31,7 @@ interface MapWriteRoutesOptions {
   uploadAudio: RequestHandler;
   uploadFile: RequestHandler;
   uploadConcurrency: RequestHandler;
+  requireAdmin: RequestHandler;
   releaseUploadConcurrency(req: Request): void;
   parseJson: RequestHandler;
   rateLimit: RateLimiter;
@@ -109,6 +110,7 @@ export function registerMapWriteRoutes({
   uploadAudio,
   uploadFile,
   uploadConcurrency,
+  requireAdmin,
   releaseUploadConcurrency,
   parseJson,
   rateLimit,
@@ -189,7 +191,7 @@ export function registerMapWriteRoutes({
     'Za dużo importów. Spróbuj ponownie za chwilę.',
   );
 
-  app.post('/api/maps', limitMapSave, uploadConcurrency, parseJson, async (req, res) => {
+  app.post('/api/maps', requireAdmin, limitMapSave, uploadConcurrency, parseJson, async (req, res) => {
     try {
       const map = normalizeMap(req.body, { maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
       await withCatalogLock(() => withMapLock(map.id, () => withMapRollback(map.id, () => mapStorage.write(map))));
@@ -201,7 +203,7 @@ export function registerMapWriteRoutes({
     }
   });
 
-  app.post('/api/maps/save', limitMapSave, uploadConcurrency, parseJson, uploadAudio, async (req, res) => {
+  app.post('/api/maps/save', requireAdmin, limitMapSave, uploadConcurrency, parseJson, uploadAudio, async (req, res) => {
     try {
       const rawBody = req.body?.map ? parseJsonSafe(req.body.map) : req.body;
       const map = normalizeMap(rawBody, { requireBeats: false, maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
@@ -237,7 +239,7 @@ export function registerMapWriteRoutes({
     }
   });
 
-  app.post('/api/maps/import', limitMapImport, uploadConcurrency, uploadFile, async (req, res) => {
+  app.post('/api/maps/import', requireAdmin, limitMapImport, uploadConcurrency, uploadFile, async (req, res) => {
     // Importing over an existing map is destructive, so it needs ?overwrite=1.
     const allowOverwrite = req.query['overwrite'] === '1';
     const assertImportDoesNotOverwrite = async (id: string): Promise<void> => {
@@ -297,7 +299,7 @@ export function registerMapWriteRoutes({
     }
   });
 
-  app.delete('/api/maps/:id', async (req, res) => {
+  app.delete('/api/maps/:id', requireAdmin, async (req, res) => {
     try {
       const ip = getIp(req);
       if (rateLimit(ip, 'maps-delete', 20)) {

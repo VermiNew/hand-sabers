@@ -1,3 +1,4 @@
 {
-  "developerToken": "wpisz-tutaj-wlasny-token"
+  "developerToken": "wpisz-tutaj-wlasny-token",
+  "adminToken": "wpisz-tutaj-token-administratora"
 }
