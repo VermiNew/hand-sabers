@@ -227,7 +227,9 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
   });
 
   syncControls();
-  window.setInterval(updateModeInfo, 1200);
+  window.setInterval(() => {
+    if (!document.hidden) updateModeInfo();
+  }, 1200);
 
   return {
     sync(): void {

@@ -1,8 +1,11 @@
-import { getBeatHitTimeSec, isBeatTooLate, shouldSpawnBeat } from '../core/timing.ts';
+import {
+  DROP_LATE_BY_SEC,
+  SPAWN_LOOKAHEAD_SEC,
+  getBeatHitTimeSec,
+  isBeatTooLate,
+  shouldSpawnBeat,
+} from '../core/timing.ts';
 import type { Beat } from '../types/index.js';
-
-const SPAWN_LOOKAHEAD_SEC = 0.12;
-const DROP_LATE_BY_SEC = 0.45;
 
 export interface QueuedBeat {
   beat: Beat;
