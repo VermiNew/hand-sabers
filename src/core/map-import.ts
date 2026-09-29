@@ -26,13 +26,41 @@ interface LocalMap {
   meta?: Record<string, unknown> & { audioFile?: string };
 }
 
-export async function importMapToServer(file: File): Promise<ServerImportedMap> {
+/** Thrown when the server already holds a map with the imported id. */
+export class MapExistsError extends Error {
+  readonly mapId: string;
+
+  constructor(mapId: string, message: string) {
+    super(message);
+    this.name = 'MapExistsError';
+    this.mapId = mapId;
+  }
+}
+
+export async function importMapToServer(file: File, { overwrite = false } = {}): Promise<ServerImportedMap> {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await fetch('/api/maps/import', { method: 'POST', body: formData });
-  const payload = await response.json().catch(async () => ({ error: await response.text() })) as ServerImportedMap & { error?: string };
+  const response = await fetch(`/api/maps/import${overwrite ? '?overwrite=1' : ''}`, { method: 'POST', body: formData });
+  const payload = await response.json().catch(async () => ({ error: await response.text() })) as ServerImportedMap & { error?: string; code?: string };
+  if (response.status === 409 && payload.code === 'MAP_EXISTS') {
+    throw new MapExistsError(payload.id, payload.error ?? payload.id);
+  }
   if (!response.ok) throw new Error(payload.error ?? `${response.status} ${response.statusText}`);
   return payload;
+}
+
+/**
+ * Imports to the server, asking before replacing an existing map. Returns null
+ * when the user declines, so callers must not fall back to a local import.
+ */
+export async function importMapToServerConfirmed(file: File): Promise<ServerImportedMap | null> {
+  try {
+    return await importMapToServer(file);
+  } catch (error) {
+    if (!(error instanceof MapExistsError)) throw error;
+    if (!window.confirm(t('maps.overwriteConfirm', { id: error.mapId }))) return null;
+    return importMapToServer(file, { overwrite: true });
+  }
 }
 
 export async function importMapLocally(file: File): Promise<ImportedMap> {

@@ -2,7 +2,7 @@ import { t, translateDom } from '../i18n/index.ts';
 import { loadLocalMapAudio, readLocalMaps, readLocalScores } from '../core/localstore.ts';
 import { compareScores, CURRENT_SCORING_VERSION, getScoringVersion } from '../core/score-version.ts';
 import { getCanonicalMapAudioUrl, normalizeMap } from '../core/map-format.ts';
-import { importMapLocally, importMapToServer } from '../core/map-import.ts';
+import { importMapLocally, importMapToServerConfirmed } from '../core/map-import.ts';
 import { getSettings, setSetting } from '../core/settings.ts';
 import {
   recommendLearningCurveMap,
@@ -729,7 +729,11 @@ async function importMapFile(file: File): Promise<void> {
     let importedWithAudio = false;
     let importSource: 'server' | 'local';
     try {
-      const imported = await importMapToServer(file);
+      const imported = await importMapToServerConfirmed(file);
+      if (!imported) {
+        showImportStatus(t('maps.importCancelled'), 'info');
+        return;
+      }
       importedId = imported.id;
       importedWithAudio = Boolean(imported.audio);
       importSource = 'server';

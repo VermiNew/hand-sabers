@@ -62,7 +62,18 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
-function mapWriteErrorStatus(error: unknown): 400 | 500 | 507 {
+class MapExistsError extends Error {
+  readonly mapId: string;
+
+  constructor(mapId: string) {
+    super(`Mapa o id ${mapId} już istnieje.`);
+    this.name = 'MapExistsError';
+    this.mapId = mapId;
+  }
+}
+
+function mapWriteErrorStatus(error: unknown): 400 | 409 | 500 | 507 {
+  if (error instanceof MapExistsError) return 409;
   if (error instanceof MapLibraryQuotaError) return 507;
   if (!(error instanceof Error)) return 400;
   if (error.message.startsWith('Nie udało się przywrócić')) return 500;
@@ -73,7 +84,12 @@ function mapWriteErrorStatus(error: unknown): 400 | 500 | 507 {
 
 function sendMapWriteError(res: Response, error: unknown): void {
   const status = mapWriteErrorStatus(error);
-  res.status(status).json(apiErrorBody(status, error, 'maps-write'));
+  const body = apiErrorBody(status, error, 'maps-write');
+  if (error instanceof MapExistsError) {
+    res.status(status).json({ ...body, code: 'MAP_EXISTS', id: error.mapId });
+    return;
+  }
+  res.status(status).json(body);
 }
 
 async function removeUploadedFile(file: Express.Multer.File | undefined): Promise<void> {
@@ -222,6 +238,11 @@ export function registerMapWriteRoutes({
   });
 
   app.post('/api/maps/import', limitMapImport, uploadConcurrency, uploadFile, async (req, res) => {
+    // Importing over an existing map is destructive, so it needs ?overwrite=1.
+    const allowOverwrite = req.query['overwrite'] === '1';
+    const assertImportDoesNotOverwrite = async (id: string): Promise<void> => {
+      if (!allowOverwrite && await mapStorage.read(id)) throw new MapExistsError(id);
+    };
     try {
       if (!req.file) return res.status(400).json({ error: 'Brak pliku.' });
       assertFileSize(req.file);
@@ -249,6 +270,7 @@ export function registerMapWriteRoutes({
         const rawMap = parseJsonSafe(rawMapText);
         const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
         const audio = await withCatalogLock(() => withMapLock(map.id, () => withAssetRollback(map.id, async () => {
+          await assertImportDoesNotOverwrite(map.id);
           const persistedAudio = await audioStorage.persistZip(entries, map, outputBudget);
           await mapStorage.write(map);
           return persistedAudio;
@@ -262,7 +284,10 @@ export function registerMapWriteRoutes({
 
       const rawMap = parseJsonSafe(uploadedBytes.toString('utf8'));
       const map = normalizeMap(rawMap, { fallbackId: path.basename(originalName, path.extname(originalName)), maxBeats: MAX_BEATS_EXTENDED, throwOnLimit: true });
-      await withCatalogLock(() => withMapLock(map.id, () => withMapRollback(map.id, () => mapStorage.write(map))));
+      await withCatalogLock(() => withMapLock(map.id, () => withMapRollback(map.id, async () => {
+        await assertImportDoesNotOverwrite(map.id);
+        await mapStorage.write(map);
+      })));
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: null, storage: 'beatdata', map });
     } catch (error) {
       sendMapWriteError(res, error);

@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { importMapLocally, importMapToServer } from '../core/map-import.ts';
+import { importMapLocally, importMapToServerConfirmed } from '../core/map-import.ts';
 import { loadLocalMapAudio } from '../core/localstore.ts';
 import { showAlert, showToast } from '../creator/dialogs.ts';
 import { t } from '../i18n/index.ts';
@@ -27,7 +27,11 @@ export async function importLibraryMap(
   stopPreview();
   showToast(t('maps.importing', { name: file.name }), { type: 'info' });
   try {
-    const imported = await importMapToServer(file);
+    const imported = await importMapToServerConfirmed(file);
+    if (!imported) {
+      showToast(t('maps.importCancelled'), { type: 'info' });
+      return;
+    }
     showToast(t('maps.importedServer', {
       id: imported.id,
       audio: imported.audio ? t('maps.withAudio') : '',

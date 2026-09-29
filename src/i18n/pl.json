@@ -621,7 +621,9 @@
     "exportFail": "Eksport nie powiódł się — brak serwera?",
     "exportLocalSuccess": "Eksport lokalny gotowy",
     "exportLocalFail": "Eksport lokalny nie powiódł się",
-    "beatsCount": "{{count}} beatów"
+    "beatsCount": "{{count}} beatów",
+    "overwriteConfirm": "Mapa o id „{{id}}” już istnieje na serwerze. Nadpisać ją?",
+    "importCancelled": "Import anulowany."
   },
   "creator": {
     "title": "KREATOR MAP",

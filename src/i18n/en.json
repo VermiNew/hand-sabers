@@ -621,7 +621,9 @@
     "exportFail": "Export failed — server unavailable?",
     "exportLocalSuccess": "Local export ready",
     "exportLocalFail": "Local export failed",
-    "beatsCount": "{{count}} beats"
+    "beatsCount": "{{count}} beats",
+    "overwriteConfirm": "A map with id \"{{id}}\" already exists on the server. Overwrite it?",
+    "importCancelled": "Import cancelled."
   },
   "creator": {
     "title": "MAP CREATOR",
