@@ -153,7 +153,7 @@ const upload = multer({
     const name = String(file.originalname || '').toLowerCase();
     const ok = name.endsWith('.json') || name.endsWith('.zip') || AUDIO_EXT_RE.test(name) || String(file.mimetype || '').startsWith('audio/');
     if (ok) cb(null, true);
-    else cb(new Error('Nieobsługiwany typ pliku. Dozwolone: .json, .zip i audio.'));
+    else cb(Object.assign(new Error('Nieobsługiwany typ pliku. Dozwolone: .json, .zip i audio.'), { status: 415 }));
   },
 });
 const mapLibraryQuota = createMapLibraryQuota({
@@ -330,9 +330,11 @@ const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
       requestId,
     });
   }
+  // Multer failures (malformed multipart, unexpected field) are client errors;
+  // anything else without an explicit HTTP status is an unexpected server fault.
   const status = Number.isInteger(err?.status) && err.status >= 400 && err.status <= 599
     ? Number(err.status)
-    : 400;
+    : err instanceof multer.MulterError ? 400 : 500;
   const message = err?.type === 'entity.parse.failed'
     ? 'Treść żądania nie jest prawidłowym JSON-em.'
     : status >= 500

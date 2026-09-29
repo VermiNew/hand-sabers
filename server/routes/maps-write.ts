@@ -1,6 +1,6 @@
 import path from 'path';
 import { readFile, unlink } from 'fs/promises';
-import type { Express, Request, RequestHandler } from 'express';
+import type { Express, Request, RequestHandler, Response } from 'express';
 import JSZip from 'jszip';
 import {
   MAX_BEATS_EXTENDED,
@@ -17,7 +17,7 @@ import {
 import type { AudioMutation, AudioStorage, ZipAudioEntry } from '../storage/audio.js';
 import type { MapStorage } from '../storage/maps.js';
 import { MapLibraryQuotaError, type MapLibraryQuota } from '../storage/library-quota.js';
-import { errorMessage, getIp, parseJsonSafe, type FileMutex, type KeyedMutex } from '../utils.js';
+import { apiErrorBody, getIp, parseJsonSafe, type FileMutex, type KeyedMutex } from '../utils.js';
 
 type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
 
@@ -69,6 +69,11 @@ function mapWriteErrorStatus(error: unknown): 400 | 500 | 507 {
   const code = (error as NodeJS.ErrnoException).code;
   if (typeof code === 'string' && code.startsWith('E')) return 500;
   return error.cause ? mapWriteErrorStatus(error.cause) : 400;
+}
+
+function sendMapWriteError(res: Response, error: unknown): void {
+  const status = mapWriteErrorStatus(error);
+  res.status(status).json(apiErrorBody(status, error, 'maps-write'));
 }
 
 async function removeUploadedFile(file: Express.Multer.File | undefined): Promise<void> {
@@ -174,7 +179,7 @@ export function registerMapWriteRoutes({
       await withCatalogLock(() => withMapLock(map.id, () => withMapRollback(map.id, () => mapStorage.write(map))));
       res.json({ ok: true, id: map.id, beats: map.beats.length, storage: 'beatdata' });
     } catch (error) {
-      res.status(mapWriteErrorStatus(error)).json({ error: errorMessage(error) });
+      sendMapWriteError(res, error);
     } finally {
       releaseUploadConcurrency(req);
     }
@@ -209,7 +214,7 @@ export function registerMapWriteRoutes({
       }));
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: audio?.originalName ?? null, storage: 'beatdata', map });
     } catch (error) {
-      res.status(mapWriteErrorStatus(error)).json({ error: errorMessage(error) });
+      sendMapWriteError(res, error);
     } finally {
       await removeUploadedFile(req.file);
       releaseUploadConcurrency(req);
@@ -260,7 +265,7 @@ export function registerMapWriteRoutes({
       await withCatalogLock(() => withMapLock(map.id, () => withMapRollback(map.id, () => mapStorage.write(map))));
       res.json({ ok: true, id: map.id, beats: map.beats.length, audio: null, storage: 'beatdata', map });
     } catch (error) {
-      res.status(mapWriteErrorStatus(error)).json({ error: errorMessage(error) });
+      sendMapWriteError(res, error);
     } finally {
       await removeUploadedFile(req.file);
       releaseUploadConcurrency(req);
@@ -291,7 +296,7 @@ export function registerMapWriteRoutes({
       res.json({ ok: true });
     } catch (error) {
       console.error('Map deletion failed:', error);
-      res.status(500).json({ error: errorMessage(error) });
+      res.status(500).json(apiErrorBody(500, error));
     }
   });
 }

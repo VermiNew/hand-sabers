@@ -6,7 +6,7 @@ import { pipeline } from 'stream/promises';
 import { getCanonicalMapAudioUrl, sanitizeMapId } from '../../src/core/map-format.js';
 import type { AudioStorage } from '../storage/audio.js';
 import type { MapStorage, StoredMap } from '../storage/maps.js';
-import { errorMessage, type FileMutex, type KeyedMutex } from '../utils.js';
+import { apiErrorBody, type FileMutex, type KeyedMutex } from '../utils.js';
 
 interface MapReadRoutesOptions {
   app: Express;
@@ -92,7 +92,7 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
     try {
       res.json(await withCatalogLock(() => mapStorage.list()));
     } catch (error) {
-      res.status(500).json({ error: errorMessage(error) });
+      res.status(500).json(apiErrorBody(500, error));
     }
   });
 
@@ -109,7 +109,7 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
       if (found) return res.json(mapForResponse(found.map, found.id));
       res.status(404).json({ error: 'Nie znaleziono.' });
     } catch (error) {
-      res.status(500).json({ error: errorMessage(error) });
+      res.status(500).json(apiErrorBody(500, error));
     }
   });
 
@@ -167,7 +167,7 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
         snapshot.audioStream?.off('error', forwardAudioError);
       }
     } catch (error) {
-      if (!res.headersSent && !res.destroyed) res.status(500).json({ error: errorMessage(error) });
+      if (!res.headersSent && !res.destroyed) res.status(500).json(apiErrorBody(500, error));
       else if (!res.destroyed) res.destroy(error instanceof Error ? error : undefined);
     } finally {
       activeMapExports = Math.max(0, activeMapExports - 1);
@@ -202,7 +202,7 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
       res.type(snapshot.mime);
       await streamResponse(snapshot.stream, res);
     } catch (error) {
-      if (!res.headersSent && !res.destroyed) res.status(500).json({ error: errorMessage(error) });
+      if (!res.headersSent && !res.destroyed) res.status(500).json(apiErrorBody(500, error));
       else if (!res.destroyed) res.destroy(error instanceof Error ? error : undefined);
     }
   });
@@ -220,7 +220,7 @@ export function registerMapReadRoutes({ app, mapStorage, audioStorage, mapAssetL
         res.json(mapForResponse(data, id));
       });
     } catch (error) {
-      res.status(500).json({ error: errorMessage(error) });
+      res.status(500).json(apiErrorBody(500, error));
     }
   });
 }

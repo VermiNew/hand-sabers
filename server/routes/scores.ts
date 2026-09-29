@@ -4,7 +4,7 @@ import { isPlainObject, sanitizeMapId } from '../../src/core/map-format.js';
 import { compareScores, CURRENT_SCORING_VERSION } from '../../src/core/score-version.js';
 import type { MapStorage } from '../storage/maps.js';
 import type { ScoreStorage } from '../storage/scores.js';
-import { errorMessage, getIp } from '../utils.js';
+import { apiErrorBody, getIp } from '../utils.js';
 
 type RateLimiter = (ip: string, key: string, maxPerMinute: number) => boolean;
 
@@ -57,7 +57,7 @@ export function registerScoreRoutes({ app, maps, storage, parseJson, rateLimit }
       scores.sort(compareScores);
       res.json(scores.slice(0, limit));
     } catch (error) {
-      res.status(500).json({ error: errorMessage(error) });
+      res.status(500).json(apiErrorBody(500, error));
     }
   });
 
@@ -108,7 +108,7 @@ export function registerScoreRoutes({ app, maps, storage, parseJson, rateLimit }
         expiresAt: new Date(session.expiresAt).toISOString(),
       });
     } catch (error) {
-      res.status(500).json({ error: errorMessage(error) });
+      res.status(500).json(apiErrorBody(500, error));
     }
   });
 
@@ -171,7 +171,7 @@ export function registerScoreRoutes({ app, maps, storage, parseJson, rateLimit }
       });
       res.json({ ok: true });
     } catch (error) {
-      res.status(500).json({ error: errorMessage(error) });
+      res.status(500).json(apiErrorBody(500, error));
     }
   });
 }

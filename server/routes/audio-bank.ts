@@ -11,7 +11,7 @@ import {
 import { getCanonicalMapAudioUrl, sanitizeMapId } from '../../src/core/map-format.js';
 import type { AudioStorage } from '../storage/audio.js';
 import type { MapStorage } from '../storage/maps.js';
-import { errorMessage, type KeyedMutex } from '../utils.js';
+import { apiErrorBody, type KeyedMutex } from '../utils.js';
 
 interface AudioBankRoutesOptions {
   app: Express;
@@ -126,7 +126,7 @@ export function registerAudioBankRoutes({ app, mapStorage, audioStorage, mapAsse
       res.setHeader('Cache-Control', 'no-cache');
       return res.json(manifest);
     } catch (error) {
-      if (!res.destroyed) return res.status(500).json({ error: errorMessage(error) });
+      if (!res.destroyed) return res.status(500).json(apiErrorBody(500, error));
     } finally {
       release();
     }

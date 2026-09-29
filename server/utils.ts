@@ -1,5 +1,30 @@
+import { randomUUID } from 'crypto';
+
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+export interface ApiErrorBody {
+  error: string;
+  code?: string;
+  requestId?: string;
+}
+
+/**
+ * Builds a JSON error body. Server-side failures (5xx, except the user-facing
+ * 507 quota error) are logged with a request id and replaced by a generic
+ * message so internal details such as file paths never reach the client.
+ */
+export function apiErrorBody(status: number, error: unknown, label = 'api'): ApiErrorBody {
+  if (status < 500 || status === 507) return { error: errorMessage(error) };
+  const requestId = randomUUID();
+  const technical = error instanceof Error ? error.stack || error.message : String(error);
+  console.error(`[${label}:${requestId}]\n${technical}`);
+  return {
+    error: 'Wewnętrzny błąd serwera. Spróbuj ponownie za chwilę.',
+    code: 'INTERNAL_SERVER_ERROR',
+    requestId,
+  };
 }
 
 // Mutex do atomowego zapisu (zapobiega race condition na JSON files)
