@@ -48,6 +48,20 @@ Domyślne `config.json` ma `"security": false`, więc lokalny prototyp nie włą
 
 Adres tunelu lub domenę HTTPS trzeba dopisać przed uruchomieniem serwera. Nie wpisuj wildcardów ani samej nazwy hosta. Kontrola obejmuje zapisy REST, multiplayer i połączenie telefonu, ale nie zastępuje uwierzytelniania ani modelu uprawnień.
 
+### Token administratora (ochrona zapisu i usuwania map)
+
+Domyślnie każdy, kto ma dostęp do serwera, może dodawać, importować i usuwać mapy. Żeby to ograniczyć, ustaw token administratora (12–256 znaków) w zmiennej środowiskowej albo w `config.local.json` (plik jest ignorowany przez git; wzór w `config.local.example.json`):
+
+```bash
+HAND_SABERS_ADMIN_TOKEN=twoj-dlugi-token npm start
+```
+
+```json
+{ "adminToken": "twoj-dlugi-token" }
+```
+
+Z tokenem trasy `POST /api/maps`, `/api/maps/save`, `/api/maps/import` i `DELETE /api/maps/:id` wymagają nagłówka `Authorization: Bearer <token>`. Odczyt map, wyniki i multiplayer pozostają publiczne. Interfejs sam zapyta o token przy pierwszej takiej operacji i zapamięta go do końca sesji karty. Bez tokenu zachowanie się nie zmienia, a serwer wypisze przy starcie ostrzeżenie. Przekazuj token tylko przez HTTPS, bo w HTTP jest widoczny w sieci.
+
 ## Najprostsze udostępnienie na konkursie: tunel HTTPS
 
 Uruchom grę lokalnie poleceniem `npm start`, a następnie wystaw port `3000` przez zaufany tunel HTTPS, np. Cloudflare Tunnel, ngrok lub podobną usługę. Udostępniaj uczestnikom wyłącznie adres zaczynający się od `https://`.
