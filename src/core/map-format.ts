@@ -78,6 +78,31 @@ export function sanitizeMapId(id: unknown, fallback = 'custom-map'): string {
   return cleaned || fallback;
 }
 
+/** Latin transliteration of common diacritics; `ł`/`Ł` have no NFD decomposition. */
+function stripDiacritics(value: string): string {
+  return value.replace(/[łŁ]/g, char => (char === 'ł' ? 'l' : 'L')).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+function shortHash(value: string): string {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index++) {
+    hash = Math.imul(hash ^ value.charCodeAt(index), 0x01000193);
+  }
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+/**
+ * Derives an id from free text (a title or file name) when the map has no
+ * explicit id. Diacritics are transliterated so Polish titles stay readable, and
+ * text with no usable characters (e.g. CJK) gets a stable hash instead of one
+ * shared fallback id, which would make unrelated maps overwrite each other.
+ */
+export function deriveMapId(source: unknown): string {
+  const text = String(source ?? '').trim();
+  const cleaned = sanitizeMapId(stripDiacritics(text), '');
+  return cleaned || (text ? `map-${shortHash(text)}` : 'custom-map');
+}
+
 export function getCanonicalMapAudioUrl(id: unknown): string {
   const safeId = sanitizeMapId(id, '');
   return safeId ? `/api/maps/${encodeURIComponent(safeId)}/audio` : '';
@@ -190,7 +215,7 @@ export function upgradeMapFormat(rawMap: unknown, options: NormalizeMapOptions =
 
   const meta: MapMeta = { ...metaSource };
   const narratorCues = normalizeNarratorCues(rawMap.narratorCues);
-  const id = sanitizeMapId(rawMap.id || meta.title || rawMap.title || options.fallbackId || 'custom-map');
+  const id = sanitizeMapId(rawMap.id, '') || deriveMapId(rawMap.id || meta.title || rawMap.title || options.fallbackId);
   delete meta.audioUrl;
   const audioOffsetMs = Number(meta.audioOffsetMs ?? rawMap.audioOffsetMs ?? 0);
   meta.audioOffsetMs = Number.isFinite(audioOffsetMs) ? Math.max(-1000, Math.min(1000, audioOffsetMs)) : 0;
