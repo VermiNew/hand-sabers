@@ -42,10 +42,12 @@ export async function ensureCurrentMapAudio(settings: Pick<Settings, 'phoneAudio
   if (!state.map || hasMapAudio()) return;
 
   if (state.map._serverAudioPending) {
-    state.map._serverAudioPending = false;
     try {
       const audioUrl = getCanonicalMapAudioUrl(state.map.id);
       const res = audioUrl ? await fetch(audioUrl) : null;
+      // Keep the flag on network/server failures so the next call retries;
+      // a definitive answer (audio loaded, or the server has none) clears it.
+      if (!res || res.status < 500) state.map._serverAudioPending = false;
       if (res?.ok) {
         await loadMapAudio(await res.arrayBuffer());
         state.map._audioReady = true;
