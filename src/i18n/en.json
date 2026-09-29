@@ -1361,5 +1361,8 @@
     "mapCarousel": "Map carousel",
     "chatPlaceholder": "Type a message…",
     "mapSearchPlaceholder": "Search maps…"
+  },
+  "admin": {
+    "tokenPrompt": "This action requires the server admin token. Enter the token:"
   }
 }

@@ -13,6 +13,7 @@ import { saveLocalMap, saveLocalMapAudio } from '../core/localstore.ts';
 import { showAlert, showConfirm, showToast } from './dialogs.ts';
 import { restoreAudioForCurrentMap, decodeAndAttachAudio } from './audio.ts';
 import { t } from '../i18n/index.ts';
+import { adminFetch } from '../core/admin-auth.ts';
 import { state, MAP_ID } from './state.ts';
 import type { CreatorMap } from './state.ts';
 import { formatCreatorTime } from './time-format.ts';
@@ -89,7 +90,7 @@ async function saveMapToServer(mapToSave: CreatorMap): Promise<Record<string, un
     const audioBlob = new Blob([state.audioArrayBuffer.slice(0)], { type: state.audioMimeType || 'application/octet-stream' });
     fd.append('audio', audioBlob, state.audioFileName || mapToSave.meta?.audioFile || `${mapToSave.id}.ogg`);
   }
-  const res     = await fetch('/api/maps/save', { method: 'POST', body: fd });
+  const res     = await adminFetch('/api/maps/save', { method: 'POST', body: fd });
   const payload = await res.json().catch(async () => ({ error: await res.text() })) as Record<string, unknown>;
   if (!res.ok) throw new Error((payload?.['error'] as string | undefined) || `${res.status} ${res.statusText}`);
   return payload;

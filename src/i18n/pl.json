@@ -1361,5 +1361,8 @@
     "mapCarousel": "Wybór map 2.5D",
     "chatPlaceholder": "Napisz wiadomość…",
     "mapSearchPlaceholder": "Szukaj map…"
+  },
+  "admin": {
+    "tokenPrompt": "Ta operacja wymaga tokenu administratora serwera. Podaj token:"
   }
 }

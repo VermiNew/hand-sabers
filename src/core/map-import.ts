@@ -8,6 +8,7 @@ import {
   readZipEntryText,
 } from './zip-limits.ts';
 import { t } from '../i18n/index.ts';
+import { adminFetch } from './admin-auth.ts';
 
 export interface ImportedMap {
   id: string;
@@ -40,7 +41,7 @@ export class MapExistsError extends Error {
 export async function importMapToServer(file: File, { overwrite = false } = {}): Promise<ServerImportedMap> {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await fetch(`/api/maps/import${overwrite ? '?overwrite=1' : ''}`, { method: 'POST', body: formData });
+  const response = await adminFetch(`/api/maps/import${overwrite ? '?overwrite=1' : ''}`, { method: 'POST', body: formData });
   const payload = await response.json().catch(async () => ({ error: await response.text() })) as ServerImportedMap & { error?: string; code?: string };
   if (response.status === 409 && payload.code === 'MAP_EXISTS') {
     throw new MapExistsError(payload.id, payload.error ?? payload.id);

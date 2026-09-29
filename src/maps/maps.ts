@@ -1,3 +1,4 @@
+import { adminFetch } from '../core/admin-auth.ts';
 import { readLocalMaps, deleteLocalMap, deleteLocalMapAudio, readLocalScores } from '../core/localstore.ts';
 import { compareScores, CURRENT_SCORING_VERSION, getScoringVersion } from '../core/score-version.ts';
 import { showConfirm, showToast } from '../creator/dialogs.ts';
@@ -254,8 +255,10 @@ async function deleteMap(id: string, tryServer: boolean): Promise<void> {
 
   let serverDeleted = false;
   if (tryServer) {
-    try { await fetchJson(`/api/maps/${encodeURIComponent(id)}`, { method: 'DELETE' }); serverDeleted = true; }
-    catch {}
+    try {
+      const response = await adminFetch(`/api/maps/${encodeURIComponent(id)}`, { method: 'DELETE', credentials: 'same-origin' });
+      serverDeleted = response.ok;
+    } catch {}
   }
   deleteLocalMap(id);
   await deleteLocalMapAudio(id);
