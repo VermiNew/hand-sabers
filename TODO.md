@@ -663,3 +663,25 @@ Wymagają oceny wizualnej na żywo — weryfikacja przez Playwright tylko po wyr
 16. [ ] Stany między grami: ekran ładowania z wskazówkami, płynne wejście do mapy (odliczanie, kamera wjeżdżająca w scenę).
 17. [ ] Własna muzyka w menu i spójny zestaw efektów dźwiękowych, uzupełniający głos narratora Lyra.
 18. [ ] Instalowalność jako PWA (manifest do istniejącego service workera) oraz ekran „Jak grać" przy pierwszym uruchomieniu.
+
+### E. Kwestie prawne — plan działań
+
+Źródło: [analiza ryzyka](docs/legal-name-and-gameplay-risk.md). To plan działań produktowych, nie opinia prawna. Punkt 19 jest zmianą neutralną względem nazwy produktu; punkty 20–21 wymagają decyzji właściciela.
+
+19. [ ] Neutralna komunikacja, niezależnie od decyzji o nazwie: zastąpić w `README.md`, `README.pl.md` i `package.json` opisy „Beat Saber without VR” / „Beat Saber-inspired” opisem własnych cech (sterowanie dłońmi przez kamerę, kreator, tryb telefonu, multiplayer), usunąć słowo kluczowe `beat-saber`, zmienić nazwę pliku `beat-sabers-3d.html` (np. `play.html`) wraz z przekierowaniem starego adresu (zaktualizować `vite.config.js`, serwer i odnośniki).
+20. [ ] Badanie nazwy przez rzecznika patentowego (Polska, EUIPO, WIPO; warianty `Hand Saber`/`Hand Sabers`; klasy: oprogramowanie, gry, rozrywka) przed promocją, sklepem lub rejestracją znaku. Przygotować brief: nazwa, klasy, rynki, dotychczasowa analiza.
+21. [ ] Pisemna decyzja: utrzymanie nazwy z uzasadnieniem albo wybór nazwy rezerwowej. Jeśli zmiana — zrobić ją wcześnie, zanim urosną domeny, repozytorium i materiały graficzne.
+22. [ ] Własny język wizualny celów, wskazówek kierunku, mieczy, areny i HUD-u, widoczny w statycznym kadrze (powiązane z punktami 12–14 z grupy D).
+23. [ ] Rejestr pochodzenia i licencji wszystkich assetów (fonty, ikony, dźwięki, utwory, modele, mapy) oraz wgranie własnych lub licencjonowanych (CC0/CC-BY) utworów demonstracyjnych. Nie dołączać cudzej muzyki ani map społeczności bez licencji.
+24. [ ] Polityka prywatności i regulamin przed publicznym wydaniem (konta, nazwy graczy, telemetria); obecny opis telemetrii w ustawieniach nie zastępuje dokumentu prawnego.
+25. [ ] Dopiero po zmianie nazwy lub badaniu: informacja o braku powiązania z Meta/Beat Games jako uzupełnienie, nie substytut odróżniającej nazwy.
+
+### F. Od prototypu do gotowej gry
+
+26. [ ] Onboarding bez konfiguracji do pierwszej gry: automatyczna kalibracja z podpowiedziami i ustawienia domyślne dobierane do możliwości urządzenia.
+27. [ ] Niezawodność na różnym sprzęcie: testy na słabszych laptopach i kamerach, jasny komunikat przy awarii śledzenia i tryb awaryjny (sterowanie myszą jako tryb pokazowy).
+28. [ ] Zawartość startowa: kilka dopracowanych map na różne poziomy trudności i gatunki.
+29. [ ] Stabilna dystrybucja: numerowane wydania z `CHANGELOG.md`, hosting pod własną domeną z HTTPS oraz CI w `.github/workflows` (lint, build, testy, smoke przy każdej zmianie).
+30. [ ] Strona produktu i materiały (trailer, zrzuty ekranu, opis własnych cech) bez sugerowania podobieństwa do innych gier.
+31. [ ] Dostępność i lokalizacja: pełne PL/EN, czytelne rozmiary tekstu, reduced-motion (punkt 4 z grupy A).
+32. [ ] Publiczna roadmapa i kanał zgłaszania błędów (uzupełnienie `CONTRIBUTING.md`).
