@@ -19,7 +19,7 @@ test('profile onboarding validates the name and keeps editing consistent in sett
     localStorage.setItem('hs_tutorial_seen', '1');
   });
 
-  await page.goto('/beat-sabers-3d.html');
+  await page.goto('/play.html');
 
   const onboarding = page.locator('#profileOnboarding');
   const nameInput = page.locator('#profileNameInput');

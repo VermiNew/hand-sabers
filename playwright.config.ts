@@ -31,7 +31,7 @@ export default defineConfig({
     },
     {
       command: 'npm run dev:client -- --host 127.0.0.1 --port 4173',
-      url: 'http://127.0.0.1:4173/beat-sabers-3d.html',
+      url: 'http://127.0.0.1:4173/play.html',
       reuseExistingServer: !process.env['CI'],
       timeout: 120_000,
     },

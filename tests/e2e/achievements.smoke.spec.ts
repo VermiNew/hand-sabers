@@ -20,7 +20,7 @@ test('achievement settings show categories, tiers and accessible progress on des
     localStorage.setItem('hs_stats', JSON.stringify({ totalGames: 5 }));
   });
 
-  await page.goto('/beat-sabers-3d.html');
+  await page.goto('/play.html');
   await page.locator('#mainSettings').click();
   await page.locator('.sp-nav-item[data-tab="achievements"]').click();
 

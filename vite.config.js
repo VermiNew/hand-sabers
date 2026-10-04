@@ -29,7 +29,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         index: resolve(__dirname, 'index.html'),
-        game: resolve(__dirname, 'beat-sabers-3d.html'),
+        game: resolve(__dirname, 'play.html'),
         maps: resolve(__dirname, 'maps.html'),
         creator: resolve(__dirname, 'map-creator.html'),
         cameraDiagnostics: resolve(__dirname, 'camera-diagnostics.html'),

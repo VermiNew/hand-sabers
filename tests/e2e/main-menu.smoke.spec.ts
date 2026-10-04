@@ -18,7 +18,7 @@ test('main menu opens and closes the map picker without critical browser errors'
     localStorage.setItem('hs_tutorial_seen', '1');
   });
 
-  await page.goto('/beat-sabers-3d.html');
+  await page.goto('/play.html');
 
   const mainMenu = page.locator('#mainMenu');
   const mapsButton = page.locator('#mainMaps');

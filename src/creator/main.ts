@@ -266,7 +266,7 @@ function buildGameTestUrl(mapId: string): string {
   for (const key of ['dev', 'testing']) {
     if (current.has(key)) params.set(key, current.get(key) ?? '');
   }
-  return `./beat-sabers-3d.html?${params.toString()}`;
+  return `./play.html?${params.toString()}`;
 }
 
 // ── BPM input + tap tempo ─────────────────────────────────────────

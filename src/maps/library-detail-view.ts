@@ -89,7 +89,7 @@ export function renderLibraryDetail(
       </div>
     </div>
     <div class="detail-actions">
-      <a class="btn-play" href="${withDevQuery(`./beat-sabers-3d.html?map=${encodeURIComponent(map.id)}`)}"><span class="material-symbols-rounded">play_arrow</span>${t('maps.playBtn')}</a>
+      <a class="btn-play" href="${withDevQuery(`./play.html?map=${encodeURIComponent(map.id)}`)}"><span class="material-symbols-rounded">play_arrow</span>${t('maps.playBtn')}</a>
       <div class="detail-secondary-actions">
         <button class="btn-secondary favorite-toggle${favorite ? ' is-favorite' : ''}" id="btnFavoriteMap" data-id="${attr(map.id)}" type="button" aria-pressed="${favorite}" title="${attr(t(favorite ? 'maps.favoriteRemove' : 'maps.favoriteAdd'))}"><span class="material-symbols-rounded">star</span>${t(favorite ? 'maps.favoriteRemove' : 'maps.favoriteAdd')}</button>
         <a class="btn-secondary" href="${withDevQuery(`./map-creator.html?id=${encodeURIComponent(map.id)}`)}"><span class="material-symbols-rounded">edit</span>${t('maps.editBtn')}</a>

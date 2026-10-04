@@ -21,7 +21,7 @@ test('Lyra keeps a stable, scrollable conversation layout for long text and redu
   });
   const longText = 'To jest bardzo długi tekst Lyry, który ma się poprawnie zawijać i przewijać. '.repeat(5).trim();
 
-  await page.goto('/beat-sabers-3d.html');
+  await page.goto('/play.html');
   await page.waitForTimeout(1_500);
   const immediateAriaLabel = await page.evaluate(async text => {
     const { narratorShow } = await import('/src/game/narrator.ts');

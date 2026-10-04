@@ -239,6 +239,12 @@ app.use((req, res, next) => {
   }
   next();
 });
+// The game page used to live at a different path; keep old links and bookmarks
+// working. Browsers carry any #fragment (e.g. room join codes) across redirects.
+app.get('/beat-sabers-3d.html', (req, res) => {
+  const query = req.originalUrl.includes('?') ? req.originalUrl.slice(req.originalUrl.indexOf('?')) : '';
+  res.redirect(301, `/play.html${query}`);
+});
 app.use(express.static(STATIC_DIR, { dotfiles: 'deny', index: false }));
 app.get('/', (_req, res) => res.sendFile(path.join(STATIC_DIR, 'index.html')));
 

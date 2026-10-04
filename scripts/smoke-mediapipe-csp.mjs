@@ -104,7 +104,7 @@ try {
 
   const unsecured = await startServer(false);
   activeServer = unsecured.server;
-  const unsecuredResponse = await fetch(`${unsecured.baseUrl}/beat-sabers-3d.html`);
+  const unsecuredResponse = await fetch(`${unsecured.baseUrl}/play.html`);
   if (unsecuredResponse.headers.has('content-security-policy')) {
     throw new Error('security=false unexpectedly emitted Content-Security-Policy.');
   }
@@ -137,7 +137,7 @@ try {
     if (message.type() === 'error') criticalErrors.push(`console: ${message.text()}`);
   });
 
-  const response = await page.goto(`${secured.baseUrl}/beat-sabers-3d.html`, {
+  const response = await page.goto(`${secured.baseUrl}/play.html`, {
     waitUntil: 'domcontentloaded',
     timeout: 30_000,
   });

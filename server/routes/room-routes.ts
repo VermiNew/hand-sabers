@@ -27,7 +27,7 @@ export function registerRoomRoutes({ app, rooms, rateLimit }: RoomRoutesOptions)
 
       const room = rooms.create();
       const fragment = new URLSearchParams({ room: room.code, token: room.joinToken });
-      const joinUrl = `${getPublicOrigin(req.protocol, req.get('host'))}/beat-sabers-3d.html#${fragment}`;
+      const joinUrl = `${getPublicOrigin(req.protocol, req.get('host'))}/play.html#${fragment}`;
       const qrDataUrl = await QRCode.toDataURL(joinUrl, {
         errorCorrectionLevel: 'M',
         margin: 1,
