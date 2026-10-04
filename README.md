@@ -1,6 +1,6 @@
 # Hand Sabers
 
-Beat Saber without VR: a rhythm game controlled by your hands via webcam. The frontend runs on Vite, the backend is an Express server that stores maps, audio and scores.
+A rhythm game you play with your bare hands through a webcam — no headset or controllers needed. Slice the incoming blocks in time with the music, build your own maps in the built-in creator, and play with friends in multiplayer or use a phone as the camera. The frontend runs on Vite, the backend is an Express server that stores maps, audio and scores.
 
 > **Polish version:** [README.pl.md](README.pl.md)
 

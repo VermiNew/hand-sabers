@@ -1,10 +1,9 @@
 {
   "name": "hand-sabers",
   "version": "1.0.0",
-  "description": "A Beat Saber-inspired rhythm game you play with your hands through a webcam — no VR headset required.",
+  "description": "A rhythm game you play with your bare hands through a webcam — no headset or controllers needed.",
   "keywords": [
     "rhythm-game",
-    "beat-saber",
     "hand-tracking",
     "webcam",
     "no-vr",

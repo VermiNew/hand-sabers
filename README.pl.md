@@ -3,7 +3,7 @@
 Chcesz pomóc w rozwoju projektu? Zobacz zasady współpracy w
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Beat Saber bez VR: gra rytmiczna sterowana rękami przez kamerę. Frontend działa na Vite, backend to Express zapisujący mapy, audio i wyniki.
+Gra rytmiczna sterowana gołymi rękami przez kamerę — bez gogli i kontrolerów. Tnij nadlatujące bloki w rytm muzyki, twórz własne mapy we wbudowanym kreatorze, graj ze znajomymi w multiplayerze albo użyj telefonu jako kamery. Frontend działa na Vite, backend to Express zapisujący mapy, audio i wyniki.
 
 > **English version:** [README.md](README.md)
 
