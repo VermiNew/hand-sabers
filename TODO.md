@@ -627,3 +627,25 @@ inspirację czytelnością HUD-u i głębią otoczenia z gry *Lockdown Protocol*
 38. [x] Dodać plik opisujący zasady współpracy open-source dla przyszłych kontrybutorów. — `CONTRIBUTING.md` opisuje zgłoszenia, konfigurację lokalną, zakres zmian, język kodu/UI, prywatność, pełną weryfikację, Conventional Commits i wymagania PR; oba README prowadzą do dokumentu, a kwestie podatności odsyłają do istniejącego `SECURITY.md`.
 39. [x] Dodać krótkie FAQ, między innymi odpowiedź, że gra nie zawiera mikropłatności ani modelu subskrypcyjnego. — modal Pomocy zawiera semantyczną listę odpowiedzi o mikropłatnościach/subskrypcjach, wymaganiu VR i przesyłaniu obrazu w obu językach. Smoke potwierdził trzy odpowiedzi, zamykanie modala, brak błędów oraz poprawny układ bez scrolla na desktopie i z kontrolowanym przewijaniem przy 390 px.
 40. [x] Przeanalizować ryzyko prawne nazwy „Hand Sabers” i podobieństwa rozgrywki do *Beat Saber* oraz omówić możliwe działania ograniczające ryzyko. Na tym etapie nie wdrażać zmian nazwy ani produktu. — [analiza](docs/legal-name-and-gameplay-risk.md) rozdziela wysokie ryzyko podobnej nazwy i komunikacji od niższego ryzyka samej mechaniki, wskazuje obszary ekspresji audiowizualnej wymagające odróżnienia oraz definiuje bramkę przed promocją lub komercjalizacją: profesjonalne badanie znaków, decyzję o marce, przegląd porównawczy i potwierdzenie licencji. Nie zmieniono nazwy, produktu ani publicznych opisów.
+
+## 39. Backlog produktu — faza II — 2026-10-04
+
+Zasada: każdy punkt realizujemy małymi krokami (plan → kod → lint → build → smoke → commit). Punkty z grupy A są gotowe do wdrożenia bez dalszych decyzji produktowych; grupy B i C wymagają wyboru kierunku przed startem.
+
+### A. Do wdrożenia w pierwszej kolejności
+
+1. [ ] Analiza po zagraniu na ekranie końca gry: rozkład opóźnień trafień (za wcześnie / za późno, z `deltaMs`), porównanie lewej i prawej ręki oraz sekcje mapy z największą liczbą pudeł. Dane zbieramy w pamięci podczas gry, bez zmian po stronie serwera. Wynik może zasilić kalibrację `audioOffsetMs`.
+2. [ ] Tryb ćwiczenia fragmentu mapy: wybór zakresu czasu, pętla oraz automatyczne podnoszenie tempa po udanych próbach (np. 0,6× → 1,0×), na bazie istniejących `trainingMode` i tempa audio.
+3. [ ] Modyfikatory rozgrywki: lustro (zamiana stron), jedna ręka (UI dla istniejącego `oneHandMode`), bez bomb, podwójne życie. Modyfikatory wpływają na wersję punktacji (`CURRENT_SCORING_VERSION`), aby rankingi pozostały uczciwe.
+4. [ ] Przełącznik ograniczenia ruchu (reduced motion) wyłączający drgania kamery (`camera-shake.ts`) i glitch przy niskim HP (`damage-glitch.ts`); domyślnie zgodny z `prefers-reduced-motion`.
+
+### B. Większe funkcje do omówienia
+
+5. [ ] Automatyczny szkic mapy z pliku audio (wykrywanie uderzeń w przeglądarce) otwierany w kreatorze do ręcznej poprawy. Jakość zależy od gatunku muzyki, więc wynik jest szkicem, nie gotową mapą.
+6. [ ] Powtórki i duch najlepszego przejścia: zapis czasów i pozycji mieczy oraz odtwarzanie obok bieżącej gry; sprawdzić, co da się wykorzystać z istniejących elementów „ghost” w multiplayerze.
+7. [ ] Udostępnianie map linkiem lub kodem (analogicznie do kodu pokoju).
+
+### C. Drobne ulepszenia
+
+8. [ ] Playlisty oraz losowa mapa z filtrem trudności (rozszerzenie funkcji „Rzuć wyzwaniem”).
+9. [ ] Ekran rozgrzewki ruchowej przed grą (zasięg rąk, krótka kalibracja).
