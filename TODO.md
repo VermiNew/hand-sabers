@@ -634,10 +634,10 @@ Zasada: każdy punkt realizujemy małymi krokami (plan → kod → lint → buil
 
 ### A. Do wdrożenia w pierwszej kolejności
 
-1. [ ] Analiza po zagraniu na ekranie końca gry: rozkład opóźnień trafień (za wcześnie / za późno, z `deltaMs`), porównanie lewej i prawej ręki oraz sekcje mapy z największą liczbą pudeł. Dane zbieramy w pamięci podczas gry, bez zmian po stronie serwera. Wynik może zasilić kalibrację `audioOffsetMs`.
+1. [x] Analiza po zagraniu na ekranie końca gry: rozkład opóźnień trafień (za wcześnie / za późno, z `deltaMs`), porównanie lewej i prawej ręki oraz sekcje mapy z największą liczbą pudeł. Dane zbieramy w pamięci podczas gry, bez zmian po stronie serwera. Wynik może zasilić kalibrację `audioOffsetMs`. — `core/run-analysis.ts` zbiera trafienia i pudła, a ekran końca gry pokazuje średni timing, podział wcześnie/późno, skuteczność każdej ręki i najgorsze 10 s mapy (ukryte poniżej 8 nut, bez autoplaya). Zweryfikowano lint, build, testy i skrypt na przykładowych danych; wygląd na ekranie końca gry NIE był oglądany (brak zgody na Playwright). Histogramu graficznego nie dodano.
 2. [ ] Tryb ćwiczenia fragmentu mapy: wybór zakresu czasu, pętla oraz automatyczne podnoszenie tempa po udanych próbach (np. 0,6× → 1,0×), na bazie istniejących `trainingMode` i tempa audio.
-3. [ ] Modyfikatory rozgrywki: lustro (zamiana stron), jedna ręka (UI dla istniejącego `oneHandMode`), bez bomb, podwójne życie. Modyfikatory wpływają na wersję punktacji (`CURRENT_SCORING_VERSION`), aby rankingi pozostały uczciwe.
-4. [ ] Przełącznik ograniczenia ruchu (reduced motion) wyłączający drgania kamery (`camera-shake.ts`) i glitch przy niskim HP (`damage-glitch.ts`); domyślnie zgodny z `prefers-reduced-motion`.
+3. [x] Modyfikatory rozgrywki: lustro (zamiana stron), jedna ręka (UI dla istniejącego `oneHandMode`), bez bomb, podwójne życie. Modyfikatory wpływają na wersję punktacji (`CURRENT_SCORING_VERSION`), aby rankingi pozostały uczciwe. — dodano lustro, brak bomb i podwójne życie (jedna ręka już istniała). Migawka przy starcie rundy, ignorowane w multiplayerze; każdy aktywny modyfikator wyłącza zapis do rankingu i achievementy, więc wersja punktacji bez zmian. Przełączniki w Ustawienia → Rozgrywka; wygląd UI NIE był oglądany.
+4. [x] Przełącznik ograniczenia ruchu (reduced motion) wyłączający drgania kamery (`camera-shake.ts`) i glitch przy niskim HP (`damage-glitch.ts`); domyślnie zgodny z `prefers-reduced-motion`. — drżenie kamery respektuje teraz `prefers-reduced-motion`, a przełącznik „Ogranicz ruch” w ustawieniach wyłącza drżenie i glitch niezależnie od systemu (glitch i CSS już respektowały ustawienie systemowe). Przełącznik nie obejmuje animacji CSS menu; wygląd NIE był oglądany.
 
 ### B. Większe funkcje do omówienia
 
