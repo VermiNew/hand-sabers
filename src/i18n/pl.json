@@ -555,7 +555,13 @@
         "gold": "Złoty",
         "lime": "Limonkowy",
         "indigo": "Indygo"
-      }
+      },
+      "modMirror": "Lustro",
+      "modMirrorDesc": "Zamienia lewą i prawą stronę. Bez rankingu, tylko solo",
+      "modNoBombs": "Bez bomb",
+      "modNoBombsDesc": "Pomija wszystkie bomby. Bez rankingu, tylko solo",
+      "modDoubleLives": "Podwójne życie",
+      "modDoubleLivesDesc": "20 zamiast 10 punktów życia. Bez rankingu, tylko solo"
     }
   },
   "maps": {

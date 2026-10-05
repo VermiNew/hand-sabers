@@ -555,7 +555,13 @@
         "gold": "Gold",
         "lime": "Lime",
         "indigo": "Indigo"
-      }
+      },
+      "modMirror": "Mirror",
+      "modMirrorDesc": "Swaps left and right. Not ranked, solo only",
+      "modNoBombs": "No bombs",
+      "modNoBombsDesc": "Skips every bomb. Not ranked, solo only",
+      "modDoubleLives": "Double lives",
+      "modDoubleLivesDesc": "20 instead of 10 life points. Not ranked, solo only"
     }
   },
   "maps": {

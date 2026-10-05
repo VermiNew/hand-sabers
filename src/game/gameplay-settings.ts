@@ -24,6 +24,12 @@ function parseMultiplayerRules(value: unknown): MultiplayerRules | null {
   };
 }
 
+const MODIFIER_TOGGLES = [
+  { id: 'menuModMirror', key: 'modMirror' },
+  { id: 'menuModNoBombs', key: 'modNoBombs' },
+  { id: 'menuModDoubleLives', key: 'modDoubleLives' },
+] as const;
+
 export function initGameplaySettings(settings: Settings): GameplaySettingsController {
   const noFailInput = document.getElementById('menuNoFail') as HTMLInputElement | null;
   const trainingModeInput = document.getElementById('menuTrainingMode') as HTMLInputElement | null;
@@ -32,6 +38,7 @@ export function initGameplaySettings(settings: Settings): GameplaySettingsContro
   const noteSpeedButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-note-speed]')];
   const hitboxSensitivityButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-hitbox-sensitivity]')];
   const gameModeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-game-mode]')];
+  const modifierInputs = MODIFIER_TOGGLES.map(({ id, key }) => ({ key, input: document.getElementById(id) as HTMLInputElement | null }));
   let multiplayerRules: MultiplayerRules | null = null;
 
   function syncOneHandButtons(): void {
@@ -87,6 +94,13 @@ export function initGameplaySettings(settings: Settings): GameplaySettingsContro
 
     if (beatLimitInput) beatLimitInput.checked = settings.beatLimitEnabled !== false;
 
+    // Modifiers are ignored in multiplayer rounds, so the toggles are locked there.
+    for (const { key, input } of modifierInputs) {
+      if (!input) continue;
+      input.disabled = multiplayerRules !== null;
+      input.checked = settings[key];
+    }
+
     state.oneHandMode = settings.oneHandMode || null;
     window.__oneHandMode = state.oneHandMode ?? 'both';
     setOneHandModeVisuals(state.oneHandMode);
@@ -117,6 +131,13 @@ export function initGameplaySettings(settings: Settings): GameplaySettingsContro
     document.body.classList.toggle('training-mode', trainingModeInput.checked);
     setSetting('trainingMode', trainingModeInput.checked);
   });
+
+  for (const { key, input } of modifierInputs) {
+    input?.addEventListener('change', () => {
+      settings[key] = input.checked;
+      setSetting(key, input.checked);
+    });
+  }
 
   beatLimitInput?.addEventListener('change', () => {
     settings.beatLimitEnabled = beatLimitInput.checked;
