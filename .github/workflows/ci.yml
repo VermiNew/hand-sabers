@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Same order as the local pipeline in AGENTS.md; smoke needs the built frontend.
+      - name: Lint (TypeScript, JS syntax, i18n keys)
+        run: npm run lint
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Unit tests
+        run: npm run unit
+
+      - name: Build server
+        run: npm run server:build
+
+      - name: Server smoke test
+        run: npm run smoke
