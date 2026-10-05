@@ -673,7 +673,7 @@ Wymagają oceny wizualnej na żywo — weryfikacja przez Playwright tylko po wyr
 21. [ ] Pisemna decyzja: utrzymanie nazwy z uzasadnieniem albo wybór nazwy rezerwowej. Jeśli zmiana — zrobić ją wcześnie, zanim urosną domeny, repozytorium i materiały graficzne.
 22. [ ] Własny język wizualny celów, wskazówek kierunku, mieczy, areny i HUD-u, widoczny w statycznym kadrze (powiązane z punktami 12–14 z grupy D).
 23. [ ] Rejestr pochodzenia i licencji wszystkich assetów (fonty, ikony, dźwięki, utwory, modele, mapy) oraz wgranie własnych lub licencjonowanych (CC0/CC-BY) utworów demonstracyjnych. Nie dołączać cudzej muzyki ani map społeczności bez licencji. — rejestr utworzony w [docs/assets-and-licenses.md](docs/assets-and-licenses.md) (zależności, czcionki, zasoby z CDN, dźwięk proceduralny). **Do uzupełnienia przez właściciela:** autor, źródło i licencja `logo.png`, awatarów Lyry (`src/assets/lora/`) i `favicon.svg`, potwierdzenie warunków modelu `hand_landmarker` oraz utwory demonstracyjne (CC0/CC-BY).
-24. [ ] Polityka prywatności i regulamin przed publicznym wydaniem (konta, nazwy graczy, telemetria); obecny opis telemetrii w ustawieniach nie zastępuje dokumentu prawnego.
+24. [ ] Polityka prywatności i regulamin przed publicznym wydaniem (konta, nazwy graczy, telemetria); obecny opis telemetrii w ustawieniach nie zastępuje dokumentu prawnego. — przygotowano szkic i inwentarz danych w [docs/privacy-and-data-inventory.md](docs/privacy-and-data-inventory.md) (co gra faktycznie przetwarza, usługi zewnętrzne, luki: wyniki niepowiązane z kontem, brak eksportu danych). **Do uzupełnienia:** administrator i kontakt oraz przegląd prawny przed publicznym wydaniem; regulamin nie powstał.
 25. [ ] Dopiero po zmianie nazwy lub badaniu: informacja o braku powiązania z Meta/Beat Games jako uzupełnienie, nie substytut odróżniającej nazwy.
 
 ### F. Od prototypu do gotowej gry
@@ -683,5 +683,5 @@ Wymagają oceny wizualnej na żywo — weryfikacja przez Playwright tylko po wyr
 28. [ ] Zawartość startowa: kilka dopracowanych map na różne poziomy trudności i gatunki.
 29. [ ] Stabilna dystrybucja: numerowane wydania z `CHANGELOG.md`, hosting pod własną domeną z HTTPS oraz CI w `.github/workflows` (lint, build, testy, smoke przy każdej zmianie). — dodano CI w `.github/workflows/ci.yml` (lint, build, testy jednostkowe, build serwera, smoke; nie obejmuje e2e Playwright). Działanie workflow potwierdzi dopiero pierwsze uruchomienie na GitHubie. Pozostają: numerowane wydania z `CHANGELOG.md` oraz hosting pod własną domeną z HTTPS.
 30. [ ] Strona produktu i materiały (trailer, zrzuty ekranu, opis własnych cech) bez sugerowania podobieństwa do innych gier.
-31. [ ] Dostępność i lokalizacja: pełne PL/EN, czytelne rozmiary tekstu, reduced-motion (punkt 4 z grupy A).
+31. [ ] Dostępność i lokalizacja: pełne PL/EN, czytelne rozmiary tekstu, reduced-motion (punkt 4 z grupy A). — zrobione: aria-label po polsku/angielsku oraz reduce-motion (grupa A4). Pozostaje weryfikacja czytelności rozmiarów tekstu w przeglądarce.
 32. [ ] Publiczna roadmapa i kanał zgłaszania błędów (uzupełnienie `CONTRIBUTING.md`).
