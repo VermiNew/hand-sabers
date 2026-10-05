@@ -144,6 +144,9 @@ export interface Settings {
   noteSpeed: number;
   hitboxSensitivity: number;
   trainingMode: boolean;
+  modMirror: boolean;
+  modNoBombs: boolean;
+  modDoubleLives: boolean;
   trackingSource: TrackingSourcePreference;
   phoneCameraProcessing: PhoneCameraProcessing;
   handDetectionConfidence: number;

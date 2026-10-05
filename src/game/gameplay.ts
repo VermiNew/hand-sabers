@@ -8,6 +8,7 @@ import { noteZAtSongTime } from '../core/timing.ts';
 import { classifyHitQuality, getCutVector, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
 import { recordBombHit } from '../core/achievements.ts';
 import { currentRunLog, resetRunLog } from '../core/run-analysis.ts';
+import { getActiveModifiers, mirrorCut, mirrorSide } from '../core/modifiers.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import { showHitFeedback } from './hit-feedback.ts';
 import { MapSpawnQueue } from './map-spawn-queue.ts';
@@ -263,8 +264,9 @@ export function startGameplay(sabers: SaberSide | 'both' = 'both') {
   state.misses      = 0;
   state.perfectHits = 0;
   resetRunLog(currentRunLog);
-  state.maxLives    = STARTING_LIVES;
-  state.lives  = STARTING_LIVES;
+  const startingLives = getActiveModifiers().doubleLives ? STARTING_LIVES * 2 : STARTING_LIVES;
+  state.maxLives    = startingLives;
+  state.lives  = startingLives;
   hitStreakForRegen = 0;
   lastHitMs = 0;
   const now = performance.now();
@@ -767,18 +769,23 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
   if (!beats) return;
   const approachSec = getMapApproachTimeSec(currentTimeSec);
   const spatialMode = getSettings().gameMode === 'spatial';
+  const modifiers = getActiveModifiers();
   for (const { beat: b, index, hitTime } of mapSpawnQueue.takeDue(beats, currentTimeSec, approachSec)) {
+    if (modifiers.noBombs && b.type === 'bomb') continue;
     const deterministicSide = ((index * 0x9e37_79b1) >>> 0) % 2 === 0 ? 'left' : 'right';
     const side = effectiveOneHandMode() || (b.side === 'random' ? deterministicSide : b.side);
-    const lane = spatialMode ? spatialLaneForBeat(beats, index) : laneForBeat(side, b);
-    spawnBlock(side, b.type === 'bomb', {
+    const baseLane = spatialMode ? spatialLaneForBeat(beats, index) : laneForBeat(side, b);
+    // One-hand mode already forces every note to one hand, so mirroring would be meaningless.
+    const mirrored = modifiers.mirror && !effectiveOneHandMode();
+    const lane = mirrored ? { ...baseLane, x: -baseLane.x } : baseLane;
+    spawnBlock(mirrored ? mirrorSide(side) : side, b.type === 'bomb', {
       mapBeat: true,
       hitTimeSec: hitTime,
       approachSec,
       x: lane.x,
       y: lane.y,
       z: SPAWN_Z,
-      cut: b.cut,
+      cut: mirrored ? mirrorCut(b.cut) : b.cut,
       heldDuration: b.type === 'held' ? (b.duration ?? 0.05) : 0,
     });
   }

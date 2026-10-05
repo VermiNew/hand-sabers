@@ -35,6 +35,7 @@ import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorGameplay, narratorHide, narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initAchievements, recordGameEnd, recordPhoneConnected } from '../core/achievements.ts';
+import { NO_MODIFIERS, getActiveModifiers, hasModifiers, modifiersFromSettings, setActiveModifiers } from '../core/modifiers.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
 import { initProfileOnboarding, showProfileOnboardingIfNeeded } from './profile.ts';
@@ -279,7 +280,9 @@ async function beginPlaying(): Promise<void> {
 
   setRoundPreparationStage('scene', 'done');
   setRoundPreparationProgress(1);
-  beginScoreSubmissionSession(state.map?.id, settings.trainingMode || isAutoPlayEnabled(), Boolean(state.map?.localOnly));
+  // Modifiers are single-player only and fixed for the whole run; a modified run is never ranked.
+  setActiveModifiers(multiplayerRoundSession.isActive() ? NO_MODIFIERS : modifiersFromSettings(settings));
+  beginScoreSubmissionSession(state.map?.id, settings.trainingMode || isAutoPlayEnabled() || hasModifiers(getActiveModifiers()), Boolean(state.map?.localOnly));
   state.appState = S.PLAYING;
   startGameplay();
   hideOverlay();
@@ -289,7 +292,8 @@ async function beginPlaying(): Promise<void> {
 function endGame(victory = false): void {
   const playTimeMs = state.map && mapTimeline ? mapTimeline.getTime() * 1000 : 0;
   const autoPlay = isAutoPlayEnabled();
-  if (!autoPlay) recordGameEnd(state, victory, playTimeMs);
+  const modified = hasModifiers(getActiveModifiers());
+  if (!autoPlay && !modified) recordGameEnd(state, victory, playTimeMs);
   mapNarratorTimeline.reset();
   gamePauseController.reset();
   clearDangerPulse();
@@ -305,7 +309,7 @@ function endGame(victory = false): void {
   runAsyncTask('score-submit', () => submitScore({
     playerName: settings.playerName,
     progress,
-    trainingMode: trainingMode || autoPlay,
+    trainingMode: trainingMode || autoPlay || modified,
   }));
   fadeTransition(() => { showGameOver(state, victory); });
 }
