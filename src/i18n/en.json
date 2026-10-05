@@ -7,7 +7,17 @@
     "playAgain": "PLAY AGAIN",
     "chooseMap": "CHOOSE MAP",
     "calibration": "CALIBRATION",
-    "mainMenu": "MAIN MENU"
+    "mainMenu": "MAIN MENU",
+    "analysis": {
+      "title": "RUN ANALYSIS",
+      "timing": "Timing",
+      "onBeat": "On the beat",
+      "late": "{{ms}} ms late",
+      "early": "{{ms}} ms early",
+      "earlyLate": "Early / late",
+      "hands": "Left / right hand",
+      "weakSegment": "Most misses"
+    }
   },
   "pause": {
     "title": "PAUSE",

@@ -7,7 +7,17 @@
     "playAgain": "ZAGRAJ PONOWNIE",
     "chooseMap": "WYBIERZ MAPĘ",
     "calibration": "KALIBRACJA",
-    "mainMenu": "MENU GŁÓWNE"
+    "mainMenu": "MENU GŁÓWNE",
+    "analysis": {
+      "title": "ANALIZA PRZEJŚCIA",
+      "timing": "Timing",
+      "onBeat": "W rytm",
+      "late": "{{ms}} ms za późno",
+      "early": "{{ms}} ms za wcześnie",
+      "earlyLate": "Wcześnie / późno",
+      "hands": "Lewa / prawa ręka",
+      "weakSegment": "Najwięcej pudeł"
+    }
   },
   "pause": {
     "title": "PAUZA",

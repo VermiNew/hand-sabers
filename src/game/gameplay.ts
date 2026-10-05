@@ -7,6 +7,7 @@ import { playBeat, playHit, playMiss, playBomb, playMilestone } from './audio.ts
 import { noteZAtSongTime } from '../core/timing.ts';
 import { classifyHitQuality, getCutVector, getSwingVector2, isCutDirectionMatch, normalizeCutDirection, registerComboHit, resetCombo, scoreForHit } from '../core/gameplay-rules.ts';
 import { recordBombHit } from '../core/achievements.ts';
+import { currentRunLog, resetRunLog } from '../core/run-analysis.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import { showHitFeedback } from './hit-feedback.ts';
 import { MapSpawnQueue } from './map-spawn-queue.ts';
@@ -261,6 +262,7 @@ export function startGameplay(sabers: SaberSide | 'both' = 'both') {
   state.hits        = 0;
   state.misses      = 0;
   state.perfectHits = 0;
+  resetRunLog(currentRunLog);
   state.maxLives    = STARTING_LIVES;
   state.lives  = STARTING_LIVES;
   hitStreakForRegen = 0;
@@ -429,6 +431,8 @@ function hitBlock(entry: ActiveBlock, color: number, light: THREE.PointLight, ca
   });
   const comboBefore = state.combo;
   const points = scoreForHit(quality.basePoints, comboBefore);
+  // Autoplay hits are perfectly timed by construction and would skew the analysis.
+  if (!autoPlayEnabled && entry.mapBeat) currentRunLog.hits.push({ side: entry.side, deltaMs });
 
   shatterBlock(entry.mesh, color, cache, { strong: quality.strong });
   showHitFeedback(entry.mesh.position, quality.label, quality.label === 'PERFECT', quality.reason, deltaMs, entry.cut);
@@ -605,6 +609,7 @@ function checkHits(deltaSec: number, mapTimeSec: number) {
         state.lives = Math.max(0, state.lives - 1);
         hitStreakForRegen = 0;
         state.misses++;
+        currentRunLog.misses.push({ side: entry.side, timeSec: mapTimeSec });
         emitGameplayFeedback({ type: 'block-miss', side: entry.side, combo: state.combo });
         updateHUD(state);
         playMiss();

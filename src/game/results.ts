@@ -2,6 +2,7 @@
 import type { RoomPlayer, RoomSnapshot } from '../multiplayer/protocol.ts';
 import { createAvatarBadge } from '../multiplayer/avatars.ts';
 import { t } from '../i18n/index.ts';
+import { currentRunLog, summarizeRun, type RunSummary } from '../core/run-analysis.ts';
 
 /** Render singleplayer results into the overlay body element. */
 export function renderSingleplayerResults(
@@ -45,7 +46,44 @@ export function renderSingleplayerResults(
   addStat(stats, t('gameover.perfects'), String(Math.max(0, Math.round(state.perfectHits))));
 
   goBody.append(mapTitle, summary, scoreCard, stats);
+  const analysis = renderRunAnalysis(summarizeRun(currentRunLog));
+  if (analysis) goBody.append(analysis);
   animateScoreValue(scoreValue, score);
+}
+
+function formatClock(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  return `${minutes}:${String(Math.round(totalSeconds % 60)).padStart(2, '0')}`;
+}
+
+/** Explains how the run went (timing bias, weaker hand, trouble spot); null when there is too little data. */
+function renderRunAnalysis(summary: RunSummary | null): HTMLElement | null {
+  if (!summary) return null;
+
+  const section = document.createElement('section');
+  section.className = 'go-analysis';
+  const heading = document.createElement('span');
+  heading.className = 'go-label go-analysis-title';
+  heading.textContent = t('gameover.analysis.title');
+  const grid = document.createElement('div');
+  grid.className = 'go-stats-grid';
+
+  const timing = summary.meanDeltaMs === 0 || Math.abs(summary.meanDeltaMs) <= 10
+    ? t('gameover.analysis.onBeat')
+    : t(summary.meanDeltaMs > 0 ? 'gameover.analysis.late' : 'gameover.analysis.early', { ms: Math.abs(summary.meanDeltaMs) });
+  addStat(grid, t('gameover.analysis.timing'), timing);
+  addStat(grid, t('gameover.analysis.earlyLate'), `${summary.earlyPercent}% / ${summary.latePercent}%`);
+
+  const side = (value: number | null): string => (value === null ? '\u2014' : `${value}%`);
+  addStat(grid, t('gameover.analysis.hands'), `${side(summary.left.accuracy)} / ${side(summary.right.accuracy)}`);
+
+  if (summary.worstSegment) {
+    const { startSec, endSec, misses } = summary.worstSegment;
+    addStat(grid, t('gameover.analysis.weakSegment'), `${formatClock(startSec)}\u2013${formatClock(endSec)} (${misses})`);
+  }
+
+  section.append(heading, grid);
+  return section;
 }
 
 function animateScoreValue(element: HTMLElement, target: number): void {
