@@ -11,7 +11,7 @@ const BOOLEAN_KEYS = new Set<keyof Settings>([
   'customFloorGlows', 'customDecorativeLights', 'customSaberGlints', 'customSaberTrails', 'customBackgroundShader',
   'customFog', 'customGrid', 'musicReactiveEnabled', 'beatLimitEnabled', 'trainingMode',
   'modMirror', 'modNoBombs', 'modDoubleLives',
-  'rememberCalibration', 'profileCompleted', 'phoneAudioOutput', 'chatSoundsEnabled', 'damageGlitchEnabled',
+  'rememberCalibration', 'profileCompleted', 'phoneAudioOutput', 'chatSoundsEnabled', 'damageGlitchEnabled', 'reduceMotion',
 ]);
 const UNIT_NUMBER_KEYS = new Set<keyof Settings>([
   'volume', 'musicVolume', 'sfxVolume', 'beatSoundVolume', 'hitSoundVolume',

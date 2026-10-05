@@ -111,6 +111,7 @@ export interface Settings {
   audioOffsetMs: number;
   performanceMode: PerformanceMode;
   damageGlitchEnabled: boolean;
+  reduceMotion: boolean;
   customAntialias: boolean;
   customReflections: boolean;
   customFloorGlows: boolean;

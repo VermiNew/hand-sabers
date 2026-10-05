@@ -33,6 +33,7 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
   const performanceHint = document.getElementById('menuPerformanceHint');
   const graphicsModeInfo = document.getElementById('menuGraphicsModeInfo');
   const damageGlitchInput = document.getElementById('menuDamageGlitch') as HTMLInputElement | null;
+  const reduceMotionInput = document.getElementById('menuReduceMotion') as HTMLInputElement | null;
   const customSection = document.getElementById('menuCustomGraphicsSection');
   const customToggles: Array<[HTMLInputElement | null, CustomBooleanSetting]> = [
     [document.getElementById('menuCustomAntialias') as HTMLInputElement | null, 'customAntialias'],
@@ -105,6 +106,7 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
   function syncControls(): void {
     if (performanceInput) performanceInput.value = getPerformanceMode(settings);
     if (damageGlitchInput) damageGlitchInput.checked = settings.damageGlitchEnabled;
+    if (reduceMotionInput) reduceMotionInput.checked = settings.reduceMotion;
     for (const [input, key] of customToggles) if (input) input.checked = settings[key];
 
     if (hitShardsInput) {
@@ -158,6 +160,11 @@ export function initGraphicsSettings(settings: Settings): GraphicsSettingsContro
       applyPerformanceMode();
     });
   }
+
+  reduceMotionInput?.addEventListener('change', () => {
+    settings.reduceMotion = reduceMotionInput.checked;
+    setSetting('reduceMotion', reduceMotionInput.checked);
+  });
 
   damageGlitchInput?.addEventListener('change', () => {
     settings.damageGlitchEnabled = damageGlitchInput.checked;

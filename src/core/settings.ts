@@ -78,6 +78,7 @@ export const DEFAULTS: Settings = {
   audioOffsetMs: 0,
   performanceMode: DEFAULT_PERFORMANCE_MODE,
   damageGlitchEnabled: true,
+  reduceMotion: false,
   customAntialias: false,
   customReflections: true,
   customFloorGlows: true,

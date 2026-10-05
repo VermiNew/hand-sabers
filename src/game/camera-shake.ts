@@ -1,9 +1,11 @@
 import type { Camera } from 'three';
+import { isReducedMotion } from '../core/reduced-motion.ts';
 
 const SHAKE_DECAY = 0.88;
 let shakeIntensity = 0;
 
 export function triggerCameraShake(intensity = 0.06): void {
+  if (isReducedMotion()) return;
   shakeIntensity = Math.max(shakeIntensity, intensity);
 }
 

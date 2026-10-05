@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { isReducedMotion } from '../core/reduced-motion.ts';
 
 const OVERLAY_LAYER = 31;
 const OVERLAY_DISTANCE = 0.11;
@@ -140,7 +141,7 @@ export function updateDamageGlitch({
   ensureOverlay(scene, camera);
   if (!overlay || !uniforms) return;
 
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const reducedMotion = isReducedMotion();
   const target = active && enabled && !reducedMotion ? targetIntensityForHp(hp) : 0;
   const smoothing = 1 - Math.exp(-Math.max(0, deltaSec) * (target > currentIntensity ? 7 : 4));
   currentIntensity = THREE.MathUtils.lerp(currentIntensity, target, smoothing);

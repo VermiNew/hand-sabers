@@ -382,7 +382,9 @@
       "damageGlitchDesc": "Efekt uszkodzonego wizjera, aktywny od profilu High.",
       "currentMode": "Obecny tryb: —",
       "currentModeAuto": "Obecny tryb: Auto → {{active}} ({{details}})",
-      "currentModeActive": "Obecny tryb: {{active}} ({{details}})"
+      "currentModeActive": "Obecny tryb: {{active}} ({{details}})",
+      "reduceMotion": "Ogranicz ruch",
+      "reduceMotionDesc": "Wyłącza drżenie kamery i zakłócenia przy niskim HP."
     },
     "visuals": {
       "arenaTheme": "Motyw areny",

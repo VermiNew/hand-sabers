@@ -382,7 +382,9 @@
       "damageGlitchDesc": "Damaged visor effect, available from the High profile.",
       "currentMode": "Current mode: —",
       "currentModeAuto": "Current mode: Auto → {{active}} ({{details}})",
-      "currentModeActive": "Current mode: {{active}} ({{details}})"
+      "currentModeActive": "Current mode: {{active}} ({{details}})",
+      "reduceMotion": "Reduce motion",
+      "reduceMotionDesc": "Turns off camera shake and the low-HP glitch effect."
     },
     "visuals": {
       "arenaTheme": "Arena theme",
