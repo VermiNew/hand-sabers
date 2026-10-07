@@ -9,6 +9,7 @@ import { classifyHitQuality, getCutVector, getSwingVector2, isCutDirectionMatch,
 import { recordBombHit } from '../core/achievements.ts';
 import { currentRunLog, resetRunLog } from '../core/run-analysis.ts';
 import { getActiveModifiers, mirrorCut, mirrorSide } from '../core/modifiers.ts';
+import { getActivePractice } from '../core/practice.ts';
 import { THREE, scene, lSaber, rSaber, lLight, rLight, triggerShake } from './scene.ts';
 import { showHitFeedback } from './hit-feedback.ts';
 import { MapSpawnQueue } from './map-spawn-queue.ts';
@@ -770,8 +771,11 @@ export function spawnMapBeats(beats: Beat[] | null | undefined, currentTimeSec: 
   const approachSec = getMapApproachTimeSec(currentTimeSec);
   const spatialMode = getSettings().gameMode === 'spatial';
   const modifiers = getActiveModifiers();
+  const practice = getActivePractice();
   for (const { beat: b, index, hitTime } of mapSpawnQueue.takeDue(beats, currentTimeSec, approachSec)) {
     if (modifiers.noBombs && b.type === 'bomb') continue;
+    // Practice plays one section only; earlier notes would otherwise fly by during the lead-in.
+    if (practice && hitTime < practice.startSec) continue;
     const deterministicSide = ((index * 0x9e37_79b1) >>> 0) % 2 === 0 ? 'left' : 'right';
     const side = effectiveOneHandMode() || (b.side === 'random' ? deterministicSide : b.side);
     const baseLane = spatialMode ? spatialLaneForBeat(beats, index) : laneForBeat(side, b);

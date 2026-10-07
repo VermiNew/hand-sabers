@@ -17,6 +17,11 @@
       "earlyLate": "Early / late",
       "hands": "Left / right hand",
       "weakSegment": "Most misses"
+    },
+    "practice": {
+      "passed": "Clean run! Next tempo: {{next}}%.",
+      "retry": "Tempo {{rate}}%. Reach at least {{accuracy}}% accuracy to move up a tempo step.",
+      "max": "Tempo {{rate}}% — full song speed."
     }
   },
   "pause": {
@@ -563,7 +568,16 @@
       "modNoBombs": "No bombs",
       "modNoBombsDesc": "Skips every bomb. Not ranked, solo only",
       "modDoubleLives": "Double lives",
-      "modDoubleLivesDesc": "20 instead of 10 life points. Not ranked, solo only"
+      "modDoubleLivesDesc": "20 instead of 10 life points. Not ranked, solo only",
+      "practiceEnabled": "Practice section",
+      "practiceEnabledDesc": "Plays only the chosen part of a map, not ranked and no achievements. Solo only",
+      "practiceRange": "Section (seconds)",
+      "practiceRangeDesc": "From – to, in seconds from the start of the song",
+      "practiceStartLabel": "Section start, seconds",
+      "practiceEndLabel": "Section end, seconds",
+      "practiceRangeInvalid": "The section must be at least 4 seconds long. While the range is invalid, practice is skipped and the whole map is played.",
+      "practiceAutoTempo": "Automatic tempo",
+      "practiceAutoTempoDesc": "Starts at 60%, 10% faster after a run with at least 90% accuracy"
     }
   },
   "maps": {

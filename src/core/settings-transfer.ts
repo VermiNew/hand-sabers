@@ -10,7 +10,7 @@ const BOOLEAN_KEYS = new Set<keyof Settings>([
   'flipCamera', 'noFail', 'developerMode', 'telemetryEnabled', 'customAntialias', 'customReflections',
   'customFloorGlows', 'customDecorativeLights', 'customSaberGlints', 'customSaberTrails', 'customBackgroundShader',
   'customFog', 'customGrid', 'musicReactiveEnabled', 'beatLimitEnabled', 'trainingMode',
-  'modMirror', 'modNoBombs', 'modDoubleLives',
+  'modMirror', 'modNoBombs', 'modDoubleLives', 'practiceEnabled', 'practiceAutoTempo',
   'rememberCalibration', 'profileCompleted', 'phoneAudioOutput', 'chatSoundsEnabled', 'damageGlitchEnabled', 'reduceMotion',
 ]);
 const UNIT_NUMBER_KEYS = new Set<keyof Settings>([
@@ -97,6 +97,8 @@ function validateSetting(key: keyof Settings, value: unknown): boolean {
     case 'customRenderScale': return isFiniteNumber(value, 0.5, 1.5);
     case 'customFieldOfView': return isFiniteNumber(value, 55, 85);
     case 'musicReactiveIntensity': return isFiniteNumber(value, 0, 1.5);
+    case 'practiceStartSec':
+    case 'practiceEndSec': return Number.isInteger(value) && isFiniteNumber(value, 0, 7200);
     case 'maxBeats': return Number.isInteger(value) && isFiniteNumber(value, 1, 100_000);
     case 'phoneAudioLatencyMs': return isFiniteNumber(value, 0, 500);
     case 'handDetectionConfidence':

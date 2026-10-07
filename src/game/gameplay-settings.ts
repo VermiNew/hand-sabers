@@ -1,5 +1,6 @@
 import { setSetting } from '../core/settings.ts';
 import { state } from '../core/state.ts';
+import { PRACTICE_MIN_LENGTH_SEC } from '../core/practice.ts';
 import { applyTrackingSettings } from '../tracking/tracking.ts';
 import type { OneHandMode, Settings } from '../types/index.js';
 import { setOneHandModeVisuals } from './scene.ts';
@@ -30,6 +31,13 @@ const MODIFIER_TOGGLES = [
   { id: 'menuModDoubleLives', key: 'modDoubleLives' },
 ] as const;
 
+const PRACTICE_MAX_SECONDS = 7200;
+
+function readSeconds(input: HTMLInputElement, fallback: number): number {
+  const value = Math.round(Number(input.value));
+  return Number.isFinite(value) ? Math.max(0, Math.min(PRACTICE_MAX_SECONDS, value)) : fallback;
+}
+
 export function initGameplaySettings(settings: Settings): GameplaySettingsController {
   const noFailInput = document.getElementById('menuNoFail') as HTMLInputElement | null;
   const trainingModeInput = document.getElementById('menuTrainingMode') as HTMLInputElement | null;
@@ -39,6 +47,11 @@ export function initGameplaySettings(settings: Settings): GameplaySettingsContro
   const hitboxSensitivityButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-hitbox-sensitivity]')];
   const gameModeButtons = [...document.querySelectorAll<HTMLButtonElement>('[data-game-mode]')];
   const modifierInputs = MODIFIER_TOGGLES.map(({ id, key }) => ({ key, input: document.getElementById(id) as HTMLInputElement | null }));
+  const practiceEnabledInput = document.getElementById('menuPracticeEnabled') as HTMLInputElement | null;
+  const practiceAutoTempoInput = document.getElementById('menuPracticeAutoTempo') as HTMLInputElement | null;
+  const practiceStartInput = document.getElementById('menuPracticeStart') as HTMLInputElement | null;
+  const practiceEndInput = document.getElementById('menuPracticeEnd') as HTMLInputElement | null;
+  const practiceHint = document.getElementById('menuPracticeHint');
   let multiplayerRules: MultiplayerRules | null = null;
 
   function syncOneHandButtons(): void {
@@ -94,6 +107,18 @@ export function initGameplaySettings(settings: Settings): GameplaySettingsContro
 
     if (beatLimitInput) beatLimitInput.checked = settings.beatLimitEnabled !== false;
 
+    // Practice, like modifiers, is ignored in multiplayer rounds, so its controls are locked there.
+    const practiceControls = [practiceEnabledInput, practiceAutoTempoInput, practiceStartInput, practiceEndInput];
+    for (const input of practiceControls) if (input) input.disabled = multiplayerRules !== null;
+    if (practiceEnabledInput) practiceEnabledInput.checked = settings.practiceEnabled;
+    if (practiceAutoTempoInput) practiceAutoTempoInput.checked = settings.practiceAutoTempo;
+    if (practiceStartInput) practiceStartInput.value = String(settings.practiceStartSec);
+    if (practiceEndInput) practiceEndInput.value = String(settings.practiceEndSec);
+    if (practiceHint) {
+      practiceHint.hidden = !settings.practiceEnabled
+        || settings.practiceEndSec - settings.practiceStartSec >= PRACTICE_MIN_LENGTH_SEC;
+    }
+
     // Modifiers are ignored in multiplayer rounds, so the toggles are locked there.
     for (const { key, input } of modifierInputs) {
       if (!input) continue;
@@ -138,6 +163,26 @@ export function initGameplaySettings(settings: Settings): GameplaySettingsContro
       setSetting(key, input.checked);
     });
   }
+
+  practiceEnabledInput?.addEventListener('change', () => {
+    settings.practiceEnabled = practiceEnabledInput.checked;
+    setSetting('practiceEnabled', practiceEnabledInput.checked);
+    sync();
+  });
+  practiceAutoTempoInput?.addEventListener('change', () => {
+    settings.practiceAutoTempo = practiceAutoTempoInput.checked;
+    setSetting('practiceAutoTempo', practiceAutoTempoInput.checked);
+  });
+  practiceStartInput?.addEventListener('change', () => {
+    settings.practiceStartSec = readSeconds(practiceStartInput, settings.practiceStartSec);
+    setSetting('practiceStartSec', settings.practiceStartSec);
+    sync();
+  });
+  practiceEndInput?.addEventListener('change', () => {
+    settings.practiceEndSec = readSeconds(practiceEndInput, settings.practiceEndSec);
+    setSetting('practiceEndSec', settings.practiceEndSec);
+    sync();
+  });
 
   beatLimitInput?.addEventListener('change', () => {
     settings.beatLimitEnabled = beatLimitInput.checked;

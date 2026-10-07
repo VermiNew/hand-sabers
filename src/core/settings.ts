@@ -107,6 +107,10 @@ export const DEFAULTS: Settings = {
   modMirror: false,
   modNoBombs: false,
   modDoubleLives: false,
+  practiceEnabled: false,
+  practiceStartSec: 0,
+  practiceEndSec: 30,
+  practiceAutoTempo: true,
   trackingSource: 'auto',
   phoneCameraProcessing: 'phone',
   handDetectionConfidence: 0.42,
@@ -215,6 +219,8 @@ function normalizeSettings(value: Partial<Settings>): Settings {
   normalized.handTrackingConfidence = clampNumber(normalized.handTrackingConfidence, 0, 1, DEFAULTS.handTrackingConfidence);
   normalized.language = normalizeLanguage(value.language);
   normalized.oneHandMode = normalizeOneHandMode(normalized.oneHandMode);
+  normalized.practiceStartSec = Math.round(clampNumber(normalized.practiceStartSec, 0, 7200, DEFAULTS.practiceStartSec));
+  normalized.practiceEndSec = Math.round(clampNumber(normalized.practiceEndSec, 0, 7200, DEFAULTS.practiceEndSec));
   normalized.playerColor = sanitizeProfileColor(normalized.playerColor);
   normalized.favoriteMapIds = normalizeFavoriteMapIds(normalized.favoriteMapIds);
   return normalized;

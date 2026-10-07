@@ -35,6 +35,7 @@ import { initRemoteTrackingPreviews } from '../multiplayer/remote-preview.ts';
 import { initRemoteTrackingPairing, isRemoteTrackingConnected } from '../remote/host-pairing.ts';
 import { narratorGameplay, narratorHide, narratorShow, NARRATOR_SPEEDS } from './narrator.ts';
 import { initAchievements, recordGameEnd, recordPhoneConnected } from '../core/achievements.ts';
+import { beginPractice, clearPractice, finishPracticeRun, getActivePractice } from '../core/practice.ts';
 import { NO_MODIFIERS, getActiveModifiers, hasModifiers, modifiersFromSettings, setActiveModifiers } from '../core/modifiers.ts';
 import { initSettingsTransfer } from '../ui/settings-transfer.ts';
 import { initMapPickerOverlay, openMapPicker } from './map-picker.ts';
@@ -266,7 +267,13 @@ async function beginPlaying(): Promise<void> {
     setRoundPreparationProgress(0.75);
     setRoundPreparationStage('scene', 'active');
     resetMapSpawn();
-    mapTimeline.start(performance.now());
+    // Practice replays one section of the map; it is single-player only and cuts narrator cues,
+    // which are timed for the whole song.
+    const practice = multiplayerRoundSession.isActive()
+      ? null
+      : beginPractice(settings, state.map.id ?? '', mapTimeline.getFullDuration());
+    if (practice) mapNarratorTimeline.reset([]);
+    mapTimeline.start(performance.now(), practice);
     showMapTitle(state.map.meta?.title ?? t('game.unknownTrack'));
   } else {
     setRoundPreparationAudioDetail(t('overlay.roundAudioPcReady'));
@@ -275,6 +282,7 @@ async function beginPlaying(): Promise<void> {
     setRoundPreparationStage('tracking', 'done');
     setRoundPreparationProgress(0.75);
     setRoundPreparationStage('scene', 'active');
+    clearPractice();
     mapTimeline.reset();
   }
 
@@ -282,7 +290,7 @@ async function beginPlaying(): Promise<void> {
   setRoundPreparationProgress(1);
   // Modifiers are single-player only and fixed for the whole run; a modified run is never ranked.
   setActiveModifiers(multiplayerRoundSession.isActive() ? NO_MODIFIERS : modifiersFromSettings(settings));
-  beginScoreSubmissionSession(state.map?.id, settings.trainingMode || isAutoPlayEnabled() || hasModifiers(getActiveModifiers()), Boolean(state.map?.localOnly));
+  beginScoreSubmissionSession(state.map?.id, settings.trainingMode || isAutoPlayEnabled() || hasModifiers(getActiveModifiers()) || getActivePractice() !== null, Boolean(state.map?.localOnly));
   state.appState = S.PLAYING;
   startGameplay();
   hideOverlay();
@@ -292,7 +300,12 @@ async function beginPlaying(): Promise<void> {
 function endGame(victory = false): void {
   const playTimeMs = state.map && mapTimeline ? mapTimeline.getTime() * 1000 : 0;
   const autoPlay = isAutoPlayEnabled();
-  const modified = hasModifiers(getActiveModifiers());
+  const practice = getActivePractice();
+  const modified = hasModifiers(getActiveModifiers()) || practice !== null;
+  if (practice && victory) {
+    const attempts = state.hits + state.misses;
+    finishPracticeRun(attempts > 0 ? (state.hits / attempts) * 100 : 0);
+  }
   if (!autoPlay && !modified) recordGameEnd(state, victory, playTimeMs);
   mapNarratorTimeline.reset();
   gamePauseController.reset();

@@ -17,6 +17,11 @@
       "earlyLate": "Wcześnie / późno",
       "hands": "Lewa / prawa ręka",
       "weakSegment": "Najwięcej pudeł"
+    },
+    "practice": {
+      "passed": "Czyste przejście! Następne tempo: {{next}}%.",
+      "retry": "Tempo {{rate}}%. Zdobądź co najmniej {{accuracy}}% celności, aby przejść na wyższe tempo.",
+      "max": "Tempo {{rate}}% — pełna prędkość utworu."
     }
   },
   "pause": {
@@ -563,7 +568,16 @@
       "modNoBombs": "Bez bomb",
       "modNoBombsDesc": "Pomija wszystkie bomby. Bez rankingu, tylko solo",
       "modDoubleLives": "Podwójne życie",
-      "modDoubleLivesDesc": "20 zamiast 10 punktów życia. Bez rankingu, tylko solo"
+      "modDoubleLivesDesc": "20 zamiast 10 punktów życia. Bez rankingu, tylko solo",
+      "practiceEnabled": "Ćwiczenie fragmentu",
+      "practiceEnabledDesc": "Gra tylko wybrany fragment mapy, bez rankingu i osiągnięć. Tylko solo",
+      "practiceRange": "Fragment (sekundy)",
+      "practiceRangeDesc": "Od – do, w sekundach od początku utworu",
+      "practiceStartLabel": "Początek fragmentu, sekundy",
+      "practiceEndLabel": "Koniec fragmentu, sekundy",
+      "practiceRangeInvalid": "Fragment musi mieć co najmniej 4 sekundy. Dopóki zakres jest nieprawidłowy, ćwiczenie jest pomijane i gra całą mapę.",
+      "practiceAutoTempo": "Automatyczne tempo",
+      "practiceAutoTempoDesc": "Start od 60%, o 10% szybciej po przejściu z celnością co najmniej 90%"
     }
   },
   "maps": {

@@ -3,6 +3,7 @@ import type { RoomPlayer, RoomSnapshot } from '../multiplayer/protocol.ts';
 import { createAvatarBadge } from '../multiplayer/avatars.ts';
 import { t } from '../i18n/index.ts';
 import { currentRunLog, summarizeRun, type RunSummary } from '../core/run-analysis.ts';
+import { PRACTICE_MAX_RATE, PRACTICE_PASS_ACCURACY, getLastPracticeRun } from '../core/practice.ts';
 
 /** Render singleplayer results into the overlay body element. */
 export function renderSingleplayerResults(
@@ -48,7 +49,26 @@ export function renderSingleplayerResults(
   goBody.append(mapTitle, summary, scoreCard, stats);
   const analysis = renderRunAnalysis(summarizeRun(currentRunLog));
   if (analysis) goBody.append(analysis);
+  const practiceNote = renderPracticeNote();
+  if (practiceNote) goBody.append(practiceNote);
   animateScoreValue(scoreValue, score);
+}
+
+/** One line on how the practice tempo moves on; null outside practice runs. */
+function renderPracticeNote(): HTMLElement | null {
+  const run = getLastPracticeRun();
+  if (!run) return null;
+  const note = document.createElement('p');
+  note.className = 'go-summary go-practice-note';
+  const percent = (rate: number): number => Math.round(rate * 100);
+  if (run.passed) {
+    note.textContent = t('gameover.practice.passed', { next: percent(run.nextRate) });
+  } else if (run.rate >= PRACTICE_MAX_RATE) {
+    note.textContent = t('gameover.practice.max', { rate: percent(run.rate) });
+  } else {
+    note.textContent = t('gameover.practice.retry', { rate: percent(run.rate), accuracy: PRACTICE_PASS_ACCURACY });
+  }
+  return note;
 }
 
 function formatClock(totalSeconds: number): string {
@@ -95,7 +115,8 @@ function animateScoreValue(element: HTMLElement, target: number): void {
   const durationMs = 700;
   const startedAt = performance.now();
   const frame = (now: number) => {
-    const progress = Math.min(1, (now - startedAt) / durationMs);
+    // rAF timestamps can precede the performance.now() captured above, giving a negative first frame.
+    const progress = Math.max(0, Math.min(1, (now - startedAt) / durationMs));
     const eased = 1 - Math.pow(1 - progress, 3);
     element.textContent = format(Math.round(target * eased));
     if (progress < 1) requestAnimationFrame(frame);

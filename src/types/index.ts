@@ -148,6 +148,10 @@ export interface Settings {
   modMirror: boolean;
   modNoBombs: boolean;
   modDoubleLives: boolean;
+  practiceEnabled: boolean;
+  practiceStartSec: number;
+  practiceEndSec: number;
+  practiceAutoTempo: boolean;
   trackingSource: TrackingSourcePreference;
   phoneCameraProcessing: PhoneCameraProcessing;
   handDetectionConfidence: number;

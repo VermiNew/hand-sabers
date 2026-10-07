@@ -277,6 +277,22 @@ body.settings-modal-open #narratorBox {
   transition:border-color 0.15s;
 }
 .sp-select:hover, .sp-select:focus { border-color:rgba(0,212,255,0.4); }
+.sp-practice-range { display:flex; align-items:center; gap:8px; color:rgba(148,163,184,0.6); }
+.sp-number {
+  width:76px; box-sizing:border-box;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.12); border-radius:8px;
+  color:#fff; font-family:'JetBrains Mono',monospace;
+  font-size:12px; padding:9px 10px; text-align:center; outline:none;
+  transition:border-color 0.15s;
+}
+.sp-number:hover, .sp-number:focus { border-color:rgba(0,212,255,0.4); }
+.sp-number:disabled { opacity:0.5; cursor:not-allowed; }
+@media (max-width:480px) {
+  .sp-toggle-row--wrap { flex-wrap:wrap; }
+  .sp-toggle-row--wrap .sp-toggle-info { flex:1 1 100%; }
+  .sp-toggle-row--wrap .sp-practice-range { margin-left:auto; }
+}
 .sp-select option { background:#0a0f1a; color:#fff; }
 .sp-hint.is-error { color:#ff8d9a; }
 .sp-hint {

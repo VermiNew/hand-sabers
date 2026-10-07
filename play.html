@@ -326,6 +326,32 @@
             </div>
             <div class="sp-toggle-row">
               <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.gameplay.practiceEnabled">practiceEnabled</span>
+                <span class="sp-toggle-desc" data-i18n="settings.gameplay.practiceEnabledDesc">practiceEnabled</span>
+              </div>
+              <label class="sp-switch"><input id="menuPracticeEnabled" type="checkbox"><span class="sp-knob"></span></label>
+            </div>
+            <div class="sp-toggle-row sp-toggle-row--wrap">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.gameplay.practiceRange">practiceRange</span>
+                <span class="sp-toggle-desc" data-i18n="settings.gameplay.practiceRangeDesc">practiceRangeDesc</span>
+              </div>
+              <div class="sp-practice-range">
+                <input id="menuPracticeStart" class="sp-number" type="number" min="0" max="7200" step="1" inputmode="numeric" aria-label="Start" data-i18n-aria-label="settings.gameplay.practiceStartLabel">
+                <span aria-hidden="true">–</span>
+                <input id="menuPracticeEnd" class="sp-number" type="number" min="0" max="7200" step="1" inputmode="numeric" aria-label="End" data-i18n-aria-label="settings.gameplay.practiceEndLabel">
+              </div>
+            </div>
+            <p class="sp-hint is-error" id="menuPracticeHint" hidden data-i18n="settings.gameplay.practiceRangeInvalid">practiceRangeInvalid</p>
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
+                <span class="sp-toggle-name" data-i18n="settings.gameplay.practiceAutoTempo">practiceAutoTempo</span>
+                <span class="sp-toggle-desc" data-i18n="settings.gameplay.practiceAutoTempoDesc">practiceAutoTempo</span>
+              </div>
+              <label class="sp-switch"><input id="menuPracticeAutoTempo" type="checkbox"><span class="sp-knob"></span></label>
+            </div>
+            <div class="sp-toggle-row">
+              <div class="sp-toggle-info">
                 <span class="sp-toggle-name" data-i18n="settings.gameplay.flipCamera">Odwróć strony kamery</span>
                 <span class="sp-toggle-desc" data-i18n="settings.gameplay.flipCameraDesc">Włącz, gdy lewy miecz trafia na prawy tor</span>
               </div>
