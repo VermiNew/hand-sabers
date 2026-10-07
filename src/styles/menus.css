@@ -1521,6 +1521,31 @@ body.round-prep-open #camPanel { visibility:hidden; }
   color:#ff8394;
   text-shadow:0 0 18px rgba(255,76,103,.45);
 }
+/* Results taller than the viewport (small phones, short windows) must scroll
+   instead of being clipped at both ends by the centered flex layout. */
+#overlay.is-gameover {
+  overflow-y:auto;
+  align-items:safe center;
+}
+/* Post-run analysis: longer values than the main stats, so a 2-column grid. */
+.go-analysis {
+  margin-top:16px;
+}
+.go-analysis-title {
+  display:block;
+  margin-bottom:8px;
+  text-align:center;
+}
+.go-analysis .go-analysis-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  margin-top:0;
+}
+.go-analysis .go-analysis-grid .go-stat:last-child {
+  grid-column:auto;
+}
+.go-analysis .go-analysis-grid .go-stat:last-child:nth-child(odd) {
+  grid-column:1 / -1;
+}
 .go-actions {
   display:flex;
   flex-wrap:wrap;

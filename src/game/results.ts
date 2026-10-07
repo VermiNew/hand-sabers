@@ -66,7 +66,7 @@ function renderRunAnalysis(summary: RunSummary | null): HTMLElement | null {
   heading.className = 'go-label go-analysis-title';
   heading.textContent = t('gameover.analysis.title');
   const grid = document.createElement('div');
-  grid.className = 'go-stats-grid';
+  grid.className = 'go-stats-grid go-analysis-grid';
 
   const timing = summary.meanDeltaMs === 0 || Math.abs(summary.meanDeltaMs) <= 10
     ? t('gameover.analysis.onBeat')
