@@ -3,6 +3,7 @@ import type { RoomPlayer, RoomSnapshot } from '../multiplayer/protocol.ts';
 import { createAvatarBadge } from '../multiplayer/avatars.ts';
 import { t } from '../i18n/index.ts';
 import { currentRunLog, summarizeRun, type RunSummary } from '../core/run-analysis.ts';
+import { computeRank } from '../core/rank.ts';
 import { PRACTICE_MAX_RATE, PRACTICE_PASS_ACCURACY, getLastPracticeRun } from '../core/practice.ts';
 
 /** Render singleplayer results into the overlay body element. */
@@ -46,12 +47,26 @@ export function renderSingleplayerResults(
   addStat(stats, t('gameover.misses'), String(misses));
   addStat(stats, t('gameover.perfects'), String(Math.max(0, Math.round(state.perfectHits))));
 
-  goBody.append(mapTitle, summary, scoreCard, stats);
+  // A rank only means something for a finished map; a failed run shows none.
+  const rank = victory ? renderRank(computeRank(accuracy)) : null;
+
+  if (rank) goBody.append(mapTitle, summary, rank, scoreCard, stats);
+  else goBody.append(mapTitle, summary, scoreCard, stats);
   const analysis = renderRunAnalysis(summarizeRun(currentRunLog));
   if (analysis) goBody.append(analysis);
   const practiceNote = renderPracticeNote();
   if (practiceNote) goBody.append(practiceNote);
   animateScoreValue(scoreValue, score);
+}
+
+function renderRank(rank: string): HTMLElement {
+  const badge = document.createElement('div');
+  badge.className = 'go-rank';
+  badge.dataset['rank'] = rank;
+  badge.setAttribute('role', 'img');
+  badge.setAttribute('aria-label', t('gameover.rankLabel', { rank }));
+  badge.textContent = rank;
+  return badge;
 }
 
 /** One line on how the practice tempo moves on; null outside practice runs. */

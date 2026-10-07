@@ -22,7 +22,8 @@
       "passed": "Clean run! Next tempo: {{next}}%.",
       "retry": "Tempo {{rate}}%. Reach at least {{accuracy}}% accuracy to move up a tempo step.",
       "max": "Tempo {{rate}}% — full song speed."
-    }
+    },
+    "rankLabel": "Rank {{rank}}"
   },
   "pause": {
     "title": "PAUSE",

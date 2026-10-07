@@ -22,7 +22,8 @@
       "passed": "Czyste przejście! Następne tempo: {{next}}%.",
       "retry": "Tempo {{rate}}%. Zdobądź co najmniej {{accuracy}}% celności, aby przejść na wyższe tempo.",
       "max": "Tempo {{rate}}% — pełna prędkość utworu."
-    }
+    },
+    "rankLabel": "Ranga {{rank}}"
   },
   "pause": {
     "title": "PAUZA",

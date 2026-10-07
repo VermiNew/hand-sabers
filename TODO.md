@@ -655,7 +655,7 @@ Zasada: każdy punkt realizujemy małymi krokami (plan → kod → lint → buil
 Wymagają oceny wizualnej na żywo — weryfikacja przez Playwright tylko po wyraźnej zgodzie (zgodnie z `AGENTS.md`).
 
 10. [ ] Odczucie trafień (game feel): krótki hit-stop (ok. 30–50 ms), błysk i cząsteczki dopasowane do jakości trafienia, dźwięk zależny od combo oraz delikatne pulsowanie sceny w rytm muzyki. Punkt wyjścia: `shatterBlock`, wstrząsy kamery i wizualizator muzyki; chodzi głównie o dostrojenie proporcji.
-11. [ ] Animowany ekran wyników z rangą (S/A/B…) i gwiazdkami zamiast samej tabeli liczb.
+11. [x] Animowany ekran wyników z rangą (S/A/B…) i gwiazdkami zamiast samej tabeli liczb. — ranga S/A/B/C/D wg celności (S ≥ 98%, A ≥ 90%, B ≥ 80%, C ≥ 65%) z animowanym znaczkiem na ekranie końca gry, tylko po ukończeniu mapy; sprawdzone na 1280 i 390 px. Gwiazdek nie dodano.
 12. [ ] Spójna tożsamość wizualna: własna paleta, krój pisma w tytułach, jednolity styl przycisków i animacji. Zbieżne z analizą ryzyka w `docs/legal-name-and-gameplay-risk.md` (odróżnienie od *Beat Saber*).
 13. [ ] Menu z „oddechem": animowane tło 3D (arena z wolno poruszającymi się światłami), dopracowane przejścia ekranów, spójne dźwięki interfejsu.
 14. [ ] Czytelny, jednolity HUD o wyraźnej hierarchii (wynik i combo ważniejsze niż reszta) — powiązane z punktem 36 z sekcji 38.

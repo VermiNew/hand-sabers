@@ -1527,6 +1527,36 @@ body.round-prep-open #camPanel { visibility:hidden; }
   overflow-y:auto;
   align-items:safe center;
 }
+/* Letter rank for a finished map. */
+@keyframes goRankPop {
+  0%   { opacity:0; transform:scale(.4) rotate(-12deg); }
+  65%  { opacity:1; transform:scale(1.14) rotate(2deg); }
+  100% { transform:scale(1) rotate(0); }
+}
+.go-rank {
+  display:grid;
+  place-items:center;
+  width:60px;
+  height:60px;
+  margin:4px auto 10px;
+  border:2px solid currentColor;
+  border-radius:50%;
+  color:var(--accent);
+  background:rgba(7,12,26,.7);
+  font:900 32px/1 'Oxanium',sans-serif;
+  text-shadow:0 0 18px currentColor;
+  box-shadow:0 0 22px color-mix(in srgb, currentColor 35%, transparent), inset 0 0 14px color-mix(in srgb, currentColor 18%, transparent);
+  animation:goRankPop .6s cubic-bezier(.34,1.56,.64,1) .05s both;
+}
+.go-rank[data-rank="S"] { color:#ffd166; }
+.go-rank[data-rank="A"] { color:#36f2a1; }
+.go-rank[data-rank="B"] { color:#2f7cff; }
+.go-rank[data-rank="C"] { color:#ffb347; }
+.go-rank[data-rank="D"] { color:#ff8394; }
+@media (prefers-reduced-motion:reduce) {
+  .go-rank { animation:none; }
+}
+
 /* Post-run analysis: longer values than the main stats, so a 2-column grid. */
 .go-analysis {
   margin-top:16px;
