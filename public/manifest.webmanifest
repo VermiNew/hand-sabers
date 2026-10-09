@@ -1,0 +1,16 @@
+{
+  "name": "Hand Sabers",
+  "short_name": "Hand Sabers",
+  "description": "Gra rytmiczna sterowana gołymi rękami przez kamerę, z kreatorem i biblioteką map.",
+  "lang": "pl",
+  "start_url": "./play.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#05070d",
+  "theme_color": "#05070d",
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
