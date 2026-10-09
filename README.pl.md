@@ -114,7 +114,11 @@ W trybie Vite użyj tych samych ścieżek na porcie `5173`.
 | --- | --- |
 | `Escape` | Pauza / wznowienie |
 | Drag & drop `.json` lub `.zip` na grę | Wczytaj mapę |
-| Panel ustawień | No Fail, kolory mieczy, tryb jednej ręki, limit beatów, wydajność |
+| Panel ustawień | No Fail, kolory mieczy, tryb jednej ręki, modyfikatory, ćwiczenie fragmentu, limit beatów, wydajność, ograniczenie ruchu |
+
+### Modyfikatory i ćwiczenie fragmentu
+
+W Ustawieniach → Rozgrywka są opcjonalne zasady dla gry solo. **Lustro** zamienia lewą i prawą stronę, **Bez bomb** pomija wszystkie bomby, a **Podwójne życie** podwaja startową integralność. **Ćwiczenie fragmentu** gra tylko wybrane sekundy mapy (od–do), a przy włączonym **Automatycznym tempie** startuje od 60% prędkości i przyspiesza o 10% po każdym przejściu z celnością co najmniej 90%; po ukończeniu fragmentu wybierz „Graj ponownie”. Przejścia z modyfikatorem lub ćwiczeniem nie trafiają do rankingu, nie dają osiągnięć i są ignorowane w Multiplayerze.
 
 ### Skróty klawiszowe kreatora map
 
@@ -187,6 +191,8 @@ Dozwolone wartości:
 - `cut`: `any`, `down`, `up`, `left`, `right`, `down-left`, `down-right`, `up-left`, `up-right`
 
 ## REST API
+
+Zapis, import i usuwanie map można zabezpieczyć tokenem administratora; opis w [SERVER_SETUP.md](SERVER_SETUP.md#token-administratora-ochrona-zapisu-i-usuwania-map).
 
 | Endpoint | Metoda | Opis |
 | --- | --- | --- |
