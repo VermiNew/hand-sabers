@@ -22,6 +22,7 @@ uzupełnione, asset należy traktować jako o niepotwierdzonym pochodzeniu.
 | `src/assets/logo.png` | logo gry | **DO UZUPEŁNIENIA** | **DO UZUPEŁNIENIA** | **DO UZUPEŁNIENIA** |
 | `src/assets/lora/01_neutral.png` … `06_sad.png` (6 plików) | awatary narratora Lyra | **DO UZUPEŁNIENIA** (jeśli wygenerowane narzędziem AI: nazwa narzędzia, wersja, prompt i warunki użycia wyników) | **DO UZUPEŁNIENIA** | **DO UZUPEŁNIENIA** |
 | `favicon.svg` | ikona strony (dwa skrzyżowane miecze) | **DO UZUPEŁNIENIA** | **DO UZUPEŁNIENIA** | **DO UZUPEŁNIENIA** |
+| `public/icons/icon-192.png`, `icon-512.png`, `icon-maskable-512.png` | ikony aplikacji (manifest PWA) | wyrenderowane z `favicon.svg` (wariant maskable: ten sam rysunek na pełnym tle `#05070d`), więc dziedziczą jego autora i licencję | jak `favicon.svg` | 2026-10-09 |
 
 ## Dźwięk i muzyka
 

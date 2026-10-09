@@ -662,7 +662,7 @@ Wymagają oceny wizualnej na żywo — weryfikacja przez Playwright tylko po wyr
 15. [ ] Progresja: poziomy konta oraz odblokowywane motywy aren lub modele mieczy za osiągnięcia (achievementy już istnieją).
 16. [ ] Stany między grami: ekran ładowania z wskazówkami, płynne wejście do mapy (odliczanie, kamera wjeżdżająca w scenę).
 17. [ ] Własna muzyka w menu i spójny zestaw efektów dźwiękowych, uzupełniający głos narratora Lyra.
-18. [ ] Instalowalność jako PWA (manifest do istniejącego service workera) oraz ekran „Jak grać" przy pierwszym uruchomieniu.
+18. [x] Instalowalność jako PWA (manifest do istniejącego service workera) oraz ekran „Jak grać" przy pierwszym uruchomieniu. — manifest `public/manifest.webmanifest` z ikonami 192/512 i maskable (wyrenderowanymi z `favicon.svg`), `theme-color` i `apple-touch-icon` w `play.html`; Chromium nie zgłasza błędów manifestu ani instalowalności (poza `in-incognito` testowego kontekstu). Ekran „Jak grać” przy pierwszym uruchomieniu już istniał (samouczek w oknie Pomocy).
 
 ### E. Kwestie prawne — plan działań
 

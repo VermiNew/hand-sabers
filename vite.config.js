@@ -5,7 +5,8 @@ import { resolve } from 'node:path';
 // Przy `npm run client` frontend działa na 5173, a zapytania /api lecą do Expressa.
 export default defineConfig({
   root: '.',
-  publicDir: false,
+  // `public/` holds files that must keep their exact URL: the web app manifest and its icons.
+  publicDir: 'public',
   server: {
     host: '0.0.0.0',
     port: 5173,
