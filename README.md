@@ -114,7 +114,11 @@ In Vite mode use the same paths on port `5173`.
 | --- | --- |
 | `Escape` | Pause / resume |
 | Drag & drop `.json` or `.zip` onto the game | Load a map |
-| Settings panel | No Fail mode, saber colors, one-hand mode, beat limit, performance |
+| Settings panel | No Fail mode, saber colors, one-hand mode, gameplay modifiers, practice section, beat limit, performance, reduce motion |
+
+### Gameplay modifiers and practice
+
+Settings → Gameplay has optional single-player rules. **Mirror** swaps left and right, **No bombs** skips every bomb and **Double lives** doubles your starting integrity. **Practice section** replays only the seconds you choose (from–to) and, with **Automatic tempo** on, starts at 60% speed and speeds up by 10% after each run with at least 90% accuracy; after a finished run use "Play again" to continue. Runs with a modifier or practice are not ranked, earn no achievements and are ignored in Multiplayer.
 
 ### Map creator keyboard shortcuts
 
@@ -187,6 +191,8 @@ Allowed values:
 - `cut`: `any`, `down`, `up`, `left`, `right`, `down-left`, `down-right`, `up-left`, `up-right`
 
 ## REST API
+
+Saving, importing and deleting maps can be protected with an admin token; see [SERVER_SETUP.md](SERVER_SETUP.md#token-administratora-ochrona-zapisu-i-usuwania-map) (Polish).
 
 | Endpoint | Method | Description |
 | --- | --- | --- |
