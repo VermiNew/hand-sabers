@@ -10,6 +10,7 @@ import {
 } from '../core/learning-curve.ts';
 import type { DifficultyBeat } from '../core/map-difficulty.ts';
 import { createModalTransition, type ModalTransitionController } from '../ui/modal-transition.ts';
+import { fetchWithTimeout } from '../core/fetch-timeout.ts';
 
 interface MapMeta {
   title?: string;
@@ -340,7 +341,7 @@ function renderAudioPreview(map: MapEntry): HTMLElement {
 // -- Server fetch --
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { cache: 'no-store', credentials: 'same-origin' });
+  const res = await fetchWithTimeout(url, { cache: 'no-store', credentials: 'same-origin' });
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json() as Promise<T>;
 }

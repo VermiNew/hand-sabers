@@ -21,6 +21,7 @@ import { renderRoomPlayerList } from './room-player-list.ts';
 import { createModalTransition, type ModalTransitionController } from '../ui/modal-transition.ts';
 import { createVoiceChat, type VoiceChatController } from './voice-chat.ts';
 import { clearVoiceSpeaking, setVoicePlayerSpeaking } from './voice-speaking.ts';
+import { fetchWithTimeout } from '../core/fetch-timeout.ts';
 
 export { PROTOCOL_VERSION } from './protocol.ts';
 export { serverTimeToPerformance } from './clock-sync.ts';
@@ -760,7 +761,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     setBusy(true);
     showMessage();
     try {
-      const response = await fetch('/api/rooms', { method: 'POST' });
+      const response = await fetchWithTimeout('/api/rooms', { method: 'POST' });
       const created = await responseJson<CreateRoomResponse>(response);
       if (!created.room?.code || !created.hostToken) throw new Error(t('multiplayer.invalidResponse'));
       activeJoinUrl = created.joinUrl;
@@ -784,7 +785,7 @@ export function initMultiplayerOverlay(defaultPlayerName: string): void {
     setBusy(true);
     showMessage();
     try {
-      const response = await fetch(`/api/rooms/${encodeURIComponent(code)}/join`, { method: 'POST' });
+      const response = await fetchWithTimeout(`/api/rooms/${encodeURIComponent(code)}/join`, { method: 'POST' });
       const credential = await responseJson<JoinCodeResponse>(response);
       share.hidden = true;
       connect(credential.code, credential.joinToken, getPlayerName(), requestedRole);

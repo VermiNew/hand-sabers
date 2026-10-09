@@ -17,6 +17,7 @@ import { adminFetch } from '../core/admin-auth.ts';
 import { state, MAP_ID } from './state.ts';
 import type { CreatorMap } from './state.ts';
 import { formatCreatorTime } from './time-format.ts';
+import { fetchWithTimeout } from '../core/fetch-timeout.ts';
 
 const AUTOSAVE_DEBOUNCE_MS = 5_000;
 const AUTOSAVE_MAX_INTERVAL_MS = 30_000;
@@ -256,7 +257,7 @@ export async function loadInitialMap(callbacks: {
     if (mapId) {
       let loaded: Record<string, unknown> | null = null;
       try {
-        const r = await fetch(`/api/maps/${encodeURIComponent(mapId)}`);
+        const r = await fetchWithTimeout(`/api/maps/${encodeURIComponent(mapId)}`);
         if (r.ok) loaded = await r.json() as Record<string, unknown>;
       } catch { /* fallback to local */ }
       loaded = loaded ?? callbacks.getLocalMapById(mapId) as Record<string, unknown> | null;

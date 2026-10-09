@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from '../core/fetch-timeout.ts';
+
 export interface MapEntry {
   id: string;
   source: 'server' | 'local' | 'autosave' | 'server+local';
@@ -32,7 +34,7 @@ export interface ScoreEntry {
 }
 
 export async function fetchJson<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, { cache: 'no-store', credentials: 'same-origin', ...options });
+  const response = await fetchWithTimeout(url, { cache: 'no-store', credentials: 'same-origin', ...options });
   if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
   return response.json() as Promise<T>;
 }
