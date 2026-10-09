@@ -2,6 +2,7 @@ import { appendLocalScore } from '../core/localstore.ts';
 import { CURRENT_SCORING_VERSION } from '../core/score-version.ts';
 import { state } from '../core/state.ts';
 import { t } from '../i18n/index.ts';
+import { fetchWithTimeout } from '../core/fetch-timeout.ts';
 
 export interface ScoreSubmissionOptions {
   playerName: string;
@@ -21,7 +22,7 @@ export function beginScoreSubmissionSession(mapId: string | undefined, trainingM
     pendingScoreSession = null;
     return;
   }
-  pendingScoreSession = fetch('/api/score-sessions', {
+  pendingScoreSession = fetchWithTimeout('/api/score-sessions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ mapId }),
@@ -60,7 +61,7 @@ export async function submitScore({
   try {
     const session = await scoreSession;
     if (!session) throw new Error('Score session unavailable');
-    const response = await fetch('/api/scores', {
+    const response = await fetchWithTimeout('/api/scores', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...payload, sessionToken: session.token }),

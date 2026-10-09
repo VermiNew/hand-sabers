@@ -6,6 +6,7 @@ import type { Settings } from '../types/index.js';
 import { clearMapAudio, getMapDuration, hasMapAudio, loadMapAudio } from './audio.ts';
 import { validateMap } from './maploader.ts';
 import { preparePhoneAudio } from '../remote/host-audio.ts';
+import { DOWNLOAD_TIMEOUT_MS, fetchWithTimeout } from '../core/fetch-timeout.ts';
 
 const MAP_ID_RE = /^[a-z0-9][a-z0-9_-]{0,119}$/i;
 
@@ -13,7 +14,7 @@ export async function loadMapById(mapId: string): Promise<boolean> {
   if (!MAP_ID_RE.test(mapId)) return false;
   if (state.map?.id === mapId) return true;
   try {
-    const res = await fetch(`/api/maps/${encodeURIComponent(mapId)}`);
+    const res = await fetchWithTimeout(`/api/maps/${encodeURIComponent(mapId)}`);
     if (res.ok) {
       const map = await res.json() as Record<string, unknown>;
       if (validateMap(map)) {
@@ -44,7 +45,7 @@ export async function ensureCurrentMapAudio(settings: Pick<Settings, 'phoneAudio
   if (state.map._serverAudioPending) {
     try {
       const audioUrl = getCanonicalMapAudioUrl(state.map.id);
-      const res = audioUrl ? await fetch(audioUrl) : null;
+      const res = audioUrl ? await fetchWithTimeout(audioUrl, {}, DOWNLOAD_TIMEOUT_MS) : null;
       // Keep the flag on network/server failures so the next call retries;
       // a definitive answer (audio loaded, or the server has none) clears it.
       if (!res || res.status < 500) state.map._serverAudioPending = false;

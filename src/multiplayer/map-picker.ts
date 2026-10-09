@@ -1,5 +1,6 @@
 import { t } from '../i18n/index.ts';
 import { createModalTransition } from '../ui/modal-transition.ts';
+import { fetchWithTimeout } from '../core/fetch-timeout.ts';
 
 interface MapSummary {
   id: string;
@@ -157,7 +158,7 @@ export function initMultiplayerMapPicker(onSelect: (mapId: string) => void): {
       loading = true;
       render();
       try {
-        const response = await fetch('/api/maps');
+        const response = await fetchWithTimeout('/api/maps');
         const payload = await response.json() as unknown;
         if (!response.ok || !Array.isArray(payload)) throw new Error(t('multiplayer.mapsError'));
         const ids = payload
@@ -165,7 +166,7 @@ export function initMultiplayerMapPicker(onSelect: (mapId: string) => void): {
           .filter(id => /^[a-z0-9][a-z0-9_-]{0,119}$/i.test(id));
         maps = await Promise.all(ids.map(async id => {
           try {
-            const mapResponse = await fetch(`/api/maps/${encodeURIComponent(id)}`);
+            const mapResponse = await fetchWithTimeout(`/api/maps/${encodeURIComponent(id)}`);
             if (!mapResponse.ok) throw new Error();
             return parseMap(await mapResponse.json() as MapPayload, id);
           } catch {
