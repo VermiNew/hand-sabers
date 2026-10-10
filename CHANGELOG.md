@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Optional server admin token (`HAND_SABERS_ADMIN_TOKEN` or `adminToken`) protecting map save, import and delete.
 - GitHub Actions CI running lint, build, unit tests and the server smoke test.
 - Asset and license register and a data inventory with a privacy policy draft (`docs/`).
+- Web app manifest and icons, so the game can be installed as an app; `public/` is now served from the site root.
 
 ### Changed
 

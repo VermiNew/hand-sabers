@@ -29,3 +29,8 @@ test-results/
 
 # Claude Code notes
 .claude/
+
+# Local work files kept next to the repository (patches, archives, agent artifacts)
+*.patch
+*.7z
+.artifacts/
